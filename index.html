@@ -3860,31 +3860,68 @@ function renderPost(post) {
    LIKES
    ========================================================= */
 
-function toggleLike(id) {
+async function toggleLike(id) {
+
+  if (!currentUser) {
+    openAuth("login");
+    return;
+  }
 
   const post =
     posts.find(
       item => String(item.id) === String(id)
     );
 
-
   if (!post) {
     return;
   }
 
+  const alreadyLiked = post.liked;
 
-  post.liked =
-    !post.liked;
+  if (alreadyLiked) {
 
+    const { error } =
+      await supabaseClient
+        .from("post_likes")
+        .delete()
+        .eq("post_id", id)
+        .eq("user_id", currentUser.id);
 
-  post.likes =
-    post.liked
-      ? post.likes + 1
-      : Math.max(
-          0,
-          post.likes - 1
-        );
+    if (error) {
+      console.error("Remove like error:", error);
+      alert("Could not remove your Like.");
+      return;
+    }
 
+    post.liked = false;
+
+    post.likes =
+      Math.max(
+        0,
+        post.likes - 1
+      );
+
+  } else {
+
+    const { error } =
+      await supabaseClient
+        .from("post_likes")
+        .insert({
+          post_id: id,
+          user_id: currentUser.id
+        });
+
+    if (error) {
+      console.error("Add like error:", error);
+      alert("Could not add your Like.");
+      return;
+    }
+
+    post.liked = true;
+
+    post.likes =
+      post.likes + 1;
+  }
 
   renderPosts();
 }
