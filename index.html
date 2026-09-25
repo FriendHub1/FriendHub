@@ -3796,11 +3796,50 @@ async function toggleLike(id) {
   }
 
 
-  const alreadyLiked =
-    post.liked;
+  /*
+    Always check Supabase first.
+
+    This keeps the button synchronized with the
+    real Like saved in the database, even if the
+    page state is stale or the user has logged in
+    from another device/browser.
+  */
+
+  const {
+    data: existingLike,
+    error: checkError
+  } =
+    await supabaseClient
+      .from("post_likes")
+      .select("id")
+      .eq("post_id", id)
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
 
 
-  if (alreadyLiked) {
+  if (checkError) {
+
+    console.error(
+      "Check like error:",
+      checkError
+    );
+
+    alert(
+      "Could not check your Like."
+    );
+
+    return;
+  }
+
+
+  if (existingLike) {
+
+    /*
+      The Like already exists.
+
+      Clicking again removes it, just like
+      a normal social network.
+    */
 
     const {
       error
@@ -3826,18 +3865,11 @@ async function toggleLike(id) {
       return;
     }
 
-
-    post.liked =
-      false;
-
-
-    post.likes =
-      Math.max(
-        0,
-        post.likes - 1
-      );
-
   } else {
+
+    /*
+      No Like exists yet, so create one.
+    */
 
     const {
       error
@@ -3845,24 +3877,22 @@ async function toggleLike(id) {
       await supabaseClient
         .from("post_likes")
         .insert({
-
           post_id:
             id,
 
           user_id:
             currentUser.id
-
         });
 
 
     if (error) {
 
       /*
-        PostgreSQL/Supabase code 23505 and HTTP 409
-        mean the unique Like already exists.
+        PostgreSQL code 23505 / HTTP 409 means
+        the Like was already created by another
+        request, for example from a double click.
 
-        Instead of showing an error, we synchronize
-        the post with the Like that is already saved.
+        We do not show an error to the user.
       */
 
       if (
@@ -3870,70 +3900,35 @@ async function toggleLike(id) {
         error.status === 409
       ) {
 
-        post.liked = true;
+        console.warn(
+          "Like already exists. Reloading Likes."
+        );
 
+      } else {
 
-        const {
-          data: existingLikes,
-          error: fetchError
-        } =
-          await supabaseClient
-            .from("post_likes")
-            .select("id")
-            .eq("post_id", id);
+        console.error(
+          "Add like error:",
+          error
+        );
 
-
-        if (
-          !fetchError &&
-          existingLikes
-        ) {
-
-          post.likes =
-            existingLikes.length;
-
-        } else {
-
-          post.likes =
-            Math.max(
-              1,
-              post.likes || 0
-            );
-
-        }
-
-
-        renderPosts();
+        alert(
+          "Could not add your Like."
+        );
 
         return;
       }
-
-
-      console.error(
-        "Add like error:",
-        error
-      );
-
-
-      alert(
-        "Could not add your Like."
-      );
-
-
-      return;
     }
-
-
-    post.liked =
-      true;
-
-
-    post.likes =
-      (post.likes || 0) + 1;
 
   }
 
 
-  renderPosts();
+  /*
+    Reload everything from Supabase so the
+    Like count and heart state are always
+    based on the real database.
+  */
+
+  await loadPosts();
 
 }
 
