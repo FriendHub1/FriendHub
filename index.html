@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>FriendHub — Meet People. Make Friends.</title>
 
     <style>
+
         * {
             margin: 0;
             padding: 0;
@@ -18,66 +20,78 @@
 
         body {
             font-family: Arial, Helvetica, sans-serif;
-            background: #f7f8fc;
+            background: #f5f6fa;
             color: #1f2937;
-            line-height: 1.6;
         }
 
-        /* HEADER */
+        /* =========================
+           HEADER
+        ========================= */
+
         header {
             position: sticky;
             top: 0;
             z-index: 1000;
-            background: rgba(255, 255, 255, 0.97);
+            background: rgba(255,255,255,0.97);
             border-bottom: 1px solid #e5e7eb;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
         }
 
         .nav-container {
             max-width: 1150px;
             margin: auto;
-            height: 70px;
-            padding: 0 24px;
+            min-height: 70px;
+            padding: 15px 24px;
+
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
 
         .logo {
+            text-decoration: none;
+            color: #4f46e5;
             font-size: 25px;
             font-weight: 800;
-            color: #4f46e5;
-            text-decoration: none;
-            cursor: pointer;
         }
 
         nav {
             display: flex;
-            gap: 28px;
+            gap: 26px;
         }
 
         nav a {
-            color: #374151;
             text-decoration: none;
-            font-size: 15px;
+            color: #374151;
             font-weight: 600;
-            cursor: pointer;
-            transition: color 0.2s ease;
+            font-size: 15px;
         }
 
         nav a:hover {
             color: #4f46e5;
         }
 
-        /* HERO */
+        /* =========================
+           HERO
+        ========================= */
+
         .hero {
-            min-height: 600px;
+            min-height: 550px;
+
             display: flex;
             align-items: center;
             justify-content: center;
+
             text-align: center;
-            padding: 80px 24px;
-            background: linear-gradient(135deg, #eef2ff, #ffffff, #f5f3ff);
+
+            padding: 80px 20px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #eef2ff,
+                    #ffffff,
+                    #f5f3ff
+                );
         }
 
         .hero-content {
@@ -85,11 +99,10 @@
         }
 
         .hero h1 {
-            font-size: clamp(42px, 7vw, 72px);
+            font-size: clamp(44px, 7vw, 72px);
             line-height: 1.05;
             color: #111827;
-            margin-bottom: 24px;
-            letter-spacing: -2px;
+            margin-bottom: 25px;
         }
 
         .hero h1 span {
@@ -97,29 +110,25 @@
         }
 
         .hero p {
-            max-width: 650px;
-            margin: 0 auto 34px;
             color: #6b7280;
             font-size: 19px;
-        }
-
-        .hero-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 14px;
-            flex-wrap: wrap;
+            max-width: 650px;
+            margin: auto auto 30px;
         }
 
         .btn {
             display: inline-block;
-            padding: 14px 25px;
-            border-radius: 12px;
-            text-decoration: none;
-            font-weight: 700;
-            transition: 0.2s ease;
-            cursor: pointer;
             border: none;
+            border-radius: 12px;
+            padding: 14px 24px;
+
             font-size: 15px;
+            font-weight: 700;
+
+            text-decoration: none;
+            cursor: pointer;
+
+            transition: 0.2s;
         }
 
         .btn-primary {
@@ -134,100 +143,416 @@
 
         .btn-secondary {
             background: white;
-            color: #374151;
             border: 1px solid #d1d5db;
+            color: #374151;
         }
 
         .btn-secondary:hover {
             border-color: #4f46e5;
             color: #4f46e5;
-            transform: translateY(-2px);
         }
 
-        /* GENERAL SECTIONS */
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* =========================
+           SECTIONS
+        ========================= */
+
         section {
             scroll-margin-top: 90px;
         }
 
         .section {
-            max-width: 1150px;
+            max-width: 1050px;
             margin: auto;
-            padding: 90px 24px;
+            padding: 85px 20px;
         }
 
-        .section-header {
+        .section-title {
             text-align: center;
-            margin-bottom: 45px;
+            margin-bottom: 40px;
         }
 
-        .section-header h2 {
+        .section-title h2 {
             font-size: 38px;
             color: #111827;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
-        .section-header p {
+        .section-title p {
             color: #6b7280;
-            max-width: 650px;
+        }
+
+        /* =========================
+           DISCOVER FEED
+        ========================= */
+
+        #discover {
+            background: #f5f6fa;
+        }
+
+        .discover-layout {
+            max-width: 720px;
             margin: auto;
         }
 
-        /* DISCOVER */
-        #discover {
-            background: #ffffff;
-        }
+        /* SEARCH */
 
-        .platform-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-        }
-
-        .platform-card {
-            background: #ffffff;
+        .search-box {
+            background: white;
             border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 14px 18px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            margin-bottom: 18px;
+
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        }
+
+        .search-box span {
+            font-size: 19px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            width: 100%;
+
+            font-size: 15px;
+        }
+
+        /* FILTERS */
+
+        .filters {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter {
+            white-space: nowrap;
+
+            border: 1px solid #d1d5db;
+            background: white;
+
+            padding: 9px 15px;
+
             border-radius: 20px;
-            padding: 32px;
-            text-align: center;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+            cursor: pointer;
+
+            font-size: 13px;
+            font-weight: 600;
+
+            color: #4b5563;
         }
 
-        .platform-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.09);
+        .filter:hover,
+        .filter.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
         }
 
-        .platform-icon {
-            width: 70px;
-            height: 70px;
-            margin: 0 auto 20px;
+        /* CREATE POST */
+
+        .create-post {
+            background: white;
+
+            border: 1px solid #e5e7eb;
             border-radius: 18px;
+
+            padding: 22px;
+
+            margin-bottom: 22px;
+
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+
+        .create-top {
+            display: flex;
+            gap: 12px;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+
+            border-radius: 50%;
+
+            background: #eef2ff;
+
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            background: #eef2ff;
+
+            font-size: 21px;
+
+            flex-shrink: 0;
         }
 
-        .platform-card h3 {
-            font-size: 23px;
-            margin-bottom: 10px;
+        .post-input {
+            width: 100%;
+
+            min-height: 90px;
+
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+
+            padding: 13px;
+
+            font-family: inherit;
+            font-size: 15px;
+
+            resize: vertical;
+
+            outline: none;
+        }
+
+        .post-input:focus {
+            border-color: #818cf8;
+        }
+
+        .post-options {
+            display: flex;
+
+            gap: 8px;
+
+            margin-top: 14px;
+
+            flex-wrap: wrap;
+        }
+
+        .post-option {
+            border: 1px solid #e5e7eb;
+            background: white;
+
+            border-radius: 10px;
+
+            padding: 9px 12px;
+
+            cursor: pointer;
+
+            font-size: 13px;
+
+            color: #4b5563;
+        }
+
+        .post-option:hover {
+            background: #f3f4f6;
+        }
+
+        .post-bottom {
+            margin-top: 15px;
+
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* POSTS */
+
+        .post {
+            background: white;
+
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+
+            padding: 22px;
+
+            margin-bottom: 18px;
+
+            box-shadow: 0 5px 20px rgba(0,0,0,0.04);
+        }
+
+        .post-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            margin-bottom: 15px;
+        }
+
+        .user-info {
+            display: flex;
+
+            gap: 11px;
+
+            align-items: center;
+        }
+
+        .user-name {
+            font-weight: 700;
             color: #111827;
         }
 
-        .platform-card p {
+        .user-meta {
             color: #6b7280;
-            margin-bottom: 22px;
+            font-size: 13px;
         }
 
-        /* ABOUT */
+        .more {
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .post-text {
+            color: #374151;
+            font-size: 15px;
+
+            margin-bottom: 18px;
+        }
+
+        .tags {
+            display: flex;
+
+            gap: 7px;
+
+            flex-wrap: wrap;
+
+            margin-bottom: 18px;
+        }
+
+        .tag {
+            background: #eef2ff;
+            color: #4338ca;
+
+            border-radius: 20px;
+
+            padding: 6px 10px;
+
+            font-size: 12px;
+
+            font-weight: 600;
+        }
+
+        /* GROUP LINK */
+
+        .group-card {
+            border: 1px solid #e5e7eb;
+
+            border-radius: 14px;
+
+            padding: 15px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 18px;
+
+            background: #fafafa;
+        }
+
+        .group-info {
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+        }
+
+        .group-icon {
+            width: 43px;
+            height: 43px;
+
+            border-radius: 12px;
+
+            background: #eef2ff;
+
+            display: flex;
+
+            align-items: center;
+            justify-content: center;
+
+            font-size: 20px;
+        }
+
+        .group-title {
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .group-type {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .join {
+            text-decoration: none;
+
+            background: #4f46e5;
+
+            color: white;
+
+            padding: 9px 14px;
+
+            border-radius: 9px;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            white-space: nowrap;
+        }
+
+        .join:hover {
+            background: #4338ca;
+        }
+
+        /* POST ACTIONS */
+
+        .post-actions {
+            border-top: 1px solid #f0f0f0;
+
+            padding-top: 13px;
+
+            display: flex;
+
+            gap: 25px;
+        }
+
+        .post-action {
+            border: none;
+            background: transparent;
+
+            cursor: pointer;
+
+            color: #6b7280;
+
+            font-size: 13px;
+        }
+
+        .post-action:hover {
+            color: #4f46e5;
+        }
+
+        /* =========================
+           ABOUT
+        ========================= */
+
         #about {
-            background: #f7f8fc;
+            background: white;
         }
 
         .about-content {
-            max-width: 850px;
+            max-width: 820px;
             margin: auto;
             text-align: center;
         }
@@ -235,93 +560,87 @@
         .about-content h2 {
             font-size: 40px;
             margin-bottom: 20px;
-            color: #111827;
         }
 
         .about-content p {
-            color: #5b6472;
+            color: #6b7280;
             font-size: 17px;
             margin-bottom: 18px;
         }
 
         .notice {
-            margin-top: 30px;
-            padding: 20px 24px;
             background: #eef2ff;
+
             border: 1px solid #c7d2fe;
+
+            padding: 20px;
+
             border-radius: 14px;
+
             color: #3730a3;
-            font-size: 15px;
+
+            margin-top: 25px;
         }
 
-        /* SUPPORT */
+        /* =========================
+           SUPPORT
+        ========================= */
+
         #support {
-            background: #ffffff;
+            background: #f5f6fa;
         }
 
         .support-box {
-            max-width: 750px;
+            max-width: 700px;
+
             margin: auto;
+
             text-align: center;
-            background: #f9fafb;
+
+            background: white;
+
             border: 1px solid #e5e7eb;
-            border-radius: 22px;
-            padding: 45px 30px;
+
+            border-radius: 20px;
+
+            padding: 45px 25px;
         }
 
         .support-box h2 {
             font-size: 36px;
-            margin-bottom: 15px;
-            color: #111827;
+
+            margin-bottom: 12px;
         }
 
         .support-box p {
             color: #6b7280;
-            margin-bottom: 25px;
+
+            margin-bottom: 20px;
         }
 
         .email {
             display: inline-block;
+
             color: #4f46e5;
+
             font-weight: 700;
+
             text-decoration: none;
-            margin-bottom: 25px;
+
+            margin-bottom: 22px;
         }
 
-        .email:hover {
-            text-decoration: underline;
-        }
+        /* =========================
+           FOOTER
+        ========================= */
 
-        /* COMING SOON */
-        .future {
-            margin-top: 55px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 18px;
-        }
-
-        .future-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 24px;
-        }
-
-        .future-card h4 {
-            margin-bottom: 8px;
-            color: #111827;
-        }
-
-        .future-card p {
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        /* FOOTER */
         footer {
             background: #111827;
+
             color: #9ca3af;
+
             text-align: center;
+
             padding: 35px 20px;
         }
 
@@ -330,388 +649,794 @@
         }
 
         footer p {
-            margin: 6px 0;
+            margin: 6px;
             font-size: 14px;
         }
 
-        /* MOBILE */
-        @media (max-width: 800px) {
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media(max-width: 700px) {
+
             .nav-container {
-                height: auto;
-                padding-top: 18px;
-                padding-bottom: 18px;
                 flex-direction: column;
                 gap: 15px;
             }
 
             nav {
-                gap: 17px;
+                gap: 15px;
                 flex-wrap: wrap;
                 justify-content: center;
             }
 
             .hero {
-                min-height: 540px;
                 padding: 70px 20px;
             }
 
             .hero h1 {
-                letter-spacing: -1px;
-            }
-
-            .hero p {
-                font-size: 17px;
-            }
-
-            .platform-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .future {
-                grid-template-columns: 1fr;
+                font-size: 48px;
             }
 
             .section {
-                padding: 70px 20px;
+                padding: 65px 15px;
             }
 
-            .section-header h2,
-            .about-content h2,
-            .support-box h2 {
-                font-size: 32px;
+            .group-card {
+                align-items: flex-start;
+                flex-direction: column;
             }
+
+            .join {
+                width: 100%;
+                text-align: center;
+            }
+
+            .post-actions {
+                gap: 15px;
+            }
+
         }
+
     </style>
 </head>
 
 <body>
 
-    <!-- HEADER -->
-    <header>
-        <div class="nav-container">
 
-            <a class="logo"
-               href="#home"
-               onclick="goToSection('home'); return false;">
-                FriendHub
+<!-- =========================
+     HEADER
+========================= -->
+
+<header>
+
+    <div class="nav-container">
+
+        <a
+            class="logo"
+            href="#home"
+            onclick="goToSection('home'); return false;">
+            FriendHub
+        </a>
+
+        <nav>
+
+            <a
+                href="#home"
+                onclick="goToSection('home'); return false;">
+                Home
             </a>
 
-            <nav>
-                <a href="#home"
-                   onclick="goToSection('home'); return false;">
-                    Home
-                </a>
+            <a
+                href="#discover"
+                onclick="goToSection('discover'); return false;">
+                Discover
+            </a>
 
-                <a href="#discover"
-                   onclick="goToSection('discover'); return false;">
-                    Discover
-                </a>
+            <a
+                href="#about"
+                onclick="goToSection('about'); return false;">
+                About
+            </a>
 
-                <a href="#about"
-                   onclick="goToSection('about'); return false;">
-                    About
-                </a>
+            <a
+                href="#support"
+                onclick="goToSection('support'); return false;">
+                Support
+            </a>
 
-                <a href="#support"
-                   onclick="goToSection('support'); return false;">
-                    Support
-                </a>
-            </nav>
+        </nav>
+
+    </div>
+
+</header>
+
+
+<!-- =========================
+     HOME
+========================= -->
+
+<section id="home" class="hero">
+
+    <div class="hero-content">
+
+        <h1>
+            Meet People.<br>
+            <span>Make Friends.</span>
+        </h1>
+
+        <p>
+            Discover people, friendships and communities
+            based on your interests and the platforms you use.
+        </p>
+
+        <div class="hero-buttons">
+
+            <a
+                class="btn btn-primary"
+                href="#discover"
+                onclick="goToSection('discover'); return false;">
+                Discover People
+            </a>
+
+            <a
+                class="btn btn-secondary"
+                href="#about"
+                onclick="goToSection('about'); return false;">
+                Learn More
+            </a>
 
         </div>
-    </header>
+
+    </div>
+
+</section>
 
 
-    <!-- HOME -->
-    <main>
+<!-- =========================
+     DISCOVER
+========================= -->
 
-        <section id="home" class="hero">
+<section id="discover">
 
-            <div class="hero-content">
+    <div class="section">
 
-                <h1>
-                    Meet People.<br>
-                    <span>Make Friends.</span>
-                </h1>
+        <div class="section-title">
 
-                <p>
-                    FriendHub is a social discovery platform designed
-                    to help people find new friends, communities and
-                    conversations across the platforms they already use.
-                </p>
+            <h2>Discover</h2>
 
-                <div class="hero-buttons">
+            <p>
+                Find people, conversations and communities
+                that match your interests.
+            </p>
 
-                    <a href="#discover"
-                       class="btn btn-primary"
-                       onclick="goToSection('discover'); return false;">
-                        Discover Friends
-                    </a>
+        </div>
 
-                    <a href="#about"
-                       class="btn btn-secondary"
-                       onclick="goToSection('about'); return false;">
-                        Learn More
-                    </a>
+
+        <div class="discover-layout">
+
+
+            <!-- SEARCH -->
+
+            <div class="search-box">
+
+                <span>🔎</span>
+
+                <input
+                    type="text"
+                    placeholder="Search people, interests or groups...">
+
+            </div>
+
+
+            <!-- FILTERS -->
+
+            <div class="filters">
+
+                <button class="filter active">
+                    All
+                </button>
+
+                <button class="filter">
+                    👤 People
+                </button>
+
+                <button class="filter">
+                    🟢 WhatsApp
+                </button>
+
+                <button class="filter">
+                    🔵 Telegram
+                </button>
+
+                <button class="filter">
+                    👻 Snapchat
+                </button>
+
+            </div>
+
+
+            <!-- CREATE POST -->
+
+            <div class="create-post">
+
+                <div class="create-top">
+
+                    <div class="avatar">
+                        👤
+                    </div>
+
+                    <textarea
+                        class="post-input"
+                        placeholder="What are you looking for?"></textarea>
+
+                </div>
+
+
+                <div class="post-options">
+
+                    <button
+                        class="post-option"
+                        onclick="selectType('👤 Personal contact')">
+                        👤 Personal contact
+                    </button>
+
+                    <button
+                        class="post-option"
+                        onclick="selectType('🟢 WhatsApp group')">
+                        🟢 WhatsApp group
+                    </button>
+
+                    <button
+                        class="post-option"
+                        onclick="selectType('🔵 Telegram group')">
+                        🔵 Telegram group
+                    </button>
+
+                    <button
+                        class="post-option"
+                        onclick="selectType('👻 Snapchat')">
+                        👻 Snapchat
+                    </button>
+
+                </div>
+
+
+                <div class="post-bottom">
+
+                    <button
+                        class="btn btn-primary"
+                        onclick="createDemoPost()">
+                        Post
+                    </button>
 
                 </div>
 
             </div>
 
-        </section>
 
+            <!-- =========================
+                 POST 1
+            ========================= -->
 
-        <!-- DISCOVER -->
-        <section id="discover">
+            <article class="post">
 
-            <div class="section">
+                <div class="post-header">
 
-                <div class="section-header">
+                    <div class="user-info">
 
-                    <h2>Discover New Connections</h2>
+                        <div class="avatar">
+                            🎮
+                        </div>
 
-                    <p>
-                        Find people and communities based on the
-                        platforms and interests that matter to you.
-                    </p>
+                        <div>
+
+                            <div class="user-name">
+                                Alex, 24 🇺🇸
+                            </div>
+
+                            <div class="user-meta">
+                                Gaming · Music · 2h ago
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="more">
+                        ⋯
+                    </div>
 
                 </div>
 
 
-                <div class="platform-grid">
+                <div class="post-text">
 
-                    <!-- SNAPCHAT -->
-                    <div class="platform-card">
+                    Looking for people who enjoy gaming,
+                    music and meeting new friends! 🎮🎵
 
-                        <div class="platform-icon">
+                    We also have a gaming community for
+                    anyone interested.
+
+                </div>
+
+
+                <div class="tags">
+
+                    <span class="tag">
+                        🎮 Gaming
+                    </span>
+
+                    <span class="tag">
+                        🎵 Music
+                    </span>
+
+                    <span class="tag">
+                        🌎 Friends
+                    </span>
+
+                </div>
+
+
+                <div class="group-card">
+
+                    <div class="group-info">
+
+                        <div class="group-icon">
+                            🟢
+                        </div>
+
+                        <div>
+
+                            <div class="group-title">
+                                Gaming Friends
+                            </div>
+
+                            <div class="group-type">
+                                WhatsApp Group
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <a
+                        class="join"
+                        href="#"
+                        onclick="joinDemo('WhatsApp'); return false;">
+                        Join Group
+                    </a>
+
+                </div>
+
+
+                <div class="post-actions">
+
+                    <button
+                        class="post-action"
+                        onclick="likePost(this)">
+                        ❤️ Like
+                    </button>
+
+                    <button
+                        class="post-action">
+                        💬 Comment
+                    </button>
+
+                    <button
+                        class="post-action">
+                        🚩 Report
+                    </button>
+
+                </div>
+
+            </article>
+
+
+            <!-- =========================
+                 POST 2
+            ========================= -->
+
+            <article class="post">
+
+                <div class="post-header">
+
+                    <div class="user-info">
+
+                        <div class="avatar">
+                            🌎
+                        </div>
+
+                        <div>
+
+                            <div class="user-name">
+                                Sofia, 21 🇺🇸
+                            </div>
+
+                            <div class="user-meta">
+                                Languages · 5h ago
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="more">
+                        ⋯
+                    </div>
+
+                </div>
+
+
+                <div class="post-text">
+
+                    Looking for people who speak Spanish
+                    and English. Let's practice together
+                    and make new friends! 😊
+
+                </div>
+
+
+                <div class="tags">
+
+                    <span class="tag">
+                        🇪🇸 Spanish
+                    </span>
+
+                    <span class="tag">
+                        🇺🇸 English
+                    </span>
+
+                    <span class="tag">
+                        🗣️ Language Exchange
+                    </span>
+
+                </div>
+
+
+                <div class="group-card">
+
+                    <div class="group-info">
+
+                        <div class="group-icon">
+                            🔵
+                        </div>
+
+                        <div>
+
+                            <div class="group-title">
+                                Language Exchange
+                            </div>
+
+                            <div class="group-type">
+                                Telegram Group
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <a
+                        class="join"
+                        href="#"
+                        onclick="joinDemo('Telegram'); return false;">
+                        Join Group
+                    </a>
+
+                </div>
+
+
+                <div class="post-actions">
+
+                    <button
+                        class="post-action"
+                        onclick="likePost(this)">
+                        ❤️ Like
+                    </button>
+
+                    <button
+                        class="post-action">
+                        💬 Comment
+                    </button>
+
+                    <button
+                        class="post-action">
+                        🚩 Report
+                    </button>
+
+                </div>
+
+            </article>
+
+
+            <!-- =========================
+                 POST 3
+            ========================= -->
+
+            <article class="post">
+
+                <div class="post-header">
+
+                    <div class="user-info">
+
+                        <div class="avatar">
                             👻
                         </div>
 
-                        <h3>Snapchat</h3>
+                        <div>
 
-                        <p>
-                            Discover people looking to make new
-                            Snapchat friends.
-                        </p>
+                            <div class="user-name">
+                                Jordan, 19 🇨🇦
+                            </div>
 
-                        <a href="#"
-                           class="btn btn-primary"
-                           onclick="showComingSoon('Snapchat'); return false;">
-                            Explore
-                        </a>
+                            <div class="user-meta">
+                                Snapchat · 1d ago
+                            </div>
 
-                    </div>
-
-
-                    <!-- WHATSAPP -->
-                    <div class="platform-card">
-
-                        <div class="platform-icon">
-                            💬
                         </div>
 
-                        <h3>WhatsApp</h3>
-
-                        <p>
-                            Find WhatsApp communities and groups
-                            based on shared interests.
-                        </p>
-
-                        <a href="#"
-                           class="btn btn-primary"
-                           onclick="showComingSoon('WhatsApp'); return false;">
-                            Explore
-                        </a>
-
                     </div>
 
-
-                    <!-- TELEGRAM -->
-                    <div class="platform-card">
-
-                        <div class="platform-icon">
-                            ✈️
-                        </div>
-
-                        <h3>Telegram</h3>
-
-                        <p>
-                            Discover Telegram groups and communities
-                            where people share your interests.
-                        </p>
-
-                        <a href="#"
-                           class="btn btn-primary"
-                           onclick="showComingSoon('Telegram'); return false;">
-                            Explore
-                        </a>
-
+                    <div class="more">
+                        ⋯
                     </div>
 
                 </div>
 
 
-                <!-- FUTURE FEATURES -->
-                <div class="future">
+                <div class="post-text">
 
-                    <div class="future-card">
-                        <h4>🔎 Smart Search</h4>
-                        <p>
-                            Search for people using age, country,
-                            language, interests and more.
-                        </p>
-                    </div>
-
-                    <div class="future-card">
-                        <h4>👤 Profiles</h4>
-                        <p>
-                            Create a profile and share the interests
-                            and communities you are looking for.
-                        </p>
-                    </div>
-
-                    <div class="future-card">
-                        <h4>🛡️ Safety</h4>
-                        <p>
-                            Tools for reporting, blocking and creating
-                            safer online communities.
-                        </p>
-                    </div>
+                    Looking for new Snapchat friends!
+                    I'm into movies, anime and gaming.
+                    Feel free to connect. 👻🎬🎮
 
                 </div>
+
+
+                <div class="tags">
+
+                    <span class="tag">
+                        👻 Snapchat
+                    </span>
+
+                    <span class="tag">
+                        🎬 Movies
+                    </span>
+
+                    <span class="tag">
+                        🎮 Gaming
+                    </span>
+
+                </div>
+
+
+                <div class="post-actions">
+
+                    <button
+                        class="post-action"
+                        onclick="likePost(this)">
+                        ❤️ Like
+                    </button>
+
+                    <button
+                        class="post-action">
+                        💬 Comment
+                    </button>
+
+                    <button
+                        class="post-action">
+                        🚩 Report
+                    </button>
+
+                </div>
+
+            </article>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================
+     ABOUT
+========================= -->
+
+<section id="about">
+
+    <div class="section">
+
+        <div class="about-content">
+
+            <h2>About FriendHub</h2>
+
+            <p>
+                FriendHub is a social discovery platform
+                designed to help people find new friends,
+                conversations and communities.
+            </p>
+
+            <p>
+                Users will be able to create posts,
+                discover people with shared interests
+                and find WhatsApp, Telegram and Snapchat
+                connections.
+            </p>
+
+            <p>
+                FriendHub is an independent platform and
+                is not affiliated with, sponsored by, or
+                endorsed by Snapchat, WhatsApp or Telegram.
+            </p>
+
+            <div class="notice">
+
+                <strong>Safety matters.</strong>
+
+                <br>
+
+                FriendHub is being designed with reporting,
+                blocking, moderation and age-appropriate
+                experiences in mind.
 
             </div>
 
-        </section>
+        </div>
+
+    </div>
+
+</section>
 
 
-        <!-- ABOUT -->
-        <section id="about">
+<!-- =========================
+     SUPPORT
+========================= -->
 
-            <div class="section">
+<section id="support">
 
-                <div class="about-content">
+    <div class="section">
 
-                    <h2>About FriendHub</h2>
+        <div class="support-box">
 
-                    <p>
-                        FriendHub is being created as a place where
-                        people can discover new friendships and
-                        communities based on shared interests.
-                    </p>
+            <h2>Need Help?</h2>
 
-                    <p>
-                        The goal is to make discovering people and
-                        groups easier by bringing different types of
-                        social connections together in one place.
-                    </p>
+            <p>
+                Have a question, found a problem,
+                or want to report something?
+            </p>
 
-                    <p>
-                        FriendHub is an independent platform and is
-                        not affiliated with, sponsored by, or endorsed
-                        by Snapchat, WhatsApp, or Telegram.
-                    </p>
+            <a
+                class="email"
+                href="mailto:friendhub.support@gmail.com">
+                friendhub.support@gmail.com
+            </a>
 
-                    <div class="notice">
-                        <strong>Safety matters.</strong><br>
-                        FriendHub is being designed with reporting,
-                        blocking, moderation and age-appropriate
-                        experiences in mind.
-                    </div>
+            <br>
 
-                </div>
+            <a
+                class="btn btn-primary"
+                href="mailto:friendhub.support@gmail.com?subject=FriendHub%20Report">
+                Report a Problem
+            </a>
 
-            </div>
+        </div>
 
-        </section>
+    </div>
+
+</section>
 
 
-        <!-- SUPPORT -->
-        <section id="support">
+<!-- =========================
+     FOOTER
+========================= -->
 
-            <div class="section">
+<footer>
 
-                <div class="support-box">
+    <p>
+        <strong>FriendHub</strong>
+        — Meet People. Make Friends.
+    </p>
 
-                    <h2>Need Help?</h2>
+    <p>
+        © 2026 FriendHub. All rights reserved.
+    </p>
 
-                    <p>
-                        Have a question, found a problem, or want to
-                        report something on FriendHub?
-                    </p>
+    <p>
+        Independent platform.
+        Not affiliated with Snapchat,
+        WhatsApp or Telegram.
+    </p>
 
-                    <a
-                        class="email"
-                        href="mailto:friendhub.support@gmail.com">
-                        friendhub.support@gmail.com
-                    </a>
-
-                    <br>
-
-                    <a
-                        class="btn btn-primary"
-                        href="mailto:friendhub.support@gmail.com?subject=FriendHub%20Report">
-                        Report a Problem
-                    </a>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </main>
+</footer>
 
 
-    <!-- FOOTER -->
-    <footer>
+<!-- =========================
+     JAVASCRIPT
+========================= -->
 
-        <p>
-            <strong>FriendHub</strong> — Meet People. Make Friends.
-        </p>
+<script>
 
-        <p>
-            © 2026 FriendHub. All rights reserved.
-        </p>
+    function goToSection(sectionId) {
 
-        <p>
-            Independent platform. Not affiliated with Snapchat,
-            WhatsApp, or Telegram.
-        </p>
+        const section =
+            document.getElementById(sectionId);
 
-    </footer>
+        if (section) {
 
+            section.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
 
-    <!-- JAVASCRIPT -->
-    <script>
-
-        function goToSection(sectionId) {
-
-            const section = document.getElementById(sectionId);
-
-            if (section) {
-
-                section.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start"
-                });
-
-                history.replaceState(null, null, "#" + sectionId);
-            }
-
-        }
-
-
-        function showComingSoon(platform) {
-
-            alert(
-                platform +
-                " discovery is coming soon to FriendHub! 🚀"
+            history.replaceState(
+                null,
+                null,
+                "#" + sectionId
             );
 
         }
 
-    </script>
+    }
+
+
+    function selectType(type) {
+
+        alert(
+            type +
+            " selected. This option will be connected to your post when accounts are added."
+        );
+
+    }
+
+
+    function createDemoPost() {
+
+        const input =
+            document.querySelector(".post-input");
+
+        if (!input.value.trim()) {
+
+            alert(
+                "Write something before creating your post."
+            );
+
+            return;
+
+        }
+
+        alert(
+            "Your post is ready! 🚀\n\n" +
+            "Real posts will be saved when we connect FriendHub to a database."
+        );
+
+        input.value = "";
+
+    }
+
+
+    function likePost(button) {
+
+        if (button.innerText.includes("❤️")) {
+
+            button.innerText = "❤️ Liked";
+
+        }
+
+    }
+
+
+    function joinDemo(platform) {
+
+        alert(
+            platform +
+            " group links will open here when real group links are added."
+        );
+
+    }
+
+</script>
 
 </body>
 </html>
