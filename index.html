@@ -559,6 +559,157 @@
       padding: 35px;
     }
 
+    /* =========================================================
+       COMMENTS
+       ========================================================= */
+
+    .comments-modal {
+      width: min(650px, 100%);
+    }
+
+    .comments-list {
+      display: grid;
+      gap: 13px;
+      max-height: 48vh;
+      overflow-y: auto;
+      padding: 3px 2px 10px;
+    }
+
+    .comment-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px;
+      background: #f8f9fc;
+      border: 1px solid #edf0f4;
+      border-radius: 13px;
+    }
+
+    .comment-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #eef0ff;
+      color: #5865f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .comment-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .comment-body {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .comment-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 3px;
+    }
+
+    .comment-username {
+      font-weight: 800;
+      color: #172033;
+    }
+
+    .comment-time {
+      color: #8a94a6;
+      font-size: 12px;
+    }
+
+    .comment-content {
+      color: #344054;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .comment-delete {
+      border: none;
+      background: transparent;
+      color: #b91c1c;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 5px;
+      border-radius: 7px;
+    }
+
+    .comment-delete:hover {
+      background: #fee2e2;
+    }
+
+    .comment-empty {
+      text-align: center;
+      color: #8a94a6;
+      padding: 25px 10px;
+    }
+
+    .comment-composer {
+      border-top: 1px solid #edf0f4;
+      margin-top: 10px;
+      padding-top: 15px;
+    }
+
+    .comment-composer textarea {
+      width: 100%;
+      min-height: 80px;
+      max-height: 180px;
+      resize: vertical;
+      border: 1px solid #dfe3eb;
+      border-radius: 12px;
+      padding: 12px;
+      outline: none;
+    }
+
+    .comment-composer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 9px;
+    }
+
+    .comment-counter {
+      color: #8a94a6;
+      font-size: 12px;
+    }
+
+    .comment-login-note {
+      background: #f1f3ff;
+      color: #4f46e5;
+      border-radius: 11px;
+      padding: 11px 12px;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 560px) {
+
+      .comments-modal {
+        padding: 20px;
+      }
+
+      .comments-list {
+        max-height: 45vh;
+      }
+
+      .comment-composer-actions {
+        align-items: flex-end;
+      }
+
+    }
+
     .profile-card {
       background: white;
       border: 1px solid #e3e7ef;
@@ -1613,6 +1764,10 @@
 </footer>
 
 
+<!-- =========================================================
+     AUTH MODAL
+     ========================================================= -->
+
 <div
   id="authModal"
   class="modal-overlay"
@@ -1741,6 +1896,10 @@
 </div>
 
 
+<!-- =========================================================
+     RESET PASSWORD MODAL
+     ========================================================= -->
+
 <div
   id="resetModal"
   class="modal-overlay"
@@ -1796,6 +1955,10 @@
 
 </div>
 
+
+<!-- =========================================================
+     NEW PASSWORD MODAL
+     ========================================================= -->
 
 <div
   id="newPasswordModal"
@@ -1861,6 +2024,95 @@
 </div>
 
 
+<!-- =========================================================
+     COMMENTS MODAL
+     ========================================================= -->
+
+<div
+  id="commentsModal"
+  class="modal-overlay"
+>
+
+  <div class="modal comments-modal">
+
+    <button
+      class="modal-close"
+      onclick="closeCommentsModal()"
+    >
+      ×
+    </button>
+
+    <h2>
+      Comments
+    </h2>
+
+    <p
+      id="commentsSubtitle"
+      class="modal-subtitle"
+    >
+      Join the conversation.
+    </p>
+
+    <div
+      id="commentsMessage"
+      class="message"
+    ></div>
+
+
+    <div
+      id="commentsList"
+      class="comments-list"
+    ></div>
+
+
+    <div
+      id="commentComposer"
+      class="comment-composer"
+    >
+
+      <textarea
+        id="commentInput"
+        maxlength="1000"
+        placeholder="Write a comment..."
+        oninput="updateCommentCounter()"
+      ></textarea>
+
+
+      <div class="comment-composer-actions">
+
+        <div
+          id="commentCounter"
+          class="comment-counter"
+        >
+          0 / 1000
+        </div>
+
+        <button
+          id="commentSubmitBtn"
+          class="btn btn-primary"
+          onclick="submitComment()"
+        >
+          Post Comment
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="commentLoginNote"
+      class="comment-login-note"
+      style="display:none;"
+    >
+      Please log in or create an account to write a comment.
+    </div>
+
+  </div>
+
+</div>
+
+
 <script>
 
 const SUPABASE_URL =
@@ -1898,6 +2150,14 @@ let posts = [];
 
 
 /* =========================================================
+   COMMENTS STATE
+   ========================================================= */
+
+let currentCommentsPostId = null;
+let currentComments = [];
+
+
+/* =========================================================
    DOUBLE TAP LIKE STATE
    ========================================================= */
 
@@ -1920,6 +2180,7 @@ let samplePosts = [
     media: null,
     likes: 0,
     liked: false,
+    comments: 0,
     userId: null,
     profilePhoto: null
   },
@@ -1934,6 +2195,7 @@ let samplePosts = [
     media: null,
     likes: 0,
     liked: false,
+    comments: 0,
     userId: null,
     profilePhoto: null
   },
@@ -1948,6 +2210,7 @@ let samplePosts = [
     media: null,
     likes: 0,
     liked: false,
+    comments: 0,
     userId: null,
     profilePhoto: null
   }
@@ -3620,7 +3883,7 @@ function removeMedia() {
 
 
 /* =========================================================
-   LOAD POSTS + LIKES FROM SUPABASE
+   LOAD POSTS + LIKES + COMMENTS FROM SUPABASE
    ========================================================= */
 
 async function loadPosts() {
@@ -3689,10 +3952,33 @@ async function loadPosts() {
   }
 
 
+  const {
+    data: commentData,
+    error: commentError
+  } =
+    await supabaseClient
+      .from("post_comments")
+      .select(
+        "post_id"
+      );
+
+
+  if (commentError) {
+
+    console.error(
+      "Comments count load error:",
+      commentError
+    );
+
+  }
+
+
   const likeCounts = {};
 
   const userLikedPosts =
     new Set();
+
+  const commentCounts = {};
 
 
   (likeData || []).forEach(
@@ -3725,6 +4011,25 @@ async function loadPosts() {
         );
 
       }
+
+    }
+  );
+
+
+  (commentData || []).forEach(
+    comment => {
+
+      const postId =
+        String(
+          comment.post_id
+        );
+
+
+      commentCounts[postId] =
+        (
+          commentCounts[postId] ||
+          0
+        ) + 1;
 
     }
   );
@@ -3802,6 +4107,11 @@ async function loadPosts() {
             userLikedPosts.has(
               rowId
             ),
+
+          comments:
+            commentCounts[
+              rowId
+            ] || 0,
 
           userId:
             row.user_id,
@@ -4013,6 +4323,9 @@ async function createPost() {
     liked:
       false,
 
+    comments:
+      0,
+
     userId:
       data.user_id,
 
@@ -4210,9 +4523,6 @@ function setFilter(
    DOUBLE TAP / DOUBLE CLICK LIKE
    ========================================================= */
 
-/*
-  Shows the large ❤️ over the CURRENT media container.
-*/
 function showDoubleTapHeart(
   mediaContainer
 ) {
@@ -4263,10 +4573,6 @@ function showDoubleTapHeart(
 }
 
 
-/*
-  Finds the NEW media container after loadPosts()
-  redraws the feed.
-*/
 function findPostMediaContainer(
   id
 ) {
@@ -4304,9 +4610,6 @@ function findPostMediaContainer(
 }
 
 
-/*
-  Mobile double-tap detection.
-*/
 function handleMediaTouch(
   event,
   id,
@@ -4378,14 +4681,6 @@ function handleMediaTouch(
 }
 
 
-/*
-  Main Like action.
-
-  DOUBLE TAP / DOUBLE CLICK:
-    - Adds Like if not already liked.
-    - Shows big ❤️.
-    - NEVER removes an existing Like.
-*/
 async function handleDoubleTapLike(
   id,
   mediaContainer
@@ -4405,10 +4700,6 @@ async function handleDoubleTapLike(
     ) || 0;
 
 
-  /*
-    Prevent touch + dblclick from
-    firing the Like twice.
-  */
   if (
     now - previousTrigger <
     500
@@ -4425,9 +4716,6 @@ async function handleDoubleTapLike(
   );
 
 
-  /*
-    Keep this Map from growing forever.
-  */
   setTimeout(() => {
 
     const saved =
@@ -4449,9 +4737,6 @@ async function handleDoubleTapLike(
   }, 1000);
 
 
-  /*
-    Login required.
-  */
   if (!currentUser) {
 
     openAuth(
@@ -4463,9 +4748,6 @@ async function handleDoubleTapLike(
   }
 
 
-  /*
-    Sample posts cannot be saved.
-  */
   if (
     key.startsWith(
       "sample-"
@@ -4496,13 +4778,6 @@ async function handleDoubleTapLike(
   }
 
 
-  /*
-    If already liked:
-    SHOW HEART ONLY.
-
-    We do NOT call toggleLike()
-    because toggleLike() can remove Likes.
-  */
   if (post.liked) {
 
     showDoubleTapHeart(
@@ -4514,9 +4789,6 @@ async function handleDoubleTapLike(
   }
 
 
-  /*
-    Prevent multiple simultaneous Like requests.
-  */
   if (
     doubleTapLikeBusy.has(
       key
@@ -4535,27 +4807,11 @@ async function handleDoubleTapLike(
 
   try {
 
-    /*
-      The post is currently NOT liked.
-
-      toggleLike() will therefore ADD the Like.
-    */
     await toggleLike(
       id
     );
 
 
-    /*
-      IMPORTANT:
-      toggleLike() calls loadPosts(), which redraws
-      the entire feed.
-
-      Therefore the OLD mediaContainer no longer
-      exists in the page.
-
-      We find the NEW media container and show
-      the ❤️ there.
-    */
     const newMediaContainer =
       findPostMediaContainer(
         id
@@ -4757,12 +5013,6 @@ function renderPost(
     "";
 
 
-  /*
-    ========================================================
-    MEDIA DOUBLE CLICK / DOUBLE TAP
-    ========================================================
-  */
-
   if (post.media) {
 
     const safePostId =
@@ -4828,6 +5078,12 @@ function renderPost(
     post.liked
       ? "♥ Liked"
       : "♡ Like";
+
+
+  const commentText =
+    post.comments
+      ? `💬 Comment ${post.comments}`
+      : "💬 Comment";
 
 
   let avatarHtml;
@@ -4903,7 +5159,7 @@ function renderPost(
           class="post-action"
           onclick="commentPost('${escapeHtmlAttribute(String(post.id))}')"
         >
-          💬 Comment
+          ${commentText}
         </button>
 
 
@@ -4968,9 +5224,6 @@ async function toggleLike(
   }
 
 
-  /*
-    Check Supabase first.
-  */
   const {
     data: existingLike,
     error: checkError
@@ -5012,11 +5265,6 @@ async function toggleLike(
 
   if (existingLike) {
 
-    /*
-      NORMAL LIKE BUTTON:
-      Existing Like = remove Like.
-    */
-
     const {
       error
     } =
@@ -5053,11 +5301,6 @@ async function toggleLike(
 
   } else {
 
-    /*
-      NORMAL LIKE BUTTON:
-      No Like = add Like.
-    */
-
     const {
       error
     } =
@@ -5077,11 +5320,6 @@ async function toggleLike(
 
 
     if (error) {
-
-      /*
-        Duplicate Like caused by another
-        request at nearly the same time.
-      */
 
       if (
         error.code ===
@@ -5115,21 +5353,743 @@ async function toggleLike(
   }
 
 
-  /*
-    Reload database state.
-  */
   await loadPosts();
 
 }
 
 
-function commentPost(
+/* =========================================================
+   COMMENTS SYSTEM
+   ========================================================= */
+
+async function commentPost(
   id
 ) {
 
-  alert(
-    "Comments will be available soon."
+  currentCommentsPostId =
+    String(id);
+
+  currentComments = [];
+
+
+  const post =
+    posts.find(
+      item =>
+        String(
+          item.id
+        ) ===
+        String(
+          id
+        )
+    );
+
+
+  if (!post) {
+    return;
+  }
+
+
+  document.getElementById(
+    "commentsSubtitle"
+  ).textContent =
+    `${post.username || "Post"} · Comments`;
+
+
+  document.getElementById(
+    "commentInput"
+  ).value =
+    "";
+
+
+  updateCommentCounter();
+
+  clearCommentsMessage();
+
+
+  if (
+    String(id).startsWith(
+      "sample-"
+    )
+  ) {
+
+    document.getElementById(
+      "commentComposer"
+    ).style.display =
+      "none";
+
+    document.getElementById(
+      "commentLoginNote"
+    ).style.display =
+      "block";
+
+    document.getElementById(
+      "commentLoginNote"
+    ).textContent =
+      "Comments are available on posts created by FriendHub members.";
+
+  } else if (!currentUser) {
+
+    document.getElementById(
+      "commentComposer"
+    ).style.display =
+      "none";
+
+    document.getElementById(
+      "commentLoginNote"
+    ).style.display =
+      "block";
+
+    document.getElementById(
+      "commentLoginNote"
+    ).textContent =
+      "Please log in or create an account to write a comment.";
+
+  } else {
+
+    document.getElementById(
+      "commentComposer"
+    ).style.display =
+      "block";
+
+    document.getElementById(
+      "commentLoginNote"
+    ).style.display =
+      "none";
+
+  }
+
+
+  openModal(
+    "commentsModal"
   );
+
+
+  await loadComments(
+    id
+  );
+
+}
+
+
+async function loadComments(
+  id
+) {
+
+  const list =
+    document.getElementById(
+      "commentsList"
+    );
+
+
+  list.innerHTML =
+    `<div class="comment-empty">
+      Loading comments...
+    </div>`;
+
+
+  if (
+    String(id).startsWith(
+      "sample-"
+    )
+  ) {
+
+    list.innerHTML =
+      `<div class="comment-empty">
+        No comments on this sample post yet.
+      </div>`;
+
+    return;
+  }
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("post_comments")
+      .select("*")
+      .eq(
+        "post_id",
+        String(id)
+      )
+      .order(
+        "created_at",
+        {
+          ascending: true
+        }
+      );
+
+
+  if (error) {
+
+    console.error(
+      "Comments load error:",
+      error
+    );
+
+
+    list.innerHTML =
+      `<div class="comment-empty">
+        Could not load comments.
+      </div>`;
+
+    return;
+  }
+
+
+  currentComments =
+    data || [];
+
+
+  renderComments();
+
+}
+
+
+function renderComments() {
+
+  const list =
+    document.getElementById(
+      "commentsList"
+    );
+
+
+  if (!currentComments.length) {
+
+    list.innerHTML =
+      `<div class="comment-empty">
+        No comments yet. Be the first to comment! 💬
+      </div>`;
+
+    return;
+  }
+
+
+  list.innerHTML =
+    currentComments
+      .map(
+        comment => {
+
+          const username =
+            escapeHtml(
+              comment.username
+            );
+
+
+          const initial =
+            escapeHtml(
+              (
+                comment.username ||
+                "U"
+              )
+                .replace(
+                  "@",
+                  ""
+                )
+                .charAt(0)
+                .toUpperCase()
+            );
+
+
+          const commentTime =
+            formatPostTime(
+              comment.created_at
+            );
+
+
+          const canDelete =
+            currentUser &&
+            String(
+              comment.user_id
+            ) ===
+            String(
+              currentUser.id
+            );
+
+
+          let avatar =
+            initial;
+
+
+          /*
+            If the comment belongs to the
+            current user and we have their photo,
+            show it.
+          */
+          if (
+            canDelete &&
+            currentProfile?.profile_photo
+          ) {
+
+            avatar =
+              `<img
+                src="${escapeHtmlAttribute(currentProfile.profile_photo)}"
+                alt="Profile photo"
+              >`;
+
+          }
+
+
+          return `
+
+            <div class="comment-item">
+
+              <div class="comment-avatar">
+                ${avatar}
+              </div>
+
+
+              <div class="comment-body">
+
+                <div class="comment-top">
+
+                  <span class="comment-username">
+                    ${username}
+                  </span>
+
+                  <span class="comment-time">
+                    ${escapeHtml(commentTime)}
+                  </span>
+
+                  ${
+                    canDelete
+                      ? `
+                        <button
+                          class="comment-delete"
+                          onclick="deleteComment('${escapeHtmlAttribute(String(comment.id))}')"
+                        >
+                          Delete
+                        </button>
+                      `
+                      : ""
+                  }
+
+                </div>
+
+
+                <div class="comment-content">
+                  ${escapeHtml(comment.content)}
+                </div>
+
+              </div>
+
+            </div>
+
+          `;
+
+        }
+      )
+      .join("");
+
+}
+
+
+async function submitComment() {
+
+  if (!currentUser) {
+
+    openAuth(
+      "login"
+    );
+
+    return;
+  }
+
+
+  if (!currentCommentsPostId) {
+    return;
+  }
+
+
+  if (
+    currentCommentsPostId.startsWith(
+      "sample-"
+    )
+  ) {
+
+    showCommentsMessage(
+      "Comments are not available on sample posts.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  if (!currentProfile) {
+
+    await loadCurrentProfile();
+
+  }
+
+
+  if (!currentProfile) {
+
+    showCommentsMessage(
+      "Please complete your profile before commenting.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const input =
+    document.getElementById(
+      "commentInput"
+    );
+
+
+  const content =
+    input.value.trim();
+
+
+  if (!content) {
+
+    showCommentsMessage(
+      "Please write a comment first.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  if (
+    content.length >
+    1000
+  ) {
+
+    showCommentsMessage(
+      "Your comment cannot exceed 1000 characters.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const button =
+    document.getElementById(
+      "commentSubmitBtn"
+    );
+
+
+  button.disabled =
+    true;
+
+  button.textContent =
+    "Posting...";
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("post_comments")
+      .insert({
+
+        post_id:
+          currentCommentsPostId,
+
+        user_id:
+          currentUser.id,
+
+        username:
+          currentProfile.username,
+
+        content
+
+      })
+      .select()
+      .single();
+
+
+  button.disabled =
+    false;
+
+  button.textContent =
+    "Post Comment";
+
+
+  if (error) {
+
+    console.error(
+      "Create comment error:",
+      error
+    );
+
+
+    showCommentsMessage(
+      "Could not post your comment: " +
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  input.value =
+    "";
+
+
+  updateCommentCounter();
+
+
+  currentComments.push(
+    data
+  );
+
+
+  renderComments();
+
+
+  /*
+    Update local post comment count
+    immediately.
+  */
+  const post =
+    posts.find(
+      item =>
+        String(
+          item.id
+        ) ===
+        String(
+          currentCommentsPostId
+        )
+    );
+
+
+  if (post) {
+
+    post.comments =
+      currentComments.length;
+
+  }
+
+
+  renderPosts();
+
+
+  /*
+    Keep the comments modal open after
+    renderPosts() redraws the feed.
+  */
+  openModal(
+    "commentsModal"
+  );
+
+}
+
+
+async function deleteComment(
+  commentId
+) {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  const comment =
+    currentComments.find(
+      item =>
+        String(
+          item.id
+        ) ===
+        String(
+          commentId
+        )
+    );
+
+
+  if (!comment) {
+    return;
+  }
+
+
+  if (
+    String(
+      comment.user_id
+    ) !==
+    String(
+      currentUser.id
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const confirmed =
+    confirm(
+      "Delete this comment?"
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("post_comments")
+      .delete()
+      .eq(
+        "id",
+        commentId
+      )
+      .eq(
+        "user_id",
+        currentUser.id
+      );
+
+
+  if (error) {
+
+    console.error(
+      "Delete comment error:",
+      error
+    );
+
+
+    showCommentsMessage(
+      "Could not delete the comment: " +
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  currentComments =
+    currentComments.filter(
+      item =>
+        String(
+          item.id
+        ) !==
+        String(
+          commentId
+        )
+    );
+
+
+  renderComments();
+
+
+  const post =
+    posts.find(
+      item =>
+        String(
+          item.id
+        ) ===
+        String(
+          currentCommentsPostId
+        )
+    );
+
+
+  if (post) {
+
+    post.comments =
+      currentComments.length;
+
+  }
+
+
+  renderPosts();
+
+
+  openModal(
+    "commentsModal"
+  );
+
+}
+
+
+function closeCommentsModal() {
+
+  currentCommentsPostId =
+    null;
+
+  currentComments =
+    [];
+
+
+  closeModal(
+    "commentsModal"
+  );
+
+}
+
+
+function updateCommentCounter() {
+
+  const input =
+    document.getElementById(
+      "commentInput"
+    );
+
+
+  const counter =
+    document.getElementById(
+      "commentCounter"
+    );
+
+
+  if (!input || !counter) {
+    return;
+  }
+
+
+  counter.textContent =
+    `${input.value.length} / 1000`;
+
+}
+
+
+function showCommentsMessage(
+  message,
+  type
+) {
+
+  const box =
+    document.getElementById(
+      "commentsMessage"
+    );
+
+
+  box.textContent =
+    message;
+
+
+  box.className =
+    "message show " + type;
+
+}
+
+
+function clearCommentsMessage() {
+
+  const box =
+    document.getElementById(
+      "commentsMessage"
+    );
+
+
+  box.textContent =
+    "";
+
+  box.className =
+    "message";
 
 }
 
@@ -5201,9 +6161,20 @@ document.querySelectorAll(
           overlay
         ) {
 
-          overlay.classList.remove(
-            "active"
-          );
+          if (
+            overlay.id ===
+            "commentsModal"
+          ) {
+
+            closeCommentsModal();
+
+          } else {
+
+            overlay.classList.remove(
+              "active"
+            );
+
+          }
 
         }
 
@@ -5213,6 +6184,10 @@ document.querySelectorAll(
   }
 );
 
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
 
 renderOptionButtons();
 
