@@ -50,7 +50,9 @@ header {
 
 nav {
   display: flex;
-  gap: 22px;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 nav a {
@@ -62,6 +64,13 @@ nav a {
 
 nav a:hover {
   color: #5865f2;
+}
+
+.profile-nav {
+  background: #eef0ff;
+  color: #4752c4 !important;
+  padding: 8px 13px;
+  border-radius: 9px;
 }
 
 .hero {
@@ -136,6 +145,8 @@ section {
   color: #667085;
 }
 
+/* DISCOVER */
+
 .search-box {
   max-width: 700px;
   margin: 0 auto 25px;
@@ -174,6 +185,8 @@ section {
   border-color: #5865f2;
 }
 
+/* COMPOSER */
+
 .composer {
   background: white;
   border: 1px solid #e4e7ec;
@@ -181,7 +194,7 @@ section {
   padding: 20px;
   max-width: 750px;
   margin: 0 auto 30px;
-  box-shadow: 0 5px 18px rgba(20, 30, 50, 0.05);
+  box-shadow: 0 5px 18px rgba(20,30,50,.05);
 }
 
 .composer h3 {
@@ -242,12 +255,6 @@ section {
   flex-wrap: wrap;
 }
 
-.media-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
 .media-btn {
   background: #f1f3f7;
   border: 1px solid #d9dee8;
@@ -278,6 +285,8 @@ section {
 .post-btn:hover {
   background: #4752c4;
 }
+
+/* MEDIA */
 
 .media-preview {
   display: none;
@@ -315,6 +324,8 @@ section {
   cursor: pointer;
 }
 
+/* FEED */
+
 .feed {
   max-width: 750px;
   margin: auto;
@@ -326,7 +337,7 @@ section {
   border-radius: 16px;
   padding: 20px;
   margin-bottom: 18px;
-  box-shadow: 0 5px 18px rgba(20, 30, 50, 0.04);
+  box-shadow: 0 5px 18px rgba(20,30,50,.04);
 }
 
 .post-header {
@@ -345,6 +356,14 @@ section {
   align-items: center;
   justify-content: center;
   font-size: 21px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .post-name {
@@ -416,32 +435,122 @@ section {
   color: #5865f2;
 }
 
-.cards {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
+/* PROFILE */
 
-.card {
+.profile-box {
+  max-width: 700px;
+  margin: auto;
   background: white;
-  padding: 28px;
-  border-radius: 16px;
   border: 1px solid #e4e7ec;
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 5px 18px rgba(20,30,50,.05);
+}
+
+.profile-photo-area {
   text-align: center;
+  margin-bottom: 25px;
 }
 
-.card-icon {
-  font-size: 38px;
-  margin-bottom: 15px;
+.profile-avatar {
+  width: 105px;
+  height: 105px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: #eef0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 45px;
 }
 
-.card h3 {
-  margin-bottom: 8px;
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.card p {
+.photo-btn {
+  border: 1px solid #d9dee8;
+  background: white;
+  padding: 9px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.profile-field {
+  margin-bottom: 18px;
+}
+
+.profile-field label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+
+.profile-field input,
+.profile-field select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d9dee8;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  background: white;
+}
+
+.username-note {
+  margin-top: 6px;
+  font-size: 12px;
   color: #667085;
 }
+
+.options-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option {
+  border: 1px solid #d9dee8;
+  background: white;
+  border-radius: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.option.selected {
+  background: #eef0ff;
+  border-color: #5865f2;
+  color: #4752c4;
+  font-weight: 700;
+}
+
+.profile-save {
+  width: 100%;
+  margin-top: 8px;
+  background: #5865f2;
+  color: white;
+  border: none;
+  padding: 13px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.profile-status {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 14px;
+  color: #4752c4;
+  min-height: 20px;
+}
+
+/* ABOUT / SUPPORT */
 
 .about-box,
 .support-box {
@@ -472,16 +581,13 @@ footer strong {
 }
 
 @media (max-width: 800px) {
+
   .hero h1 {
     font-size: 39px;
   }
 
-  .cards {
-    grid-template-columns: 1fr;
-  }
-
   nav {
-    gap: 10px;
+    gap: 9px;
     font-size: 13px;
   }
 
@@ -496,6 +602,10 @@ footer strong {
   .logo {
     font-size: 21px;
   }
+
+  .profile-box {
+    padding: 20px;
+  }
 }
 </style>
 </head>
@@ -504,21 +614,29 @@ footer strong {
 
 <header>
   <div class="navbar">
-    <div class="logo" onclick="goToSection('home')">FriendHub</div>
+
+    <div class="logo" onclick="goToSection('home')">
+      FriendHub
+    </div>
 
     <nav>
       <a onclick="goToSection('home')">Home</a>
       <a onclick="goToSection('discover')">Discover</a>
+      <a onclick="goToSection('profile')" class="profile-nav">👤 Profile</a>
       <a onclick="goToSection('about')">About</a>
       <a onclick="goToSection('support')">Support</a>
     </nav>
+
   </div>
 </header>
 
 
 <!-- HOME -->
+
 <section id="home">
+
   <div class="hero">
+
     <h1>Meet People. Make Friends.</h1>
 
     <p>
@@ -527,45 +645,97 @@ footer strong {
     </p>
 
     <div class="buttons">
-      <button class="btn primary" onclick="goToSection('discover')">
+
+      <button
+        class="btn primary"
+        onclick="goToSection('discover')"
+      >
         Discover People
       </button>
 
-      <button class="btn secondary" onclick="goToSection('about')">
+      <button
+        class="btn secondary"
+        onclick="goToSection('about')"
+      >
         Learn More
       </button>
+
     </div>
+
   </div>
+
 </section>
 
 
 <!-- DISCOVER -->
+
 <section id="discover">
 
   <div class="section-title">
+
     <h2>Discover</h2>
-    <p>Find people and communities that match your interests.</p>
+
+    <p>
+      Find people and communities that match your interests.
+    </p>
+
   </div>
 
+
   <div class="search-box">
+
     <input
       id="searchInput"
       type="text"
       placeholder="Search people, interests, groups..."
       oninput="searchPosts()"
     >
+
   </div>
 
+
   <div class="filters">
-    <button class="filter active" onclick="filterPosts('all', this)">All</button>
-    <button class="filter" onclick="filterPosts('people', this)">People</button>
-    <button class="filter" onclick="filterPosts('whatsapp', this)">WhatsApp</button>
-    <button class="filter" onclick="filterPosts('telegram', this)">Telegram</button>
-    <button class="filter" onclick="filterPosts('snapchat', this)">Snapchat</button>
+
+    <button
+      class="filter active"
+      onclick="filterPosts('all', this)"
+    >
+      All
+    </button>
+
+    <button
+      class="filter"
+      onclick="filterPosts('people', this)"
+    >
+      People
+    </button>
+
+    <button
+      class="filter"
+      onclick="filterPosts('whatsapp', this)"
+    >
+      WhatsApp
+    </button>
+
+    <button
+      class="filter"
+      onclick="filterPosts('telegram', this)"
+    >
+      Telegram
+    </button>
+
+    <button
+      class="filter"
+      onclick="filterPosts('snapchat', this)"
+    >
+      Snapchat
+    </button>
+
   </div>
 
 
   <!-- CREATE POST -->
+
   <div class="composer">
 
     <h3>Create a post</h3>
@@ -575,25 +745,39 @@ footer strong {
       placeholder="What are you looking for?"
     ></textarea>
 
+
     <div class="post-types">
 
-      <button class="type-btn selected" onclick="selectType('people', this)">
+      <button
+        class="type-btn selected"
+        onclick="selectType('people', this)"
+      >
         👤 Personal contact
       </button>
 
-      <button class="type-btn" onclick="selectType('whatsapp', this)">
+      <button
+        class="type-btn"
+        onclick="selectType('whatsapp', this)"
+      >
         🟢 WhatsApp group
       </button>
 
-      <button class="type-btn" onclick="selectType('telegram', this)">
+      <button
+        class="type-btn"
+        onclick="selectType('telegram', this)"
+      >
         🔵 Telegram group
       </button>
 
-      <button class="type-btn" onclick="selectType('snapchat', this)">
+      <button
+        class="type-btn"
+        onclick="selectType('snapchat', this)"
+      >
         👻 Snapchat
       </button>
 
     </div>
+
 
     <input
       id="linkInput"
@@ -601,6 +785,7 @@ footer strong {
       type="text"
       placeholder="Paste your WhatsApp or Telegram group link..."
     >
+
 
     <input
       id="mediaInput"
@@ -610,23 +795,37 @@ footer strong {
       onchange="previewMedia(event)"
     >
 
-    <div id="mediaPreview" class="media-preview">
-      <button class="remove-media" onclick="removeMedia()">×</button>
+
+    <div
+      id="mediaPreview"
+      class="media-preview"
+    >
+
+      <button
+        class="remove-media"
+        onclick="removeMedia()"
+      >
+        ×
+      </button>
+
       <div id="previewContent"></div>
+
     </div>
+
 
     <div class="composer-bottom">
 
-      <div class="media-actions">
-        <button
-          class="media-btn"
-          onclick="document.getElementById('mediaInput').click()"
-        >
-          📎 Add media
-        </button>
-      </div>
+      <button
+        class="media-btn"
+        onclick="document.getElementById('mediaInput').click()"
+      >
+        📎 Add media
+      </button>
 
-      <button class="post-btn" onclick="createPost()">
+      <button
+        class="post-btn"
+        onclick="createPost()"
+      >
         Post
       </button>
 
@@ -636,93 +835,212 @@ footer strong {
 
 
   <!-- FEED -->
+
   <div id="feed" class="feed">
 
+
     <!-- SAMPLE POST -->
-    <article class="post" data-type="whatsapp" data-search="Alex gaming music whatsapp friends">
+
+    <article
+      class="post"
+      data-type="whatsapp"
+      data-search="Alex gaming music whatsapp friends"
+    >
 
       <div class="post-header">
-        <div class="avatar">👨🏻</div>
+
+        <div class="avatar">
+          👨🏻
+        </div>
 
         <div>
-          <div class="post-name">Alex, 24 🇺🇸</div>
-          <div class="post-meta">Gaming · Music</div>
+
+          <div class="post-name">
+            @AlexGaming
+          </div>
+
+          <div class="post-meta">
+            🎮 Gaming · 🎵 Music
+          </div>
+
         </div>
+
       </div>
+
 
       <div class="post-text">
         Looking for Snapchat and gaming friends! 🎮
       </div>
 
+
       <div class="connection-card">
-        <div class="connection-title">🟢 WhatsApp Gaming Friends</div>
-        <div class="post-meta">Community</div>
+
+        <div class="connection-title">
+          🟢 WhatsApp Gaming Friends
+        </div>
+
+        <div class="post-meta">
+          Community
+        </div>
+
       </div>
 
+
       <div class="post-actions">
-        <button class="post-action" onclick="likePost(this)">♡ Like</button>
-        <button class="post-action">💬 Comment</button>
-        <button class="post-action">⚠️ Report</button>
+
+        <button
+          class="post-action"
+          onclick="likePost(this)"
+        >
+          ♡ Like
+        </button>
+
+        <button class="post-action">
+          💬 Comment
+        </button>
+
+        <button class="post-action">
+          ⚠️ Report
+        </button>
+
       </div>
 
     </article>
 
 
     <!-- SAMPLE POST -->
-    <article class="post" data-type="telegram" data-search="Sofia Spanish English telegram language exchange">
+
+    <article
+      class="post"
+      data-type="telegram"
+      data-search="Sofia Spanish English telegram language exchange"
+    >
 
       <div class="post-header">
-        <div class="avatar">👩🏻</div>
+
+        <div class="avatar">
+          👩🏻
+        </div>
 
         <div>
-          <div class="post-name">Sofia, 21 🇺🇸</div>
-          <div class="post-meta">Spanish · English</div>
+
+          <div class="post-name">
+            @SofiaLanguages
+          </div>
+
+          <div class="post-meta">
+            🗣️ Spanish · English
+          </div>
+
         </div>
+
       </div>
+
 
       <div class="post-text">
         Looking for people to practice languages and make new friends. 🌎
       </div>
 
+
       <div class="connection-card">
-        <div class="connection-title">🔵 Telegram Language Exchange</div>
-        <div class="post-meta">Community</div>
+
+        <div class="connection-title">
+          🔵 Telegram Language Exchange
+        </div>
+
+        <div class="post-meta">
+          Community
+        </div>
+
       </div>
 
+
       <div class="post-actions">
-        <button class="post-action" onclick="likePost(this)">♡ Like</button>
-        <button class="post-action">💬 Comment</button>
-        <button class="post-action">⚠️ Report</button>
+
+        <button
+          class="post-action"
+          onclick="likePost(this)"
+        >
+          ♡ Like
+        </button>
+
+        <button class="post-action">
+          💬 Comment
+        </button>
+
+        <button class="post-action">
+          ⚠️ Report
+        </button>
+
       </div>
 
     </article>
 
 
     <!-- SAMPLE POST -->
-    <article class="post" data-type="snapchat" data-search="Jordan Canada Snapchat movies gaming">
+
+    <article
+      class="post"
+      data-type="snapchat"
+      data-search="Jordan Canada Snapchat movies gaming"
+    >
 
       <div class="post-header">
-        <div class="avatar">🧑🏻</div>
+
+        <div class="avatar">
+          🧑🏻
+        </div>
 
         <div>
-          <div class="post-name">Jordan, 19 🇨🇦</div>
-          <div class="post-meta">Snapchat · Movies · Gaming</div>
+
+          <div class="post-name">
+            @JordanMovies
+          </div>
+
+          <div class="post-meta">
+            👻 Snapchat · 🎬 Movies · 🎮 Gaming
+          </div>
+
         </div>
+
       </div>
+
 
       <div class="post-text">
         Looking for people to talk to and share movie recommendations. 🍿
       </div>
 
+
       <div class="connection-card">
-        <div class="connection-title">👻 Snapchat</div>
-        <div class="post-meta">Looking for friends</div>
+
+        <div class="connection-title">
+          👻 Snapchat
+        </div>
+
+        <div class="post-meta">
+          Looking for friends
+        </div>
+
       </div>
 
+
       <div class="post-actions">
-        <button class="post-action" onclick="likePost(this)">♡ Like</button>
-        <button class="post-action">💬 Comment</button>
-        <button class="post-action">⚠️ Report</button>
+
+        <button
+          class="post-action"
+          onclick="likePost(this)"
+        >
+          ♡ Like
+        </button>
+
+        <button class="post-action">
+          💬 Comment
+        </button>
+
+        <button class="post-action">
+          ⚠️ Report
+        </button>
+
       </div>
 
     </article>
@@ -732,13 +1050,365 @@ footer strong {
 </section>
 
 
+<!-- PROFILE -->
+
+<section id="profile">
+
+  <div class="section-title">
+
+    <h2>Your Profile</h2>
+
+    <p>
+      Create your FriendHub identity.
+    </p>
+
+  </div>
+
+
+  <div class="profile-box">
+
+
+    <div class="profile-photo-area">
+
+      <div
+        id="profileAvatar"
+        class="profile-avatar"
+      >
+        👤
+      </div>
+
+
+      <input
+        id="profilePhotoInput"
+        class="hidden-file"
+        type="file"
+        accept="image/*"
+        onchange="previewProfilePhoto(event)"
+      >
+
+
+      <button
+        class="photo-btn"
+        onclick="document.getElementById('profilePhotoInput').click()"
+      >
+        📷 Add profile photo
+      </button>
+
+    </div>
+
+
+    <!-- USERNAME -->
+
+    <div class="profile-field">
+
+      <label>
+        Username
+      </label>
+
+      <input
+        id="usernameInput"
+        type="text"
+        placeholder="@YourUsername"
+        maxlength="20"
+      >
+
+      <div class="username-note">
+        Your username is public. You can change it once every 30 days.
+      </div>
+
+    </div>
+
+
+    <!-- AGE -->
+
+    <div class="profile-field">
+
+      <label>
+        Age
+      </label>
+
+      <input
+        id="ageInput"
+        type="number"
+        min="1"
+        max="120"
+        placeholder="Your age"
+      >
+
+    </div>
+
+
+    <!-- COUNTRY -->
+
+    <div class="profile-field">
+
+      <label>
+        Country
+      </label>
+
+      <select id="countryInput">
+
+        <option value="">
+          Select your country
+        </option>
+
+        <option>United States</option>
+        <option>Canada</option>
+        <option>Mexico</option>
+        <option>Brazil</option>
+        <option>Colombia</option>
+        <option>Argentina</option>
+        <option>Chile</option>
+        <option>Peru</option>
+        <option>Spain</option>
+        <option>United Kingdom</option>
+        <option>France</option>
+        <option>Germany</option>
+        <option>Italy</option>
+        <option>Japan</option>
+        <option>South Korea</option>
+        <option>India</option>
+        <option>Australia</option>
+        <option>Other</option>
+
+      </select>
+
+    </div>
+
+
+    <!-- LANGUAGES -->
+
+    <div class="profile-field">
+
+      <label>
+        🗣️ Languages
+      </label>
+
+      <div class="options-grid">
+
+        <button class="option" onclick="toggleOption(this)">
+          English
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          Spanish
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          Portuguese
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          French
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          German
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          Italian
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          Japanese
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          Korean
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          Other
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- INTERESTS -->
+
+    <div class="profile-field">
+
+      <label>
+        ❤️ Interests
+      </label>
+
+      <div class="options-grid">
+
+        <button class="option" onclick="toggleOption(this)">
+          🎮 Gaming
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🎵 Music
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🎬 Movies
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          📺 TV Shows
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          📚 Books
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          ⚽ Sports
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          ✈️ Travel
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          💻 Technology
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🎨 Art
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🍳 Food
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🐶 Animals
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          💪 Fitness
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- WHAT ARE YOU LOOKING FOR -->
+
+    <div class="profile-field">
+
+      <label>
+        🔎 What are you looking for?
+      </label>
+
+      <div class="options-grid">
+
+        <button class="option" onclick="toggleOption(this)">
+          🤝 New friends
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          💬 Someone to talk to
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🎮 Gaming partners
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🎵 People with similar music taste
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🎬 Movie & TV friends
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          📚 Study partners
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🗣️ Language exchange
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🌎 Friends from other countries
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          👥 Communities & groups
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🟢 WhatsApp groups
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🔵 Telegram groups
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          👻 Snapchat friends
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🎨 People with similar interests
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🏀 Sports partners
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          ✈️ Travel friends
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          💻 Networking
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          🧑‍🤝‍🧑 Meet new people
+        </button>
+
+        <button class="option" onclick="toggleOption(this)">
+          ✏️ Other
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <button
+      class="profile-save"
+      onclick="saveProfile()"
+    >
+      Save Profile
+    </button>
+
+
+    <div
+      id="profileStatus"
+      class="profile-status"
+    ></div>
+
+  </div>
+
+</section>
+
+
 <!-- ABOUT -->
+
 <section id="about">
 
   <div class="section-title">
+
     <h2>About FriendHub</h2>
-    <p>A place to discover friendships and communities.</p>
+
+    <p>
+      A place to discover friendships and communities.
+    </p>
+
   </div>
+
 
   <div class="about-box">
 
@@ -770,12 +1440,19 @@ footer strong {
 
 
 <!-- SUPPORT -->
+
 <section id="support">
 
   <div class="section-title">
+
     <h2>Support</h2>
-    <p>Need help? Contact the FriendHub team.</p>
+
+    <p>
+      Need help? Contact the FriendHub team.
+    </p>
+
   </div>
+
 
   <div class="support-box">
 
@@ -784,8 +1461,11 @@ footer strong {
     </p>
 
     <p>
-      <strong>friendhub.support@gmail.com</strong>
+      <strong>
+        friendhub.support@gmail.com
+      </strong>
     </p>
+
 
     <button
       class="btn primary"
@@ -800,8 +1480,15 @@ footer strong {
 
 
 <footer>
-  <strong>FriendHub</strong>
-  <p>© 2026 FriendHub. Independent platform.</p>
+
+  <strong>
+    FriendHub
+  </strong>
+
+  <p>
+    © 2026 FriendHub. Independent platform.
+  </p>
+
 </footer>
 
 
@@ -809,46 +1496,66 @@ footer strong {
 
 let selectedType = "people";
 let selectedMediaURL = null;
+let profilePhotoURL = null;
 
 
 /* NAVIGATION */
 
 function goToSection(sectionId) {
-  document.getElementById(sectionId).scrollIntoView({
-    behavior: "smooth"
-  });
+
+  document
+    .getElementById(sectionId)
+    .scrollIntoView({
+      behavior: "smooth"
+    });
+
 }
 
 
-/* SELECT POST TYPE */
+/* POST TYPE */
 
 function selectType(type, button) {
 
   selectedType = type;
 
-  document.querySelectorAll(".type-btn").forEach(function(btn) {
-    btn.classList.remove("selected");
-  });
+  document
+    .querySelectorAll(".type-btn")
+    .forEach(function(btn) {
+      btn.classList.remove("selected");
+    });
 
   button.classList.add("selected");
 
-  const linkInput = document.getElementById("linkInput");
+  const linkInput =
+    document.getElementById("linkInput");
 
-  if (type === "whatsapp" || type === "telegram") {
+  if (
+    type === "whatsapp" ||
+    type === "telegram"
+  ) {
+
     linkInput.style.display = "block";
 
     if (type === "whatsapp") {
+
       linkInput.placeholder =
         "Paste your WhatsApp group link...";
+
     } else {
+
       linkInput.placeholder =
         "Paste your Telegram group link...";
+
     }
 
   } else {
+
     linkInput.style.display = "none";
+
     linkInput.value = "";
+
   }
+
 }
 
 
@@ -856,49 +1563,71 @@ function selectType(type, button) {
 
 function previewMedia(event) {
 
-  const file = event.target.files[0];
+  const file =
+    event.target.files[0];
 
-  if (!file) {
+  if (!file) return;
+
+  if (
+    !file.type.startsWith("image/") &&
+    !file.type.startsWith("video/")
+  ) {
+
+    alert(
+      "Please select an image or video."
+    );
+
     return;
-  }
 
-  if (!file.type.startsWith("image/") &&
-      !file.type.startsWith("video/")) {
-
-    alert("Please select an image or video.");
-    return;
   }
 
   if (selectedMediaURL) {
-    URL.revokeObjectURL(selectedMediaURL);
+
+    URL.revokeObjectURL(
+      selectedMediaURL
+    );
+
   }
 
-  selectedMediaURL = URL.createObjectURL(file);
+  selectedMediaURL =
+    URL.createObjectURL(file);
 
-  const preview = document.getElementById("mediaPreview");
-  const content = document.getElementById("previewContent");
+  const preview =
+    document.getElementById(
+      "mediaPreview"
+    );
+
+  const content =
+    document.getElementById(
+      "previewContent"
+    );
 
   content.innerHTML = "";
 
   if (file.type.startsWith("image/")) {
 
-    const img = document.createElement("img");
+    const img =
+      document.createElement("img");
+
     img.src = selectedMediaURL;
 
     content.appendChild(img);
 
   } else {
 
-    const video = document.createElement("video");
+    const video =
+      document.createElement("video");
 
     video.src = selectedMediaURL;
     video.controls = true;
     video.playsInline = true;
 
     content.appendChild(video);
+
   }
 
   preview.classList.add("show");
+
 }
 
 
@@ -906,213 +1635,365 @@ function previewMedia(event) {
 
 function removeMedia() {
 
-  const input = document.getElementById("mediaInput");
+  document
+    .getElementById("mediaInput")
+    .value = "";
 
-  input.value = "";
+  document
+    .getElementById("previewContent")
+    .innerHTML = "";
 
-  document.getElementById("previewContent").innerHTML = "";
-
-  document.getElementById("mediaPreview").classList.remove("show");
+  document
+    .getElementById("mediaPreview")
+    .classList.remove("show");
 
   if (selectedMediaURL) {
-    URL.revokeObjectURL(selectedMediaURL);
+
+    URL.revokeObjectURL(
+      selectedMediaURL
+    );
+
     selectedMediaURL = null;
+
   }
+
 }
 
 
-/* CREATE REAL FEED POST */
+/* CREATE POST */
 
 function createPost() {
 
-  const text = document.getElementById("postText").value.trim();
-  const link = document.getElementById("linkInput").value.trim();
-  const mediaInput = document.getElementById("mediaInput");
+  const text =
+    document
+      .getElementById("postText")
+      .value
+      .trim();
 
-  const hasMedia = mediaInput.files.length > 0;
+  const link =
+    document
+      .getElementById("linkInput")
+      .value
+      .trim();
+
+  const mediaInput =
+    document.getElementById(
+      "mediaInput"
+    );
+
+  const hasMedia =
+    mediaInput.files.length > 0;
 
   if (!text && !hasMedia) {
-    alert("Please write something or add a photo/video.");
+
+    alert(
+      "Please write something or add a photo/video."
+    );
+
     return;
+
   }
 
-  if ((selectedType === "whatsapp" || selectedType === "telegram") && !link) {
-    alert("Please add your WhatsApp or Telegram group link.");
+  if (
+    (
+      selectedType === "whatsapp" ||
+      selectedType === "telegram"
+    ) &&
+    !link
+  ) {
+
+    alert(
+      "Please add your WhatsApp or Telegram group link."
+    );
+
     return;
+
   }
 
-  const feed = document.getElementById("feed");
 
-  const post = document.createElement("article");
+  const feed =
+    document.getElementById("feed");
+
+
+  const post =
+    document.createElement("article");
 
   post.className = "post";
+
+  post.dataset.type =
+    selectedType;
+
+
+  let username =
+    localStorage.getItem(
+      "friendhub_username"
+    ) || "You";
+
+
+  let avatarHTML = "🙂";
+
+  const savedPhoto =
+    localStorage.getItem(
+      "friendhub_profile_photo"
+    );
+
+  if (savedPhoto) {
+
+    avatarHTML =
+      `<img src="${savedPhoto}" alt="Profile">`;
+
+  }
+
 
   let typeName = "";
   let emoji = "";
 
   if (selectedType === "people") {
-    typeName = "Personal contact";
+
+    typeName =
+      "Personal contact";
+
     emoji = "👤";
+
   }
 
   if (selectedType === "whatsapp") {
-    typeName = "WhatsApp group";
+
+    typeName =
+      "WhatsApp group";
+
     emoji = "🟢";
+
   }
 
   if (selectedType === "telegram") {
-    typeName = "Telegram group";
+
+    typeName =
+      "Telegram group";
+
     emoji = "🔵";
+
   }
 
   if (selectedType === "snapchat") {
-    typeName = "Snapchat";
+
+    typeName =
+      "Snapchat";
+
     emoji = "👻";
+
   }
 
-  post.dataset.type = selectedType;
 
   post.dataset.search =
-    (text + " " + typeName + " " + link).toLowerCase();
+    (
+      username +
+      " " +
+      text +
+      " " +
+      typeName +
+      " " +
+      link
+    ).toLowerCase();
 
 
-  let html = `
+  post.innerHTML = `
+
     <div class="post-header">
 
-      <div class="avatar">🙂</div>
+      <div class="avatar">
+        ${avatarHTML}
+      </div>
 
       <div>
-        <div class="post-name">You</div>
-        <div class="post-meta">${emoji} ${typeName}</div>
+
+        <div class="post-name">
+          ${escapeHTML(username)}
+        </div>
+
+        <div class="post-meta">
+          ${emoji} ${typeName}
+        </div>
+
       </div>
 
     </div>
+
   `;
 
 
   if (text) {
-    html += `
-      <div class="post-text"></div>
-    `;
+
+    const textElement =
+      document.createElement("div");
+
+    textElement.className =
+      "post-text";
+
+    textElement.textContent =
+      text;
+
+    post.appendChild(
+      textElement
+    );
+
   }
 
 
   if (hasMedia) {
 
-    const file = mediaInput.files[0];
+    const file =
+      mediaInput.files[0];
 
     const mediaContainer =
       document.createElement("div");
 
-    mediaContainer.className = "post-media";
+    mediaContainer.className =
+      "post-media";
 
-    if (file.type.startsWith("image/")) {
 
-      const img = document.createElement("img");
+    if (
+      file.type.startsWith("image/")
+    ) {
 
-      img.src = selectedMediaURL;
+      const img =
+        document.createElement("img");
 
-      mediaContainer.appendChild(img);
+      img.src =
+        selectedMediaURL;
+
+      mediaContainer.appendChild(
+        img
+      );
 
     } else {
 
-      const video = document.createElement("video");
+      const video =
+        document.createElement("video");
 
-      video.src = selectedMediaURL;
+      video.src =
+        selectedMediaURL;
+
       video.controls = true;
       video.playsInline = true;
 
-      mediaContainer.appendChild(video);
+      mediaContainer.appendChild(
+        video
+      );
+
     }
 
-    post.innerHTML = html;
 
-    if (text) {
-      post.querySelector(".post-text").textContent = text;
-    }
+    post.appendChild(
+      mediaContainer
+    );
 
-    post.appendChild(mediaContainer);
-
-  } else {
-
-    post.innerHTML = html;
-
-    if (text) {
-      post.querySelector(".post-text").textContent = text;
-    }
   }
 
 
-  if (selectedType === "whatsapp" ||
-      selectedType === "telegram") {
+  if (
+    selectedType === "whatsapp" ||
+    selectedType === "telegram"
+  ) {
 
-    const card = document.createElement("div");
+    const card =
+      document.createElement("div");
 
-    card.className = "connection-card";
+    card.className =
+      "connection-card";
+
 
     const title =
       document.createElement("div");
 
-    title.className = "connection-title";
+    title.className =
+      "connection-title";
 
     title.textContent =
       emoji + " " + typeName;
 
+
     const linkElement =
       document.createElement("a");
 
-    linkElement.className = "connection-link";
+    linkElement.className =
+      "connection-link";
 
-    linkElement.href = link;
-    linkElement.target = "_blank";
-    linkElement.rel = "noopener noreferrer";
+    linkElement.href =
+      link;
 
-    linkElement.textContent = link;
+    linkElement.target =
+      "_blank";
+
+    linkElement.rel =
+      "noopener noreferrer";
+
+    linkElement.textContent =
+      link;
+
 
     card.appendChild(title);
-    card.appendChild(linkElement);
 
-    post.appendChild(card);
+    card.appendChild(
+      linkElement
+    );
+
+    post.appendChild(
+      card
+    );
+
   }
 
 
   const actions =
     document.createElement("div");
 
-  actions.className = "post-actions";
+  actions.className =
+    "post-actions";
 
   actions.innerHTML = `
-    <button class="post-action" onclick="likePost(this)">
+
+    <button
+      class="post-action"
+      onclick="likePost(this)"
+    >
       ♡ Like
     </button>
 
-    <button class="post-action">
+    <button
+      class="post-action"
+    >
       💬 Comment
     </button>
 
-    <button class="post-action">
+    <button
+      class="post-action"
+    >
       ⚠️ Report
     </button>
+
   `;
 
-  post.appendChild(actions);
+  post.appendChild(
+    actions
+  );
 
 
-  /* NEW POSTS GO TO THE TOP */
+  feed.prepend(
+    post
+  );
 
-  feed.prepend(post);
 
+  document
+    .getElementById("postText")
+    .value = "";
 
-  /* RESET COMPOSER */
-
-  document.getElementById("postText").value = "";
-
-  document.getElementById("linkInput").value = "";
+  document
+    .getElementById("linkInput")
+    .value = "";
 
   removeMedia();
 
-
-  /* RETURN TO FEED */
 
   feed.scrollIntoView({
     behavior: "smooth",
@@ -1126,15 +2007,20 @@ function createPost() {
 
 function likePost(button) {
 
-  if (button.textContent.includes("Like")) {
+  if (
+    button.textContent.includes("Like")
+  ) {
 
-    button.textContent = "♥ Liked";
+    button.textContent =
+      "♥ Liked";
 
   } else {
 
-    button.textContent = "♡ Like";
+    button.textContent =
+      "♡ Like";
 
   }
+
 }
 
 
@@ -1143,59 +2029,513 @@ function likePost(button) {
 function searchPosts() {
 
   const search =
-    document.getElementById("searchInput")
+    document
+      .getElementById("searchInput")
       .value
       .toLowerCase()
       .trim();
 
-  const posts =
-    document.querySelectorAll(".post");
 
-  posts.forEach(function(post) {
+  document
+    .querySelectorAll(".post")
+    .forEach(function(post) {
 
-    const content =
-      (post.dataset.search || post.textContent)
-      .toLowerCase();
+      const content =
+        (
+          post.dataset.search ||
+          post.textContent
+        ).toLowerCase();
 
-    if (!search || content.includes(search)) {
-      post.style.display = "";
-    } else {
-      post.style.display = "none";
-    }
 
-  });
+      if (
+        !search ||
+        content.includes(search)
+      ) {
+
+        post.style.display = "";
+
+      } else {
+
+        post.style.display =
+          "none";
+
+      }
+
+    });
+
 }
 
 
 /* FILTER */
 
-function filterPosts(type, button) {
+function filterPosts(
+  type,
+  button
+) {
 
-  document.querySelectorAll(".filter").forEach(function(btn) {
-    btn.classList.remove("active");
-  });
+  document
+    .querySelectorAll(".filter")
+    .forEach(function(btn) {
 
-  button.classList.add("active");
+      btn.classList.remove(
+        "active"
+      );
 
-  const posts =
-    document.querySelectorAll(".post");
+    });
 
-  posts.forEach(function(post) {
 
-    if (type === "all") {
-      post.style.display = "";
-      return;
-    }
+  button.classList.add(
+    "active"
+  );
 
-    if (post.dataset.type === type) {
-      post.style.display = "";
-    } else {
-      post.style.display = "none";
-    }
 
-  });
+  document
+    .querySelectorAll(".post")
+    .forEach(function(post) {
+
+      if (type === "all") {
+
+        post.style.display = "";
+
+        return;
+
+      }
+
+
+      if (
+        post.dataset.type === type
+      ) {
+
+        post.style.display = "";
+
+      } else {
+
+        post.style.display =
+          "none";
+
+      }
+
+    });
 
 }
+
+
+/* PROFILE OPTIONS */
+
+function toggleOption(button) {
+
+  button.classList.toggle(
+    "selected"
+  );
+
+}
+
+
+/* PROFILE PHOTO */
+
+function previewProfilePhoto(event) {
+
+  const file =
+    event.target.files[0];
+
+  if (!file) return;
+
+
+  if (!file.type.startsWith("image/")) {
+
+    alert(
+      "Please select an image."
+    );
+
+    return;
+
+  }
+
+
+  if (profilePhotoURL) {
+
+    URL.revokeObjectURL(
+      profilePhotoURL
+    );
+
+  }
+
+
+  profilePhotoURL =
+    URL.createObjectURL(file);
+
+
+  const avatar =
+    document.getElementById(
+      "profileAvatar"
+    );
+
+
+  avatar.innerHTML = `
+
+    <img
+      src="${profilePhotoURL}"
+      alt="Profile photo"
+    >
+
+  `;
+
+}
+
+
+/* SAVE PROFILE */
+
+function saveProfile() {
+
+  let username =
+    document
+      .getElementById(
+        "usernameInput"
+      )
+      .value
+      .trim();
+
+
+  const age =
+    document
+      .getElementById(
+        "ageInput"
+      )
+      .value
+      .trim();
+
+
+  const country =
+    document
+      .getElementById(
+        "countryInput"
+      )
+      .value;
+
+
+  if (!username) {
+
+    alert(
+      "Please choose a username."
+    );
+
+    return;
+
+  }
+
+
+  if (!username.startsWith("@")) {
+
+    username =
+      "@" + username;
+
+  }
+
+
+  username =
+    username.replace(
+      /[^a-zA-Z0-9_@]/g,
+      ""
+    );
+
+
+  if (username.length < 3) {
+
+    alert(
+      "Your username is too short."
+    );
+
+    return;
+
+  }
+
+
+  if (!age) {
+
+    alert(
+      "Please enter your age."
+    );
+
+    return;
+
+  }
+
+
+  if (!country) {
+
+    alert(
+      "Please select your country."
+    );
+
+    return;
+
+  }
+
+
+  const previousUsername =
+    localStorage.getItem(
+      "friendhub_username"
+    );
+
+
+  const lastChange =
+    localStorage.getItem(
+      "friendhub_username_change"
+    );
+
+
+  if (
+    previousUsername &&
+    previousUsername !== username &&
+    lastChange
+  ) {
+
+    const daysPassed =
+      (
+        Date.now() -
+        Number(lastChange)
+      ) /
+      (
+        1000 *
+        60 *
+        60 *
+        24
+      );
+
+
+    if (daysPassed < 30) {
+
+      const remaining =
+        Math.ceil(
+          30 - daysPassed
+        );
+
+
+      alert(
+        "You can change your username again in " +
+        remaining +
+        " day(s)."
+      );
+
+      return;
+
+    }
+
+  }
+
+
+  if (
+    previousUsername !== username
+  ) {
+
+    localStorage.setItem(
+      "friendhub_username_change",
+      Date.now().toString()
+    );
+
+  }
+
+
+  localStorage.setItem(
+    "friendhub_username",
+    username
+  );
+
+
+  localStorage.setItem(
+    "friendhub_age",
+    age
+  );
+
+
+  localStorage.setItem(
+    "friendhub_country",
+    country
+  );
+
+
+  const selectedOptions =
+    Array.from(
+      document.querySelectorAll(
+        ".option.selected"
+      )
+    ).map(function(option) {
+
+      return option.textContent.trim();
+
+    });
+
+
+  localStorage.setItem(
+    "friendhub_options",
+    JSON.stringify(
+      selectedOptions
+    )
+  );
+
+
+  if (profilePhotoURL) {
+
+    localStorage.setItem(
+      "friendhub_profile_photo",
+      profilePhotoURL
+    );
+
+  }
+
+
+  document
+    .getElementById(
+      "profileStatus"
+    )
+    .textContent =
+      "✓ Profile saved successfully!";
+
+
+  updateExistingPosts();
+
+}
+
+
+/* UPDATE POSTS WITH USERNAME */
+
+function updateExistingPosts() {
+
+  const username =
+    localStorage.getItem(
+      "friendhub_username"
+    );
+
+
+  if (!username) return;
+
+
+  document
+    .querySelectorAll(
+      ".post-name"
+    )
+    .forEach(function(name) {
+
+      if (
+        name.textContent.trim() ===
+        "You"
+      ) {
+
+        name.textContent =
+          username;
+
+      }
+
+    });
+
+}
+
+
+/* ESCAPE HTML */
+
+function escapeHTML(value) {
+
+  const div =
+    document.createElement(
+      "div"
+    );
+
+  div.textContent =
+    value;
+
+  return div.innerHTML;
+
+}
+
+
+/* LOAD SAVED PROFILE */
+
+window.addEventListener(
+  "load",
+  function() {
+
+    const username =
+      localStorage.getItem(
+        "friendhub_username"
+      );
+
+
+    const age =
+      localStorage.getItem(
+        "friendhub_age"
+      );
+
+
+    const country =
+      localStorage.getItem(
+        "friendhub_country"
+      );
+
+
+    const savedPhoto =
+      localStorage.getItem(
+        "friendhub_profile_photo"
+      );
+
+
+    if (username) {
+
+      document
+        .getElementById(
+          "usernameInput"
+        )
+        .value =
+          username;
+
+    }
+
+
+    if (age) {
+
+      document
+        .getElementById(
+          "ageInput"
+        )
+        .value =
+          age;
+
+    }
+
+
+    if (country) {
+
+      document
+        .getElementById(
+          "countryInput"
+        )
+        .value =
+          country;
+
+    }
+
+
+    if (savedPhoto) {
+
+      document
+        .getElementById(
+          "profileAvatar"
+        )
+        .innerHTML = `
+
+          <img
+            src="${savedPhoto}"
+            alt="Profile photo"
+          >
+
+        `;
+
+    }
+
+
+    updateExistingPosts();
+
+  }
+);
 
 </script>
 
