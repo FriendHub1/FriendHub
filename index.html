@@ -24,9 +24,7 @@
             color: #1f2937;
         }
 
-        /* =========================
-           HEADER
-        ========================= */
+        /* HEADER */
 
         header {
             position: sticky;
@@ -70,9 +68,7 @@
             color: #4f46e5;
         }
 
-        /* =========================
-           HERO
-        ========================= */
+        /* HERO */
 
         .hero {
             min-height: 550px;
@@ -159,9 +155,7 @@
             flex-wrap: wrap;
         }
 
-        /* =========================
-           SECTIONS
-        ========================= */
+        /* SECTIONS */
 
         section {
             scroll-margin-top: 90px;
@@ -188,9 +182,7 @@
             color: #6b7280;
         }
 
-        /* =========================
-           DISCOVER FEED
-        ========================= */
+        /* DISCOVER */
 
         #discover {
             background: #f5f6fa;
@@ -325,6 +317,65 @@
             border-color: #818cf8;
         }
 
+        /* MEDIA PREVIEW */
+
+        .media-preview {
+            display: none;
+
+            position: relative;
+
+            margin-top: 15px;
+
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+
+            overflow: hidden;
+
+            background: #f9fafb;
+        }
+
+        .media-preview.show {
+            display: block;
+        }
+
+        .media-preview img,
+        .media-preview video {
+            display: block;
+
+            width: 100%;
+            max-height: 400px;
+
+            object-fit: contain;
+
+            background: #111827;
+        }
+
+        .remove-media {
+            position: absolute;
+
+            top: 10px;
+            right: 10px;
+
+            width: 34px;
+            height: 34px;
+
+            border: none;
+            border-radius: 50%;
+
+            background: rgba(0,0,0,0.75);
+            color: white;
+
+            font-size: 18px;
+
+            cursor: pointer;
+        }
+
+        .remove-media:hover {
+            background: #000;
+        }
+
+        /* POST OPTIONS */
+
         .post-options {
             display: flex;
 
@@ -358,7 +409,33 @@
             margin-top: 15px;
 
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .media-button {
+            border: 1px solid #e5e7eb;
+            background: white;
+
+            border-radius: 10px;
+
+            padding: 9px 13px;
+
+            cursor: pointer;
+
+            font-size: 13px;
+            font-weight: 600;
+
+            color: #4b5563;
+        }
+
+        .media-button:hover {
+            background: #f3f4f6;
+            color: #4f46e5;
+        }
+
+        .hidden-file {
+            display: none;
         }
 
         /* POSTS */
@@ -543,9 +620,7 @@
             color: #4f46e5;
         }
 
-        /* =========================
-           ABOUT
-        ========================= */
+        /* ABOUT */
 
         #about {
             background: white;
@@ -582,9 +657,7 @@
             margin-top: 25px;
         }
 
-        /* =========================
-           SUPPORT
-        ========================= */
+        /* SUPPORT */
 
         #support {
             background: #f5f6fa;
@@ -630,9 +703,7 @@
             margin-bottom: 22px;
         }
 
-        /* =========================
-           FOOTER
-        ========================= */
+        /* FOOTER */
 
         footer {
             background: #111827;
@@ -653,9 +724,7 @@
             font-size: 14px;
         }
 
-        /* =========================
-           MOBILE
-        ========================= */
+        /* MOBILE */
 
         @media(max-width: 700px) {
 
@@ -696,6 +765,18 @@
                 gap: 15px;
             }
 
+            .post-bottom {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .media-button,
+            .post-bottom .btn {
+                width: 100%;
+                text-align: center;
+            }
+
         }
 
     </style>
@@ -704,9 +785,7 @@
 <body>
 
 
-<!-- =========================
-     HEADER
-========================= -->
+<!-- HEADER -->
 
 <header>
 
@@ -752,9 +831,7 @@
 </header>
 
 
-<!-- =========================
-     HOME
-========================= -->
+<!-- HOME -->
 
 <section id="home" class="hero">
 
@@ -793,9 +870,7 @@
 </section>
 
 
-<!-- =========================
-     DISCOVER
-========================= -->
+<!-- DISCOVER -->
 
 <section id="discover">
 
@@ -873,6 +948,25 @@
                 </div>
 
 
+                <!-- MEDIA PREVIEW -->
+
+                <div
+                    id="mediaPreview"
+                    class="media-preview">
+
+                    <button
+                        class="remove-media"
+                        onclick="removeMedia()">
+                        ×
+                    </button>
+
+                    <div id="previewContent"></div>
+
+                </div>
+
+
+                <!-- POST OPTIONS -->
+
                 <div class="post-options">
 
                     <button
@@ -902,7 +996,27 @@
                 </div>
 
 
+                <!-- POST BUTTONS -->
+
                 <div class="post-bottom">
+
+                    <div>
+
+                        <input
+                            id="mediaInput"
+                            class="hidden-file"
+                            type="file"
+                            accept="image/*,video/*"
+                            onchange="previewMedia(event)">
+
+                        <button
+                            class="media-button"
+                            onclick="document.getElementById('mediaInput').click()">
+                            📎 Add media
+                        </button>
+
+                    </div>
+
 
                     <button
                         class="btn btn-primary"
@@ -915,9 +1029,7 @@
             </div>
 
 
-            <!-- =========================
-                 POST 1
-            ========================= -->
+            <!-- POST 1 -->
 
             <article class="post">
 
@@ -1033,9 +1145,7 @@
             </article>
 
 
-            <!-- =========================
-                 POST 2
-            ========================= -->
+            <!-- POST 2 -->
 
             <article class="post">
 
@@ -1149,9 +1259,7 @@
             </article>
 
 
-            <!-- =========================
-                 POST 3
-            ========================= -->
+            <!-- POST 3 -->
 
             <article class="post">
 
@@ -1240,9 +1348,7 @@
 </section>
 
 
-<!-- =========================
-     ABOUT
-========================= -->
+<!-- ABOUT -->
 
 <section id="about">
 
@@ -1290,9 +1396,7 @@
 </section>
 
 
-<!-- =========================
-     SUPPORT
-========================= -->
+<!-- SUPPORT -->
 
 <section id="support">
 
@@ -1328,9 +1432,7 @@
 </section>
 
 
-<!-- =========================
-     FOOTER
-========================= -->
+<!-- FOOTER -->
 
 <footer>
 
@@ -1352,9 +1454,7 @@
 </footer>
 
 
-<!-- =========================
-     JAVASCRIPT
-========================= -->
+<!-- JAVASCRIPT -->
 
 <script>
 
@@ -1381,6 +1481,99 @@
     }
 
 
+    /* MEDIA PREVIEW */
+
+    function previewMedia(event) {
+
+        const file =
+            event.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+        const preview =
+            document.getElementById("mediaPreview");
+
+        const content =
+            document.getElementById("previewContent");
+
+        content.innerHTML = "";
+
+        const fileURL =
+            URL.createObjectURL(file);
+
+
+        if (file.type.startsWith("image/")) {
+
+            const image =
+                document.createElement("img");
+
+            image.src = fileURL;
+
+            image.alt = "Selected image";
+
+            content.appendChild(image);
+
+        }
+
+
+        else if (file.type.startsWith("video/")) {
+
+            const video =
+                document.createElement("video");
+
+            video.src = fileURL;
+
+            video.controls = true;
+
+            video.playsInline = true;
+
+            content.appendChild(video);
+
+        }
+
+
+        else {
+
+            alert(
+                "Please select an image or video."
+            );
+
+            return;
+
+        }
+
+
+        preview.classList.add("show");
+
+    }
+
+
+    /* REMOVE MEDIA */
+
+    function removeMedia() {
+
+        const input =
+            document.getElementById("mediaInput");
+
+        const preview =
+            document.getElementById("mediaPreview");
+
+        const content =
+            document.getElementById("previewContent");
+
+        input.value = "";
+
+        content.innerHTML = "";
+
+        preview.classList.remove("show");
+
+    }
+
+
+    /* POST TYPE */
+
     function selectType(type) {
 
         alert(
@@ -1391,15 +1584,20 @@
     }
 
 
+    /* CREATE POST */
+
     function createDemoPost() {
 
         const input =
             document.querySelector(".post-input");
 
-        if (!input.value.trim()) {
+        const media =
+            document.getElementById("mediaInput");
+
+        if (!input.value.trim() && !media.files.length) {
 
             alert(
-                "Write something before creating your post."
+                "Write something or add a photo/video before creating your post."
             );
 
             return;
@@ -1413,12 +1611,16 @@
 
         input.value = "";
 
+        removeMedia();
+
     }
 
 
+    /* LIKE */
+
     function likePost(button) {
 
-        if (button.innerText.includes("❤️")) {
+        if (button.innerText.includes("❤️ Like")) {
 
             button.innerText = "❤️ Liked";
 
@@ -1426,6 +1628,8 @@
 
     }
 
+
+    /* GROUP */
 
     function joinDemo(platform) {
 
