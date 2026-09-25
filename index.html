@@ -462,6 +462,7 @@
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
+      border-radius: 12px;
     }
 
     .post-media img,
@@ -474,51 +475,58 @@
       display: block;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .double-tap-heart {
       position: absolute;
       left: 50%;
       top: 50%;
-      transform: translate(-50%, -50%) scale(0.4);
-      font-size: 95px;
+      transform: translate(-50%, -50%) scale(0.3);
+      font-size: 100px;
       line-height: 1;
       pointer-events: none;
       opacity: 0;
-      z-index: 20;
-      animation: doubleTapHeart 0.8s ease-out forwards;
-      filter: drop-shadow(0 5px 12px rgba(0,0,0,0.20));
+      z-index: 9999;
+      filter:
+        drop-shadow(0 5px 12px rgba(0,0,0,0.25))
+        drop-shadow(0 0 8px rgba(255,255,255,0.25));
+      animation: doubleTapHeart 0.85s ease-out forwards;
     }
 
     @keyframes doubleTapHeart {
 
       0% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.4);
+        transform: translate(-50%, -50%) scale(0.3);
       }
 
-      20% {
+      15% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1.18);
+        transform: translate(-50%, -50%) scale(1.22);
       }
 
-      42% {
+      30% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(0.95);
+        transform: translate(-50%, -50%) scale(0.96);
+      }
+
+      48% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08);
       }
 
       70% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.03);
+        opacity: 0.9;
+        transform: translate(-50%, -50%) scale(1);
       }
 
       100% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(1.08);
+        transform: translate(-50%, -50%) scale(1.12);
       }
 
     }
-
 
     .post-actions {
       display: flex;
@@ -852,7 +860,7 @@
       }
 
       .double-tap-heart {
-        font-size: 80px;
+        font-size: 85px;
       }
 
     }
@@ -2010,26 +2018,21 @@ function showPage(pageId) {
     page.classList.remove("active");
   });
 
-
   const page =
     document.getElementById(pageId);
-
 
   if (page) {
     page.classList.add("active");
   }
-
 
   window.scrollTo({
     top: 0,
     behavior: "smooth"
   });
 
-
   if (pageId === "discover") {
     loadPosts();
   }
-
 
   if (pageId === "profile") {
 
@@ -4204,11 +4207,11 @@ function setFilter(
 
 
 /* =========================================================
-   DOUBLE TAP LIKE FUNCTIONS
+   DOUBLE TAP / DOUBLE CLICK LIKE
    ========================================================= */
 
 /*
-  Shows the big ❤️ animation over the post media.
+  Shows the large ❤️ over the CURRENT media container.
 */
 function showDoubleTapHeart(
   mediaContainer
@@ -4255,19 +4258,54 @@ function showDoubleTapHeart(
       heart.remove();
     }
 
-  }, 850);
+  }, 900);
 
 }
 
 
 /*
-  Handles a double tap on touch devices.
+  Finds the NEW media container after loadPosts()
+  redraws the feed.
+*/
+function findPostMediaContainer(
+  id
+) {
 
-  First tap:
-    - remembers the time.
+  const key =
+    String(id);
 
-  Second tap:
-    - triggers the Like.
+
+  const mediaContainers =
+    document.querySelectorAll(
+      ".post-media"
+    );
+
+
+  for (
+    const container of mediaContainers
+  ) {
+
+    if (
+      String(
+        container.dataset.postId
+      ) ===
+      key
+    ) {
+
+      return container;
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+/*
+  Mobile double-tap detection.
 */
 function handleMediaTouch(
   event,
@@ -4315,11 +4353,6 @@ function handleMediaTouch(
     );
 
 
-    /*
-      Remove old tap records so the Map
-      doesn't grow forever.
-    */
-
     setTimeout(() => {
 
       const saved =
@@ -4346,15 +4379,12 @@ function handleMediaTouch(
 
 
 /*
-  Main double-tap Like function.
+  Main Like action.
 
-  IMPORTANT:
-  This does NOT toggle/unlike.
-
-  Double tap can only ADD a Like.
-
-  The normal Like button continues using
-  toggleLike(), which can add/remove Likes.
+  DOUBLE TAP / DOUBLE CLICK:
+    - Adds Like if not already liked.
+    - Shows big ❤️.
+    - NEVER removes an existing Like.
 */
 async function handleDoubleTapLike(
   id,
@@ -4365,10 +4395,6 @@ async function handleDoubleTapLike(
     String(id);
 
 
-  /*
-    Prevent a mobile touch event and a browser
-    dblclick event from triggering the action twice.
-  */
   const now =
     Date.now();
 
@@ -4379,6 +4405,10 @@ async function handleDoubleTapLike(
     ) || 0;
 
 
+  /*
+    Prevent touch + dblclick from
+    firing the Like twice.
+  */
   if (
     now - previousTrigger <
     500
@@ -4396,7 +4426,31 @@ async function handleDoubleTapLike(
 
 
   /*
-    User must be logged in.
+    Keep this Map from growing forever.
+  */
+  setTimeout(() => {
+
+    const saved =
+      recentDoubleTapTriggers.get(
+        key
+      );
+
+
+    if (
+      saved === now
+    ) {
+
+      recentDoubleTapTriggers.delete(
+        key
+      );
+
+    }
+
+  }, 1000);
+
+
+  /*
+    Login required.
   */
   if (!currentUser) {
 
@@ -4410,13 +4464,17 @@ async function handleDoubleTapLike(
 
 
   /*
-    Sample posts are only demonstration posts.
+    Sample posts cannot be saved.
   */
   if (
     key.startsWith(
       "sample-"
     )
   ) {
+
+    showDoubleTapHeart(
+      mediaContainer
+    );
 
     return;
 
@@ -4439,21 +4497,17 @@ async function handleDoubleTapLike(
 
 
   /*
-    Always show the animation when the user
-    double taps a real post.
-  */
-  showDoubleTapHeart(
-    mediaContainer
-  );
+    If already liked:
+    SHOW HEART ONLY.
 
-
-  /*
-    If the post is already liked,
-    DO NOT remove the Like.
-
-    The double tap only adds Likes.
+    We do NOT call toggleLike()
+    because toggleLike() can remove Likes.
   */
   if (post.liked) {
+
+    showDoubleTapHeart(
+      mediaContainer
+    );
 
     return;
 
@@ -4461,8 +4515,7 @@ async function handleDoubleTapLike(
 
 
   /*
-    Prevent multiple rapid double-tap requests
-    for the same post.
+    Prevent multiple simultaneous Like requests.
   */
   if (
     doubleTapLikeBusy.has(
@@ -4483,18 +4536,39 @@ async function handleDoubleTapLike(
   try {
 
     /*
-      toggleLike() normally toggles.
+      The post is currently NOT liked.
 
-      Since we already checked post.liked === false,
-      the expected operation here is ADD.
-
-      If another request happens at exactly the
-      same time, toggleLike() checks Supabase first
-      and safely handles duplicate Likes.
+      toggleLike() will therefore ADD the Like.
     */
     await toggleLike(
       id
     );
+
+
+    /*
+      IMPORTANT:
+      toggleLike() calls loadPosts(), which redraws
+      the entire feed.
+
+      Therefore the OLD mediaContainer no longer
+      exists in the page.
+
+      We find the NEW media container and show
+      the ❤️ there.
+    */
+    const newMediaContainer =
+      findPostMediaContainer(
+        id
+      );
+
+
+    if (newMediaContainer) {
+
+      showDoubleTapHeart(
+        newMediaContainer
+      );
+
+    }
 
   } finally {
 
@@ -4685,15 +4759,8 @@ function renderPost(
 
   /*
     ========================================================
-    DOUBLE TAP MEDIA
+    MEDIA DOUBLE CLICK / DOUBLE TAP
     ========================================================
-
-    Both image and video receive:
-
-      ondblclick = desktop double click
-      ontouchend = mobile double tap detection
-
-    The double tap function only adds a Like.
   */
 
   if (post.media) {
@@ -4723,6 +4790,7 @@ function renderPost(
             src="${escapeHtmlAttribute(post.media.src)}"
             controls
             playsinline
+            draggable="false"
           ></video>
 
         </div>`;
@@ -4856,7 +4924,7 @@ function renderPost(
 
 
 /* =========================================================
-   LIKES
+   NORMAL LIKE BUTTON
    ========================================================= */
 
 async function toggleLike(
@@ -4901,14 +4969,8 @@ async function toggleLike(
 
 
   /*
-    Always check Supabase first.
-
-    This keeps the button synchronized with the
-    real Like saved in the database, even if the
-    page state is stale or the user has logged in
-    from another device/browser.
+    Check Supabase first.
   */
-
   const {
     data: existingLike,
     error: checkError
@@ -4951,16 +5013,8 @@ async function toggleLike(
   if (existingLike) {
 
     /*
-      The Like already exists.
-
-      Clicking the NORMAL Like button again
-      removes it.
-
-      IMPORTANT:
-      Double tap does NOT call this branch when
-      the post is already liked because
-      handleDoubleTapLike() returns before calling
-      toggleLike().
+      NORMAL LIKE BUTTON:
+      Existing Like = remove Like.
     */
 
     const {
@@ -5000,7 +5054,8 @@ async function toggleLike(
   } else {
 
     /*
-      No Like exists yet, so create one.
+      NORMAL LIKE BUTTON:
+      No Like = add Like.
     */
 
     const {
@@ -5024,11 +5079,8 @@ async function toggleLike(
     if (error) {
 
       /*
-        PostgreSQL code 23505 / HTTP 409 means
-        the Like was already created by another
-        request, for example from a rapid double tap.
-
-        We do not show an error to the user.
+        Duplicate Like caused by another
+        request at nearly the same time.
       */
 
       if (
@@ -5064,11 +5116,8 @@ async function toggleLike(
 
 
   /*
-    Reload everything from Supabase so the
-    Like count and heart state are always
-    based on the real database.
+    Reload database state.
   */
-
   await loadPosts();
 
 }
