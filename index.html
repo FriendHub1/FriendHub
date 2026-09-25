@@ -1,1572 +1,3019 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FriendHub</title>
-
-<style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  background: #f5f7fb;
-  color: #172033;
-  line-height: 1.5;
-}
-
-header {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 24px;
-}
-
-.navbar {
-  max-width: 1150px;
-  margin: auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  font-size: 25px;
-  font-weight: 800;
-  color: #5865f2;
-  cursor: pointer;
-}
-
-nav {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-nav a {
-  text-decoration: none;
-  color: #374151;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-nav a:hover {
-  color: #5865f2;
-}
-
-.profile-nav {
-  background: #eef0ff;
-  color: #4752c4 !important;
-  padding: 8px 13px;
-  border-radius: 9px;
-}
-
-.hero {
-  max-width: 1150px;
-  margin: auto;
-  padding: 90px 24px 70px;
-  text-align: center;
-}
-
-.hero h1 {
-  font-size: 52px;
-  margin-bottom: 18px;
-  color: #111827;
-}
-
-.hero p {
-  max-width: 700px;
-  margin: auto;
-  font-size: 19px;
-  color: #667085;
-}
-
-.buttons {
-  margin-top: 30px;
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.btn {
-  border: none;
-  border-radius: 10px;
-  padding: 13px 22px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.primary {
-  background: #5865f2;
-  color: white;
-}
-
-.primary:hover {
-  background: #4752c4;
-}
-
-.secondary {
-  background: white;
-  color: #374151;
-  border: 1px solid #d9dee8;
-}
-
-section {
-  max-width: 1150px;
-  margin: auto;
-  padding: 70px 24px;
-}
-
-.section-title {
-  text-align: center;
-  margin-bottom: 35px;
-}
-
-.section-title h2 {
-  font-size: 34px;
-  margin-bottom: 10px;
-}
-
-.section-title p {
-  color: #667085;
-}
-
-/* DISCOVER */
-
-.search-box {
-  max-width: 700px;
-  margin: 0 auto 25px;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 15px 18px;
-  border: 1px solid #d9dee8;
-  border-radius: 12px;
-  font-size: 16px;
-  outline: none;
-}
-
-.filters {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 30px;
-}
-
-.filter {
-  padding: 9px 16px;
-  border: 1px solid #d9dee8;
-  background: white;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.filter.active,
-.filter:hover {
-  background: #5865f2;
-  color: white;
-  border-color: #5865f2;
-}
-
-/* COMPOSER */
-
-.composer {
-  background: white;
-  border: 1px solid #e4e7ec;
-  border-radius: 16px;
-  padding: 20px;
-  max-width: 750px;
-  margin: 0 auto 30px;
-  box-shadow: 0 5px 18px rgba(20,30,50,.05);
-}
-
-.composer h3 {
-  margin-bottom: 14px;
-}
-
-.composer textarea {
-  width: 100%;
-  min-height: 100px;
-  resize: vertical;
-  border: 1px solid #d9dee8;
-  border-radius: 12px;
-  padding: 14px;
-  font-family: inherit;
-  font-size: 15px;
-  outline: none;
-}
-
-.post-types {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 13px;
-}
-
-.type-btn {
-  border: 1px solid #d9dee8;
-  background: #fff;
-  padding: 9px 13px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.type-btn.selected {
-  background: #eef0ff;
-  border-color: #5865f2;
-  color: #4752c4;
-  font-weight: 700;
-}
-
-.link-input {
-  width: 100%;
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid #d9dee8;
-  border-radius: 10px;
-  display: none;
-  font-size: 14px;
-}
-
-.composer-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-top: 15px;
-  flex-wrap: wrap;
-}
-
-.media-btn {
-  background: #f1f3f7;
-  border: 1px solid #d9dee8;
-  padding: 10px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.media-btn:hover {
-  background: #e7eaf0;
-}
-
-.hidden-file {
-  display: none;
-}
-
-.post-btn {
-  background: #5865f2;
-  color: white;
-  border: none;
-  padding: 11px 20px;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.post-btn:hover {
-  background: #4752c4;
-}
-
-/* MEDIA */
-
-.media-preview {
-  display: none;
-  position: relative;
-  margin-top: 15px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #111827;
-}
-
-.media-preview.show {
-  display: block;
-}
-
-.media-preview img,
-.media-preview video {
-  display: block;
-  width: 100%;
-  max-height: 400px;
-  object-fit: contain;
-}
-
-.remove-media {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  z-index: 5;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(0,0,0,.7);
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-/* FEED */
-
-.feed {
-  max-width: 750px;
-  margin: auto;
-}
-
-.post {
-  background: white;
-  border: 1px solid #e4e7ec;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 18px;
-  box-shadow: 0 5px 18px rgba(20,30,50,.04);
-}
-
-.post-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.avatar {
-  width: 45px;
-  height: 45px;
-  border-radius: 50%;
-  background: #eef0ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 21px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.post-name {
-  font-weight: 800;
-}
-
-.post-meta {
-  font-size: 13px;
-  color: #667085;
-}
-
-.post-text {
-  font-size: 16px;
-  margin-bottom: 14px;
-  white-space: pre-wrap;
-}
-
-.post-media {
-  margin: 14px 0;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #111827;
-}
-
-.post-media img,
-.post-media video {
-  display: block;
-  width: 100%;
-  max-height: 500px;
-  object-fit: contain;
-}
-
-.connection-card {
-  border: 1px solid #e4e7ec;
-  background: #f8f9fc;
-  padding: 14px;
-  border-radius: 12px;
-  margin: 14px 0;
-}
-
-.connection-title {
-  font-weight: 800;
-  margin-bottom: 4px;
-}
-
-.connection-link {
-  color: #5865f2;
-  text-decoration: none;
-  font-size: 14px;
-  word-break: break-all;
-}
-
-.post-actions {
-  display: flex;
-  gap: 18px;
-  padding-top: 13px;
-  border-top: 1px solid #eef0f3;
-}
-
-.post-action {
-  background: none;
-  border: none;
-  color: #667085;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.post-action:hover {
-  color: #5865f2;
-}
-
-/* PROFILE */
-
-.profile-box {
-  max-width: 700px;
-  margin: auto;
-  background: white;
-  border: 1px solid #e4e7ec;
-  border-radius: 18px;
-  padding: 28px;
-  box-shadow: 0 5px 18px rgba(20,30,50,.05);
-}
-
-.profile-photo-area {
-  text-align: center;
-  margin-bottom: 25px;
-}
-
-.profile-avatar {
-  width: 105px;
-  height: 105px;
-  margin: 0 auto 14px;
-  border-radius: 50%;
-  background: #eef0ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  font-size: 45px;
-}
-
-.profile-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-btn {
-  border: 1px solid #d9dee8;
-  background: white;
-  padding: 9px 14px;
-  border-radius: 9px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.profile-field {
-  margin-bottom: 18px;
-}
-
-.profile-field label {
-  display: block;
-  font-weight: 700;
-  margin-bottom: 7px;
-}
-
-.profile-field input,
-.profile-field select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d9dee8;
-  border-radius: 10px;
-  font-size: 15px;
-  outline: none;
-  background: white;
-}
-
-.username-note {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #667085;
-}
-
-.options-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.option {
-  border: 1px solid #d9dee8;
-  background: white;
-  border-radius: 10px;
-  padding: 9px 12px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.option.selected {
-  background: #eef0ff;
-  border-color: #5865f2;
-  color: #4752c4;
-  font-weight: 700;
-}
-
-.profile-save {
-  width: 100%;
-  margin-top: 8px;
-  background: #5865f2;
-  color: white;
-  border: none;
-  padding: 13px;
-  border-radius: 10px;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-.profile-status {
-  margin-top: 12px;
-  text-align: center;
-  font-size: 14px;
-  color: #4752c4;
-  min-height: 20px;
-}
-
-/* ABOUT / SUPPORT */
-
-.about-box,
-.support-box {
-  max-width: 800px;
-  margin: auto;
-  background: white;
-  border: 1px solid #e4e7ec;
-  border-radius: 16px;
-  padding: 30px;
-}
-
-.about-box p,
-.support-box p {
-  margin-bottom: 15px;
-  color: #596273;
-}
-
-footer {
-  background: #111827;
-  color: #d1d5db;
-  text-align: center;
-  padding: 35px 20px;
-  margin-top: 50px;
-}
-
-footer strong {
-  color: white;
-}
-
-@media (max-width: 800px) {
-
-  .hero h1 {
-    font-size: 39px;
-  }
-
-  nav {
-    gap: 9px;
-    font-size: 13px;
-  }
-
-  header {
-    padding: 13px 15px;
-  }
-
-  .navbar {
-    gap: 10px;
-  }
-
-  .logo {
-    font-size: 21px;
-  }
-
-  .profile-box {
-    padding: 20px;
-  }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>FriendHub</title>
+  <meta name="description" content="Meet people, make friends, and discover communities on FriendHub.">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f7fb;
+      color: #172033;
+      line-height: 1.5;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .container {
+      width: min(1120px, 92%);
+      margin: 0 auto;
+    }
+
+    /* HEADER */
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e7eaf0;
+    }
+
+    .nav {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .logo {
+      font-size: 25px;
+      font-weight: 800;
+      color: #5865f2;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links button {
+      border: none;
+      background: transparent;
+      color: #4b5563;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .nav-links button:hover {
+      background: #f0f2ff;
+      color: #5865f2;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 17px;
+      font-weight: 700;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: #5865f2;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #4752c4;
+    }
+
+    .btn-secondary {
+      background: #eef0f7;
+      color: #263043;
+    }
+
+    .btn-danger {
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    /* SECTIONS */
+
+    main {
+      min-height: calc(100vh - 70px);
+    }
+
+    .page {
+      display: none;
+      padding: 55px 0;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* HOME */
+
+    .hero {
+      min-height: 570px;
+      display: flex;
+      align-items: center;
+      text-align: center;
+      background:
+        radial-gradient(circle at top left, rgba(88,101,242,0.12), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(124,58,237,0.10), transparent 35%);
+    }
+
+    .hero-content {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: #eef0ff;
+      color: #5865f2;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      font-size: clamp(42px, 7vw, 72px);
+      line-height: 1.05;
+      margin-bottom: 22px;
+      letter-spacing: -2px;
+    }
+
+    .hero h1 span {
+      color: #5865f2;
+    }
+
+    .hero p {
+      font-size: 19px;
+      color: #667085;
+      max-width: 650px;
+      margin: 0 auto 30px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .features {
+      padding: 60px 0;
+      background: white;
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 35px;
+    }
+
+    .section-title h2 {
+      font-size: 34px;
+      margin-bottom: 8px;
+    }
+
+    .section-title p {
+      color: #667085;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: #f8f9fc;
+      border: 1px solid #e8ebf1;
+      border-radius: 18px;
+      padding: 28px;
+    }
+
+    .feature-icon {
+      font-size: 35px;
+      margin-bottom: 14px;
+    }
+
+    .feature-card h3 {
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      color: #667085;
+    }
+
+    /* DISCOVER */
+
+    .page-header {
+      margin-bottom: 25px;
+    }
+
+    .page-header h1 {
+      font-size: 38px;
+      margin-bottom: 6px;
+    }
+
+    .page-header p {
+      color: #667085;
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 15px 17px;
+      border: 1px solid #dfe3eb;
+      border-radius: 12px;
+      outline: none;
+      background: white;
+      margin-bottom: 15px;
+    }
+
+    .search-box:focus,
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #5865f2;
+      box-shadow: 0 0 0 3px rgba(88,101,242,0.10);
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 25px;
+    }
+
+    .filter-btn {
+      border: 1px solid #dfe3eb;
+      background: white;
+      color: #4b5563;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .filter-btn.active {
+      background: #5865f2;
+      color: white;
+      border-color: #5865f2;
+    }
+
+    /* COMPOSER */
+
+    .composer {
+      background: white;
+      border: 1px solid #e3e7ef;
+      border-radius: 17px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 15px rgba(16,24,40,0.04);
+    }
+
+    .composer h3 {
+      margin-bottom: 13px;
+    }
+
+    .composer textarea {
+      width: 100%;
+      min-height: 90px;
+      resize: vertical;
+      border: 1px solid #dfe3eb;
+      border-radius: 12px;
+      padding: 13px;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    .post-types {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .post-type {
+      border: 1px solid #dfe3eb;
+      background: white;
+      border-radius: 10px;
+      padding: 8px 11px;
+      color: #475467;
+    }
+
+    .post-type.active {
+      border-color: #5865f2;
+      background: #eef0ff;
+      color: #5865f2;
+      font-weight: 700;
+    }
+
+    .composer-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .file-label {
+      border: 1px solid #dfe3eb;
+      background: #fff;
+      border-radius: 10px;
+      padding: 9px 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #mediaInput {
+      display: none;
+    }
+
+    .media-preview {
+      margin: 12px 0 0;
+      display: none;
+      position: relative;
+    }
+
+    .media-preview img,
+    .media-preview video {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 12px;
+      display: block;
+    }
+
+    .remove-media {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.7);
+      color: white;
+    }
+
+    /* POSTS */
+
+    .feed {
+      display: grid;
+      gap: 15px;
+    }
+
+    .post {
+      background: white;
+      border: 1px solid #e3e7ef;
+      border-radius: 17px;
+      padding: 20px;
+      box-shadow: 0 3px 12px rgba(16,24,40,0.035);
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .avatar {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      background: #eef0ff;
+      color: #5865f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .post-user {
+      font-weight: 800;
+    }
+
+    .post-meta {
+      color: #8a94a6;
+      font-size: 13px;
+    }
+
+    .post-content {
+      margin-bottom: 14px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .post-tag {
+      display: inline-block;
+      background: #f1f3f8;
+      color: #536071;
+      border-radius: 8px;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-right: 5px;
+      margin-bottom: 8px;
+    }
+
+    .post-media {
+      margin-top: 12px;
+    }
+
+    .post-media img,
+    .post-media video {
+      width: 100%;
+      max-height: 480px;
+      object-fit: contain;
+      background: #f5f6f8;
+      border-radius: 12px;
+    }
+
+    .post-actions {
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid #edf0f4;
+      padding-top: 12px;
+      margin-top: 14px;
+    }
+
+    .post-action {
+      border: none;
+      background: transparent;
+      color: #667085;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .post-action:hover {
+      background: #f4f5f8;
+    }
+
+    .post-action.liked {
+      color: #e11d48;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #667085;
+      padding: 35px;
+    }
+
+    /* PROFILE */
+
+    .profile-card {
+      background: white;
+      border: 1px solid #e3e7ef;
+      border-radius: 18px;
+      padding: 28px;
+      max-width: 750px;
+      margin: 0 auto;
+    }
+
+    .profile-photo-section {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .profile-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      background: #eef0ff;
+      color: #5865f2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 38px;
+      font-weight: 800;
+      overflow: hidden;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-photo-label {
+      display: inline-block;
+      cursor: pointer;
+      color: #5865f2;
+      font-weight: 700;
+    }
+
+    #profilePhotoInput {
+      display: none;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 7px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      border: 1px solid #dfe3eb;
+      border-radius: 10px;
+      padding: 12px;
+      outline: none;
+      background: white;
+    }
+
+    .help-text {
+      color: #8a94a6;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    .option-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .option-btn {
+      border: 1px solid #dfe3eb;
+      background: white;
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: #475467;
+      cursor: pointer;
+    }
+
+    .option-btn.selected {
+      background: #eef0ff;
+      border-color: #5865f2;
+      color: #5865f2;
+      font-weight: 700;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+
+    /* ABOUT / SUPPORT */
+
+    .content-card {
+      background: white;
+      border: 1px solid #e3e7ef;
+      border-radius: 18px;
+      padding: 30px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .content-card h2 {
+      margin-bottom: 15px;
+    }
+
+    .content-card p {
+      color: #667085;
+      margin-bottom: 15px;
+    }
+
+    .content-card ul {
+      padding-left: 22px;
+      color: #667085;
+    }
+
+    .support-email {
+      display: inline-block;
+      color: #5865f2;
+      font-weight: 800;
+      margin-top: 10px;
+    }
+
+    /* MODAL */
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(15,23,42,0.55);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: white;
+      width: min(440px, 100%);
+      border-radius: 18px;
+      padding: 25px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-close {
+      position: absolute;
+      right: 14px;
+      top: 12px;
+      border: none;
+      background: transparent;
+      font-size: 25px;
+      color: #667085;
+    }
+
+    .modal h2 {
+      margin-bottom: 7px;
+    }
+
+    .modal-subtitle {
+      color: #667085;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 15px;
+      color: #667085;
+      font-size: 14px;
+    }
+
+    .auth-switch button,
+    .forgot-btn {
+      border: none;
+      background: transparent;
+      color: #5865f2;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .forgot-wrap {
+      text-align: right;
+      margin-top: -8px;
+      margin-bottom: 15px;
+    }
+
+    .message {
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      display: none;
+      font-size: 14px;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .message.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    /* FOOTER */
+
+    footer {
+      background: #111827;
+      color: #cbd5e1;
+      padding: 35px 0;
+      margin-top: 30px;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer-brand {
+      font-weight: 800;
+      color: white;
+      margin-bottom: 6px;
+    }
+
+    .footer-small {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 850px) {
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        padding: 10px 0;
+        flex-wrap: wrap;
+      }
+
+      .nav-links {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .hero {
+        min-height: 500px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        padding: 35px 0;
+      }
+
+      .hero h1 {
+        font-size: 43px;
+      }
+
+      .hero p {
+        font-size: 17px;
+      }
+
+      .auth-buttons {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .nav-links button {
+        font-size: 13px;
+        padding: 8px 7px;
+      }
+
+      .profile-card,
+      .content-card,
+      .composer,
+      .post {
+        padding: 18px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<header>
-  <div class="navbar">
+  <!-- HEADER -->
 
-    <div class="logo" onclick="goToSection('home')">
-      FriendHub
-    </div>
+  <header>
+    <div class="container nav">
 
-    <nav>
-      <a onclick="goToSection('home')">Home</a>
-      <a onclick="goToSection('discover')">Discover</a>
-      <a onclick="goToSection('profile')" class="profile-nav">👤 Profile</a>
-      <a onclick="goToSection('about')">About</a>
-      <a onclick="goToSection('support')">Support</a>
-    </nav>
+      <div class="logo" onclick="showPage('home')">
+        FriendHub
+      </div>
 
-  </div>
-</header>
+      <nav class="nav-links">
+        <button onclick="showPage('home')">Home</button>
+        <button onclick="showPage('discover')">Discover</button>
+        <button onclick="showPage('profile')">Profile</button>
+        <button onclick="showPage('about')">About</button>
+        <button onclick="showPage('support')">Support</button>
+      </nav>
 
+      <div class="auth-buttons">
+        <button class="btn btn-secondary" id="loginBtn" onclick="openAuth('login')">
+          Log In
+        </button>
 
-<!-- HOME -->
+        <button class="btn btn-primary" id="signupBtn" onclick="openAuth('signup')">
+          Create Account
+        </button>
 
-<section id="home">
-
-  <div class="hero">
-
-    <h1>Meet People. Make Friends.</h1>
-
-    <p>
-      Discover people, friendships and communities based on your interests
-      and the platforms you use.
-    </p>
-
-    <div class="buttons">
-
-      <button
-        class="btn primary"
-        onclick="goToSection('discover')"
-      >
-        Discover People
-      </button>
-
-      <button
-        class="btn secondary"
-        onclick="goToSection('about')"
-      >
-        Learn More
-      </button>
+        <button class="btn btn-secondary" id="logoutBtn" onclick="logout()" style="display:none;">
+          Log Out
+        </button>
+      </div>
 
     </div>
-
-  </div>
-
-</section>
+  </header>
 
 
-<!-- DISCOVER -->
+  <main>
 
-<section id="discover">
+    <!-- HOME -->
 
-  <div class="section-title">
+    <section id="home" class="page active">
 
-    <h2>Discover</h2>
+      <div class="hero">
+        <div class="container hero-content">
 
-    <p>
-      Find people and communities that match your interests.
-    </p>
+          <div class="hero-badge">
+            🌎 A place to meet people
+          </div>
 
-  </div>
+          <h1>
+            Meet People.<br>
+            <span>Make Friends.</span>
+          </h1>
 
+          <p>
+            Discover people, friendships and communities based on
+            your interests and the platforms you use.
+          </p>
 
-  <div class="search-box">
+          <div class="hero-buttons">
+            <button class="btn btn-primary" onclick="showPage('discover')">
+              Discover People
+            </button>
 
-    <input
-      id="searchInput"
-      type="text"
-      placeholder="Search people, interests, groups..."
-      oninput="searchPosts()"
-    >
+            <button class="btn btn-secondary" onclick="showPage('about')">
+              Learn More
+            </button>
+          </div>
 
-  </div>
-
-
-  <div class="filters">
-
-    <button
-      class="filter active"
-      onclick="filterPosts('all', this)"
-    >
-      All
-    </button>
-
-    <button
-      class="filter"
-      onclick="filterPosts('people', this)"
-    >
-      People
-    </button>
-
-    <button
-      class="filter"
-      onclick="filterPosts('whatsapp', this)"
-    >
-      WhatsApp
-    </button>
-
-    <button
-      class="filter"
-      onclick="filterPosts('telegram', this)"
-    >
-      Telegram
-    </button>
-
-    <button
-      class="filter"
-      onclick="filterPosts('snapchat', this)"
-    >
-      Snapchat
-    </button>
-
-  </div>
+        </div>
+      </div>
 
 
-  <!-- CREATE POST -->
+      <div class="features">
 
-  <div class="composer">
+        <div class="container">
 
-    <h3>Create a post</h3>
+          <div class="section-title">
+            <h2>Find Your Community</h2>
+            <p>Connect around the things you enjoy.</p>
+          </div>
 
-    <textarea
-      id="postText"
-      placeholder="What are you looking for?"
-    ></textarea>
+          <div class="feature-grid">
+
+            <div class="feature-card">
+              <div class="feature-icon">👤</div>
+              <h3>Meet People</h3>
+              <p>
+                Discover people with similar interests,
+                languages, hobbies and goals.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">💬</div>
+              <h3>Find Communities</h3>
+              <p>
+                Discover WhatsApp and Telegram communities
+                that match your interests.
+              </p>
+            </div>
+
+            <div class="feature-card">
+              <div class="feature-icon">🌎</div>
+              <h3>Make Connections</h3>
+              <p>
+                Find new friends from different countries
+                and backgrounds.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
 
 
-    <div class="post-types">
+    <!-- DISCOVER -->
 
-      <button
-        class="type-btn selected"
-        onclick="selectType('people', this)"
-      >
-        👤 Personal contact
-      </button>
+    <section id="discover" class="page">
 
-      <button
-        class="type-btn"
-        onclick="selectType('whatsapp', this)"
-      >
-        🟢 WhatsApp group
-      </button>
+      <div class="container">
 
-      <button
-        class="type-btn"
-        onclick="selectType('telegram', this)"
-      >
-        🔵 Telegram group
-      </button>
+        <div class="page-header">
+          <h1>Discover</h1>
+          <p>Find people and communities that match what you're looking for.</p>
+        </div>
 
-      <button
-        class="type-btn"
-        onclick="selectType('snapchat', this)"
-      >
-        👻 Snapchat
-      </button>
+
+        <input
+          id="searchInput"
+          class="search-box"
+          type="text"
+          placeholder="Search people, interests, groups..."
+          oninput="renderPosts()"
+        >
+
+
+        <div class="filters">
+
+          <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">
+            All
+          </button>
+
+          <button class="filter-btn" data-filter="people" onclick="setFilter('people', this)">
+            👤 People
+          </button>
+
+          <button class="filter-btn" data-filter="whatsapp" onclick="setFilter('whatsapp', this)">
+            🟢 WhatsApp
+          </button>
+
+          <button class="filter-btn" data-filter="telegram" onclick="setFilter('telegram', this)">
+            🔵 Telegram
+          </button>
+
+          <button class="filter-btn" data-filter="snapchat" onclick="setFilter('snapchat', this)">
+            👻 Snapchat
+          </button>
+
+        </div>
+
+
+        <!-- COMPOSER -->
+
+        <div class="composer">
+
+          <h3>Create a post</h3>
+
+          <div id="loginRequiredMessage" class="message error">
+            Please log in or create an account before creating a post.
+          </div>
+
+          <textarea
+            id="postText"
+            placeholder="What are you looking for?"
+          ></textarea>
+
+
+          <div class="post-types">
+
+            <button
+              class="post-type active"
+              data-post-type="personal"
+              onclick="selectPostType('personal', this)"
+            >
+              👤 Personal contact
+            </button>
+
+            <button
+              class="post-type"
+              data-post-type="whatsapp"
+              onclick="selectPostType('whatsapp', this)"
+            >
+              🟢 WhatsApp group
+            </button>
+
+            <button
+              class="post-type"
+              data-post-type="telegram"
+              onclick="selectPostType('telegram', this)"
+            >
+              🔵 Telegram group
+            </button>
+
+            <button
+              class="post-type"
+              data-post-type="snapchat"
+              onclick="selectPostType('snapchat', this)"
+            >
+              👻 Snapchat
+            </button>
+
+          </div>
+
+
+          <div class="composer-actions">
+
+            <div>
+
+              <label class="file-label" for="mediaInput">
+                📎 Add media
+              </label>
+
+              <input
+                id="mediaInput"
+                type="file"
+                accept="image/*,video/*"
+                onchange="handleMedia(event)"
+              >
+
+            </div>
+
+            <button class="btn btn-primary" onclick="createPost()">
+              Post
+            </button>
+
+          </div>
+
+
+          <div id="mediaPreview" class="media-preview">
+
+            <button
+              class="remove-media"
+              onclick="removeMedia()"
+            >
+              ×
+            </button>
+
+            <div id="mediaPreviewContent"></div>
+
+          </div>
+
+        </div>
+
+
+        <!-- FEED -->
+
+        <div id="feed" class="feed"></div>
+
+      </div>
+
+    </section>
+
+
+    <!-- PROFILE -->
+
+    <section id="profile" class="page">
+
+      <div class="container">
+
+        <div class="page-header">
+          <h1>Your Profile</h1>
+          <p>Customize how people discover you on FriendHub.</p>
+        </div>
+
+
+        <div id="profileLoginMessage" class="content-card" style="display:none;">
+          <h2>Create an account first</h2>
+
+          <p>
+            Your profile is connected to your FriendHub account.
+            Please log in or create an account to continue.
+          </p>
+
+          <button class="btn btn-primary" onclick="openAuth('signup')">
+            Create Account
+          </button>
+        </div>
+
+
+        <div id="profileCard" class="profile-card">
+
+          <div class="profile-photo-section">
+
+            <div id="profileAvatar" class="profile-avatar">
+              👤
+            </div>
+
+            <label class="profile-photo-label" for="profilePhotoInput">
+              📷 Change profile photo
+            </label>
+
+            <input
+              id="profilePhotoInput"
+              type="file"
+              accept="image/*"
+              onchange="handleProfilePhoto(event)"
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="username">
+              Username
+            </label>
+
+            <input
+              id="username"
+              type="text"
+              maxlength="20"
+              placeholder="@username"
+            >
+
+            <div class="help-text">
+              Your username is public. You can change it once every 30 days.
+            </div>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="age">
+              Age
+            </label>
+
+            <input
+              id="age"
+              type="number"
+              min="1"
+              max="120"
+              placeholder="Your age"
+            >
+
+            <div class="help-text">
+              Your exact age is private and is not displayed publicly.
+            </div>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="country">
+              Country
+            </label>
+
+            <input
+              id="country"
+              type="text"
+              maxlength="80"
+              placeholder="Your country"
+            >
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>
+              Languages
+            </label>
+
+            <div id="languagesOptions" class="option-grid"></div>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>
+              Interests
+            </label>
+
+            <div id="interestsOptions" class="option-grid"></div>
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label>
+              What are you looking for?
+            </label>
+
+            <div id="lookingForOptions" class="option-grid"></div>
+
+          </div>
+
+
+          <div class="profile-actions">
+
+            <button class="btn btn-primary" onclick="saveProfile()">
+              Save Profile
+            </button>
+
+            <button
+              class="btn btn-secondary"
+              onclick="loadCurrentProfile()"
+            >
+              Reset
+            </button>
+
+          </div>
+
+
+          <div
+            id="profileMessage"
+            class="message"
+            style="margin-top:15px;"
+          ></div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ABOUT -->
+
+    <section id="about" class="page">
+
+      <div class="container">
+
+        <div class="page-header">
+          <h1>About FriendHub</h1>
+          <p>A simple place to discover people and communities.</p>
+        </div>
+
+
+        <div class="content-card">
+
+          <h2>What is FriendHub?</h2>
+
+          <p>
+            FriendHub is a social discovery platform designed to help
+            people discover friendships, communities and connections
+            based on shared interests.
+          </p>
+
+          <p>
+            Users can create posts, discover people and find
+            WhatsApp, Telegram and Snapchat connections.
+          </p>
+
+          <h2>What you can do</h2>
+
+          <ul>
+            <li>Create a personal profile.</li>
+            <li>Discover people with similar interests.</li>
+            <li>Find WhatsApp communities.</li>
+            <li>Find Telegram communities.</li>
+            <li>Share Snapchat-related posts.</li>
+            <li>Create posts and interact with the community.</li>
+          </ul>
+
+          <br>
+
+          <h2>Important</h2>
+
+          <p>
+            FriendHub is an independent platform and is not affiliated
+            with Snapchat, WhatsApp or Telegram.
+          </p>
+
+          <p>
+            FriendHub is designed with safety, privacy and
+            age-appropriate interactions in mind.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- SUPPORT -->
+
+    <section id="support" class="page">
+
+      <div class="container">
+
+        <div class="page-header">
+          <h1>Support</h1>
+          <p>Need help with FriendHub?</p>
+        </div>
+
+
+        <div class="content-card">
+
+          <h2>Contact FriendHub Support</h2>
+
+          <p>
+            If you have a question, experience a problem or need
+            assistance with your account, contact us by email.
+          </p>
+
+          <a
+            class="support-email"
+            href="mailto:friendhub.support@gmail.com"
+          >
+            friendhub.support@gmail.com
+          </a>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- FOOTER -->
+
+  <footer>
+
+    <div class="container footer-inner">
+
+      <div>
+        <div class="footer-brand">
+          FriendHub
+        </div>
+
+        <div class="footer-small">
+          Meet People. Make Friends.
+        </div>
+      </div>
+
+      <div class="footer-small">
+        © 2026 FriendHub. All rights reserved.
+      </div>
 
     </div>
 
-
-    <input
-      id="linkInput"
-      class="link-input"
-      type="text"
-      placeholder="Paste your WhatsApp or Telegram group link..."
-    >
+  </footer>
 
 
-    <input
-      id="mediaInput"
-      class="hidden-file"
-      type="file"
-      accept="image/*,video/*"
-      onchange="previewMedia(event)"
-    >
+  <!-- AUTH MODAL -->
 
+  <div id="authModal" class="modal-overlay">
 
-    <div
-      id="mediaPreview"
-      class="media-preview"
-    >
+    <div class="modal">
 
       <button
-        class="remove-media"
-        onclick="removeMedia()"
+        class="modal-close"
+        onclick="closeModal('authModal')"
       >
         ×
       </button>
 
-      <div id="previewContent"></div>
+
+      <h2 id="authTitle">
+        Log In
+      </h2>
+
+      <p id="authSubtitle" class="modal-subtitle">
+        Welcome back to FriendHub.
+      </p>
+
+
+      <div id="authMessage" class="message"></div>
+
+
+      <div class="form-group">
+
+        <label for="authEmail">
+          Email
+        </label>
+
+        <input
+          id="authEmail"
+          type="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+        >
+
+      </div>
+
+
+      <div class="form-group">
+
+        <label for="authPassword">
+          Password
+        </label>
+
+        <input
+          id="authPassword"
+          type="password"
+          placeholder="Password"
+          autocomplete="current-password"
+        >
+
+      </div>
+
+
+      <div id="confirmPasswordGroup" class="form-group" style="display:none;">
+
+        <label for="authConfirmPassword">
+          Confirm Password
+        </label>
+
+        <input
+          id="authConfirmPassword"
+          type="password"
+          placeholder="Confirm password"
+          autocomplete="new-password"
+        >
+
+      </div>
+
+
+      <div id="forgotWrap" class="forgot-wrap">
+
+        <button
+          class="forgot-btn"
+          onclick="openResetPassword()"
+        >
+          Forgot password?
+        </button>
+
+      </div>
+
+
+      <button
+        id="authSubmitBtn"
+        class="btn btn-primary"
+        style="width:100%;"
+        onclick="submitAuth()"
+      >
+        Log In
+      </button>
+
+
+      <div class="auth-switch">
+
+        <span id="authSwitchText">
+          Don't have an account?
+        </span>
+
+        <button
+          id="authSwitchButton"
+          onclick="toggleAuthMode()"
+        >
+          Create Account
+        </button>
+
+      </div>
 
     </div>
 
+  </div>
 
-    <div class="composer-bottom">
+
+  <!-- PASSWORD RESET MODAL -->
+
+  <div id="resetModal" class="modal-overlay">
+
+    <div class="modal">
 
       <button
-        class="media-btn"
-        onclick="document.getElementById('mediaInput').click()"
+        class="modal-close"
+        onclick="closeModal('resetModal')"
       >
-        📎 Add media
+        ×
       </button>
 
-      <button
-        class="post-btn"
-        onclick="createPost()"
-      >
-        Post
-      </button>
+      <h2>Reset Password</h2>
 
-    </div>
+      <p class="modal-subtitle">
+        Enter your email and we'll send you a password reset link.
+      </p>
 
-  </div>
+      <div id="resetMessage" class="message"></div>
 
+      <div class="form-group">
 
-  <!-- FEED -->
+        <label for="resetEmail">
+          Email
+        </label>
 
-  <div id="feed" class="feed">
-
-
-    <!-- SAMPLE POST -->
-
-    <article
-      class="post"
-      data-type="whatsapp"
-      data-search="Alex gaming music whatsapp friends"
-    >
-
-      <div class="post-header">
-
-        <div class="avatar">
-          👨🏻
-        </div>
-
-        <div>
-
-          <div class="post-name">
-            @AlexGaming
-          </div>
-
-          <div class="post-meta">
-            🎮 Gaming · 🎵 Music
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="post-text">
-        Looking for Snapchat and gaming friends! 🎮
-      </div>
-
-
-      <div class="connection-card">
-
-        <div class="connection-title">
-          🟢 WhatsApp Gaming Friends
-        </div>
-
-        <div class="post-meta">
-          Community
-        </div>
-
-      </div>
-
-
-      <div class="post-actions">
-
-        <button
-          class="post-action"
-          onclick="likePost(this)"
+        <input
+          id="resetEmail"
+          type="email"
+          placeholder="you@example.com"
         >
-          ♡ Like
-        </button>
-
-        <button class="post-action">
-          💬 Comment
-        </button>
-
-        <button class="post-action">
-          ⚠️ Report
-        </button>
 
       </div>
-
-    </article>
-
-
-    <!-- SAMPLE POST -->
-
-    <article
-      class="post"
-      data-type="telegram"
-      data-search="Sofia Spanish English telegram language exchange"
-    >
-
-      <div class="post-header">
-
-        <div class="avatar">
-          👩🏻
-        </div>
-
-        <div>
-
-          <div class="post-name">
-            @SofiaLanguages
-          </div>
-
-          <div class="post-meta">
-            🗣️ Spanish · English
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="post-text">
-        Looking for people to practice languages and make new friends. 🌎
-      </div>
-
-
-      <div class="connection-card">
-
-        <div class="connection-title">
-          🔵 Telegram Language Exchange
-        </div>
-
-        <div class="post-meta">
-          Community
-        </div>
-
-      </div>
-
-
-      <div class="post-actions">
-
-        <button
-          class="post-action"
-          onclick="likePost(this)"
-        >
-          ♡ Like
-        </button>
-
-        <button class="post-action">
-          💬 Comment
-        </button>
-
-        <button class="post-action">
-          ⚠️ Report
-        </button>
-
-      </div>
-
-    </article>
-
-
-    <!-- SAMPLE POST -->
-
-    <article
-      class="post"
-      data-type="snapchat"
-      data-search="Jordan Canada Snapchat movies gaming"
-    >
-
-      <div class="post-header">
-
-        <div class="avatar">
-          🧑🏻
-        </div>
-
-        <div>
-
-          <div class="post-name">
-            @JordanMovies
-          </div>
-
-          <div class="post-meta">
-            👻 Snapchat · 🎬 Movies · 🎮 Gaming
-          </div>
-
-        </div>
-
-      </div>
-
-
-      <div class="post-text">
-        Looking for people to talk to and share movie recommendations. 🍿
-      </div>
-
-
-      <div class="connection-card">
-
-        <div class="connection-title">
-          👻 Snapchat
-        </div>
-
-        <div class="post-meta">
-          Looking for friends
-        </div>
-
-      </div>
-
-
-      <div class="post-actions">
-
-        <button
-          class="post-action"
-          onclick="likePost(this)"
-        >
-          ♡ Like
-        </button>
-
-        <button class="post-action">
-          💬 Comment
-        </button>
-
-        <button class="post-action">
-          ⚠️ Report
-        </button>
-
-      </div>
-
-    </article>
-
-  </div>
-
-</section>
-
-
-<!-- PROFILE -->
-
-<section id="profile">
-
-  <div class="section-title">
-
-    <h2>Your Profile</h2>
-
-    <p>
-      Create your FriendHub identity.
-    </p>
-
-  </div>
-
-
-  <div class="profile-box">
-
-
-    <div class="profile-photo-area">
-
-      <div
-        id="profileAvatar"
-        class="profile-avatar"
-      >
-        👤
-      </div>
-
-
-      <input
-        id="profilePhotoInput"
-        class="hidden-file"
-        type="file"
-        accept="image/*"
-        onchange="previewProfilePhoto(event)"
-      >
-
 
       <button
-        class="photo-btn"
-        onclick="document.getElementById('profilePhotoInput').click()"
+        class="btn btn-primary"
+        style="width:100%;"
+        onclick="sendPasswordReset()"
       >
-        📷 Add profile photo
+        Send Reset Link
       </button>
 
     </div>
 
+  </div>
 
-    <!-- USERNAME -->
 
-    <div class="profile-field">
+  <!-- NEW PASSWORD MODAL -->
 
-      <label>
-        Username
-      </label>
+  <div id="newPasswordModal" class="modal-overlay">
 
-      <input
-        id="usernameInput"
-        type="text"
-        placeholder="@YourUsername"
-        maxlength="20"
+    <div class="modal">
+
+      <h2>Create New Password</h2>
+
+      <p class="modal-subtitle">
+        Choose a new password for your FriendHub account.
+      </p>
+
+      <div id="newPasswordMessage" class="message"></div>
+
+      <div class="form-group">
+
+        <label for="newPassword">
+          New Password
+        </label>
+
+        <input
+          id="newPassword"
+          type="password"
+          placeholder="New password"
+        >
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="newPasswordConfirm">
+          Confirm New Password
+        </label>
+
+        <input
+          id="newPasswordConfirm"
+          type="password"
+          placeholder="Confirm new password"
+        >
+
+      </div>
+
+      <button
+        class="btn btn-primary"
+        style="width:100%;"
+        onclick="updatePassword()"
       >
-
-      <div class="username-note">
-        Your username is public. You can change it once every 30 days.
-      </div>
+        Update Password
+      </button>
 
     </div>
-
-
-    <!-- AGE -->
-
-    <div class="profile-field">
-
-      <label>
-        Age
-      </label>
-
-      <input
-        id="ageInput"
-        type="number"
-        min="1"
-        max="120"
-        placeholder="Your age"
-      >
-
-    </div>
-
-
-    <!-- COUNTRY -->
-
-    <div class="profile-field">
-
-      <label>
-        Country
-      </label>
-
-      <select id="countryInput">
-
-        <option value="">
-          Select your country
-        </option>
-
-        <option>United States</option>
-        <option>Canada</option>
-        <option>Mexico</option>
-        <option>Brazil</option>
-        <option>Colombia</option>
-        <option>Argentina</option>
-        <option>Chile</option>
-        <option>Peru</option>
-        <option>Spain</option>
-        <option>United Kingdom</option>
-        <option>France</option>
-        <option>Germany</option>
-        <option>Italy</option>
-        <option>Japan</option>
-        <option>South Korea</option>
-        <option>India</option>
-        <option>Australia</option>
-        <option>Other</option>
-
-      </select>
-
-    </div>
-
-
-    <!-- LANGUAGES -->
-
-    <div class="profile-field">
-
-      <label>
-        🗣️ Languages
-      </label>
-
-      <div class="options-grid">
-
-        <button class="option" onclick="toggleOption(this)">
-          English
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          Spanish
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          Portuguese
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          French
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          German
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          Italian
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          Japanese
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          Korean
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          Other
-        </button>
-
-      </div>
-
-    </div>
-
-
-    <!-- INTERESTS -->
-
-    <div class="profile-field">
-
-      <label>
-        ❤️ Interests
-      </label>
-
-      <div class="options-grid">
-
-        <button class="option" onclick="toggleOption(this)">
-          🎮 Gaming
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🎵 Music
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🎬 Movies
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          📺 TV Shows
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          📚 Books
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          ⚽ Sports
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          ✈️ Travel
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          💻 Technology
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🎨 Art
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🍳 Food
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🐶 Animals
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          💪 Fitness
-        </button>
-
-      </div>
-
-    </div>
-
-
-    <!-- WHAT ARE YOU LOOKING FOR -->
-
-    <div class="profile-field">
-
-      <label>
-        🔎 What are you looking for?
-      </label>
-
-      <div class="options-grid">
-
-        <button class="option" onclick="toggleOption(this)">
-          🤝 New friends
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          💬 Someone to talk to
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🎮 Gaming partners
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🎵 People with similar music taste
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🎬 Movie & TV friends
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          📚 Study partners
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🗣️ Language exchange
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🌎 Friends from other countries
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          👥 Communities & groups
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🟢 WhatsApp groups
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🔵 Telegram groups
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          👻 Snapchat friends
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🎨 People with similar interests
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🏀 Sports partners
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          ✈️ Travel friends
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          💻 Networking
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          🧑‍🤝‍🧑 Meet new people
-        </button>
-
-        <button class="option" onclick="toggleOption(this)">
-          ✏️ Other
-        </button>
-
-      </div>
-
-    </div>
-
-
-    <button
-      class="profile-save"
-      onclick="saveProfile()"
-    >
-      Save Profile
-    </button>
-
-
-    <div
-      id="profileStatus"
-      class="profile-status"
-    ></div>
 
   </div>
-
-</section>
-
-
-<!-- ABOUT -->
-
-<section id="about">
-
-  <div class="section-title">
-
-    <h2>About FriendHub</h2>
-
-    <p>
-      A place to discover friendships and communities.
-    </p>
-
-  </div>
-
-
-  <div class="about-box">
-
-    <p>
-      FriendHub is a social discovery platform designed to help people
-      discover new friendships, communities and connections based on
-      shared interests.
-    </p>
-
-    <p>
-      Users can create posts, discover people and find WhatsApp,
-      Telegram and Snapchat connections.
-    </p>
-
-    <p>
-      FriendHub is an independent platform and is not affiliated with
-      Snapchat, WhatsApp or Telegram.
-    </p>
-
-    <p>
-      <strong>Safety matters.</strong>
-      FriendHub is designed with reporting, privacy and age-appropriate
-      interactions in mind.
-    </p>
-
-  </div>
-
-</section>
-
-
-<!-- SUPPORT -->
-
-<section id="support">
-
-  <div class="section-title">
-
-    <h2>Support</h2>
-
-    <p>
-      Need help? Contact the FriendHub team.
-    </p>
-
-  </div>
-
-
-  <div class="support-box">
-
-    <p>
-      For questions, technical problems or reports, contact:
-    </p>
-
-    <p>
-      <strong>
-        friendhub.support@gmail.com
-      </strong>
-    </p>
-
-
-    <button
-      class="btn primary"
-      onclick="window.location.href='mailto:friendhub.support@gmail.com?subject=FriendHub%20Support'"
-    >
-      Report a Problem
-    </button>
-
-  </div>
-
-</section>
-
-
-<footer>
-
-  <strong>
-    FriendHub
-  </strong>
-
-  <p>
-    © 2026 FriendHub. Independent platform.
-  </p>
-
-</footer>
 
 
 <script>
 
-let selectedType = "people";
-let selectedMediaURL = null;
-let profilePhotoURL = null;
+/* =========================================================
+   SUPABASE CONFIGURATION
+   ========================================================= */
+
+const SUPABASE_URL =
+  "https://cxosofpxfmjkrhfabrqc.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_TPezCBhcWobUpElquePVwg_WamONWCM";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    }
+  );
 
 
-/* NAVIGATION */
+/* =========================================================
+   APP STATE
+   ========================================================= */
 
-function goToSection(sectionId) {
+let currentUser = null;
+let currentProfile = null;
 
-  document
-    .getElementById(sectionId)
-    .scrollIntoView({
-      behavior: "smooth"
-    });
+let currentFilter = "all";
+let currentPostType = "personal";
 
+let selectedMedia = null;
+let selectedProfilePhoto = null;
+
+let authMode = "login";
+
+
+/* =========================================================
+   OPTIONS
+   ========================================================= */
+
+const languageOptions = [
+  "🇺🇸 English",
+  "🇪🇸 Spanish",
+  "🇧🇷 Portuguese",
+  "🇫🇷 French",
+  "🇩🇪 German",
+  "🇮🇹 Italian",
+  "🇯🇵 Japanese",
+  "🇰🇷 Korean",
+  "🇨🇳 Chinese",
+  "🌎 Other"
+];
+
+const interestOptions = [
+  "🎮 Gaming",
+  "🎵 Music",
+  "🎬 Movies & TV",
+  "📚 Books",
+  "⚽ Sports",
+  "💻 Technology",
+  "🎨 Art",
+  "✈️ Travel",
+  "🍳 Food",
+  "📸 Photography",
+  "🧠 Psychology",
+  "🏋️ Fitness",
+  "🌱 Nature",
+  "🎭 Entertainment",
+  "🗣️ Languages",
+  "🌎 Culture",
+  "✨ Other"
+];
+
+const lookingForOptions = [
+  "🤝 New friends",
+  "💬 Someone to talk to",
+  "🎮 Gaming partners",
+  "🎵 People with similar music taste",
+  "🎬 Movie & TV friends",
+  "📚 Study partners",
+  "🗣️ Language exchange",
+  "🌎 Friends from other countries",
+  "👥 Communities & groups",
+  "🟢 WhatsApp groups",
+  "🔵 Telegram groups",
+  "👻 Snapchat friends",
+  "🎨 People with similar interests",
+  "🏀 Sports partners",
+  "✈️ Travel friends",
+  "💻 Networking",
+  "🧑‍🤝‍🧑 Meet new people",
+  "✏️ Other"
+];
+
+
+/* =========================================================
+   SAMPLE POSTS
+   ========================================================= */
+
+let posts = [
+
+  {
+    id: 1,
+    username: "@AlexGaming",
+    text: "Looking for people to play games and hang out with! 🎮",
+    type: "whatsapp",
+    tags: ["🎮 Gaming", "🎵 Music"],
+    time: "Sample post",
+    media: null,
+    likes: 0,
+    liked: false
+  },
+
+  {
+    id: 2,
+    username: "@SofiaLanguages",
+    text: "Looking for people interested in practicing Spanish and English together.",
+    type: "telegram",
+    tags: ["🗣️ Spanish", "🇺🇸 English"],
+    time: "Sample post",
+    media: null,
+    likes: 0,
+    liked: false
+  },
+
+  {
+    id: 3,
+    username: "@JordanMovies",
+    text: "Anyone here into movies, gaming and Snapchat? 👻",
+    type: "snapchat",
+    tags: ["👻 Snapchat", "🎬 Movies", "🎮 Gaming"],
+    time: "Sample post",
+    media: null,
+    likes: 0,
+    liked: false
+  }
+
+];
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function showPage(pageId) {
+
+  document.querySelectorAll(".page").forEach(page => {
+    page.classList.remove("active");
+  });
+
+  const page = document.getElementById(pageId);
+
+  if (page) {
+    page.classList.add("active");
+  }
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+
+  if (pageId === "discover") {
+    renderPosts();
+  }
+
+  if (pageId === "profile") {
+    updateProfileVisibility();
+
+    if (currentUser) {
+      loadCurrentProfile();
+    }
+  }
 }
 
 
-/* POST TYPE */
+/* =========================================================
+   MODALS
+   ========================================================= */
 
-function selectType(type, button) {
+function openModal(id) {
+  document.getElementById(id).classList.add("active");
+}
 
-  selectedType = type;
+function closeModal(id) {
+  document.getElementById(id).classList.remove("active");
+}
 
-  document
-    .querySelectorAll(".type-btn")
-    .forEach(function(btn) {
-      btn.classList.remove("selected");
-    });
 
-  button.classList.add("selected");
+/* =========================================================
+   AUTH MODE
+   ========================================================= */
 
-  const linkInput =
-    document.getElementById("linkInput");
+function openAuth(mode) {
 
-  if (
-    type === "whatsapp" ||
-    type === "telegram"
-  ) {
+  authMode = mode;
 
-    linkInput.style.display = "block";
+  clearAuthMessage();
 
-    if (type === "whatsapp") {
+  document.getElementById("authEmail").value = "";
+  document.getElementById("authPassword").value = "";
+  document.getElementById("authConfirmPassword").value = "";
 
-      linkInput.placeholder =
-        "Paste your WhatsApp group link...";
+  updateAuthModal();
+
+  openModal("authModal");
+}
+
+
+function updateAuthModal() {
+
+  const title =
+    document.getElementById("authTitle");
+
+  const subtitle =
+    document.getElementById("authSubtitle");
+
+  const submit =
+    document.getElementById("authSubmitBtn");
+
+  const switchText =
+    document.getElementById("authSwitchText");
+
+  const switchButton =
+    document.getElementById("authSwitchButton");
+
+  const confirmGroup =
+    document.getElementById("confirmPasswordGroup");
+
+  const forgotWrap =
+    document.getElementById("forgotWrap");
+
+
+  if (authMode === "signup") {
+
+    title.textContent = "Create Account";
+
+    subtitle.textContent =
+      "Join FriendHub and start discovering people.";
+
+    submit.textContent = "Create Account";
+
+    switchText.textContent =
+      "Already have an account?";
+
+    switchButton.textContent =
+      "Log In";
+
+    confirmGroup.style.display =
+      "block";
+
+    forgotWrap.style.display =
+      "none";
+
+  } else {
+
+    title.textContent = "Log In";
+
+    subtitle.textContent =
+      "Welcome back to FriendHub.";
+
+    submit.textContent = "Log In";
+
+    switchText.textContent =
+      "Don't have an account?";
+
+    switchButton.textContent =
+      "Create Account";
+
+    confirmGroup.style.display =
+      "none";
+
+    forgotWrap.style.display =
+      "block";
+  }
+}
+
+
+function toggleAuthMode() {
+
+  authMode =
+    authMode === "login"
+      ? "signup"
+      : "login";
+
+  clearAuthMessage();
+
+  updateAuthModal();
+}
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
+async function submitAuth() {
+
+  const email =
+    document.getElementById("authEmail")
+      .value
+      .trim();
+
+  const password =
+    document.getElementById("authPassword")
+      .value;
+
+  const confirmPassword =
+    document.getElementById("authConfirmPassword")
+      .value;
+
+
+  if (!email || !password) {
+
+    showAuthMessage(
+      "Please enter your email and password.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  if (authMode === "signup") {
+
+    if (password.length < 8) {
+
+      showAuthMessage(
+        "Password must be at least 8 characters.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    if (password !== confirmPassword) {
+
+      showAuthMessage(
+        "Passwords do not match.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    const { data, error } =
+      await supabaseClient.auth.signUp({
+
+        email,
+        password,
+
+        options: {
+          emailRedirectTo:
+            "https://friendhub.paredesarixon.workers.dev"
+        }
+
+      });
+
+
+    if (error) {
+
+      showAuthMessage(
+        error.message,
+        "error"
+      );
+
+      return;
+    }
+
+
+    if (data.session) {
+
+      showAuthMessage(
+        "Account created successfully!",
+        "success"
+      );
+
+      setTimeout(() => {
+        closeModal("authModal");
+      }, 1000);
 
     } else {
 
-      linkInput.placeholder =
-        "Paste your Telegram group link...";
-
+      showAuthMessage(
+        "Account created! Please check your email to confirm your account.",
+        "success"
+      );
     }
 
   } else {
 
-    linkInput.style.display = "none";
+    const { data, error } =
+      await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
 
-    linkInput.value = "";
+
+    if (error) {
+
+      showAuthMessage(
+        error.message,
+        "error"
+      );
+
+      return;
+    }
+
+
+    currentUser =
+      data.user;
+
+    showAuthMessage(
+      "Logged in successfully!",
+      "success"
+    );
+
+
+    setTimeout(async () => {
+
+      closeModal("authModal");
+
+      await loadCurrentProfile();
+
+      updateAuthUI();
+
+    }, 700);
 
   }
 
 }
 
 
-/* MEDIA PREVIEW */
+function showAuthMessage(message, type) {
 
-function previewMedia(event) {
+  const box =
+    document.getElementById("authMessage");
+
+  box.textContent = message;
+
+  box.className =
+    "message show " + type;
+}
+
+
+function clearAuthMessage() {
+
+  const box =
+    document.getElementById("authMessage");
+
+  box.textContent = "";
+
+  box.className =
+    "message";
+}
+
+
+/* =========================================================
+   PASSWORD RESET
+   ========================================================= */
+
+function openResetPassword() {
+
+  closeModal("authModal");
+
+  document.getElementById("resetEmail").value = "";
+
+  const box =
+    document.getElementById("resetMessage");
+
+  box.className = "message";
+
+  box.textContent = "";
+
+  openModal("resetModal");
+}
+
+
+async function sendPasswordReset() {
+
+  const email =
+    document.getElementById("resetEmail")
+      .value
+      .trim();
+
+
+  if (!email) {
+
+    showResetMessage(
+      "Please enter your email.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const { error } =
+    await supabaseClient.auth
+      .resetPasswordForEmail(
+        email,
+        {
+          redirectTo:
+            "https://friendhub.paredesarixon.workers.dev"
+        }
+      );
+
+
+  if (error) {
+
+    showResetMessage(
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  showResetMessage(
+    "Password reset email sent. Please check your inbox.",
+    "success"
+  );
+}
+
+
+function showResetMessage(message, type) {
+
+  const box =
+    document.getElementById("resetMessage");
+
+  box.textContent = message;
+
+  box.className =
+    "message show " + type;
+}
+
+
+async function updatePassword() {
+
+  const password =
+    document.getElementById("newPassword")
+      .value;
+
+  const confirm =
+    document.getElementById("newPasswordConfirm")
+      .value;
+
+
+  if (password.length < 8) {
+
+    showNewPasswordMessage(
+      "Password must be at least 8 characters.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  if (password !== confirm) {
+
+    showNewPasswordMessage(
+      "Passwords do not match.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const { error } =
+    await supabaseClient.auth.updateUser({
+      password
+    });
+
+
+  if (error) {
+
+    showNewPasswordMessage(
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+
+  showNewPasswordMessage(
+    "Password updated successfully!",
+    "success"
+  );
+
+
+  setTimeout(() => {
+    closeModal("newPasswordModal");
+  }, 1200);
+}
+
+
+function showNewPasswordMessage(message, type) {
+
+  const box =
+    document.getElementById("newPasswordMessage");
+
+  box.textContent = message;
+
+  box.className =
+    "message show " + type;
+}
+
+
+/* =========================================================
+   AUTH STATE
+   ========================================================= */
+
+supabaseClient.auth.onAuthStateChange(
+  async (event, session) => {
+
+    currentUser =
+      session?.user || null;
+
+    updateAuthUI();
+
+    if (currentUser) {
+      await loadCurrentProfile();
+    } else {
+      currentProfile = null;
+    }
+
+    updateProfileVisibility();
+
+  }
+);
+
+
+async function checkSession() {
+
+  const {
+    data,
+    error
+  } = await supabaseClient.auth.getSession();
+
+
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+
+  currentUser =
+    data.session?.user || null;
+
+
+  updateAuthUI();
+
+
+  if (currentUser) {
+    await loadCurrentProfile();
+  }
+
+
+  updateProfileVisibility();
+}
+
+
+function updateAuthUI() {
+
+  const loginBtn =
+    document.getElementById("loginBtn");
+
+  const signupBtn =
+    document.getElementById("signupBtn");
+
+  const logoutBtn =
+    document.getElementById("logoutBtn");
+
+
+  if (currentUser) {
+
+    loginBtn.style.display =
+      "none";
+
+    signupBtn.style.display =
+      "none";
+
+    logoutBtn.style.display =
+      "inline-block";
+
+  } else {
+
+    loginBtn.style.display =
+      "inline-block";
+
+    signupBtn.style.display =
+      "inline-block";
+
+    logoutBtn.style.display =
+      "none";
+  }
+}
+
+
+async function logout() {
+
+  await supabaseClient.auth.signOut();
+
+  currentUser = null;
+  currentProfile = null;
+
+  updateAuthUI();
+  updateProfileVisibility();
+
+  showPage("home");
+}
+
+
+/* =========================================================
+   PROFILE OPTIONS
+   ========================================================= */
+
+function renderOptionButtons() {
+
+  renderOptions(
+    "languagesOptions",
+    languageOptions,
+    "languages"
+  );
+
+  renderOptions(
+    "interestsOptions",
+    interestOptions,
+    "interests"
+  );
+
+  renderOptions(
+    "lookingForOptions",
+    lookingForOptions,
+    "lookingFor"
+  );
+}
+
+
+function renderOptions(containerId, options, category) {
+
+  const container =
+    document.getElementById(containerId);
+
+  container.innerHTML = "";
+
+
+  options.forEach(option => {
+
+    const button =
+      document.createElement("button");
+
+    button.type = "button";
+
+    button.className =
+      "option-btn";
+
+    button.textContent =
+      option;
+
+    button.dataset.category =
+      category;
+
+    button.dataset.value =
+      option;
+
+    button.onclick = () => {
+
+      button.classList.toggle("selected");
+
+    };
+
+
+    container.appendChild(button);
+
+  });
+
+}
+
+
+function getSelectedOptions(category) {
+
+  return [
+    ...document.querySelectorAll(
+      `.option-btn[data-category="${category}"].selected`
+    )
+  ].map(button => button.dataset.value);
+
+}
+
+
+function setSelectedOptions(category, values) {
+
+  document.querySelectorAll(
+    `.option-btn[data-category="${category}"]`
+  ).forEach(button => {
+
+    button.classList.toggle(
+      "selected",
+      values.includes(button.dataset.value)
+    );
+
+  });
+
+}
+
+
+/* =========================================================
+   PROFILE LOAD
+   ========================================================= */
+
+async function loadCurrentProfile() {
+
+  if (!currentUser) {
+    return;
+  }
+
+
+  const {
+    data,
+    error
+  } = await supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+
+  if (error) {
+
+    console.error(
+      "Profile load error:",
+      error
+    );
+
+    return;
+  }
+
+
+  if (!data) {
+
+    currentProfile = null;
+
+    clearProfileForm();
+
+    return;
+  }
+
+
+  currentProfile =
+    data;
+
+
+  document.getElementById("username").value =
+    data.username || "";
+
+  document.getElementById("age").value =
+    data.age || "";
+
+  document.getElementById("country").value =
+    data.country || "";
+
+
+  let languages = [];
+  let interests = [];
+  let lookingFor = [];
+
+
+  try {
+    languages =
+      data.languages
+        ? JSON.parse(data.languages)
+        : [];
+  } catch {
+    languages = [];
+  }
+
+
+  try {
+    interests =
+      data.interests
+        ? JSON.parse(data.interests)
+        : [];
+  } catch {
+    interests = [];
+  }
+
+
+  try {
+    lookingFor =
+      data.looking_for
+        ? JSON.parse(data.looking_for)
+        : [];
+  } catch {
+    lookingFor = [];
+  }
+
+
+  setSelectedOptions(
+    "languages",
+    languages
+  );
+
+  setSelectedOptions(
+    "interests",
+    interests
+  );
+
+  setSelectedOptions(
+    "lookingFor",
+    lookingFor
+  );
+
+
+  selectedProfilePhoto =
+    data.profile_photo || null;
+
+
+  updateProfileAvatar(
+    data.username,
+    data.profile_photo
+  );
+}
+
+
+function clearProfileForm() {
+
+  document.getElementById("username").value =
+    "";
+
+  document.getElementById("age").value =
+    "";
+
+  document.getElementById("country").value =
+    "";
+
+
+  setSelectedOptions(
+    "languages",
+    []
+  );
+
+  setSelectedOptions(
+    "interests",
+    []
+  );
+
+  setSelectedOptions(
+    "lookingFor",
+    []
+  );
+
+
+  selectedProfilePhoto = null;
+
+  updateProfileAvatar(
+    "",
+    null
+  );
+}
+
+
+/* =========================================================
+   PROFILE SAVE
+   ========================================================= */
+
+async function saveProfile() {
+
+  if (!currentUser) {
+
+    openAuth("signup");
+
+    return;
+  }
+
+
+  const usernameInput =
+    document.getElementById("username");
+
+  let username =
+    usernameInput.value.trim();
+
+
+  if (!username) {
+
+    showProfileMessage(
+      "Please choose a username.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  username =
+    normalizeUsername(username);
+
+
+  if (username.length < 2) {
+
+    showProfileMessage(
+      "Username must contain at least 2 characters.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const age =
+    parseInt(
+      document.getElementById("age").value,
+      10
+    );
+
+
+  if (!age || age < 1 || age > 120) {
+
+    showProfileMessage(
+      "Please enter a valid age.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const country =
+    document.getElementById("country")
+      .value
+      .trim();
+
+
+  const languages =
+    getSelectedOptions("languages");
+
+  const interests =
+    getSelectedOptions("interests");
+
+  const lookingFor =
+    getSelectedOptions("lookingFor");
+
+
+  if (
+    currentProfile &&
+    currentProfile.username &&
+    currentProfile.username !== username
+  ) {
+
+    const lastChange =
+      localStorage.getItem(
+        "friendhub_username_change"
+      );
+
+
+    if (lastChange) {
+
+      const daysPassed =
+        (
+          Date.now() -
+          Number(lastChange)
+        ) /
+        (1000 * 60 * 60 * 24);
+
+
+      if (daysPassed < 30) {
+
+        const remaining =
+          Math.ceil(30 - daysPassed);
+
+        showProfileMessage(
+          `You can change your username again in ${remaining} day${remaining === 1 ? "" : "s"}.`,
+          "error"
+        );
+
+        return;
+      }
+
+    }
+
+  }
+
+
+  const profileData = {
+
+    user_id:
+      currentUser.id,
+
+    username,
+
+    age,
+
+    country,
+
+    languages:
+      JSON.stringify(languages),
+
+    interests:
+      JSON.stringify(interests),
+
+    looking_for:
+      JSON.stringify(lookingFor),
+
+    profile_photo:
+      selectedProfilePhoto || null
+
+  };
+
+
+  let result;
+
+
+  if (currentProfile) {
+
+    result =
+      await supabaseClient
+        .from("profiles")
+        .update(profileData)
+        .eq("user_id", currentUser.id)
+        .select()
+        .single();
+
+  } else {
+
+    result =
+      await supabaseClient
+        .from("profiles")
+        .insert(profileData)
+        .select()
+        .single();
+
+  }
+
+
+  if (result.error) {
+
+    console.error(result.error);
+
+    if (
+      result.error.code === "23505"
+    ) {
+
+      showProfileMessage(
+        "That username is already taken. Please choose another one.",
+        "error"
+      );
+
+    } else {
+
+      showProfileMessage(
+        result.error.message,
+        "error"
+      );
+    }
+
+    return;
+  }
+
+
+  currentProfile =
+    result.data;
+
+
+  localStorage.setItem(
+    "friendhub_username",
+    username
+  );
+
+
+  if (
+    currentProfile.username !== username
+  ) {
+
+    localStorage.setItem(
+      "friendhub_username_change",
+      Date.now().toString()
+    );
+
+  } else if (
+    !localStorage.getItem(
+      "friendhub_username_change"
+    )
+  ) {
+
+    localStorage.setItem(
+      "friendhub_username_change",
+      Date.now().toString()
+    );
+  }
+
+
+  updateProfileAvatar(
+    username,
+    selectedProfilePhoto
+  );
+
+
+  showProfileMessage(
+    "Profile saved successfully! 🎉",
+    "success"
+  );
+
+
+  renderPosts();
+}
+
+
+/* =========================================================
+   PROFILE MESSAGE
+   ========================================================= */
+
+function showProfileMessage(message, type) {
+
+  const box =
+    document.getElementById("profileMessage");
+
+  box.textContent =
+    message;
+
+  box.className =
+    "message show " + type;
+
+}
+
+
+/* =========================================================
+   USERNAME
+   ========================================================= */
+
+function normalizeUsername(value) {
+
+  value =
+    value.replace(/^@+/, "");
+
+  value =
+    value.replace(
+      /[^a-zA-Z0-9_]/g,
+      ""
+    );
+
+  value =
+    value.substring(0, 20);
+
+  return "@" + value;
+}
+
+
+/* =========================================================
+   PROFILE PHOTO
+   ========================================================= */
+
+function handleProfilePhoto(event) {
 
   const file =
     event.target.files[0];
 
-  if (!file) return;
+
+  if (!file) {
+    return;
+  }
+
+
+  if (!file.type.startsWith("image/")) {
+
+    showProfileMessage(
+      "Please select an image.",
+      "error"
+    );
+
+    return;
+  }
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload =
+    function(e) {
+
+      selectedProfilePhoto =
+        e.target.result;
+
+
+      updateProfileAvatar(
+        document.getElementById("username").value,
+        selectedProfilePhoto
+      );
+
+    };
+
+
+  reader.readAsDataURL(file);
+}
+
+
+function updateProfileAvatar(username, photo) {
+
+  const avatar =
+    document.getElementById("profileAvatar");
+
+
+  if (photo) {
+
+    avatar.innerHTML =
+      `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`;
+
+    return;
+  }
+
+
+  const cleanUsername =
+    (username || "")
+      .replace("@", "")
+      .trim();
+
+
+  if (cleanUsername) {
+
+    avatar.textContent =
+      cleanUsername
+        .charAt(0)
+        .toUpperCase();
+
+  } else {
+
+    avatar.textContent =
+      "👤";
+  }
+
+}
+
+
+/* =========================================================
+   PROFILE VISIBILITY
+   ========================================================= */
+
+function updateProfileVisibility() {
+
+  const loginMessage =
+    document.getElementById(
+      "profileLoginMessage"
+    );
+
+  const profileCard =
+    document.getElementById(
+      "profileCard"
+    );
+
+
+  if (currentUser) {
+
+    loginMessage.style.display =
+      "none";
+
+    profileCard.style.display =
+      "block";
+
+  } else {
+
+    loginMessage.style.display =
+      "block";
+
+    profileCard.style.display =
+      "none";
+  }
+
+}
+
+
+/* =========================================================
+   POST TYPE
+   ========================================================= */
+
+function selectPostType(type, button) {
+
+  currentPostType =
+    type;
+
+
+  document.querySelectorAll(
+    ".post-type"
+  ).forEach(btn => {
+
+    btn.classList.remove(
+      "active"
+    );
+
+  });
+
+
+  button.classList.add(
+    "active"
+  );
+}
+
+
+/* =========================================================
+   MEDIA
+   ========================================================= */
+
+function handleMedia(event) {
+
+  const file =
+    event.target.files[0];
+
+
+  if (!file) {
+    return;
+  }
+
 
   if (
     !file.type.startsWith("image/") &&
@@ -1578,510 +3025,249 @@ function previewMedia(event) {
     );
 
     return;
-
   }
 
-  if (selectedMediaURL) {
 
-    URL.revokeObjectURL(
-      selectedMediaURL
-    );
+  const reader =
+    new FileReader();
 
-  }
 
-  selectedMediaURL =
-    URL.createObjectURL(file);
+  reader.onload =
+    function(e) {
 
-  const preview =
-    document.getElementById(
-      "mediaPreview"
-    );
+      selectedMedia = {
 
-  const content =
-    document.getElementById(
-      "previewContent"
-    );
+        type:
+          file.type.startsWith("video/")
+            ? "video"
+            : "image",
 
-  content.innerHTML = "";
+        src:
+          e.target.result
 
-  if (file.type.startsWith("image/")) {
+      };
 
-    const img =
-      document.createElement("img");
 
-    img.src = selectedMediaURL;
+      const preview =
+        document.getElementById(
+          "mediaPreview"
+        );
 
-    content.appendChild(img);
+      const content =
+        document.getElementById(
+          "mediaPreviewContent"
+        );
 
-  } else {
 
-    const video =
-      document.createElement("video");
+      if (
+        selectedMedia.type === "video"
+      ) {
 
-    video.src = selectedMediaURL;
-    video.controls = true;
-    video.playsInline = true;
+        content.innerHTML =
+          `<video src="${escapeHtmlAttribute(selectedMedia.src)}" controls></video>`;
 
-    content.appendChild(video);
+      } else {
 
-  }
+        content.innerHTML =
+          `<img src="${escapeHtmlAttribute(selectedMedia.src)}" alt="Selected media">`;
+      }
 
-  preview.classList.add("show");
 
+      preview.style.display =
+        "block";
+
+    };
+
+
+  reader.readAsDataURL(file);
 }
 
-
-/* REMOVE MEDIA */
 
 function removeMedia() {
 
-  document
-    .getElementById("mediaInput")
-    .value = "";
+  selectedMedia = null;
 
-  document
-    .getElementById("previewContent")
-    .innerHTML = "";
+  document.getElementById(
+    "mediaInput"
+  ).value = "";
 
-  document
-    .getElementById("mediaPreview")
-    .classList.remove("show");
+  document.getElementById(
+    "mediaPreview"
+  ).style.display = "none";
 
-  if (selectedMediaURL) {
-
-    URL.revokeObjectURL(
-      selectedMediaURL
-    );
-
-    selectedMediaURL = null;
-
-  }
-
+  document.getElementById(
+    "mediaPreviewContent"
+  ).innerHTML = "";
 }
 
 
-/* CREATE POST */
+/* =========================================================
+   CREATE POST
+   ========================================================= */
 
 function createPost() {
 
-  const text =
-    document
-      .getElementById("postText")
-      .value
-      .trim();
+  if (!currentUser) {
 
-  const link =
-    document
-      .getElementById("linkInput")
-      .value
-      .trim();
-
-  const mediaInput =
     document.getElementById(
-      "mediaInput"
-    );
+      "loginRequiredMessage"
+    ).classList.add("show");
 
-  const hasMedia =
-    mediaInput.files.length > 0;
+    setTimeout(() => {
 
-  if (!text && !hasMedia) {
+      openAuth("login");
 
-    alert(
-      "Please write something or add a photo/video."
-    );
+    }, 300);
 
     return;
-
-  }
-
-  if (
-    (
-      selectedType === "whatsapp" ||
-      selectedType === "telegram"
-    ) &&
-    !link
-  ) {
-
-    alert(
-      "Please add your WhatsApp or Telegram group link."
-    );
-
-    return;
-
   }
 
 
-  const feed =
-    document.getElementById("feed");
+  document.getElementById(
+    "loginRequiredMessage"
+  ).classList.remove("show");
 
 
-  const post =
-    document.createElement("article");
-
-  post.className = "post";
-
-  post.dataset.type =
-    selectedType;
+  const textarea =
+    document.getElementById(
+      "postText"
+    );
 
 
-  let username =
+  const text =
+    textarea.value.trim();
+
+
+  if (!text) {
+
+    alert(
+      "Please write something before posting."
+    );
+
+    return;
+  }
+
+
+  const username =
+    currentProfile?.username ||
     localStorage.getItem(
       "friendhub_username"
-    ) || "You";
+    ) ||
+    "@User";
 
 
-  let avatarHTML = "🙂";
+  const tags =
+    currentProfile
+      ? getProfileTags()
+      : [];
 
-  const savedPhoto =
-    localStorage.getItem(
-      "friendhub_profile_photo"
-    );
 
-  if (savedPhoto) {
+  const newPost = {
 
-    avatarHTML =
-      `<img src="${savedPhoto}" alt="Profile">`;
+    id:
+      Date.now(),
 
-  }
+    username,
 
+    text,
 
-  let typeName = "";
-  let emoji = "";
+    type:
+      currentPostType,
 
-  if (selectedType === "people") {
+    tags,
 
-    typeName =
-      "Personal contact";
+    time:
+      "Just now",
 
-    emoji = "👤";
+    media:
+      selectedMedia
+        ? {
+            type:
+              selectedMedia.type,
 
-  }
+            src:
+              selectedMedia.src
+          }
+        : null,
 
-  if (selectedType === "whatsapp") {
+    likes: 0,
 
-    typeName =
-      "WhatsApp group";
+    liked: false
 
-    emoji = "🟢";
+  };
 
-  }
 
-  if (selectedType === "telegram") {
-
-    typeName =
-      "Telegram group";
-
-    emoji = "🔵";
-
-  }
-
-  if (selectedType === "snapchat") {
-
-    typeName =
-      "Snapchat";
-
-    emoji = "👻";
-
-  }
-
-
-  post.dataset.search =
-    (
-      username +
-      " " +
-      text +
-      " " +
-      typeName +
-      " " +
-      link
-    ).toLowerCase();
-
-
-  post.innerHTML = `
-
-    <div class="post-header">
-
-      <div class="avatar">
-        ${avatarHTML}
-      </div>
-
-      <div>
-
-        <div class="post-name">
-          ${escapeHTML(username)}
-        </div>
-
-        <div class="post-meta">
-          ${emoji} ${typeName}
-        </div>
-
-      </div>
-
-    </div>
-
-  `;
-
-
-  if (text) {
-
-    const textElement =
-      document.createElement("div");
-
-    textElement.className =
-      "post-text";
-
-    textElement.textContent =
-      text;
-
-    post.appendChild(
-      textElement
-    );
-
-  }
-
-
-  if (hasMedia) {
-
-    const file =
-      mediaInput.files[0];
-
-    const mediaContainer =
-      document.createElement("div");
-
-    mediaContainer.className =
-      "post-media";
-
-
-    if (
-      file.type.startsWith("image/")
-    ) {
-
-      const img =
-        document.createElement("img");
-
-      img.src =
-        selectedMediaURL;
-
-      mediaContainer.appendChild(
-        img
-      );
-
-    } else {
-
-      const video =
-        document.createElement("video");
-
-      video.src =
-        selectedMediaURL;
-
-      video.controls = true;
-      video.playsInline = true;
-
-      mediaContainer.appendChild(
-        video
-      );
-
-    }
-
-
-    post.appendChild(
-      mediaContainer
-    );
-
-  }
-
-
-  if (
-    selectedType === "whatsapp" ||
-    selectedType === "telegram"
-  ) {
-
-    const card =
-      document.createElement("div");
-
-    card.className =
-      "connection-card";
-
-
-    const title =
-      document.createElement("div");
-
-    title.className =
-      "connection-title";
-
-    title.textContent =
-      emoji + " " + typeName;
-
-
-    const linkElement =
-      document.createElement("a");
-
-    linkElement.className =
-      "connection-link";
-
-    linkElement.href =
-      link;
-
-    linkElement.target =
-      "_blank";
-
-    linkElement.rel =
-      "noopener noreferrer";
-
-    linkElement.textContent =
-      link;
-
-
-    card.appendChild(title);
-
-    card.appendChild(
-      linkElement
-    );
-
-    post.appendChild(
-      card
-    );
-
-  }
-
-
-  const actions =
-    document.createElement("div");
-
-  actions.className =
-    "post-actions";
-
-  actions.innerHTML = `
-
-    <button
-      class="post-action"
-      onclick="likePost(this)"
-    >
-      ♡ Like
-    </button>
-
-    <button
-      class="post-action"
-    >
-      💬 Comment
-    </button>
-
-    <button
-      class="post-action"
-    >
-      ⚠️ Report
-    </button>
-
-  `;
-
-  post.appendChild(
-    actions
+  posts.unshift(
+    newPost
   );
 
 
-  feed.prepend(
-    post
-  );
+  textarea.value =
+    "";
 
-
-  document
-    .getElementById("postText")
-    .value = "";
-
-  document
-    .getElementById("linkInput")
-    .value = "";
 
   removeMedia();
 
 
-  feed.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
+  renderPosts();
+
+}
+
+
+/* =========================================================
+   PROFILE TAGS
+   ========================================================= */
+
+function getProfileTags() {
+
+  const tags = [];
+
+
+  const interests =
+    getSelectedOptions("interests");
+
+
+  const languages =
+    getSelectedOptions("languages");
+
+
+  interests
+    .slice(0, 3)
+    .forEach(item => {
+      tags.push(item);
+    });
+
+
+  languages
+    .slice(0, 2)
+    .forEach(item => {
+      tags.push(item);
+    });
+
+
+  return tags;
+}
+
+
+/* =========================================================
+   FILTERS
+   ========================================================= */
+
+function setFilter(filter, button) {
+
+  currentFilter =
+    filter;
+
+
+  document.querySelectorAll(
+    ".filter-btn"
+  ).forEach(btn => {
+
+    btn.classList.remove(
+      "active"
+    );
+
   });
-
-}
-
-
-/* LIKE */
-
-function likePost(button) {
-
-  if (
-    button.textContent.includes("Like")
-  ) {
-
-    button.textContent =
-      "♥ Liked";
-
-  } else {
-
-    button.textContent =
-      "♡ Like";
-
-  }
-
-}
-
-
-/* SEARCH */
-
-function searchPosts() {
-
-  const search =
-    document
-      .getElementById("searchInput")
-      .value
-      .toLowerCase()
-      .trim();
-
-
-  document
-    .querySelectorAll(".post")
-    .forEach(function(post) {
-
-      const content =
-        (
-          post.dataset.search ||
-          post.textContent
-        ).toLowerCase();
-
-
-      if (
-        !search ||
-        content.includes(search)
-      ) {
-
-        post.style.display = "";
-
-      } else {
-
-        post.style.display =
-          "none";
-
-      }
-
-    });
-
-}
-
-
-/* FILTER */
-
-function filterPosts(
-  type,
-  button
-) {
-
-  document
-    .querySelectorAll(".filter")
-    .forEach(function(btn) {
-
-      btn.classList.remove(
-        "active"
-      );
-
-    });
 
 
   button.classList.add(
@@ -2089,456 +3275,381 @@ function filterPosts(
   );
 
 
-  document
-    .querySelectorAll(".post")
-    .forEach(function(post) {
-
-      if (type === "all") {
-
-        post.style.display = "";
-
-        return;
-
-      }
-
-
-      if (
-        post.dataset.type === type
-      ) {
-
-        post.style.display = "";
-
-      } else {
-
-        post.style.display =
-          "none";
-
-      }
-
-    });
-
+  renderPosts();
 }
 
 
-/* PROFILE OPTIONS */
+/* =========================================================
+   RENDER POSTS
+   ========================================================= */
 
-function toggleOption(button) {
+function renderPosts() {
 
-  button.classList.toggle(
-    "selected"
-  );
-
-}
-
-
-/* PROFILE PHOTO */
-
-function previewProfilePhoto(event) {
-
-  const file =
-    event.target.files[0];
-
-  if (!file) return;
-
-
-  if (!file.type.startsWith("image/")) {
-
-    alert(
-      "Please select an image."
+  const feed =
+    document.getElementById(
+      "feed"
     );
+
+
+  const search =
+    document.getElementById(
+      "searchInput"
+    )
+      .value
+      .trim()
+      .toLowerCase();
+
+
+  let filtered =
+    [...posts];
+
+
+  if (
+    currentFilter !== "all"
+  ) {
+
+    filtered =
+      filtered.filter(post => {
+
+        if (
+          currentFilter === "people"
+        ) {
+
+          return post.type === "personal";
+        }
+
+        return (
+          post.type ===
+          currentFilter
+        );
+
+      });
+
+  }
+
+
+  if (search) {
+
+    filtered =
+      filtered.filter(post => {
+
+        const searchable =
+          [
+            post.username,
+            post.text,
+            ...(post.tags || [])
+          ]
+            .join(" ")
+            .toLowerCase();
+
+
+        return searchable.includes(
+          search
+        );
+
+      });
+
+  }
+
+
+  if (!filtered.length) {
+
+    feed.innerHTML =
+      `<div class="empty-state">
+        No posts found.
+      </div>`;
 
     return;
+  }
+
+
+  feed.innerHTML =
+    filtered
+      .map(post => renderPost(post))
+      .join("");
+
+}
+
+
+/* =========================================================
+   RENDER SINGLE POST
+   ========================================================= */
+
+function renderPost(post) {
+
+  const username =
+    escapeHtml(
+      post.username
+    );
+
+
+  const initial =
+    escapeHtml(
+      (post.username || "U")
+        .replace("@", "")
+        .charAt(0)
+        .toUpperCase()
+    );
+
+
+  const typeLabels = {
+
+    personal:
+      "👤 Personal",
+
+    whatsapp:
+      "🟢 WhatsApp",
+
+    telegram:
+      "🔵 Telegram",
+
+    snapchat:
+      "👻 Snapchat"
+
+  };
+
+
+  const tags =
+    (post.tags || [])
+      .map(tag =>
+        `<span class="post-tag">${escapeHtml(tag)}</span>`
+      )
+      .join("");
+
+
+  let mediaHtml = "";
+
+
+  if (post.media) {
+
+    if (
+      post.media.type === "video"
+    ) {
+
+      mediaHtml =
+        `<div class="post-media">
+          <video
+            src="${escapeHtmlAttribute(post.media.src)}"
+            controls
+          ></video>
+        </div>`;
+
+    } else {
+
+      mediaHtml =
+        `<div class="post-media">
+          <img
+            src="${escapeHtmlAttribute(post.media.src)}"
+            alt="Post media"
+          >
+        </div>`;
+    }
 
   }
 
 
-  if (profilePhotoURL) {
-
-    URL.revokeObjectURL(
-      profilePhotoURL
-    );
-
-  }
+  const likedClass =
+    post.liked
+      ? "liked"
+      : "";
 
 
-  profilePhotoURL =
-    URL.createObjectURL(file);
+  const likeText =
+    post.liked
+      ? "♥ Liked"
+      : "♡ Like";
 
 
-  const avatar =
-    document.getElementById(
-      "profileAvatar"
-    );
+  return `
+
+    <article class="post">
+
+      <div class="post-header">
+
+        <div class="avatar">
+          ${initial}
+        </div>
+
+        <div>
+
+          <div class="post-user">
+            ${username}
+          </div>
+
+          <div class="post-meta">
+            ${typeLabels[post.type] || "Post"}
+            · ${escapeHtml(post.time)}
+          </div>
+
+        </div>
+
+      </div>
 
 
-  avatar.innerHTML = `
+      <div>
+        ${tags}
+      </div>
 
-    <img
-      src="${profilePhotoURL}"
-      alt="Profile photo"
-    >
+
+      <div class="post-content">
+        ${escapeHtml(post.text)}
+      </div>
+
+
+      ${mediaHtml}
+
+
+      <div class="post-actions">
+
+        <button
+          class="post-action ${likedClass}"
+          onclick="toggleLike(${post.id})"
+        >
+          ${likeText}
+          ${post.likes ? ` ${post.likes}` : ""}
+        </button>
+
+
+        <button
+          class="post-action"
+          onclick="commentPost(${post.id})"
+        >
+          💬 Comment
+        </button>
+
+
+        <button
+          class="post-action"
+          onclick="reportPost(${post.id})"
+        >
+          ⚑ Report
+        </button>
+
+      </div>
+
+    </article>
 
   `;
 
 }
 
 
-/* SAVE PROFILE */
+/* =========================================================
+   LIKES
+   ========================================================= */
 
-function saveProfile() {
+function toggleLike(id) {
 
-  let username =
-    document
-      .getElementById(
-        "usernameInput"
-      )
-      .value
-      .trim();
-
-
-  const age =
-    document
-      .getElementById(
-        "ageInput"
-      )
-      .value
-      .trim();
-
-
-  const country =
-    document
-      .getElementById(
-        "countryInput"
-      )
-      .value;
-
-
-  if (!username) {
-
-    alert(
-      "Please choose a username."
+  const post =
+    posts.find(
+      item => item.id === id
     );
 
+
+  if (!post) {
     return;
-
   }
 
 
-  if (!username.startsWith("@")) {
-
-    username =
-      "@" + username;
-
-  }
+  post.liked =
+    !post.liked;
 
 
-  username =
-    username.replace(
-      /[^a-zA-Z0-9_@]/g,
-      ""
-    );
-
-
-  if (username.length < 3) {
-
-    alert(
-      "Your username is too short."
-    );
-
-    return;
-
-  }
-
-
-  if (!age) {
-
-    alert(
-      "Please enter your age."
-    );
-
-    return;
-
-  }
-
-
-  if (!country) {
-
-    alert(
-      "Please select your country."
-    );
-
-    return;
-
-  }
-
-
-  const previousUsername =
-    localStorage.getItem(
-      "friendhub_username"
-    );
-
-
-  const lastChange =
-    localStorage.getItem(
-      "friendhub_username_change"
-    );
-
-
-  if (
-    previousUsername &&
-    previousUsername !== username &&
-    lastChange
-  ) {
-
-    const daysPassed =
-      (
-        Date.now() -
-        Number(lastChange)
-      ) /
-      (
-        1000 *
-        60 *
-        60 *
-        24
-      );
-
-
-    if (daysPassed < 30) {
-
-      const remaining =
-        Math.ceil(
-          30 - daysPassed
+  post.likes =
+    post.liked
+      ? post.likes + 1
+      : Math.max(
+          0,
+          post.likes - 1
         );
 
 
-      alert(
-        "You can change your username again in " +
-        remaining +
-        " day(s)."
-      );
-
-      return;
-
-    }
-
-  }
+  renderPosts();
+}
 
 
-  if (
-    previousUsername !== username
-  ) {
+/* =========================================================
+   COMMENTS / REPORT
+   ========================================================= */
 
-    localStorage.setItem(
-      "friendhub_username_change",
-      Date.now().toString()
-    );
+function commentPost(id) {
 
-  }
-
-
-  localStorage.setItem(
-    "friendhub_username",
-    username
+  alert(
+    "Comments will be available soon."
   );
+}
 
 
-  localStorage.setItem(
-    "friendhub_age",
-    age
+function reportPost(id) {
+
+  alert(
+    "Thank you. Reporting tools will be expanded as FriendHub grows."
   );
+}
 
 
-  localStorage.setItem(
-    "friendhub_country",
-    country
-  );
+/* =========================================================
+   SECURITY HELPERS
+   ========================================================= */
 
+function escapeHtml(value) {
 
-  const selectedOptions =
-    Array.from(
-      document.querySelectorAll(
-        ".option.selected"
-      )
-    ).map(function(option) {
-
-      return option.textContent.trim();
-
-    });
-
-
-  localStorage.setItem(
-    "friendhub_options",
-    JSON.stringify(
-      selectedOptions
-    )
-  );
-
-
-  if (profilePhotoURL) {
-
-    localStorage.setItem(
-      "friendhub_profile_photo",
-      profilePhotoURL
-    );
-
-  }
-
-
-  document
-    .getElementById(
-      "profileStatus"
-    )
-    .textContent =
-      "✓ Profile saved successfully!";
-
-
-  updateExistingPosts();
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 
 }
 
 
-/* UPDATE POSTS WITH USERNAME */
+function escapeHtmlAttribute(value) {
 
-function updateExistingPosts() {
+  return escapeHtml(value);
 
-  const username =
-    localStorage.getItem(
-      "friendhub_username"
-    );
+}
 
 
-  if (!username) return;
+/* =========================================================
+   CLICK OUTSIDE MODALS
+   ========================================================= */
 
+document.querySelectorAll(
+  ".modal-overlay"
+).forEach(overlay => {
 
-  document
-    .querySelectorAll(
-      ".post-name"
-    )
-    .forEach(function(name) {
+  overlay.addEventListener(
+    "click",
+    function(event) {
 
       if (
-        name.textContent.trim() ===
-        "You"
+        event.target === overlay
       ) {
 
-        name.textContent =
-          username;
+        overlay.classList.remove(
+          "active"
+        );
 
       }
 
-    });
-
-}
-
-
-/* ESCAPE HTML */
-
-function escapeHTML(value) {
-
-  const div =
-    document.createElement(
-      "div"
-    );
-
-  div.textContent =
-    value;
-
-  return div.innerHTML;
-
-}
-
-
-/* LOAD SAVED PROFILE */
-
-window.addEventListener(
-  "load",
-  function() {
-
-    const username =
-      localStorage.getItem(
-        "friendhub_username"
-      );
-
-
-    const age =
-      localStorage.getItem(
-        "friendhub_age"
-      );
-
-
-    const country =
-      localStorage.getItem(
-        "friendhub_country"
-      );
-
-
-    const savedPhoto =
-      localStorage.getItem(
-        "friendhub_profile_photo"
-      );
-
-
-    if (username) {
-
-      document
-        .getElementById(
-          "usernameInput"
-        )
-        .value =
-          username;
-
     }
+  );
+
+});
 
 
-    if (age) {
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
 
-      document
-        .getElementById(
-          "ageInput"
-        )
-        .value =
-          age;
+renderOptionButtons();
 
-    }
+renderPosts();
 
-
-    if (country) {
-
-      document
-        .getElementById(
-          "countryInput"
-        )
-        .value =
-          country;
-
-    }
-
-
-    if (savedPhoto) {
-
-      document
-        .getElementById(
-          "profileAvatar"
-        )
-        .innerHTML = `
-
-          <img
-            src="${savedPhoto}"
-            alt="Profile photo"
-          >
-
-        `;
-
-    }
-
-
-    updateExistingPosts();
-
-  }
-);
+checkSession();
 
 </script>
 
 </body>
 </html>
-```
