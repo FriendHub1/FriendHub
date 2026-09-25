@@ -1634,6 +1634,54 @@ let selectedProfilePhoto = null;
 
 let authMode = "login";
 
+let posts = [];
+
+let samplePosts = [
+
+  {
+    id: "sample-1",
+    username: "@AlexGaming",
+    text: "Looking for people to play games and hang out with! 🎮",
+    type: "whatsapp",
+    tags: ["🎮 Gaming", "🎵 Music"],
+    time: "Sample post",
+    media: null,
+    likes: 0,
+    liked: false,
+    userId: null,
+    profilePhoto: null
+  },
+
+  {
+    id: "sample-2",
+    username: "@SofiaLanguages",
+    text: "Looking for people interested in practicing Spanish and English together.",
+    type: "telegram",
+    tags: ["🗣️ Spanish", "🇺🇸 English"],
+    time: "Sample post",
+    media: null,
+    likes: 0,
+    liked: false,
+    userId: null,
+    profilePhoto: null
+  },
+
+  {
+    id: "sample-3",
+    username: "@JordanMovies",
+    text: "Anyone here into movies, gaming and Snapchat? 👻",
+    type: "snapchat",
+    tags: ["👻 Snapchat", "🎬 Movies", "🎮 Gaming"],
+    time: "Sample post",
+    media: null,
+    likes: 0,
+    liked: false,
+    userId: null,
+    profilePhoto: null
+  }
+
+];
+
 
 /* =========================================================
    OPTIONS
@@ -1695,51 +1743,6 @@ const lookingForOptions = [
 
 
 /* =========================================================
-   SAMPLE POSTS
-   ========================================================= */
-
-let posts = [
-
-  {
-    id: 1,
-    username: "@AlexGaming",
-    text: "Looking for people to play games and hang out with! 🎮",
-    type: "whatsapp",
-    tags: ["🎮 Gaming", "🎵 Music"],
-    time: "Sample post",
-    media: null,
-    likes: 0,
-    liked: false
-  },
-
-  {
-    id: 2,
-    username: "@SofiaLanguages",
-    text: "Looking for people interested in practicing Spanish and English together.",
-    type: "telegram",
-    tags: ["🗣️ Spanish", "🇺🇸 English"],
-    time: "Sample post",
-    media: null,
-    likes: 0,
-    liked: false
-  },
-
-  {
-    id: 3,
-    username: "@JordanMovies",
-    text: "Anyone here into movies, gaming and Snapchat? 👻",
-    type: "snapchat",
-    tags: ["👻 Snapchat", "🎬 Movies", "🎮 Gaming"],
-    time: "Sample post",
-    media: null,
-    likes: 0,
-    liked: false
-  }
-
-];
-
-
-/* =========================================================
    NAVIGATION
    ========================================================= */
 
@@ -1761,7 +1764,7 @@ function showPage(pageId) {
   });
 
   if (pageId === "discover") {
-    renderPosts();
+    loadPosts();
   }
 
   if (pageId === "profile") {
@@ -2022,6 +2025,7 @@ async function submitAuth() {
       closeModal("authModal");
 
       await loadCurrentProfile();
+      await loadPosts();
 
       updateAuthUI();
 
@@ -2224,9 +2228,17 @@ supabaseClient.auth.onAuthStateChange(
     updateAuthUI();
 
     if (currentUser) {
+
       await loadCurrentProfile();
+      await loadPosts();
+
     } else {
+
       currentProfile = null;
+
+      posts = [...samplePosts];
+
+      renderPosts();
     }
 
     updateProfileVisibility();
@@ -2257,7 +2269,15 @@ async function checkSession() {
 
 
   if (currentUser) {
+
     await loadCurrentProfile();
+    await loadPosts();
+
+  } else {
+
+    posts = [...samplePosts];
+    renderPosts();
+
   }
 
 
@@ -2309,8 +2329,12 @@ async function logout() {
   currentUser = null;
   currentProfile = null;
 
+  posts = [...samplePosts];
+
   updateAuthUI();
   updateProfileVisibility();
+
+  renderPosts();
 
   showPage("home");
 }
@@ -2686,6 +2710,10 @@ async function saveProfile() {
   }
 
 
+  const oldUsername =
+    currentProfile?.username || null;
+
+
   const profileData = {
 
     user_id:
@@ -2773,7 +2801,8 @@ async function saveProfile() {
 
 
   if (
-    currentProfile.username !== username
+    oldUsername &&
+    oldUsername !== username
   ) {
 
     localStorage.setItem(
@@ -2806,7 +2835,8 @@ async function saveProfile() {
   );
 
 
-  renderPosts();
+  await loadPosts();
+
 }
 
 
@@ -3102,10 +3132,130 @@ function removeMedia() {
 
 
 /* =========================================================
+   LOAD POSTS FROM SUPABASE
+   ========================================================= */
+
+async function loadPosts() {
+
+  if (!currentUser) {
+
+    posts = [...samplePosts];
+
+    renderPosts();
+
+    return;
+  }
+
+
+  const {
+    data,
+    error
+  } = await supabaseClient
+    .from("posts")
+    .select("*")
+    .order("created_at", {
+      ascending: false
+    });
+
+
+  if (error) {
+
+    console.error(
+      "Posts load error:",
+      error
+    );
+
+    posts = [...samplePosts];
+
+    renderPosts();
+
+    return;
+  }
+
+
+  const databasePosts =
+    (data || []).map(row => {
+
+      let tags = [];
+
+      try {
+
+        tags =
+          row.content_tags
+            ? JSON.parse(row.content_tags)
+            : [];
+
+      } catch {
+
+        tags = [];
+
+      }
+
+
+      return {
+
+        id:
+          row.id,
+
+        username:
+          row.username,
+
+        text:
+          row.content || "",
+
+        type:
+          row.post_type,
+
+        tags,
+
+        time:
+          formatPostTime(row.created_at),
+
+        media:
+          row.media_url
+            ? {
+                type:
+                  row.media_type || "image",
+
+                src:
+                  row.media_url
+              }
+            : null,
+
+        likes: 0,
+
+        liked: false,
+
+        userId:
+          row.user_id,
+
+        profilePhoto:
+          row.user_id === currentUser.id
+            ? currentProfile?.profile_photo || null
+            : null
+
+      };
+
+    });
+
+
+  posts =
+    [
+      ...databasePosts,
+      ...samplePosts
+    ];
+
+
+  renderPosts();
+
+}
+
+
+/* =========================================================
    CREATE POST
    ========================================================= */
 
-function createPost() {
+async function createPost() {
 
   if (!currentUser) {
 
@@ -3148,31 +3298,108 @@ function createPost() {
   }
 
 
+  if (!currentProfile) {
+
+    await loadCurrentProfile();
+
+  }
+
+
+  if (!currentProfile) {
+
+    alert(
+      "Please complete your profile before creating a post."
+    );
+
+    showPage("profile");
+
+    return;
+  }
+
+
   const username =
-    currentProfile?.username ||
-    localStorage.getItem(
-      "friendhub_username"
-    ) ||
-    "@User";
+    currentProfile.username;
 
 
   const tags =
-    currentProfile
-      ? getProfileTags()
-      : [];
+    getProfileTags();
 
+
+  const postData = {
+
+    user_id:
+      currentUser.id,
+
+    username,
+
+    post_type:
+      currentPostType,
+
+    content:
+      text,
+
+    link:
+      null,
+
+    media_url:
+      selectedMedia
+        ? selectedMedia.src
+        : null,
+
+    media_type:
+      selectedMedia
+        ? selectedMedia.type
+        : null
+
+  };
+
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("posts")
+      .insert(postData)
+      .select()
+      .single();
+
+
+  if (error) {
+
+    console.error(
+      "Create post error:",
+      error
+    );
+
+    alert(
+      "Could not create the post: " +
+      error.message
+    );
+
+    return;
+  }
+
+
+  /*
+    The database table currently does not have a
+    content_tags column, so tags are kept locally
+    for the newly created post during this session.
+  */
 
   const newPost = {
 
     id:
-      Date.now(),
+      data.id,
 
-    username,
+    username:
+      data.username,
 
-    text,
+    text:
+      data.content || "",
 
     type:
-      currentPostType,
+      data.post_type,
 
     tags,
 
@@ -3180,19 +3407,25 @@ function createPost() {
       "Just now",
 
     media:
-      selectedMedia
+      data.media_url
         ? {
             type:
-              selectedMedia.type,
+              data.media_type || "image",
 
             src:
-              selectedMedia.src
+              data.media_url
           }
         : null,
 
     likes: 0,
 
-    liked: false
+    liked: false,
+
+    userId:
+      data.user_id,
+
+    profilePhoto:
+      currentProfile.profile_photo || null
 
   };
 
@@ -3250,6 +3483,68 @@ function getProfileTags() {
 
 
 /* =========================================================
+   POST TIME
+   ========================================================= */
+
+function formatPostTime(dateString) {
+
+  if (!dateString) {
+    return "Post";
+  }
+
+
+  const date =
+    new Date(dateString);
+
+
+  if (Number.isNaN(date.getTime())) {
+    return "Post";
+  }
+
+
+  const seconds =
+    Math.floor(
+      (Date.now() - date.getTime()) / 1000
+    );
+
+
+  if (seconds < 60) {
+    return "Just now";
+  }
+
+
+  const minutes =
+    Math.floor(seconds / 60);
+
+
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+
+
+  const hours =
+    Math.floor(minutes / 60);
+
+
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+
+
+  const days =
+    Math.floor(hours / 24);
+
+
+  if (days < 7) {
+    return `${days}d ago`;
+  }
+
+
+  return date.toLocaleDateString();
+}
+
+
+/* =========================================================
    FILTERS
    ========================================================= */
 
@@ -3291,13 +3586,21 @@ function renderPosts() {
     );
 
 
-  const search =
+  if (!feed) {
+    return;
+  }
+
+
+  const searchInput =
     document.getElementById(
       "searchInput"
-    )
-      .value
-      .trim()
-      .toLowerCase();
+    );
+
+
+  const search =
+    searchInput
+      ? searchInput.value.trim().toLowerCase()
+      : "";
 
 
   let filtered =
@@ -3460,6 +3763,25 @@ function renderPost(post) {
       : "♡ Like";
 
 
+  let avatarHtml;
+
+
+  if (post.profilePhoto) {
+
+    avatarHtml =
+      `<img
+        src="${escapeHtmlAttribute(post.profilePhoto)}"
+        alt="Profile photo"
+      >`;
+
+  } else {
+
+    avatarHtml =
+      initial;
+
+  }
+
+
   return `
 
     <article class="post">
@@ -3467,7 +3789,7 @@ function renderPost(post) {
       <div class="post-header">
 
         <div class="avatar">
-          ${initial}
+          ${avatarHtml}
         </div>
 
         <div>
@@ -3503,7 +3825,7 @@ function renderPost(post) {
 
         <button
           class="post-action ${likedClass}"
-          onclick="toggleLike(${post.id})"
+          onclick="toggleLike('${escapeHtmlAttribute(String(post.id))}')"
         >
           ${likeText}
           ${post.likes ? ` ${post.likes}` : ""}
@@ -3512,7 +3834,7 @@ function renderPost(post) {
 
         <button
           class="post-action"
-          onclick="commentPost(${post.id})"
+          onclick="commentPost('${escapeHtmlAttribute(String(post.id))}')"
         >
           💬 Comment
         </button>
@@ -3520,7 +3842,7 @@ function renderPost(post) {
 
         <button
           class="post-action"
-          onclick="reportPost(${post.id})"
+          onclick="reportPost('${escapeHtmlAttribute(String(post.id))}')"
         >
           ⚑ Report
         </button>
@@ -3542,7 +3864,7 @@ function toggleLike(id) {
 
   const post =
     posts.find(
-      item => item.id === id
+      item => String(item.id) === String(id)
     );
 
 
