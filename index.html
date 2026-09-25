@@ -48,8 +48,6 @@
       margin: 0 auto;
     }
 
-    /* HEADER */
-
     header {
       position: sticky;
       top: 0;
@@ -131,8 +129,6 @@
       color: #b91c1c;
     }
 
-    /* SECTIONS */
-
     main {
       min-height: calc(100vh - 70px);
     }
@@ -145,8 +141,6 @@
     .page.active {
       display: block;
     }
-
-    /* HOME */
 
     .hero {
       min-height: 570px;
@@ -244,8 +238,6 @@
       color: #667085;
     }
 
-    /* DISCOVER */
-
     .page-header {
       margin-bottom: 25px;
     }
@@ -298,8 +290,6 @@
       color: white;
       border-color: #5865f2;
     }
-
-    /* COMPOSER */
 
     .composer {
       background: white;
@@ -393,8 +383,6 @@
       background: rgba(0,0,0,0.7);
       color: white;
     }
-
-    /* POSTS */
 
     .feed {
       display: grid;
@@ -507,8 +495,6 @@
       padding: 35px;
     }
 
-    /* PROFILE */
-
     .profile-card {
       background: white;
       border: 1px solid #e3e7ef;
@@ -610,8 +596,6 @@
       flex-wrap: wrap;
     }
 
-    /* ABOUT / SUPPORT */
-
     .content-card {
       background: white;
       border: 1px solid #e3e7ef;
@@ -641,8 +625,6 @@
       font-weight: 800;
       margin-top: 10px;
     }
-
-    /* MODAL */
 
     .modal-overlay {
       display: none;
@@ -734,8 +716,6 @@
       color: #991b1b;
     }
 
-    /* FOOTER */
-
     footer {
       background: #111827;
       color: #cbd5e1;
@@ -760,8 +740,6 @@
       font-size: 13px;
       color: #94a3b8;
     }
-
-    /* RESPONSIVE */
 
     @media (max-width: 850px) {
       .feature-grid {
@@ -819,785 +797,731 @@
 
 <body>
 
-  <!-- HEADER -->
+<header>
+  <div class="container nav">
 
-  <header>
-    <div class="container nav">
+    <div class="logo" onclick="showPage('home')">
+      FriendHub
+    </div>
 
-      <div class="logo" onclick="showPage('home')">
+    <nav class="nav-links">
+      <button onclick="showPage('home')">Home</button>
+      <button onclick="showPage('discover')">Discover</button>
+      <button onclick="showPage('profile')">Profile</button>
+      <button onclick="showPage('about')">About</button>
+      <button onclick="showPage('support')">Support</button>
+    </nav>
+
+    <div class="auth-buttons">
+      <button class="btn btn-secondary" id="loginBtn" onclick="openAuth('login')">
+        Log In
+      </button>
+
+      <button class="btn btn-primary" id="signupBtn" onclick="openAuth('signup')">
+        Create Account
+      </button>
+
+      <button class="btn btn-secondary" id="logoutBtn" onclick="logout()" style="display:none;">
+        Log Out
+      </button>
+    </div>
+
+  </div>
+</header>
+
+
+<main>
+
+<section id="home" class="page active">
+
+  <div class="hero">
+    <div class="container hero-content">
+
+      <div class="hero-badge">
+        🌎 A place to meet people
+      </div>
+
+      <h1>
+        Meet People.<br>
+        <span>Make Friends.</span>
+      </h1>
+
+      <p>
+        Discover people, friendships and communities based on
+        your interests and the platforms you use.
+      </p>
+
+      <div class="hero-buttons">
+        <button class="btn btn-primary" onclick="showPage('discover')">
+          Discover People
+        </button>
+
+        <button class="btn btn-secondary" onclick="showPage('about')">
+          Learn More
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="features">
+
+    <div class="container">
+
+      <div class="section-title">
+        <h2>Find Your Community</h2>
+        <p>Connect around the things you enjoy.</p>
+      </div>
+
+      <div class="feature-grid">
+
+        <div class="feature-card">
+          <div class="feature-icon">👤</div>
+          <h3>Meet People</h3>
+          <p>
+            Discover people with similar interests,
+            languages, hobbies and goals.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <h3>Find Communities</h3>
+          <p>
+            Discover WhatsApp and Telegram communities
+            that match your interests.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🌎</div>
+          <h3>Make Connections</h3>
+          <p>
+            Find new friends from different countries
+            and backgrounds.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<section id="discover" class="page">
+
+  <div class="container">
+
+    <div class="page-header">
+      <h1>Discover</h1>
+      <p>Find people and communities that match what you're looking for.</p>
+    </div>
+
+    <input
+      id="searchInput"
+      class="search-box"
+      type="text"
+      placeholder="Search people, interests, groups..."
+      oninput="renderPosts()"
+    >
+
+    <div class="filters">
+
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">
+        All
+      </button>
+
+      <button class="filter-btn" data-filter="people" onclick="setFilter('people', this)">
+        👤 People
+      </button>
+
+      <button class="filter-btn" data-filter="whatsapp" onclick="setFilter('whatsapp', this)">
+        🟢 WhatsApp
+      </button>
+
+      <button class="filter-btn" data-filter="telegram" onclick="setFilter('telegram', this)">
+        🔵 Telegram
+      </button>
+
+      <button class="filter-btn" data-filter="snapchat" onclick="setFilter('snapchat', this)">
+        👻 Snapchat
+      </button>
+
+    </div>
+
+
+    <div class="composer">
+
+      <h3>Create a post</h3>
+
+      <div id="loginRequiredMessage" class="message error">
+        Please log in or create an account before creating a post.
+      </div>
+
+      <textarea
+        id="postText"
+        placeholder="What are you looking for?"
+      ></textarea>
+
+      <div class="post-types">
+
+        <button
+          class="post-type active"
+          data-post-type="personal"
+          onclick="selectPostType('personal', this)"
+        >
+          👤 Personal contact
+        </button>
+
+        <button
+          class="post-type"
+          data-post-type="whatsapp"
+          onclick="selectPostType('whatsapp', this)"
+        >
+          🟢 WhatsApp group
+        </button>
+
+        <button
+          class="post-type"
+          data-post-type="telegram"
+          onclick="selectPostType('telegram', this)"
+        >
+          🔵 Telegram group
+        </button>
+
+        <button
+          class="post-type"
+          data-post-type="snapchat"
+          onclick="selectPostType('snapchat', this)"
+        >
+          👻 Snapchat
+        </button>
+
+      </div>
+
+      <div class="composer-actions">
+
+        <div>
+
+          <label class="file-label" for="mediaInput">
+            📎 Add media
+          </label>
+
+          <input
+            id="mediaInput"
+            type="file"
+            accept="image/*,video/*"
+            onchange="handleMedia(event)"
+          >
+
+        </div>
+
+        <button class="btn btn-primary" onclick="createPost()">
+          Post
+        </button>
+
+      </div>
+
+      <div id="mediaPreview" class="media-preview">
+
+        <button
+          class="remove-media"
+          onclick="removeMedia()"
+        >
+          ×
+        </button>
+
+        <div id="mediaPreviewContent"></div>
+
+      </div>
+
+    </div>
+
+
+    <div id="feed" class="feed"></div>
+
+  </div>
+
+</section>
+
+
+<section id="profile" class="page">
+
+  <div class="container">
+
+    <div class="page-header">
+      <h1>Your Profile</h1>
+      <p>Customize how people discover you on FriendHub.</p>
+    </div>
+
+    <div id="profileLoginMessage" class="content-card" style="display:none;">
+      <h2>Create an account first</h2>
+
+      <p>
+        Your profile is connected to your FriendHub account.
+        Please log in or create an account to continue.
+      </p>
+
+      <button class="btn btn-primary" onclick="openAuth('signup')">
+        Create Account
+      </button>
+    </div>
+
+    <div id="profileCard" class="profile-card">
+
+      <div class="profile-photo-section">
+
+        <div id="profileAvatar" class="profile-avatar">
+          👤
+        </div>
+
+        <label class="profile-photo-label" for="profilePhotoInput">
+          📷 Change profile photo
+        </label>
+
+        <input
+          id="profilePhotoInput"
+          type="file"
+          accept="image/*"
+          onchange="handleProfilePhoto(event)"
+        >
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="username">
+          Username
+        </label>
+
+        <input
+          id="username"
+          type="text"
+          maxlength="20"
+          placeholder="@username"
+        >
+
+        <div class="help-text">
+          Your username is public. You can change it once every 30 days.
+        </div>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="age">
+          Age
+        </label>
+
+        <input
+          id="age"
+          type="number"
+          min="1"
+          max="120"
+          placeholder="Your age"
+        >
+
+        <div class="help-text">
+          Your exact age is private and is not displayed publicly.
+        </div>
+
+      </div>
+
+      <div class="form-group">
+
+        <label for="country">
+          Country
+        </label>
+
+        <input
+          id="country"
+          type="text"
+          maxlength="80"
+          placeholder="Your country"
+        >
+
+      </div>
+
+      <div class="form-group">
+
+        <label>
+          Languages
+        </label>
+
+        <div id="languagesOptions" class="option-grid"></div>
+
+      </div>
+
+      <div class="form-group">
+
+        <label>
+          Interests
+        </label>
+
+        <div id="interestsOptions" class="option-grid"></div>
+
+      </div>
+
+      <div class="form-group">
+
+        <label>
+          What are you looking for?
+        </label>
+
+        <div id="lookingForOptions" class="option-grid"></div>
+
+      </div>
+
+      <div class="profile-actions">
+
+        <button class="btn btn-primary" onclick="saveProfile()">
+          Save Profile
+        </button>
+
+        <button
+          class="btn btn-secondary"
+          onclick="loadCurrentProfile()"
+        >
+          Reset
+        </button>
+
+      </div>
+
+      <div
+        id="profileMessage"
+        class="message"
+        style="margin-top:15px;"
+      ></div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<section id="about" class="page">
+
+  <div class="container">
+
+    <div class="page-header">
+      <h1>About FriendHub</h1>
+      <p>A simple place to discover people and communities.</p>
+    </div>
+
+    <div class="content-card">
+
+      <h2>What is FriendHub?</h2>
+
+      <p>
+        FriendHub is a social discovery platform designed to help
+        people discover friendships, communities and connections
+        based on shared interests.
+      </p>
+
+      <p>
+        Users can create posts, discover people and find
+        WhatsApp, Telegram and Snapchat connections.
+      </p>
+
+      <h2>What you can do</h2>
+
+      <ul>
+        <li>Create a personal profile.</li>
+        <li>Discover people with similar interests.</li>
+        <li>Find WhatsApp communities.</li>
+        <li>Find Telegram communities.</li>
+        <li>Share Snapchat-related posts.</li>
+        <li>Create posts and interact with the community.</li>
+      </ul>
+
+      <br>
+
+      <h2>Important</h2>
+
+      <p>
+        FriendHub is an independent platform and is not affiliated
+        with Snapchat, WhatsApp or Telegram.
+      </p>
+
+      <p>
+        FriendHub is designed with safety, privacy and
+        age-appropriate interactions in mind.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<section id="support" class="page">
+
+  <div class="container">
+
+    <div class="page-header">
+      <h1>Support</h1>
+      <p>Need help with FriendHub?</p>
+    </div>
+
+    <div class="content-card">
+
+      <h2>Contact FriendHub Support</h2>
+
+      <p>
+        If you have a question, experience a problem or need
+        assistance with your account, contact us by email.
+      </p>
+
+      <a
+        class="support-email"
+        href="mailto:friendhub.support@gmail.com"
+      >
+        friendhub.support@gmail.com
+      </a>
+
+    </div>
+
+  </div>
+
+</section>
+
+</main>
+
+
+<footer>
+
+  <div class="container footer-inner">
+
+    <div>
+      <div class="footer-brand">
         FriendHub
       </div>
 
-      <nav class="nav-links">
-        <button onclick="showPage('home')">Home</button>
-        <button onclick="showPage('discover')">Discover</button>
-        <button onclick="showPage('profile')">Profile</button>
-        <button onclick="showPage('about')">About</button>
-        <button onclick="showPage('support')">Support</button>
-      </nav>
-
-      <div class="auth-buttons">
-        <button class="btn btn-secondary" id="loginBtn" onclick="openAuth('login')">
-          Log In
-        </button>
-
-        <button class="btn btn-primary" id="signupBtn" onclick="openAuth('signup')">
-          Create Account
-        </button>
-
-        <button class="btn btn-secondary" id="logoutBtn" onclick="logout()" style="display:none;">
-          Log Out
-        </button>
-      </div>
-
-    </div>
-  </header>
-
-
-  <main>
-
-    <!-- HOME -->
-
-    <section id="home" class="page active">
-
-      <div class="hero">
-        <div class="container hero-content">
-
-          <div class="hero-badge">
-            🌎 A place to meet people
-          </div>
-
-          <h1>
-            Meet People.<br>
-            <span>Make Friends.</span>
-          </h1>
-
-          <p>
-            Discover people, friendships and communities based on
-            your interests and the platforms you use.
-          </p>
-
-          <div class="hero-buttons">
-            <button class="btn btn-primary" onclick="showPage('discover')">
-              Discover People
-            </button>
-
-            <button class="btn btn-secondary" onclick="showPage('about')">
-              Learn More
-            </button>
-          </div>
-
-        </div>
-      </div>
-
-
-      <div class="features">
-
-        <div class="container">
-
-          <div class="section-title">
-            <h2>Find Your Community</h2>
-            <p>Connect around the things you enjoy.</p>
-          </div>
-
-          <div class="feature-grid">
-
-            <div class="feature-card">
-              <div class="feature-icon">👤</div>
-              <h3>Meet People</h3>
-              <p>
-                Discover people with similar interests,
-                languages, hobbies and goals.
-              </p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">💬</div>
-              <h3>Find Communities</h3>
-              <p>
-                Discover WhatsApp and Telegram communities
-                that match your interests.
-              </p>
-            </div>
-
-            <div class="feature-card">
-              <div class="feature-icon">🌎</div>
-              <h3>Make Connections</h3>
-              <p>
-                Find new friends from different countries
-                and backgrounds.
-              </p>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- DISCOVER -->
-
-    <section id="discover" class="page">
-
-      <div class="container">
-
-        <div class="page-header">
-          <h1>Discover</h1>
-          <p>Find people and communities that match what you're looking for.</p>
-        </div>
-
-
-        <input
-          id="searchInput"
-          class="search-box"
-          type="text"
-          placeholder="Search people, interests, groups..."
-          oninput="renderPosts()"
-        >
-
-
-        <div class="filters">
-
-          <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">
-            All
-          </button>
-
-          <button class="filter-btn" data-filter="people" onclick="setFilter('people', this)">
-            👤 People
-          </button>
-
-          <button class="filter-btn" data-filter="whatsapp" onclick="setFilter('whatsapp', this)">
-            🟢 WhatsApp
-          </button>
-
-          <button class="filter-btn" data-filter="telegram" onclick="setFilter('telegram', this)">
-            🔵 Telegram
-          </button>
-
-          <button class="filter-btn" data-filter="snapchat" onclick="setFilter('snapchat', this)">
-            👻 Snapchat
-          </button>
-
-        </div>
-
-
-        <!-- COMPOSER -->
-
-        <div class="composer">
-
-          <h3>Create a post</h3>
-
-          <div id="loginRequiredMessage" class="message error">
-            Please log in or create an account before creating a post.
-          </div>
-
-          <textarea
-            id="postText"
-            placeholder="What are you looking for?"
-          ></textarea>
-
-
-          <div class="post-types">
-
-            <button
-              class="post-type active"
-              data-post-type="personal"
-              onclick="selectPostType('personal', this)"
-            >
-              👤 Personal contact
-            </button>
-
-            <button
-              class="post-type"
-              data-post-type="whatsapp"
-              onclick="selectPostType('whatsapp', this)"
-            >
-              🟢 WhatsApp group
-            </button>
-
-            <button
-              class="post-type"
-              data-post-type="telegram"
-              onclick="selectPostType('telegram', this)"
-            >
-              🔵 Telegram group
-            </button>
-
-            <button
-              class="post-type"
-              data-post-type="snapchat"
-              onclick="selectPostType('snapchat', this)"
-            >
-              👻 Snapchat
-            </button>
-
-          </div>
-
-
-          <div class="composer-actions">
-
-            <div>
-
-              <label class="file-label" for="mediaInput">
-                📎 Add media
-              </label>
-
-              <input
-                id="mediaInput"
-                type="file"
-                accept="image/*,video/*"
-                onchange="handleMedia(event)"
-              >
-
-            </div>
-
-            <button class="btn btn-primary" onclick="createPost()">
-              Post
-            </button>
-
-          </div>
-
-
-          <div id="mediaPreview" class="media-preview">
-
-            <button
-              class="remove-media"
-              onclick="removeMedia()"
-            >
-              ×
-            </button>
-
-            <div id="mediaPreviewContent"></div>
-
-          </div>
-
-        </div>
-
-
-        <!-- FEED -->
-
-        <div id="feed" class="feed"></div>
-
-      </div>
-
-    </section>
-
-
-    <!-- PROFILE -->
-
-    <section id="profile" class="page">
-
-      <div class="container">
-
-        <div class="page-header">
-          <h1>Your Profile</h1>
-          <p>Customize how people discover you on FriendHub.</p>
-        </div>
-
-
-        <div id="profileLoginMessage" class="content-card" style="display:none;">
-          <h2>Create an account first</h2>
-
-          <p>
-            Your profile is connected to your FriendHub account.
-            Please log in or create an account to continue.
-          </p>
-
-          <button class="btn btn-primary" onclick="openAuth('signup')">
-            Create Account
-          </button>
-        </div>
-
-
-        <div id="profileCard" class="profile-card">
-
-          <div class="profile-photo-section">
-
-            <div id="profileAvatar" class="profile-avatar">
-              👤
-            </div>
-
-            <label class="profile-photo-label" for="profilePhotoInput">
-              📷 Change profile photo
-            </label>
-
-            <input
-              id="profilePhotoInput"
-              type="file"
-              accept="image/*"
-              onchange="handleProfilePhoto(event)"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="username">
-              Username
-            </label>
-
-            <input
-              id="username"
-              type="text"
-              maxlength="20"
-              placeholder="@username"
-            >
-
-            <div class="help-text">
-              Your username is public. You can change it once every 30 days.
-            </div>
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="age">
-              Age
-            </label>
-
-            <input
-              id="age"
-              type="number"
-              min="1"
-              max="120"
-              placeholder="Your age"
-            >
-
-            <div class="help-text">
-              Your exact age is private and is not displayed publicly.
-            </div>
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="country">
-              Country
-            </label>
-
-            <input
-              id="country"
-              type="text"
-              maxlength="80"
-              placeholder="Your country"
-            >
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label>
-              Languages
-            </label>
-
-            <div id="languagesOptions" class="option-grid"></div>
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label>
-              Interests
-            </label>
-
-            <div id="interestsOptions" class="option-grid"></div>
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label>
-              What are you looking for?
-            </label>
-
-            <div id="lookingForOptions" class="option-grid"></div>
-
-          </div>
-
-
-          <div class="profile-actions">
-
-            <button class="btn btn-primary" onclick="saveProfile()">
-              Save Profile
-            </button>
-
-            <button
-              class="btn btn-secondary"
-              onclick="loadCurrentProfile()"
-            >
-              Reset
-            </button>
-
-          </div>
-
-
-          <div
-            id="profileMessage"
-            class="message"
-            style="margin-top:15px;"
-          ></div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- ABOUT -->
-
-    <section id="about" class="page">
-
-      <div class="container">
-
-        <div class="page-header">
-          <h1>About FriendHub</h1>
-          <p>A simple place to discover people and communities.</p>
-        </div>
-
-
-        <div class="content-card">
-
-          <h2>What is FriendHub?</h2>
-
-          <p>
-            FriendHub is a social discovery platform designed to help
-            people discover friendships, communities and connections
-            based on shared interests.
-          </p>
-
-          <p>
-            Users can create posts, discover people and find
-            WhatsApp, Telegram and Snapchat connections.
-          </p>
-
-          <h2>What you can do</h2>
-
-          <ul>
-            <li>Create a personal profile.</li>
-            <li>Discover people with similar interests.</li>
-            <li>Find WhatsApp communities.</li>
-            <li>Find Telegram communities.</li>
-            <li>Share Snapchat-related posts.</li>
-            <li>Create posts and interact with the community.</li>
-          </ul>
-
-          <br>
-
-          <h2>Important</h2>
-
-          <p>
-            FriendHub is an independent platform and is not affiliated
-            with Snapchat, WhatsApp or Telegram.
-          </p>
-
-          <p>
-            FriendHub is designed with safety, privacy and
-            age-appropriate interactions in mind.
-          </p>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- SUPPORT -->
-
-    <section id="support" class="page">
-
-      <div class="container">
-
-        <div class="page-header">
-          <h1>Support</h1>
-          <p>Need help with FriendHub?</p>
-        </div>
-
-
-        <div class="content-card">
-
-          <h2>Contact FriendHub Support</h2>
-
-          <p>
-            If you have a question, experience a problem or need
-            assistance with your account, contact us by email.
-          </p>
-
-          <a
-            class="support-email"
-            href="mailto:friendhub.support@gmail.com"
-          >
-            friendhub.support@gmail.com
-          </a>
-
-        </div>
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <!-- FOOTER -->
-
-  <footer>
-
-    <div class="container footer-inner">
-
-      <div>
-        <div class="footer-brand">
-          FriendHub
-        </div>
-
-        <div class="footer-small">
-          Meet People. Make Friends.
-        </div>
-      </div>
-
       <div class="footer-small">
-        © 2026 FriendHub. All rights reserved.
+        Meet People. Make Friends.
       </div>
-
     </div>
 
-  </footer>
-
-
-  <!-- AUTH MODAL -->
-
-  <div id="authModal" class="modal-overlay">
-
-    <div class="modal">
-
-      <button
-        class="modal-close"
-        onclick="closeModal('authModal')"
-      >
-        ×
-      </button>
-
-
-      <h2 id="authTitle">
-        Log In
-      </h2>
-
-      <p id="authSubtitle" class="modal-subtitle">
-        Welcome back to FriendHub.
-      </p>
-
-
-      <div id="authMessage" class="message"></div>
-
-
-      <div class="form-group">
-
-        <label for="authEmail">
-          Email
-        </label>
-
-        <input
-          id="authEmail"
-          type="email"
-          placeholder="you@example.com"
-          autocomplete="email"
-        >
-
-      </div>
-
-
-      <div class="form-group">
-
-        <label for="authPassword">
-          Password
-        </label>
-
-        <input
-          id="authPassword"
-          type="password"
-          placeholder="Password"
-          autocomplete="current-password"
-        >
-
-      </div>
-
-
-      <div id="confirmPasswordGroup" class="form-group" style="display:none;">
-
-        <label for="authConfirmPassword">
-          Confirm Password
-        </label>
-
-        <input
-          id="authConfirmPassword"
-          type="password"
-          placeholder="Confirm password"
-          autocomplete="new-password"
-        >
-
-      </div>
-
-
-      <div id="forgotWrap" class="forgot-wrap">
-
-        <button
-          class="forgot-btn"
-          onclick="openResetPassword()"
-        >
-          Forgot password?
-        </button>
-
-      </div>
-
-
-      <button
-        id="authSubmitBtn"
-        class="btn btn-primary"
-        style="width:100%;"
-        onclick="submitAuth()"
-      >
-        Log In
-      </button>
-
-
-      <div class="auth-switch">
-
-        <span id="authSwitchText">
-          Don't have an account?
-        </span>
-
-        <button
-          id="authSwitchButton"
-          onclick="toggleAuthMode()"
-        >
-          Create Account
-        </button>
-
-      </div>
-
+    <div class="footer-small">
+      © 2026 FriendHub. All rights reserved.
     </div>
 
   </div>
 
+</footer>
 
-  <!-- PASSWORD RESET MODAL -->
 
-  <div id="resetModal" class="modal-overlay">
+<div id="authModal" class="modal-overlay">
 
-    <div class="modal">
+  <div class="modal">
+
+    <button
+      class="modal-close"
+      onclick="closeModal('authModal')"
+    >
+      ×
+    </button>
+
+    <h2 id="authTitle">
+      Log In
+    </h2>
+
+    <p id="authSubtitle" class="modal-subtitle">
+      Welcome back to FriendHub.
+    </p>
+
+    <div id="authMessage" class="message"></div>
+
+    <div class="form-group">
+
+      <label for="authEmail">
+        Email
+      </label>
+
+      <input
+        id="authEmail"
+        type="email"
+        placeholder="you@example.com"
+        autocomplete="email"
+      >
+
+    </div>
+
+    <div class="form-group">
+
+      <label for="authPassword">
+        Password
+      </label>
+
+      <input
+        id="authPassword"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+      >
+
+    </div>
+
+    <div id="confirmPasswordGroup" class="form-group" style="display:none;">
+
+      <label for="authConfirmPassword">
+        Confirm Password
+      </label>
+
+      <input
+        id="authConfirmPassword"
+        type="password"
+        placeholder="Confirm password"
+        autocomplete="new-password"
+      >
+
+    </div>
+
+    <div id="forgotWrap" class="forgot-wrap">
 
       <button
-        class="modal-close"
-        onclick="closeModal('resetModal')"
+        class="forgot-btn"
+        onclick="openResetPassword()"
       >
-        ×
+        Forgot password?
       </button>
 
-      <h2>Reset Password</h2>
+    </div>
 
-      <p class="modal-subtitle">
-        Enter your email and we'll send you a password reset link.
-      </p>
+    <button
+      id="authSubmitBtn"
+      class="btn btn-primary"
+      style="width:100%;"
+      onclick="submitAuth()"
+    >
+      Log In
+    </button>
 
-      <div id="resetMessage" class="message"></div>
+    <div class="auth-switch">
 
-      <div class="form-group">
-
-        <label for="resetEmail">
-          Email
-        </label>
-
-        <input
-          id="resetEmail"
-          type="email"
-          placeholder="you@example.com"
-        >
-
-      </div>
+      <span id="authSwitchText">
+        Don't have an account?
+      </span>
 
       <button
-        class="btn btn-primary"
-        style="width:100%;"
-        onclick="sendPasswordReset()"
+        id="authSwitchButton"
+        onclick="toggleAuthMode()"
       >
-        Send Reset Link
+        Create Account
       </button>
 
     </div>
 
   </div>
 
+</div>
 
-  <!-- NEW PASSWORD MODAL -->
 
-  <div id="newPasswordModal" class="modal-overlay">
+<div id="resetModal" class="modal-overlay">
 
-    <div class="modal">
+  <div class="modal">
 
-      <h2>Create New Password</h2>
+    <button
+      class="modal-close"
+      onclick="closeModal('resetModal')"
+    >
+      ×
+    </button>
 
-      <p class="modal-subtitle">
-        Choose a new password for your FriendHub account.
-      </p>
+    <h2>Reset Password</h2>
 
-      <div id="newPasswordMessage" class="message"></div>
+    <p class="modal-subtitle">
+      Enter your email and we'll send you a password reset link.
+    </p>
 
-      <div class="form-group">
+    <div id="resetMessage" class="message"></div>
 
-        <label for="newPassword">
-          New Password
-        </label>
+    <div class="form-group">
 
-        <input
-          id="newPassword"
-          type="password"
-          placeholder="New password"
-        >
+      <label for="resetEmail">
+        Email
+      </label>
 
-      </div>
-
-      <div class="form-group">
-
-        <label for="newPasswordConfirm">
-          Confirm New Password
-        </label>
-
-        <input
-          id="newPasswordConfirm"
-          type="password"
-          placeholder="Confirm new password"
-        >
-
-      </div>
-
-      <button
-        class="btn btn-primary"
-        style="width:100%;"
-        onclick="updatePassword()"
+      <input
+        id="resetEmail"
+        type="email"
+        placeholder="you@example.com"
       >
-        Update Password
-      </button>
 
     </div>
 
+    <button
+      class="btn btn-primary"
+      style="width:100%;"
+      onclick="sendPasswordReset()"
+    >
+      Send Reset Link
+    </button>
+
   </div>
+
+</div>
+
+
+<div id="newPasswordModal" class="modal-overlay">
+
+  <div class="modal">
+
+    <h2>Create New Password</h2>
+
+    <p class="modal-subtitle">
+      Choose a new password for your FriendHub account.
+    </p>
+
+    <div id="newPasswordMessage" class="message"></div>
+
+    <div class="form-group">
+
+      <label for="newPassword">
+        New Password
+      </label>
+
+      <input
+        id="newPassword"
+        type="password"
+        placeholder="New password"
+      >
+
+    </div>
+
+    <div class="form-group">
+
+      <label for="newPasswordConfirm">
+        Confirm New Password
+      </label>
+
+      <input
+        id="newPasswordConfirm"
+        type="password"
+        placeholder="Confirm new password"
+      >
+
+    </div>
+
+    <button
+      class="btn btn-primary"
+      style="width:100%;"
+      onclick="updatePassword()"
+    >
+      Update Password
+    </button>
+
+  </div>
+
+</div>
 
 
 <script>
-
-/* =========================================================
-   SUPABASE CONFIGURATION
-   ========================================================= */
 
 const SUPABASE_URL =
   "https://cxosofpxfmjkrhfabrqc.supabase.co";
@@ -1619,10 +1543,6 @@ const supabaseClient =
   );
 
 
-/* =========================================================
-   APP STATE
-   ========================================================= */
-
 let currentUser = null;
 let currentProfile = null;
 
@@ -1635,6 +1555,7 @@ let selectedProfilePhoto = null;
 let authMode = "login";
 
 let posts = [];
+
 
 let samplePosts = [
 
@@ -1682,10 +1603,6 @@ let samplePosts = [
 
 ];
 
-
-/* =========================================================
-   OPTIONS
-   ========================================================= */
 
 const languageOptions = [
   "🇺🇸 English",
@@ -1742,17 +1659,14 @@ const lookingForOptions = [
 ];
 
 
-/* =========================================================
-   NAVIGATION
-   ========================================================= */
-
 function showPage(pageId) {
 
   document.querySelectorAll(".page").forEach(page => {
     page.classList.remove("active");
   });
 
-  const page = document.getElementById(pageId);
+  const page =
+    document.getElementById(pageId);
 
   if (page) {
     page.classList.add("active");
@@ -1768,31 +1682,27 @@ function showPage(pageId) {
   }
 
   if (pageId === "profile") {
+
     updateProfileVisibility();
 
     if (currentUser) {
       loadCurrentProfile();
     }
+
   }
+
 }
 
-
-/* =========================================================
-   MODALS
-   ========================================================= */
 
 function openModal(id) {
   document.getElementById(id).classList.add("active");
 }
 
+
 function closeModal(id) {
   document.getElementById(id).classList.remove("active");
 }
 
-
-/* =========================================================
-   AUTH MODE
-   ========================================================= */
 
 function openAuth(mode) {
 
@@ -1875,7 +1785,9 @@ function updateAuthModal() {
 
     forgotWrap.style.display =
       "block";
+
   }
+
 }
 
 
@@ -1891,10 +1803,6 @@ function toggleAuthMode() {
   updateAuthModal();
 }
 
-
-/* =========================================================
-   AUTH
-   ========================================================= */
 
 async function submitAuth() {
 
@@ -1989,6 +1897,7 @@ async function submitAuth() {
         "Account created! Please check your email to confirm your account.",
         "success"
       );
+
     }
 
   } else {
@@ -2059,10 +1968,6 @@ function clearAuthMessage() {
     "message";
 }
 
-
-/* =========================================================
-   PASSWORD RESET
-   ========================================================= */
 
 function openResetPassword() {
 
@@ -2215,10 +2120,6 @@ function showNewPasswordMessage(message, type) {
 }
 
 
-/* =========================================================
-   AUTH STATE
-   ========================================================= */
-
 supabaseClient.auth.onAuthStateChange(
   async (event, session) => {
 
@@ -2239,6 +2140,7 @@ supabaseClient.auth.onAuthStateChange(
       posts = [...samplePosts];
 
       renderPosts();
+
     }
 
     updateProfileVisibility();
@@ -2318,7 +2220,9 @@ function updateAuthUI() {
 
     logoutBtn.style.display =
       "none";
+
   }
+
 }
 
 
@@ -2340,10 +2244,6 @@ async function logout() {
 }
 
 
-/* =========================================================
-   PROFILE OPTIONS
-   ========================================================= */
-
 function renderOptionButtons() {
 
   renderOptions(
@@ -2363,6 +2263,7 @@ function renderOptionButtons() {
     lookingForOptions,
     "lookingFor"
   );
+
 }
 
 
@@ -2433,10 +2334,6 @@ function setSelectedOptions(category, values) {
 
 }
 
-
-/* =========================================================
-   PROFILE LOAD
-   ========================================================= */
 
 async function loadCurrentProfile() {
 
@@ -2588,10 +2485,6 @@ function clearProfileForm() {
   );
 }
 
-
-/* =========================================================
-   PROFILE SAVE
-   ========================================================= */
 
 async function saveProfile() {
 
@@ -2784,6 +2677,7 @@ async function saveProfile() {
         result.error.message,
         "error"
       );
+
     }
 
     return;
@@ -2820,6 +2714,7 @@ async function saveProfile() {
       "friendhub_username_change",
       Date.now().toString()
     );
+
   }
 
 
@@ -2840,10 +2735,6 @@ async function saveProfile() {
 }
 
 
-/* =========================================================
-   PROFILE MESSAGE
-   ========================================================= */
-
 function showProfileMessage(message, type) {
 
   const box =
@@ -2857,10 +2748,6 @@ function showProfileMessage(message, type) {
 
 }
 
-
-/* =========================================================
-   USERNAME
-   ========================================================= */
 
 function normalizeUsername(value) {
 
@@ -2879,10 +2766,6 @@ function normalizeUsername(value) {
   return "@" + value;
 }
 
-
-/* =========================================================
-   PROFILE PHOTO
-   ========================================================= */
 
 function handleProfilePhoto(event) {
 
@@ -2961,14 +2844,11 @@ function updateProfileAvatar(username, photo) {
 
     avatar.textContent =
       "👤";
+
   }
 
 }
 
-
-/* =========================================================
-   PROFILE VISIBILITY
-   ========================================================= */
 
 function updateProfileVisibility() {
 
@@ -2998,14 +2878,11 @@ function updateProfileVisibility() {
 
     profileCard.style.display =
       "none";
+
   }
 
 }
 
-
-/* =========================================================
-   POST TYPE
-   ========================================================= */
 
 function selectPostType(type, button) {
 
@@ -3029,10 +2906,6 @@ function selectPostType(type, button) {
   );
 }
 
-
-/* =========================================================
-   MEDIA
-   ========================================================= */
 
 function handleMedia(event) {
 
@@ -3100,6 +2973,7 @@ function handleMedia(event) {
 
         content.innerHTML =
           `<img src="${escapeHtmlAttribute(selectedMedia.src)}" alt="Selected media">`;
+
       }
 
 
@@ -3132,7 +3006,7 @@ function removeMedia() {
 
 
 /* =========================================================
-   LOAD POSTS FROM SUPABASE
+   LOAD POSTS + LIKES FROM SUPABASE
    ========================================================= */
 
 async function loadPosts() {
@@ -3148,8 +3022,8 @@ async function loadPosts() {
 
 
   const {
-    data,
-    error
+    data: postData,
+    error: postError
   } = await supabaseClient
     .from("posts")
     .select("*")
@@ -3158,11 +3032,11 @@ async function loadPosts() {
     });
 
 
-  if (error) {
+  if (postError) {
 
     console.error(
       "Posts load error:",
-      error
+      postError
     );
 
     posts = [...samplePosts];
@@ -3173,10 +3047,59 @@ async function loadPosts() {
   }
 
 
+  const {
+    data: likeData,
+    error: likeError
+  } = await supabaseClient
+    .from("post_likes")
+    .select("post_id, user_id");
+
+
+  if (likeError) {
+
+    console.error(
+      "Likes load error:",
+      likeError
+    );
+
+  }
+
+
+  const likeCounts = {};
+
+  const userLikedPosts =
+    new Set();
+
+
+  (likeData || []).forEach(like => {
+
+    const postId =
+      String(like.post_id);
+
+
+    likeCounts[postId] =
+      (likeCounts[postId] || 0) + 1;
+
+
+    if (
+      String(like.user_id) ===
+      String(currentUser.id)
+    ) {
+
+      userLikedPosts.add(
+        postId
+      );
+
+    }
+
+  });
+
+
   const databasePosts =
-    (data || []).map(row => {
+    (postData || []).map(row => {
 
       let tags = [];
+
 
       try {
 
@@ -3190,6 +3113,10 @@ async function loadPosts() {
         tags = [];
 
       }
+
+
+      const rowId =
+        String(row.id);
 
 
       return {
@@ -3222,9 +3149,11 @@ async function loadPosts() {
               }
             : null,
 
-        likes: 0,
+        likes:
+          likeCounts[rowId] || 0,
 
-        liked: false,
+        liked:
+          userLikedPosts.has(rowId),
 
         userId:
           row.user_id,
@@ -3381,12 +3310,6 @@ async function createPost() {
   }
 
 
-  /*
-    The database table currently does not have a
-    content_tags column, so tags are kept locally
-    for the newly created post during this session.
-  */
-
   const newPost = {
 
     id:
@@ -3447,10 +3370,6 @@ async function createPost() {
 }
 
 
-/* =========================================================
-   PROFILE TAGS
-   ========================================================= */
-
 function getProfileTags() {
 
   const tags = [];
@@ -3481,10 +3400,6 @@ function getProfileTags() {
   return tags;
 }
 
-
-/* =========================================================
-   POST TIME
-   ========================================================= */
 
 function formatPostTime(dateString) {
 
@@ -3544,10 +3459,6 @@ function formatPostTime(dateString) {
 }
 
 
-/* =========================================================
-   FILTERS
-   ========================================================= */
-
 function setFilter(filter, button) {
 
   currentFilter =
@@ -3573,10 +3484,6 @@ function setFilter(filter, button) {
   renderPosts();
 }
 
-
-/* =========================================================
-   RENDER POSTS
-   ========================================================= */
 
 function renderPosts() {
 
@@ -3619,6 +3526,7 @@ function renderPosts() {
         ) {
 
           return post.type === "personal";
+
         }
 
         return (
@@ -3673,10 +3581,6 @@ function renderPosts() {
 
 }
 
-
-/* =========================================================
-   RENDER SINGLE POST
-   ========================================================= */
 
 function renderPost(post) {
 
@@ -3746,6 +3650,7 @@ function renderPost(post) {
             alt="Post media"
           >
         </div>`;
+
     }
 
   }
@@ -3863,37 +3768,68 @@ function renderPost(post) {
 async function toggleLike(id) {
 
   if (!currentUser) {
+
     openAuth("login");
+
     return;
   }
 
+
+  if (
+    String(id).startsWith("sample-")
+  ) {
+
+    return;
+  }
+
+
   const post =
     posts.find(
-      item => String(item.id) === String(id)
+      item =>
+        String(item.id) ===
+        String(id)
     );
+
 
   if (!post) {
     return;
   }
 
-  const alreadyLiked = post.liked;
+
+  const alreadyLiked =
+    post.liked;
+
 
   if (alreadyLiked) {
 
-    const { error } =
+    const {
+      error
+    } =
       await supabaseClient
         .from("post_likes")
         .delete()
         .eq("post_id", id)
         .eq("user_id", currentUser.id);
 
+
     if (error) {
-      console.error("Remove like error:", error);
-      alert("Could not remove your Like.");
+
+      console.error(
+        "Remove like error:",
+        error
+      );
+
+      alert(
+        "Could not remove your Like."
+      );
+
       return;
     }
 
-    post.liked = false;
+
+    post.liked =
+      false;
+
 
     post.likes =
       Math.max(
@@ -3903,39 +3839,58 @@ async function toggleLike(id) {
 
   } else {
 
-    const { error } =
+    const {
+      error
+    } =
       await supabaseClient
         .from("post_likes")
         .insert({
-          post_id: id,
-          user_id: currentUser.id
+
+          post_id:
+            id,
+
+          user_id:
+            currentUser.id
+
         });
 
+
     if (error) {
-      console.error("Add like error:", error);
-      alert("Could not add your Like.");
+
+      console.error(
+        "Add like error:",
+        error
+      );
+
+      alert(
+        "Could not add your Like."
+      );
+
       return;
     }
 
-    post.liked = true;
+
+    post.liked =
+      true;
+
 
     post.likes =
       post.likes + 1;
+
   }
 
+
   renderPosts();
+
 }
 
-
-/* =========================================================
-   COMMENTS / REPORT
-   ========================================================= */
 
 function commentPost(id) {
 
   alert(
     "Comments will be available soon."
   );
+
 }
 
 
@@ -3944,12 +3899,9 @@ function reportPost(id) {
   alert(
     "Thank you. Reporting tools will be expanded as FriendHub grows."
   );
+
 }
 
-
-/* =========================================================
-   SECURITY HELPERS
-   ========================================================= */
 
 function escapeHtml(value) {
 
@@ -3969,10 +3921,6 @@ function escapeHtmlAttribute(value) {
 
 }
 
-
-/* =========================================================
-   CLICK OUTSIDE MODALS
-   ========================================================= */
 
 document.querySelectorAll(
   ".modal-overlay"
@@ -3997,10 +3945,6 @@ document.querySelectorAll(
 
 });
 
-
-/* =========================================================
-   INITIALIZE
-   ========================================================= */
 
 renderOptionButtons();
 
