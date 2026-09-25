@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FriendHub — Meet New People</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0b0b12;
+            color: white;
+        }
+
+        header {
+            width: 100%;
+            padding: 22px 7%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(11, 11, 18, 0.95);
+            border-bottom: 1px solid #22222f;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .logo span {
+            color: #7c5cff;
+        }
+
+        nav a {
+            color: #ccc;
+            text-decoration: none;
+            margin-left: 25px;
+            font-size: 15px;
+        }
+
+        nav a:hover {
+            color: white;
+        }
+
+        .hero {
+            min-height: 620px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 60px 20px;
+            background:
+                radial-gradient(circle at top, #251c55 0%, #0b0b12 55%);
+        }
+
+        .hero h1 {
+            font-size: clamp(45px, 8vw, 82px);
+            line-height: 1;
+            margin-bottom: 25px;
+        }
+
+        .hero h1 span {
+            color: #8b6cff;
+        }
+
+        .hero p {
+            max-width: 650px;
+            color: #b7b7c5;
+            font-size: 19px;
+            line-height: 1.6;
+            margin-bottom: 35px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .button {
+            padding: 14px 25px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .primary {
+            background: #7c5cff;
+            color: white;
+        }
+
+        .secondary {
+            border: 1px solid #333343;
+            color: white;
+            background: #15151f;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .section {
+            padding: 80px 7%;
+        }
+
+        .section h2 {
+            text-align: center;
+            font-size: 38px;
+            margin-bottom: 15px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: #9999aa;
+            margin-bottom: 45px;
+        }
+
+        .cards {
+            max-width: 1100px;
+            margin: auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 22px;
+        }
+
+        .card {
+            background: #15151f;
+            border: 1px solid #272735;
+            border-radius: 18px;
+            padding: 35px 25px;
+            text-align: center;
+            transition: 0.25s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #6250d8;
+        }
+
+        .icon {
+            font-size: 45px;
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            font-size: 23px;
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            color: #9999aa;
+            line-height: 1.6;
+            margin-bottom: 22px;
+        }
+
+        .card a {
+            display: inline-block;
+            color: white;
+            background: #242433;
+            padding: 10px 18px;
+            border-radius: 9px;
+            text-decoration: none;
+        }
+
+        footer {
+            border-top: 1px solid #22222f;
+            padding: 30px;
+            text-align: center;
+            color: #777788;
+        }
+
+        @media (max-width: 800px) {
+            nav {
+                display: none;
+            }
+
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                min-height: 550px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">Friend<span>Hub</span></div>
+
+    <nav>
+        <a href="#home">Home</a>
+        <a href="#discover">Discover</a>
+        <a href="#about">About</a>
+    </nav>
+</header>
+
+<section class="hero" id="home">
+
+    <h1>Meet People.<br><span>Make Friends.</span></h1>
+
+    <p>
+        Discover new people, Snapchat friends, WhatsApp groups
+        and Telegram communities from around the world.
+    </p>
+
+    <div class="buttons">
+        <a href="#discover" class="button primary">Discover Friends</a>
+        <a href="#discover" class="button secondary">Explore Groups</a>
+    </div>
+
+</section>
+
+<section class="section" id="discover">
+
+    <h2>Connect Your Way</h2>
+
+    <p class="section-subtitle">
+        Find people and communities on the platforms you already use.
+    </p>
+
+    <div class="cards">
+
+        <div class="card">
+            <div class="icon">👻</div>
+            <h3>Snapchat</h3>
+            <p>
+                Find new Snapchat friends based on interests,
+                languages and location.
+            </p>
+            <a href="#">Find Friends</a>
+        </div>
+
+        <div class="card">
+            <div class="icon">💬</div>
+            <h3>WhatsApp</h3>
+            <p>
+                Discover WhatsApp groups and communities
+                for different interests.
+            </p>
+            <a href="#">Explore Groups</a>
+        </div>
+
+        <div class="card">
+            <div class="icon">✈️</div>
+            <h3>Telegram</h3>
+            <p>
+                Join Telegram communities and meet people
+                from around the world.
+            </p>
+            <a href="#">Explore Telegram</a>
+        </div>
+
+    </div>
+
+</section>
+
+<footer>
+    © 2026 FriendHub. Connect. Discover. Make Friends.
+</footer>
+
+</body>
+</html>
