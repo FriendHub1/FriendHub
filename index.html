@@ -3857,14 +3857,67 @@ async function toggleLike(id) {
 
     if (error) {
 
+      /*
+        PostgreSQL/Supabase code 23505 and HTTP 409
+        mean the unique Like already exists.
+
+        Instead of showing an error, we synchronize
+        the post with the Like that is already saved.
+      */
+
+      if (
+        error.code === "23505" ||
+        error.status === 409
+      ) {
+
+        post.liked = true;
+
+
+        const {
+          data: existingLikes,
+          error: fetchError
+        } =
+          await supabaseClient
+            .from("post_likes")
+            .select("id")
+            .eq("post_id", id);
+
+
+        if (
+          !fetchError &&
+          existingLikes
+        ) {
+
+          post.likes =
+            existingLikes.length;
+
+        } else {
+
+          post.likes =
+            Math.max(
+              1,
+              post.likes || 0
+            );
+
+        }
+
+
+        renderPosts();
+
+        return;
+      }
+
+
       console.error(
         "Add like error:",
         error
       );
 
+
       alert(
         "Could not add your Like."
       );
+
 
       return;
     }
@@ -3875,7 +3928,7 @@ async function toggleLike(id) {
 
 
     post.likes =
-      post.likes + 1;
+      (post.likes || 0) + 1;
 
   }
 
