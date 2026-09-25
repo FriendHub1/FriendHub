@@ -451,8 +451,17 @@
       margin-bottom: 8px;
     }
 
+    /* =========================================================
+       POST MEDIA + DOUBLE TAP LIKE
+       ========================================================= */
+
     .post-media {
       margin-top: 12px;
+      position: relative;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
     .post-media img,
@@ -462,7 +471,54 @@
       object-fit: contain;
       background: #f5f6f8;
       border-radius: 12px;
+      display: block;
+      user-select: none;
+      -webkit-user-select: none;
     }
+
+    .double-tap-heart {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0.4);
+      font-size: 95px;
+      line-height: 1;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 20;
+      animation: doubleTapHeart 0.8s ease-out forwards;
+      filter: drop-shadow(0 5px 12px rgba(0,0,0,0.20));
+    }
+
+    @keyframes doubleTapHeart {
+
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.4);
+      }
+
+      20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.18);
+      }
+
+      42% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.95);
+      }
+
+      70% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.03);
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.08);
+      }
+
+    }
+
 
     .post-actions {
       display: flex;
@@ -742,6 +798,7 @@
     }
 
     @media (max-width: 850px) {
+
       .feature-grid {
         grid-template-columns: 1fr;
       }
@@ -760,9 +817,11 @@
       .hero {
         min-height: 500px;
       }
+
     }
 
     @media (max-width: 560px) {
+
       .page {
         padding: 35px 0;
       }
@@ -791,13 +850,20 @@
       .post {
         padding: 18px;
       }
+
+      .double-tap-heart {
+        font-size: 80px;
+      }
+
     }
+
   </style>
 </head>
 
 <body>
 
 <header>
+
   <div class="container nav">
 
     <div class="logo" onclick="showPage('home')">
@@ -805,28 +871,60 @@
     </div>
 
     <nav class="nav-links">
-      <button onclick="showPage('home')">Home</button>
-      <button onclick="showPage('discover')">Discover</button>
-      <button onclick="showPage('profile')">Profile</button>
-      <button onclick="showPage('about')">About</button>
-      <button onclick="showPage('support')">Support</button>
+
+      <button onclick="showPage('home')">
+        Home
+      </button>
+
+      <button onclick="showPage('discover')">
+        Discover
+      </button>
+
+      <button onclick="showPage('profile')">
+        Profile
+      </button>
+
+      <button onclick="showPage('about')">
+        About
+      </button>
+
+      <button onclick="showPage('support')">
+        Support
+      </button>
+
     </nav>
 
     <div class="auth-buttons">
-      <button class="btn btn-secondary" id="loginBtn" onclick="openAuth('login')">
+
+      <button
+        class="btn btn-secondary"
+        id="loginBtn"
+        onclick="openAuth('login')"
+      >
         Log In
       </button>
 
-      <button class="btn btn-primary" id="signupBtn" onclick="openAuth('signup')">
+      <button
+        class="btn btn-primary"
+        id="signupBtn"
+        onclick="openAuth('signup')"
+      >
         Create Account
       </button>
 
-      <button class="btn btn-secondary" id="logoutBtn" onclick="logout()" style="display:none;">
+      <button
+        class="btn btn-secondary"
+        id="logoutBtn"
+        onclick="logout()"
+        style="display:none;"
+      >
         Log Out
       </button>
+
     </div>
 
   </div>
+
 </header>
 
 
@@ -835,6 +933,7 @@
 <section id="home" class="page active">
 
   <div class="hero">
+
     <div class="container hero-content">
 
       <div class="hero-badge">
@@ -852,54 +951,98 @@
       </p>
 
       <div class="hero-buttons">
-        <button class="btn btn-primary" onclick="showPage('discover')">
+
+        <button
+          class="btn btn-primary"
+          onclick="showPage('discover')"
+        >
           Discover People
         </button>
 
-        <button class="btn btn-secondary" onclick="showPage('about')">
+        <button
+          class="btn btn-secondary"
+          onclick="showPage('about')"
+        >
           Learn More
         </button>
+
       </div>
 
     </div>
+
   </div>
+
 
   <div class="features">
 
     <div class="container">
 
       <div class="section-title">
-        <h2>Find Your Community</h2>
-        <p>Connect around the things you enjoy.</p>
+
+        <h2>
+          Find Your Community
+        </h2>
+
+        <p>
+          Connect around the things you enjoy.
+        </p>
+
       </div>
+
 
       <div class="feature-grid">
 
         <div class="feature-card">
-          <div class="feature-icon">👤</div>
-          <h3>Meet People</h3>
+
+          <div class="feature-icon">
+            👤
+          </div>
+
+          <h3>
+            Meet People
+          </h3>
+
           <p>
             Discover people with similar interests,
             languages, hobbies and goals.
           </p>
+
         </div>
 
+
         <div class="feature-card">
-          <div class="feature-icon">💬</div>
-          <h3>Find Communities</h3>
+
+          <div class="feature-icon">
+            💬
+          </div>
+
+          <h3>
+            Find Communities
+          </h3>
+
           <p>
             Discover WhatsApp and Telegram communities
             that match your interests.
           </p>
+
         </div>
 
+
         <div class="feature-card">
-          <div class="feature-icon">🌎</div>
-          <h3>Make Connections</h3>
+
+          <div class="feature-icon">
+            🌎
+          </div>
+
+          <h3>
+            Make Connections
+          </h3>
+
           <p>
             Find new friends from different countries
             and backgrounds.
           </p>
+
         </div>
 
       </div>
@@ -916,9 +1059,17 @@
   <div class="container">
 
     <div class="page-header">
-      <h1>Discover</h1>
-      <p>Find people and communities that match what you're looking for.</p>
+
+      <h1>
+        Discover
+      </h1>
+
+      <p>
+        Find people and communities that match what you're looking for.
+      </p>
+
     </div>
+
 
     <input
       id="searchInput"
@@ -928,25 +1079,46 @@
       oninput="renderPosts()"
     >
 
+
     <div class="filters">
 
-      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">
+      <button
+        class="filter-btn active"
+        data-filter="all"
+        onclick="setFilter('all', this)"
+      >
         All
       </button>
 
-      <button class="filter-btn" data-filter="people" onclick="setFilter('people', this)">
+      <button
+        class="filter-btn"
+        data-filter="people"
+        onclick="setFilter('people', this)"
+      >
         👤 People
       </button>
 
-      <button class="filter-btn" data-filter="whatsapp" onclick="setFilter('whatsapp', this)">
+      <button
+        class="filter-btn"
+        data-filter="whatsapp"
+        onclick="setFilter('whatsapp', this)"
+      >
         🟢 WhatsApp
       </button>
 
-      <button class="filter-btn" data-filter="telegram" onclick="setFilter('telegram', this)">
+      <button
+        class="filter-btn"
+        data-filter="telegram"
+        onclick="setFilter('telegram', this)"
+      >
         🔵 Telegram
       </button>
 
-      <button class="filter-btn" data-filter="snapchat" onclick="setFilter('snapchat', this)">
+      <button
+        class="filter-btn"
+        data-filter="snapchat"
+        onclick="setFilter('snapchat', this)"
+      >
         👻 Snapchat
       </button>
 
@@ -955,9 +1127,14 @@
 
     <div class="composer">
 
-      <h3>Create a post</h3>
+      <h3>
+        Create a post
+      </h3>
 
-      <div id="loginRequiredMessage" class="message error">
+      <div
+        id="loginRequiredMessage"
+        class="message error"
+      >
         Please log in or create an account before creating a post.
       </div>
 
@@ -965,6 +1142,7 @@
         id="postText"
         placeholder="What are you looking for?"
       ></textarea>
+
 
       <div class="post-types">
 
@@ -1002,11 +1180,15 @@
 
       </div>
 
+
       <div class="composer-actions">
 
         <div>
 
-          <label class="file-label" for="mediaInput">
+          <label
+            class="file-label"
+            for="mediaInput"
+          >
             📎 Add media
           </label>
 
@@ -1019,13 +1201,21 @@
 
         </div>
 
-        <button class="btn btn-primary" onclick="createPost()">
+
+        <button
+          class="btn btn-primary"
+          onclick="createPost()"
+        >
           Post
         </button>
 
       </div>
 
-      <div id="mediaPreview" class="media-preview">
+
+      <div
+        id="mediaPreview"
+        class="media-preview"
+      >
 
         <button
           class="remove-media"
@@ -1041,7 +1231,10 @@
     </div>
 
 
-    <div id="feed" class="feed"></div>
+    <div
+      id="feed"
+      class="feed"
+    ></div>
 
   </div>
 
@@ -1053,32 +1246,61 @@
   <div class="container">
 
     <div class="page-header">
-      <h1>Your Profile</h1>
-      <p>Customize how people discover you on FriendHub.</p>
+
+      <h1>
+        Your Profile
+      </h1>
+
+      <p>
+        Customize how people discover you on FriendHub.
+      </p>
+
     </div>
 
-    <div id="profileLoginMessage" class="content-card" style="display:none;">
-      <h2>Create an account first</h2>
+
+    <div
+      id="profileLoginMessage"
+      class="content-card"
+      style="display:none;"
+    >
+
+      <h2>
+        Create an account first
+      </h2>
 
       <p>
         Your profile is connected to your FriendHub account.
         Please log in or create an account to continue.
       </p>
 
-      <button class="btn btn-primary" onclick="openAuth('signup')">
+      <button
+        class="btn btn-primary"
+        onclick="openAuth('signup')"
+      >
         Create Account
       </button>
+
     </div>
 
-    <div id="profileCard" class="profile-card">
+
+    <div
+      id="profileCard"
+      class="profile-card"
+    >
 
       <div class="profile-photo-section">
 
-        <div id="profileAvatar" class="profile-avatar">
+        <div
+          id="profileAvatar"
+          class="profile-avatar"
+        >
           👤
         </div>
 
-        <label class="profile-photo-label" for="profilePhotoInput">
+        <label
+          class="profile-photo-label"
+          for="profilePhotoInput"
+        >
           📷 Change profile photo
         </label>
 
@@ -1090,6 +1312,7 @@
         >
 
       </div>
+
 
       <div class="form-group">
 
@@ -1109,6 +1332,7 @@
         </div>
 
       </div>
+
 
       <div class="form-group">
 
@@ -1130,6 +1354,7 @@
 
       </div>
 
+
       <div class="form-group">
 
         <label for="country">
@@ -1145,15 +1370,20 @@
 
       </div>
 
+
       <div class="form-group">
 
         <label>
           Languages
         </label>
 
-        <div id="languagesOptions" class="option-grid"></div>
+        <div
+          id="languagesOptions"
+          class="option-grid"
+        ></div>
 
       </div>
+
 
       <div class="form-group">
 
@@ -1161,9 +1391,13 @@
           Interests
         </label>
 
-        <div id="interestsOptions" class="option-grid"></div>
+        <div
+          id="interestsOptions"
+          class="option-grid"
+        ></div>
 
       </div>
+
 
       <div class="form-group">
 
@@ -1171,13 +1405,20 @@
           What are you looking for?
         </label>
 
-        <div id="lookingForOptions" class="option-grid"></div>
+        <div
+          id="lookingForOptions"
+          class="option-grid"
+        ></div>
 
       </div>
 
+
       <div class="profile-actions">
 
-        <button class="btn btn-primary" onclick="saveProfile()">
+        <button
+          class="btn btn-primary"
+          onclick="saveProfile()"
+        >
           Save Profile
         </button>
 
@@ -1189,6 +1430,7 @@
         </button>
 
       </div>
+
 
       <div
         id="profileMessage"
@@ -1208,13 +1450,23 @@
   <div class="container">
 
     <div class="page-header">
-      <h1>About FriendHub</h1>
-      <p>A simple place to discover people and communities.</p>
+
+      <h1>
+        About FriendHub
+      </h1>
+
+      <p>
+        A simple place to discover people and communities.
+      </p>
+
     </div>
+
 
     <div class="content-card">
 
-      <h2>What is FriendHub?</h2>
+      <h2>
+        What is FriendHub?
+      </h2>
 
       <p>
         FriendHub is a social discovery platform designed to help
@@ -1227,20 +1479,45 @@
         WhatsApp, Telegram and Snapchat connections.
       </p>
 
-      <h2>What you can do</h2>
+
+      <h2>
+        What you can do
+      </h2>
 
       <ul>
-        <li>Create a personal profile.</li>
-        <li>Discover people with similar interests.</li>
-        <li>Find WhatsApp communities.</li>
-        <li>Find Telegram communities.</li>
-        <li>Share Snapchat-related posts.</li>
-        <li>Create posts and interact with the community.</li>
+
+        <li>
+          Create a personal profile.
+        </li>
+
+        <li>
+          Discover people with similar interests.
+        </li>
+
+        <li>
+          Find WhatsApp communities.
+        </li>
+
+        <li>
+          Find Telegram communities.
+        </li>
+
+        <li>
+          Share Snapchat-related posts.
+        </li>
+
+        <li>
+          Create posts and interact with the community.
+        </li>
+
       </ul>
 
       <br>
 
-      <h2>Important</h2>
+
+      <h2>
+        Important
+      </h2>
 
       <p>
         FriendHub is an independent platform and is not affiliated
@@ -1264,13 +1541,23 @@
   <div class="container">
 
     <div class="page-header">
-      <h1>Support</h1>
-      <p>Need help with FriendHub?</p>
+
+      <h1>
+        Support
+      </h1>
+
+      <p>
+        Need help with FriendHub?
+      </p>
+
     </div>
+
 
     <div class="content-card">
 
-      <h2>Contact FriendHub Support</h2>
+      <h2>
+        Contact FriendHub Support
+      </h2>
 
       <p>
         If you have a question, experience a problem or need
@@ -1298,6 +1585,7 @@
   <div class="container footer-inner">
 
     <div>
+
       <div class="footer-brand">
         FriendHub
       </div>
@@ -1305,6 +1593,7 @@
       <div class="footer-small">
         Meet People. Make Friends.
       </div>
+
     </div>
 
     <div class="footer-small">
@@ -1316,7 +1605,10 @@
 </footer>
 
 
-<div id="authModal" class="modal-overlay">
+<div
+  id="authModal"
+  class="modal-overlay"
+>
 
   <div class="modal">
 
@@ -1331,11 +1623,18 @@
       Log In
     </h2>
 
-    <p id="authSubtitle" class="modal-subtitle">
+    <p
+      id="authSubtitle"
+      class="modal-subtitle"
+    >
       Welcome back to FriendHub.
     </p>
 
-    <div id="authMessage" class="message"></div>
+    <div
+      id="authMessage"
+      class="message"
+    ></div>
+
 
     <div class="form-group">
 
@@ -1352,6 +1651,7 @@
 
     </div>
 
+
     <div class="form-group">
 
       <label for="authPassword">
@@ -1367,7 +1667,12 @@
 
     </div>
 
-    <div id="confirmPasswordGroup" class="form-group" style="display:none;">
+
+    <div
+      id="confirmPasswordGroup"
+      class="form-group"
+      style="display:none;"
+    >
 
       <label for="authConfirmPassword">
         Confirm Password
@@ -1382,7 +1687,11 @@
 
     </div>
 
-    <div id="forgotWrap" class="forgot-wrap">
+
+    <div
+      id="forgotWrap"
+      class="forgot-wrap"
+    >
 
       <button
         class="forgot-btn"
@@ -1393,6 +1702,7 @@
 
     </div>
 
+
     <button
       id="authSubmitBtn"
       class="btn btn-primary"
@@ -1401,6 +1711,7 @@
     >
       Log In
     </button>
+
 
     <div class="auth-switch">
 
@@ -1422,7 +1733,10 @@
 </div>
 
 
-<div id="resetModal" class="modal-overlay">
+<div
+  id="resetModal"
+  class="modal-overlay"
+>
 
   <div class="modal">
 
@@ -1433,13 +1747,19 @@
       ×
     </button>
 
-    <h2>Reset Password</h2>
+    <h2>
+      Reset Password
+    </h2>
 
     <p class="modal-subtitle">
       Enter your email and we'll send you a password reset link.
     </p>
 
-    <div id="resetMessage" class="message"></div>
+    <div
+      id="resetMessage"
+      class="message"
+    ></div>
+
 
     <div class="form-group">
 
@@ -1455,6 +1775,7 @@
 
     </div>
 
+
     <button
       class="btn btn-primary"
       style="width:100%;"
@@ -1468,17 +1789,26 @@
 </div>
 
 
-<div id="newPasswordModal" class="modal-overlay">
+<div
+  id="newPasswordModal"
+  class="modal-overlay"
+>
 
   <div class="modal">
 
-    <h2>Create New Password</h2>
+    <h2>
+      Create New Password
+    </h2>
 
     <p class="modal-subtitle">
       Choose a new password for your FriendHub account.
     </p>
 
-    <div id="newPasswordMessage" class="message"></div>
+    <div
+      id="newPasswordMessage"
+      class="message"
+    ></div>
+
 
     <div class="form-group">
 
@@ -1494,6 +1824,7 @@
 
     </div>
 
+
     <div class="form-group">
 
       <label for="newPasswordConfirm">
@@ -1507,6 +1838,7 @@
       >
 
     </div>
+
 
     <button
       class="btn btn-primary"
@@ -1555,6 +1887,17 @@ let selectedProfilePhoto = null;
 let authMode = "login";
 
 let posts = [];
+
+
+/* =========================================================
+   DOUBLE TAP LIKE STATE
+   ========================================================= */
+
+const lastTapTimes = new Map();
+
+const doubleTapLikeBusy = new Set();
+
+const recentDoubleTapTriggers = new Map();
 
 
 let samplePosts = [
@@ -1617,6 +1960,7 @@ const languageOptions = [
   "🌎 Other"
 ];
 
+
 const interestOptions = [
   "🎮 Gaming",
   "🎵 Music",
@@ -1636,6 +1980,7 @@ const interestOptions = [
   "🌎 Culture",
   "✨ Other"
 ];
+
 
 const lookingForOptions = [
   "🤝 New friends",
@@ -1665,21 +2010,26 @@ function showPage(pageId) {
     page.classList.remove("active");
   });
 
+
   const page =
     document.getElementById(pageId);
+
 
   if (page) {
     page.classList.add("active");
   }
+
 
   window.scrollTo({
     top: 0,
     behavior: "smooth"
   });
 
+
   if (pageId === "discover") {
     loadPosts();
   }
+
 
   if (pageId === "profile") {
 
@@ -1695,12 +2045,20 @@ function showPage(pageId) {
 
 
 function openModal(id) {
-  document.getElementById(id).classList.add("active");
+
+  document
+    .getElementById(id)
+    .classList.add("active");
+
 }
 
 
 function closeModal(id) {
-  document.getElementById(id).classList.remove("active");
+
+  document
+    .getElementById(id)
+    .classList.remove("active");
+
 }
 
 
@@ -1717,6 +2075,7 @@ function openAuth(mode) {
   updateAuthModal();
 
   openModal("authModal");
+
 }
 
 
@@ -1746,12 +2105,14 @@ function updateAuthModal() {
 
   if (authMode === "signup") {
 
-    title.textContent = "Create Account";
+    title.textContent =
+      "Create Account";
 
     subtitle.textContent =
       "Join FriendHub and start discovering people.";
 
-    submit.textContent = "Create Account";
+    submit.textContent =
+      "Create Account";
 
     switchText.textContent =
       "Already have an account?";
@@ -1767,12 +2128,14 @@ function updateAuthModal() {
 
   } else {
 
-    title.textContent = "Log In";
+    title.textContent =
+      "Log In";
 
     subtitle.textContent =
       "Welcome back to FriendHub.";
 
-    submit.textContent = "Log In";
+    submit.textContent =
+      "Log In";
 
     switchText.textContent =
       "Don't have an account?";
@@ -1801,6 +2164,7 @@ function toggleAuthMode() {
   clearAuthMessage();
 
   updateAuthModal();
+
 }
 
 
@@ -1887,8 +2251,11 @@ async function submitAuth() {
         "success"
       );
 
+
       setTimeout(() => {
+
         closeModal("authModal");
+
       }, 1000);
 
     } else {
@@ -1923,6 +2290,7 @@ async function submitAuth() {
     currentUser =
       data.user;
 
+
     showAuthMessage(
       "Logged in successfully!",
       "success"
@@ -1934,6 +2302,7 @@ async function submitAuth() {
       closeModal("authModal");
 
       await loadCurrentProfile();
+
       await loadPosts();
 
       updateAuthUI();
@@ -1948,24 +2317,32 @@ async function submitAuth() {
 function showAuthMessage(message, type) {
 
   const box =
-    document.getElementById("authMessage");
+    document.getElementById(
+      "authMessage"
+    );
 
-  box.textContent = message;
+  box.textContent =
+    message;
 
   box.className =
     "message show " + type;
+
 }
 
 
 function clearAuthMessage() {
 
   const box =
-    document.getElementById("authMessage");
+    document.getElementById(
+      "authMessage"
+    );
 
-  box.textContent = "";
+  box.textContent =
+    "";
 
   box.className =
     "message";
+
 }
 
 
@@ -1973,25 +2350,38 @@ function openResetPassword() {
 
   closeModal("authModal");
 
-  document.getElementById("resetEmail").value = "";
+  document.getElementById(
+    "resetEmail"
+  ).value = "";
+
 
   const box =
-    document.getElementById("resetMessage");
+    document.getElementById(
+      "resetMessage"
+    );
 
-  box.className = "message";
+  box.className =
+    "message";
 
-  box.textContent = "";
+  box.textContent =
+    "";
 
-  openModal("resetModal");
+
+  openModal(
+    "resetModal"
+  );
+
 }
 
 
 async function sendPasswordReset() {
 
   const email =
-    document.getElementById("resetEmail")
-      .value
-      .trim();
+    document.getElementById(
+      "resetEmail"
+    )
+    .value
+    .trim();
 
 
   if (!email) {
@@ -2031,30 +2421,37 @@ async function sendPasswordReset() {
     "Password reset email sent. Please check your inbox.",
     "success"
   );
+
 }
 
 
 function showResetMessage(message, type) {
 
   const box =
-    document.getElementById("resetMessage");
+    document.getElementById(
+      "resetMessage"
+    );
 
-  box.textContent = message;
+  box.textContent =
+    message;
 
   box.className =
     "message show " + type;
+
 }
 
 
 async function updatePassword() {
 
   const password =
-    document.getElementById("newPassword")
-      .value;
+    document.getElementById(
+      "newPassword"
+    ).value;
 
   const confirm =
-    document.getElementById("newPasswordConfirm")
-      .value;
+    document.getElementById(
+      "newPasswordConfirm"
+    ).value;
 
 
   if (password.length < 8) {
@@ -2103,20 +2500,29 @@ async function updatePassword() {
 
 
   setTimeout(() => {
-    closeModal("newPasswordModal");
+
+    closeModal(
+      "newPasswordModal"
+    );
+
   }, 1200);
+
 }
 
 
 function showNewPasswordMessage(message, type) {
 
   const box =
-    document.getElementById("newPasswordMessage");
+    document.getElementById(
+      "newPasswordMessage"
+    );
 
-  box.textContent = message;
+  box.textContent =
+    message;
 
   box.className =
     "message show " + type;
+
 }
 
 
@@ -2126,11 +2532,14 @@ supabaseClient.auth.onAuthStateChange(
     currentUser =
       session?.user || null;
 
+
     updateAuthUI();
+
 
     if (currentUser) {
 
       await loadCurrentProfile();
+
       await loadPosts();
 
     } else {
@@ -2143,6 +2552,7 @@ supabaseClient.auth.onAuthStateChange(
 
     }
 
+
     updateProfileVisibility();
 
   }
@@ -2154,11 +2564,14 @@ async function checkSession() {
   const {
     data,
     error
-  } = await supabaseClient.auth.getSession();
+  } =
+    await supabaseClient.auth.getSession();
 
 
   if (error) {
+
     console.error(error);
+
     return;
   }
 
@@ -2173,30 +2586,39 @@ async function checkSession() {
   if (currentUser) {
 
     await loadCurrentProfile();
+
     await loadPosts();
 
   } else {
 
     posts = [...samplePosts];
+
     renderPosts();
 
   }
 
 
   updateProfileVisibility();
+
 }
 
 
 function updateAuthUI() {
 
   const loginBtn =
-    document.getElementById("loginBtn");
+    document.getElementById(
+      "loginBtn"
+    );
 
   const signupBtn =
-    document.getElementById("signupBtn");
+    document.getElementById(
+      "signupBtn"
+    );
 
   const logoutBtn =
-    document.getElementById("logoutBtn");
+    document.getElementById(
+      "logoutBtn"
+    );
 
 
   if (currentUser) {
@@ -2231,16 +2653,19 @@ async function logout() {
   await supabaseClient.auth.signOut();
 
   currentUser = null;
+
   currentProfile = null;
 
   posts = [...samplePosts];
 
   updateAuthUI();
+
   updateProfileVisibility();
 
   renderPosts();
 
   showPage("home");
+
 }
 
 
@@ -2252,11 +2677,13 @@ function renderOptionButtons() {
     "languages"
   );
 
+
   renderOptions(
     "interestsOptions",
     interestOptions,
     "interests"
   );
+
 
   renderOptions(
     "lookingForOptions",
@@ -2267,20 +2694,31 @@ function renderOptionButtons() {
 }
 
 
-function renderOptions(containerId, options, category) {
+function renderOptions(
+  containerId,
+  options,
+  category
+) {
 
   const container =
-    document.getElementById(containerId);
+    document.getElementById(
+      containerId
+    );
 
-  container.innerHTML = "";
+
+  container.innerHTML =
+    "";
 
 
   options.forEach(option => {
 
     const button =
-      document.createElement("button");
+      document.createElement(
+        "button"
+      );
 
-    button.type = "button";
+    button.type =
+      "button";
 
     button.className =
       "option-btn";
@@ -2294,32 +2732,45 @@ function renderOptions(containerId, options, category) {
     button.dataset.value =
       option;
 
+
     button.onclick = () => {
 
-      button.classList.toggle("selected");
+      button.classList.toggle(
+        "selected"
+      );
 
     };
 
 
-    container.appendChild(button);
+    container.appendChild(
+      button
+    );
 
   });
 
 }
 
 
-function getSelectedOptions(category) {
+function getSelectedOptions(
+  category
+) {
 
   return [
     ...document.querySelectorAll(
       `.option-btn[data-category="${category}"].selected`
     )
-  ].map(button => button.dataset.value);
+  ].map(
+    button =>
+      button.dataset.value
+  );
 
 }
 
 
-function setSelectedOptions(category, values) {
+function setSelectedOptions(
+  category,
+  values
+) {
 
   document.querySelectorAll(
     `.option-btn[data-category="${category}"]`
@@ -2327,7 +2778,9 @@ function setSelectedOptions(category, values) {
 
     button.classList.toggle(
       "selected",
-      values.includes(button.dataset.value)
+      values.includes(
+        button.dataset.value
+      )
     );
 
   });
@@ -2345,11 +2798,15 @@ async function loadCurrentProfile() {
   const {
     data,
     error
-  } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq(
+        "user_id",
+        currentUser.id
+      )
+      .maybeSingle();
 
 
   if (error) {
@@ -2365,7 +2822,8 @@ async function loadCurrentProfile() {
 
   if (!data) {
 
-    currentProfile = null;
+    currentProfile =
+      null;
 
     clearProfileForm();
 
@@ -2377,48 +2835,76 @@ async function loadCurrentProfile() {
     data;
 
 
-  document.getElementById("username").value =
+  document.getElementById(
+    "username"
+  ).value =
     data.username || "";
 
-  document.getElementById("age").value =
+
+  document.getElementById(
+    "age"
+  ).value =
     data.age || "";
 
-  document.getElementById("country").value =
+
+  document.getElementById(
+    "country"
+  ).value =
     data.country || "";
 
 
   let languages = [];
+
   let interests = [];
+
   let lookingFor = [];
 
 
   try {
+
     languages =
       data.languages
-        ? JSON.parse(data.languages)
+        ? JSON.parse(
+            data.languages
+          )
         : [];
+
   } catch {
+
     languages = [];
+
   }
 
 
   try {
+
     interests =
       data.interests
-        ? JSON.parse(data.interests)
+        ? JSON.parse(
+            data.interests
+          )
         : [];
+
   } catch {
+
     interests = [];
+
   }
 
 
   try {
+
     lookingFor =
       data.looking_for
-        ? JSON.parse(data.looking_for)
+        ? JSON.parse(
+            data.looking_for
+          )
         : [];
+
   } catch {
+
     lookingFor = [];
+
   }
 
 
@@ -2427,10 +2913,12 @@ async function loadCurrentProfile() {
     languages
   );
 
+
   setSelectedOptions(
     "interests",
     interests
   );
+
 
   setSelectedOptions(
     "lookingFor",
@@ -2446,18 +2934,27 @@ async function loadCurrentProfile() {
     data.username,
     data.profile_photo
   );
+
 }
 
 
 function clearProfileForm() {
 
-  document.getElementById("username").value =
+  document.getElementById(
+    "username"
+  ).value =
     "";
 
-  document.getElementById("age").value =
+
+  document.getElementById(
+    "age"
+  ).value =
     "";
 
-  document.getElementById("country").value =
+
+  document.getElementById(
+    "country"
+  ).value =
     "";
 
 
@@ -2466,10 +2963,12 @@ function clearProfileForm() {
     []
   );
 
+
   setSelectedOptions(
     "interests",
     []
   );
+
 
   setSelectedOptions(
     "lookingFor",
@@ -2477,12 +2976,15 @@ function clearProfileForm() {
   );
 
 
-  selectedProfilePhoto = null;
+  selectedProfilePhoto =
+    null;
+
 
   updateProfileAvatar(
     "",
     null
   );
+
 }
 
 
@@ -2490,14 +2992,19 @@ async function saveProfile() {
 
   if (!currentUser) {
 
-    openAuth("signup");
+    openAuth(
+      "signup"
+    );
 
     return;
   }
 
 
   const usernameInput =
-    document.getElementById("username");
+    document.getElementById(
+      "username"
+    );
+
 
   let username =
     usernameInput.value.trim();
@@ -2515,7 +3022,9 @@ async function saveProfile() {
 
 
   username =
-    normalizeUsername(username);
+    normalizeUsername(
+      username
+    );
 
 
   if (username.length < 2) {
@@ -2531,12 +3040,18 @@ async function saveProfile() {
 
   const age =
     parseInt(
-      document.getElementById("age").value,
+      document.getElementById(
+        "age"
+      ).value,
       10
     );
 
 
-  if (!age || age < 1 || age > 120) {
+  if (
+    !age ||
+    age < 1 ||
+    age > 120
+  ) {
 
     showProfileMessage(
       "Please enter a valid age.",
@@ -2548,19 +3063,29 @@ async function saveProfile() {
 
 
   const country =
-    document.getElementById("country")
-      .value
-      .trim();
+    document.getElementById(
+      "country"
+    )
+    .value
+    .trim();
 
 
   const languages =
-    getSelectedOptions("languages");
+    getSelectedOptions(
+      "languages"
+    );
+
 
   const interests =
-    getSelectedOptions("interests");
+    getSelectedOptions(
+      "interests"
+    );
+
 
   const lookingFor =
-    getSelectedOptions("lookingFor");
+    getSelectedOptions(
+      "lookingFor"
+    );
 
 
   if (
@@ -2588,7 +3113,10 @@ async function saveProfile() {
       if (daysPassed < 30) {
 
         const remaining =
-          Math.ceil(30 - daysPassed);
+          Math.ceil(
+            30 - daysPassed
+          );
+
 
         showProfileMessage(
           `You can change your username again in ${remaining} day${remaining === 1 ? "" : "s"}.`,
@@ -2604,7 +3132,8 @@ async function saveProfile() {
 
 
   const oldUsername =
-    currentProfile?.username || null;
+    currentProfile?.username ||
+    null;
 
 
   const profileData = {
@@ -2619,16 +3148,23 @@ async function saveProfile() {
     country,
 
     languages:
-      JSON.stringify(languages),
+      JSON.stringify(
+        languages
+      ),
 
     interests:
-      JSON.stringify(interests),
+      JSON.stringify(
+        interests
+      ),
 
     looking_for:
-      JSON.stringify(lookingFor),
+      JSON.stringify(
+        lookingFor
+      ),
 
     profile_photo:
-      selectedProfilePhoto || null
+      selectedProfilePhoto ||
+      null
 
   };
 
@@ -2641,8 +3177,13 @@ async function saveProfile() {
     result =
       await supabaseClient
         .from("profiles")
-        .update(profileData)
-        .eq("user_id", currentUser.id)
+        .update(
+          profileData
+        )
+        .eq(
+          "user_id",
+          currentUser.id
+        )
         .select()
         .single();
 
@@ -2651,7 +3192,9 @@ async function saveProfile() {
     result =
       await supabaseClient
         .from("profiles")
-        .insert(profileData)
+        .insert(
+          profileData
+        )
         .select()
         .single();
 
@@ -2660,10 +3203,14 @@ async function saveProfile() {
 
   if (result.error) {
 
-    console.error(result.error);
+    console.error(
+      result.error
+    );
+
 
     if (
-      result.error.code === "23505"
+      result.error.code ===
+      "23505"
     ) {
 
       showProfileMessage(
@@ -2735,13 +3282,20 @@ async function saveProfile() {
 }
 
 
-function showProfileMessage(message, type) {
+function showProfileMessage(
+  message,
+  type
+) {
 
   const box =
-    document.getElementById("profileMessage");
+    document.getElementById(
+      "profileMessage"
+    );
+
 
   box.textContent =
     message;
+
 
   box.className =
     "message show " + type;
@@ -2749,10 +3303,16 @@ function showProfileMessage(message, type) {
 }
 
 
-function normalizeUsername(value) {
+function normalizeUsername(
+  value
+) {
 
   value =
-    value.replace(/^@+/, "");
+    value.replace(
+      /^@+/,
+      ""
+    );
+
 
   value =
     value.replace(
@@ -2760,14 +3320,22 @@ function normalizeUsername(value) {
       ""
     );
 
+
   value =
-    value.substring(0, 20);
+    value.substring(
+      0,
+      20
+    );
+
 
   return "@" + value;
+
 }
 
 
-function handleProfilePhoto(event) {
+function handleProfilePhoto(
+  event
+) {
 
   const file =
     event.target.files[0];
@@ -2778,7 +3346,11 @@ function handleProfilePhoto(event) {
   }
 
 
-  if (!file.type.startsWith("image/")) {
+  if (
+    !file.type.startsWith(
+      "image/"
+    )
+  ) {
 
     showProfileMessage(
       "Please select an image.",
@@ -2801,21 +3373,31 @@ function handleProfilePhoto(event) {
 
 
       updateProfileAvatar(
-        document.getElementById("username").value,
+        document.getElementById(
+          "username"
+        ).value,
         selectedProfilePhoto
       );
 
     };
 
 
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(
+    file
+  );
+
 }
 
 
-function updateProfileAvatar(username, photo) {
+function updateProfileAvatar(
+  username,
+  photo
+) {
 
   const avatar =
-    document.getElementById("profileAvatar");
+    document.getElementById(
+      "profileAvatar"
+    );
 
 
   if (photo) {
@@ -2829,7 +3411,10 @@ function updateProfileAvatar(username, photo) {
 
   const cleanUsername =
     (username || "")
-      .replace("@", "")
+      .replace(
+        "@",
+        ""
+      )
       .trim();
 
 
@@ -2856,6 +3441,7 @@ function updateProfileVisibility() {
     document.getElementById(
       "profileLoginMessage"
     );
+
 
   const profileCard =
     document.getElementById(
@@ -2884,7 +3470,10 @@ function updateProfileVisibility() {
 }
 
 
-function selectPostType(type, button) {
+function selectPostType(
+  type,
+  button
+) {
 
   currentPostType =
     type;
@@ -2904,10 +3493,13 @@ function selectPostType(type, button) {
   button.classList.add(
     "active"
   );
+
 }
 
 
-function handleMedia(event) {
+function handleMedia(
+  event
+) {
 
   const file =
     event.target.files[0];
@@ -2919,8 +3511,12 @@ function handleMedia(event) {
 
 
   if (
-    !file.type.startsWith("image/") &&
-    !file.type.startsWith("video/")
+    !file.type.startsWith(
+      "image/"
+    ) &&
+    !file.type.startsWith(
+      "video/"
+    )
   ) {
 
     alert(
@@ -2941,7 +3537,9 @@ function handleMedia(event) {
       selectedMedia = {
 
         type:
-          file.type.startsWith("video/")
+          file.type.startsWith(
+            "video/"
+          )
             ? "video"
             : "image",
 
@@ -2956,6 +3554,7 @@ function handleMedia(event) {
           "mediaPreview"
         );
 
+
       const content =
         document.getElementById(
           "mediaPreviewContent"
@@ -2963,7 +3562,8 @@ function handleMedia(event) {
 
 
       if (
-        selectedMedia.type === "video"
+        selectedMedia.type ===
+        "video"
       ) {
 
         content.innerHTML =
@@ -2983,25 +3583,36 @@ function handleMedia(event) {
     };
 
 
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(
+    file
+  );
+
 }
 
 
 function removeMedia() {
 
-  selectedMedia = null;
+  selectedMedia =
+    null;
+
 
   document.getElementById(
     "mediaInput"
-  ).value = "";
+  ).value =
+    "";
+
 
   document.getElementById(
     "mediaPreview"
-  ).style.display = "none";
+  ).style.display =
+    "none";
+
 
   document.getElementById(
     "mediaPreviewContent"
-  ).innerHTML = "";
+  ).innerHTML =
+    "";
+
 }
 
 
@@ -3013,7 +3624,8 @@ async function loadPosts() {
 
   if (!currentUser) {
 
-    posts = [...samplePosts];
+    posts =
+      [...samplePosts];
 
     renderPosts();
 
@@ -3024,12 +3636,16 @@ async function loadPosts() {
   const {
     data: postData,
     error: postError
-  } = await supabaseClient
-    .from("posts")
-    .select("*")
-    .order("created_at", {
-      ascending: false
-    });
+  } =
+    await supabaseClient
+      .from("posts")
+      .select("*")
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
 
 
   if (postError) {
@@ -3039,7 +3655,9 @@ async function loadPosts() {
       postError
     );
 
-    posts = [...samplePosts];
+
+    posts =
+      [...samplePosts];
 
     renderPosts();
 
@@ -3050,9 +3668,12 @@ async function loadPosts() {
   const {
     data: likeData,
     error: likeError
-  } = await supabaseClient
-    .from("post_likes")
-    .select("post_id, user_id");
+  } =
+    await supabaseClient
+      .from("post_likes")
+      .select(
+        "post_id, user_id"
+      );
 
 
   if (likeError) {
@@ -3071,101 +3692,128 @@ async function loadPosts() {
     new Set();
 
 
-  (likeData || []).forEach(like => {
+  (likeData || []).forEach(
+    like => {
 
-    const postId =
-      String(like.post_id);
-
-
-    likeCounts[postId] =
-      (likeCounts[postId] || 0) + 1;
-
-
-    if (
-      String(like.user_id) ===
-      String(currentUser.id)
-    ) {
-
-      userLikedPosts.add(
-        postId
-      );
-
-    }
-
-  });
+      const postId =
+        String(
+          like.post_id
+        );
 
 
-  const databasePosts =
-    (postData || []).map(row => {
+      likeCounts[postId] =
+        (
+          likeCounts[postId] ||
+          0
+        ) + 1;
 
-      let tags = [];
 
+      if (
+        String(
+          like.user_id
+        ) ===
+        String(
+          currentUser.id
+        )
+      ) {
 
-      try {
-
-        tags =
-          row.content_tags
-            ? JSON.parse(row.content_tags)
-            : [];
-
-      } catch {
-
-        tags = [];
+        userLikedPosts.add(
+          postId
+        );
 
       }
 
+    }
+  );
 
-      const rowId =
-        String(row.id);
+
+  const databasePosts =
+    (postData || []).map(
+      row => {
+
+        let tags = [];
 
 
-      return {
+        try {
 
-        id:
-          row.id,
+          tags =
+            row.content_tags
+              ? JSON.parse(
+                  row.content_tags
+                )
+              : [];
 
-        username:
-          row.username,
+        } catch {
 
-        text:
-          row.content || "",
+          tags = [];
 
-        type:
-          row.post_type,
+        }
 
-        tags,
 
-        time:
-          formatPostTime(row.created_at),
+        const rowId =
+          String(
+            row.id
+          );
 
-        media:
-          row.media_url
-            ? {
-                type:
-                  row.media_type || "image",
 
-                src:
-                  row.media_url
-              }
-            : null,
+        return {
 
-        likes:
-          likeCounts[rowId] || 0,
+          id:
+            row.id,
 
-        liked:
-          userLikedPosts.has(rowId),
+          username:
+            row.username,
 
-        userId:
-          row.user_id,
+          text:
+            row.content ||
+            "",
 
-        profilePhoto:
-          row.user_id === currentUser.id
-            ? currentProfile?.profile_photo || null
-            : null
+          type:
+            row.post_type,
 
-      };
+          tags,
 
-    });
+          time:
+            formatPostTime(
+              row.created_at
+            ),
+
+          media:
+            row.media_url
+              ? {
+                  type:
+                    row.media_type ||
+                    "image",
+
+                  src:
+                    row.media_url
+                }
+              : null,
+
+          likes:
+            likeCounts[
+              rowId
+            ] || 0,
+
+          liked:
+            userLikedPosts.has(
+              rowId
+            ),
+
+          userId:
+            row.user_id,
+
+          profilePhoto:
+            row.user_id ===
+            currentUser.id
+              ? currentProfile?.profile_photo ||
+                null
+              : null
+
+        };
+
+      }
+    );
 
 
   posts =
@@ -3190,13 +3838,19 @@ async function createPost() {
 
     document.getElementById(
       "loginRequiredMessage"
-    ).classList.add("show");
+    ).classList.add(
+      "show"
+    );
+
 
     setTimeout(() => {
 
-      openAuth("login");
+      openAuth(
+        "login"
+      );
 
     }, 300);
+
 
     return;
   }
@@ -3204,7 +3858,9 @@ async function createPost() {
 
   document.getElementById(
     "loginRequiredMessage"
-  ).classList.remove("show");
+  ).classList.remove(
+    "show"
+  );
 
 
   const textarea =
@@ -3240,7 +3896,9 @@ async function createPost() {
       "Please complete your profile before creating a post."
     );
 
-    showPage("profile");
+    showPage(
+      "profile"
+    );
 
     return;
   }
@@ -3289,7 +3947,9 @@ async function createPost() {
   } =
     await supabaseClient
       .from("posts")
-      .insert(postData)
+      .insert(
+        postData
+      )
       .select()
       .single();
 
@@ -3301,10 +3961,12 @@ async function createPost() {
       error
     );
 
+
     alert(
       "Could not create the post: " +
       error.message
     );
+
 
     return;
   }
@@ -3319,7 +3981,8 @@ async function createPost() {
       data.username,
 
     text:
-      data.content || "",
+      data.content ||
+      "",
 
     type:
       data.post_type,
@@ -3333,22 +3996,26 @@ async function createPost() {
       data.media_url
         ? {
             type:
-              data.media_type || "image",
+              data.media_type ||
+              "image",
 
             src:
               data.media_url
           }
         : null,
 
-    likes: 0,
+    likes:
+      0,
 
-    liked: false,
+    liked:
+      false,
 
     userId:
       data.user_id,
 
     profilePhoto:
-      currentProfile.profile_photo || null
+      currentProfile.profile_photo ||
+      null
 
   };
 
@@ -3376,32 +4043,53 @@ function getProfileTags() {
 
 
   const interests =
-    getSelectedOptions("interests");
+    getSelectedOptions(
+      "interests"
+    );
 
 
   const languages =
-    getSelectedOptions("languages");
+    getSelectedOptions(
+      "languages"
+    );
 
 
   interests
-    .slice(0, 3)
-    .forEach(item => {
-      tags.push(item);
-    });
+    .slice(
+      0,
+      3
+    )
+    .forEach(
+      item => {
+        tags.push(
+          item
+        );
+      }
+    );
 
 
   languages
-    .slice(0, 2)
-    .forEach(item => {
-      tags.push(item);
-    });
+    .slice(
+      0,
+      2
+    )
+    .forEach(
+      item => {
+        tags.push(
+          item
+        );
+      }
+    );
 
 
   return tags;
+
 }
 
 
-function formatPostTime(dateString) {
+function formatPostTime(
+  dateString
+) {
 
   if (!dateString) {
     return "Post";
@@ -3409,17 +4097,28 @@ function formatPostTime(dateString) {
 
 
   const date =
-    new Date(dateString);
+    new Date(
+      dateString
+    );
 
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+
     return "Post";
+
   }
 
 
   const seconds =
     Math.floor(
-      (Date.now() - date.getTime()) / 1000
+      (
+        Date.now() -
+        date.getTime()
+      ) / 1000
     );
 
 
@@ -3429,37 +4128,53 @@ function formatPostTime(dateString) {
 
 
   const minutes =
-    Math.floor(seconds / 60);
+    Math.floor(
+      seconds / 60
+    );
 
 
   if (minutes < 60) {
+
     return `${minutes}m ago`;
+
   }
 
 
   const hours =
-    Math.floor(minutes / 60);
+    Math.floor(
+      minutes / 60
+    );
 
 
   if (hours < 24) {
+
     return `${hours}h ago`;
+
   }
 
 
   const days =
-    Math.floor(hours / 24);
+    Math.floor(
+      hours / 24
+    );
 
 
   if (days < 7) {
+
     return `${days}d ago`;
+
   }
 
 
   return date.toLocaleDateString();
+
 }
 
 
-function setFilter(filter, button) {
+function setFilter(
+  filter,
+  button
+) {
 
   currentFilter =
     filter;
@@ -3467,13 +4182,15 @@ function setFilter(filter, button) {
 
   document.querySelectorAll(
     ".filter-btn"
-  ).forEach(btn => {
+  ).forEach(
+    btn => {
 
-    btn.classList.remove(
-      "active"
-    );
+      btn.classList.remove(
+        "active"
+      );
 
-  });
+    }
+  );
 
 
   button.classList.add(
@@ -3482,8 +4199,317 @@ function setFilter(filter, button) {
 
 
   renderPosts();
+
 }
 
+
+/* =========================================================
+   DOUBLE TAP LIKE FUNCTIONS
+   ========================================================= */
+
+/*
+  Shows the big ❤️ animation over the post media.
+*/
+function showDoubleTapHeart(
+  mediaContainer
+) {
+
+  if (!mediaContainer) {
+    return;
+  }
+
+
+  const oldHeart =
+    mediaContainer.querySelector(
+      ".double-tap-heart"
+    );
+
+
+  if (oldHeart) {
+    oldHeart.remove();
+  }
+
+
+  const heart =
+    document.createElement(
+      "div"
+    );
+
+
+  heart.className =
+    "double-tap-heart";
+
+
+  heart.textContent =
+    "❤️";
+
+
+  mediaContainer.appendChild(
+    heart
+  );
+
+
+  setTimeout(() => {
+
+    if (heart.parentNode) {
+      heart.remove();
+    }
+
+  }, 850);
+
+}
+
+
+/*
+  Handles a double tap on touch devices.
+
+  First tap:
+    - remembers the time.
+
+  Second tap:
+    - triggers the Like.
+*/
+function handleMediaTouch(
+  event,
+  id,
+  mediaContainer
+) {
+
+  const key =
+    String(id);
+
+
+  const now =
+    Date.now();
+
+
+  const lastTap =
+    lastTapTimes.get(
+      key
+    ) || 0;
+
+
+  if (
+    now - lastTap <
+    350
+  ) {
+
+    event.preventDefault();
+
+    lastTapTimes.delete(
+      key
+    );
+
+
+    handleDoubleTapLike(
+      id,
+      mediaContainer
+    );
+
+
+  } else {
+
+    lastTapTimes.set(
+      key,
+      now
+    );
+
+
+    /*
+      Remove old tap records so the Map
+      doesn't grow forever.
+    */
+
+    setTimeout(() => {
+
+      const saved =
+        lastTapTimes.get(
+          key
+        );
+
+
+      if (
+        saved === now
+      ) {
+
+        lastTapTimes.delete(
+          key
+        );
+
+      }
+
+    }, 400);
+
+  }
+
+}
+
+
+/*
+  Main double-tap Like function.
+
+  IMPORTANT:
+  This does NOT toggle/unlike.
+
+  Double tap can only ADD a Like.
+
+  The normal Like button continues using
+  toggleLike(), which can add/remove Likes.
+*/
+async function handleDoubleTapLike(
+  id,
+  mediaContainer
+) {
+
+  const key =
+    String(id);
+
+
+  /*
+    Prevent a mobile touch event and a browser
+    dblclick event from triggering the action twice.
+  */
+  const now =
+    Date.now();
+
+
+  const previousTrigger =
+    recentDoubleTapTriggers.get(
+      key
+    ) || 0;
+
+
+  if (
+    now - previousTrigger <
+    500
+  ) {
+
+    return;
+
+  }
+
+
+  recentDoubleTapTriggers.set(
+    key,
+    now
+  );
+
+
+  /*
+    User must be logged in.
+  */
+  if (!currentUser) {
+
+    openAuth(
+      "login"
+    );
+
+    return;
+
+  }
+
+
+  /*
+    Sample posts are only demonstration posts.
+  */
+  if (
+    key.startsWith(
+      "sample-"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  const post =
+    posts.find(
+      item =>
+        String(
+          item.id
+        ) ===
+        key
+    );
+
+
+  if (!post) {
+    return;
+  }
+
+
+  /*
+    Always show the animation when the user
+    double taps a real post.
+  */
+  showDoubleTapHeart(
+    mediaContainer
+  );
+
+
+  /*
+    If the post is already liked,
+    DO NOT remove the Like.
+
+    The double tap only adds Likes.
+  */
+  if (post.liked) {
+
+    return;
+
+  }
+
+
+  /*
+    Prevent multiple rapid double-tap requests
+    for the same post.
+  */
+  if (
+    doubleTapLikeBusy.has(
+      key
+    )
+  ) {
+
+    return;
+
+  }
+
+
+  doubleTapLikeBusy.add(
+    key
+  );
+
+
+  try {
+
+    /*
+      toggleLike() normally toggles.
+
+      Since we already checked post.liked === false,
+      the expected operation here is ADD.
+
+      If another request happens at exactly the
+      same time, toggleLike() checks Supabase first
+      and safely handles duplicate Likes.
+    */
+    await toggleLike(
+      id
+    );
+
+  } finally {
+
+    doubleTapLikeBusy.delete(
+      key
+    );
+
+  }
+
+}
+
+
+/* =========================================================
+   RENDER POSTS
+   ========================================================= */
 
 function renderPosts() {
 
@@ -3506,7 +4532,9 @@ function renderPosts() {
 
   const search =
     searchInput
-      ? searchInput.value.trim().toLowerCase()
+      ? searchInput.value
+          .trim()
+          .toLowerCase()
       : "";
 
 
@@ -3515,26 +4543,34 @@ function renderPosts() {
 
 
   if (
-    currentFilter !== "all"
+    currentFilter !==
+    "all"
   ) {
 
     filtered =
-      filtered.filter(post => {
+      filtered.filter(
+        post => {
 
-        if (
-          currentFilter === "people"
-        ) {
+          if (
+            currentFilter ===
+            "people"
+          ) {
 
-          return post.type === "personal";
+            return (
+              post.type ===
+              "personal"
+            );
+
+          }
+
+
+          return (
+            post.type ===
+            currentFilter
+          );
 
         }
-
-        return (
-          post.type ===
-          currentFilter
-        );
-
-      });
+      );
 
   }
 
@@ -3542,23 +4578,25 @@ function renderPosts() {
   if (search) {
 
     filtered =
-      filtered.filter(post => {
+      filtered.filter(
+        post => {
 
-        const searchable =
-          [
-            post.username,
-            post.text,
-            ...(post.tags || [])
-          ]
-            .join(" ")
-            .toLowerCase();
+          const searchable =
+            [
+              post.username,
+              post.text,
+              ...(post.tags || [])
+            ]
+              .join(" ")
+              .toLowerCase();
 
 
-        return searchable.includes(
-          search
-        );
+          return searchable.includes(
+            search
+          );
 
-      });
+        }
+      );
 
   }
 
@@ -3576,13 +4614,20 @@ function renderPosts() {
 
   feed.innerHTML =
     filtered
-      .map(post => renderPost(post))
+      .map(
+        post =>
+          renderPost(
+            post
+          )
+      )
       .join("");
 
 }
 
 
-function renderPost(post) {
+function renderPost(
+  post
+) {
 
   const username =
     escapeHtml(
@@ -3592,8 +4637,14 @@ function renderPost(post) {
 
   const initial =
     escapeHtml(
-      (post.username || "U")
-        .replace("@", "")
+      (
+        post.username ||
+        "U"
+      )
+        .replace(
+          "@",
+          ""
+        )
         .charAt(0)
         .toUpperCase()
     );
@@ -3617,38 +4668,81 @@ function renderPost(post) {
 
 
   const tags =
-    (post.tags || [])
-      .map(tag =>
-        `<span class="post-tag">${escapeHtml(tag)}</span>`
+    (
+      post.tags ||
+      []
+    )
+      .map(
+        tag =>
+          `<span class="post-tag">${escapeHtml(tag)}</span>`
       )
       .join("");
 
 
-  let mediaHtml = "";
+  let mediaHtml =
+    "";
 
+
+  /*
+    ========================================================
+    DOUBLE TAP MEDIA
+    ========================================================
+
+    Both image and video receive:
+
+      ondblclick = desktop double click
+      ontouchend = mobile double tap detection
+
+    The double tap function only adds a Like.
+  */
 
   if (post.media) {
 
+    const safePostId =
+      escapeHtmlAttribute(
+        String(
+          post.id
+        )
+      );
+
+
     if (
-      post.media.type === "video"
+      post.media.type ===
+      "video"
     ) {
 
       mediaHtml =
-        `<div class="post-media">
+        `<div
+          class="post-media"
+          data-post-id="${safePostId}"
+          ontouchend="handleMediaTouch(event, '${safePostId}', this)"
+          ondblclick="handleDoubleTapLike('${safePostId}', this)"
+        >
+
           <video
             src="${escapeHtmlAttribute(post.media.src)}"
             controls
+            playsinline
           ></video>
+
         </div>`;
 
     } else {
 
       mediaHtml =
-        `<div class="post-media">
+        `<div
+          class="post-media"
+          data-post-id="${safePostId}"
+          ontouchend="handleMediaTouch(event, '${safePostId}', this)"
+          ondblclick="handleDoubleTapLike('${safePostId}', this)"
+        >
+
           <img
             src="${escapeHtmlAttribute(post.media.src)}"
             alt="Post media"
+            draggable="false"
           >
+
         </div>`;
 
     }
@@ -3765,18 +4859,24 @@ function renderPost(post) {
    LIKES
    ========================================================= */
 
-async function toggleLike(id) {
+async function toggleLike(
+  id
+) {
 
   if (!currentUser) {
 
-    openAuth("login");
+    openAuth(
+      "login"
+    );
 
     return;
   }
 
 
   if (
-    String(id).startsWith("sample-")
+    String(id).startsWith(
+      "sample-"
+    )
   ) {
 
     return;
@@ -3786,8 +4886,12 @@ async function toggleLike(id) {
   const post =
     posts.find(
       item =>
-        String(item.id) ===
-        String(id)
+        String(
+          item.id
+        ) ===
+        String(
+          id
+        )
     );
 
 
@@ -3810,10 +4914,20 @@ async function toggleLike(id) {
     error: checkError
   } =
     await supabaseClient
-      .from("post_likes")
-      .select("id")
-      .eq("post_id", id)
-      .eq("user_id", currentUser.id)
+      .from(
+        "post_likes"
+      )
+      .select(
+        "id"
+      )
+      .eq(
+        "post_id",
+        id
+      )
+      .eq(
+        "user_id",
+        currentUser.id
+      )
       .maybeSingle();
 
 
@@ -3824,9 +4938,11 @@ async function toggleLike(id) {
       checkError
     );
 
+
     alert(
       "Could not check your Like."
     );
+
 
     return;
   }
@@ -3837,18 +4953,32 @@ async function toggleLike(id) {
     /*
       The Like already exists.
 
-      Clicking again removes it, just like
-      a normal social network.
+      Clicking the NORMAL Like button again
+      removes it.
+
+      IMPORTANT:
+      Double tap does NOT call this branch when
+      the post is already liked because
+      handleDoubleTapLike() returns before calling
+      toggleLike().
     */
 
     const {
       error
     } =
       await supabaseClient
-        .from("post_likes")
+        .from(
+          "post_likes"
+        )
         .delete()
-        .eq("post_id", id)
-        .eq("user_id", currentUser.id);
+        .eq(
+          "post_id",
+          id
+        )
+        .eq(
+          "user_id",
+          currentUser.id
+        );
 
 
     if (error) {
@@ -3858,9 +4988,11 @@ async function toggleLike(id) {
         error
       );
 
+
       alert(
         "Could not remove your Like."
       );
+
 
       return;
     }
@@ -3875,13 +5007,17 @@ async function toggleLike(id) {
       error
     } =
       await supabaseClient
-        .from("post_likes")
+        .from(
+          "post_likes"
+        )
         .insert({
+
           post_id:
             id,
 
           user_id:
             currentUser.id
+
         });
 
 
@@ -3890,14 +5026,16 @@ async function toggleLike(id) {
       /*
         PostgreSQL code 23505 / HTTP 409 means
         the Like was already created by another
-        request, for example from a double click.
+        request, for example from a rapid double tap.
 
         We do not show an error to the user.
       */
 
       if (
-        error.code === "23505" ||
-        error.status === 409
+        error.code ===
+          "23505" ||
+        error.status ===
+          409
       ) {
 
         console.warn(
@@ -3911,12 +5049,15 @@ async function toggleLike(id) {
           error
         );
 
+
         alert(
           "Could not add your Like."
         );
 
+
         return;
       }
+
     }
 
   }
@@ -3933,7 +5074,9 @@ async function toggleLike(id) {
 }
 
 
-function commentPost(id) {
+function commentPost(
+  id
+) {
 
   alert(
     "Comments will be available soon."
@@ -3942,7 +5085,9 @@ function commentPost(id) {
 }
 
 
-function reportPost(id) {
+function reportPost(
+  id
+) {
 
   alert(
     "Thank you. Reporting tools will be expanded as FriendHub grows."
@@ -3951,47 +5096,73 @@ function reportPost(id) {
 }
 
 
-function escapeHtml(value) {
+function escapeHtml(
+  value
+) {
 
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return String(
+    value ?? ""
+  )
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+    .replace(
+      /'/g,
+      "&#039;"
+    );
 
 }
 
 
-function escapeHtmlAttribute(value) {
+function escapeHtmlAttribute(
+  value
+) {
 
-  return escapeHtml(value);
+  return escapeHtml(
+    value
+  );
 
 }
 
 
 document.querySelectorAll(
   ".modal-overlay"
-).forEach(overlay => {
+).forEach(
+  overlay => {
 
-  overlay.addEventListener(
-    "click",
-    function(event) {
+    overlay.addEventListener(
+      "click",
+      function(event) {
 
-      if (
-        event.target === overlay
-      ) {
+        if (
+          event.target ===
+          overlay
+        ) {
 
-        overlay.classList.remove(
-          "active"
-        );
+          overlay.classList.remove(
+            "active"
+          );
+
+        }
 
       }
+    );
 
-    }
-  );
-
-});
+  }
+);
 
 
 renderOptionButtons();
