@@ -1,1646 +1,1204 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>FriendHub — Meet People. Make Friends.</title>
-
-    <style>
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f5f6fa;
-            color: #1f2937;
-        }
-
-        /* HEADER */
-
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            background: rgba(255,255,255,0.97);
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .nav-container {
-            max-width: 1150px;
-            margin: auto;
-            min-height: 70px;
-            padding: 15px 24px;
-
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo {
-            text-decoration: none;
-            color: #4f46e5;
-            font-size: 25px;
-            font-weight: 800;
-        }
-
-        nav {
-            display: flex;
-            gap: 26px;
-        }
-
-        nav a {
-            text-decoration: none;
-            color: #374151;
-            font-weight: 600;
-            font-size: 15px;
-        }
-
-        nav a:hover {
-            color: #4f46e5;
-        }
-
-        /* HERO */
-
-        .hero {
-            min-height: 550px;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            text-align: center;
-
-            padding: 80px 20px;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #eef2ff,
-                    #ffffff,
-                    #f5f3ff
-                );
-        }
-
-        .hero-content {
-            max-width: 800px;
-        }
-
-        .hero h1 {
-            font-size: clamp(44px, 7vw, 72px);
-            line-height: 1.05;
-            color: #111827;
-            margin-bottom: 25px;
-        }
-
-        .hero h1 span {
-            color: #4f46e5;
-        }
-
-        .hero p {
-            color: #6b7280;
-            font-size: 19px;
-            max-width: 650px;
-            margin: auto auto 30px;
-        }
-
-        .btn {
-            display: inline-block;
-            border: none;
-            border-radius: 12px;
-            padding: 14px 24px;
-
-            font-size: 15px;
-            font-weight: 700;
-
-            text-decoration: none;
-            cursor: pointer;
-
-            transition: 0.2s;
-        }
-
-        .btn-primary {
-            background: #4f46e5;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #4338ca;
-            transform: translateY(-2px);
-        }
-
-        .btn-secondary {
-            background: white;
-            border: 1px solid #d1d5db;
-            color: #374151;
-        }
-
-        .btn-secondary:hover {
-            border-color: #4f46e5;
-            color: #4f46e5;
-        }
-
-        .hero-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        /* SECTIONS */
-
-        section {
-            scroll-margin-top: 90px;
-        }
-
-        .section {
-            max-width: 1050px;
-            margin: auto;
-            padding: 85px 20px;
-        }
-
-        .section-title {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .section-title h2 {
-            font-size: 38px;
-            color: #111827;
-            margin-bottom: 10px;
-        }
-
-        .section-title p {
-            color: #6b7280;
-        }
-
-        /* DISCOVER */
-
-        #discover {
-            background: #f5f6fa;
-        }
-
-        .discover-layout {
-            max-width: 720px;
-            margin: auto;
-        }
-
-        /* SEARCH */
-
-        .search-box {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 16px;
-            padding: 14px 18px;
-
-            display: flex;
-            align-items: center;
-            gap: 10px;
-
-            margin-bottom: 18px;
-
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-        }
-
-        .search-box span {
-            font-size: 19px;
-        }
-
-        .search-box input {
-            border: none;
-            outline: none;
-            width: 100%;
-
-            font-size: 15px;
-        }
-
-        /* FILTERS */
-
-        .filters {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .filter {
-            white-space: nowrap;
-
-            border: 1px solid #d1d5db;
-            background: white;
-
-            padding: 9px 15px;
-
-            border-radius: 20px;
-
-            cursor: pointer;
-
-            font-size: 13px;
-            font-weight: 600;
-
-            color: #4b5563;
-        }
-
-        .filter:hover,
-        .filter.active {
-            background: #4f46e5;
-            color: white;
-            border-color: #4f46e5;
-        }
-
-        /* CREATE POST */
-
-        .create-post {
-            background: white;
-
-            border: 1px solid #e5e7eb;
-            border-radius: 18px;
-
-            padding: 22px;
-
-            margin-bottom: 22px;
-
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        }
-
-        .create-top {
-            display: flex;
-            gap: 12px;
-        }
-
-        .avatar {
-            width: 45px;
-            height: 45px;
-
-            border-radius: 50%;
-
-            background: #eef2ff;
-
-            display: flex;
-            align-items: center;
-            justify-content: center;
-
-            font-size: 21px;
-
-            flex-shrink: 0;
-        }
-
-        .post-input {
-            width: 100%;
-
-            min-height: 90px;
-
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-
-            padding: 13px;
-
-            font-family: inherit;
-            font-size: 15px;
-
-            resize: vertical;
-
-            outline: none;
-        }
-
-        .post-input:focus {
-            border-color: #818cf8;
-        }
-
-        /* MEDIA PREVIEW */
-
-        .media-preview {
-            display: none;
-
-            position: relative;
-
-            margin-top: 15px;
-
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-
-            overflow: hidden;
-
-            background: #f9fafb;
-        }
-
-        .media-preview.show {
-            display: block;
-        }
-
-        .media-preview img,
-        .media-preview video {
-            display: block;
-
-            width: 100%;
-            max-height: 400px;
-
-            object-fit: contain;
-
-            background: #111827;
-        }
-
-        .remove-media {
-            position: absolute;
-
-            top: 10px;
-            right: 10px;
-
-            width: 34px;
-            height: 34px;
-
-            border: none;
-            border-radius: 50%;
-
-            background: rgba(0,0,0,0.75);
-            color: white;
-
-            font-size: 18px;
-
-            cursor: pointer;
-        }
-
-        .remove-media:hover {
-            background: #000;
-        }
-
-        /* POST OPTIONS */
-
-        .post-options {
-            display: flex;
-
-            gap: 8px;
-
-            margin-top: 14px;
-
-            flex-wrap: wrap;
-        }
-
-        .post-option {
-            border: 1px solid #e5e7eb;
-            background: white;
-
-            border-radius: 10px;
-
-            padding: 9px 12px;
-
-            cursor: pointer;
-
-            font-size: 13px;
-
-            color: #4b5563;
-        }
-
-        .post-option:hover {
-            background: #f3f4f6;
-        }
-
-        .post-bottom {
-            margin-top: 15px;
-
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .media-button {
-            border: 1px solid #e5e7eb;
-            background: white;
-
-            border-radius: 10px;
-
-            padding: 9px 13px;
-
-            cursor: pointer;
-
-            font-size: 13px;
-            font-weight: 600;
-
-            color: #4b5563;
-        }
-
-        .media-button:hover {
-            background: #f3f4f6;
-            color: #4f46e5;
-        }
-
-        .hidden-file {
-            display: none;
-        }
-
-        /* POSTS */
-
-        .post {
-            background: white;
-
-            border: 1px solid #e5e7eb;
-            border-radius: 18px;
-
-            padding: 22px;
-
-            margin-bottom: 18px;
-
-            box-shadow: 0 5px 20px rgba(0,0,0,0.04);
-        }
-
-        .post-header {
-            display: flex;
-
-            justify-content: space-between;
-
-            margin-bottom: 15px;
-        }
-
-        .user-info {
-            display: flex;
-
-            gap: 11px;
-
-            align-items: center;
-        }
-
-        .user-name {
-            font-weight: 700;
-            color: #111827;
-        }
-
-        .user-meta {
-            color: #6b7280;
-            font-size: 13px;
-        }
-
-        .more {
-            color: #9ca3af;
-            cursor: pointer;
-            font-size: 20px;
-        }
-
-        .post-text {
-            color: #374151;
-            font-size: 15px;
-
-            margin-bottom: 18px;
-        }
-
-        .tags {
-            display: flex;
-
-            gap: 7px;
-
-            flex-wrap: wrap;
-
-            margin-bottom: 18px;
-        }
-
-        .tag {
-            background: #eef2ff;
-            color: #4338ca;
-
-            border-radius: 20px;
-
-            padding: 6px 10px;
-
-            font-size: 12px;
-
-            font-weight: 600;
-        }
-
-        /* GROUP LINK */
-
-        .group-card {
-            border: 1px solid #e5e7eb;
-
-            border-radius: 14px;
-
-            padding: 15px;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: space-between;
-
-            gap: 15px;
-
-            margin-bottom: 18px;
-
-            background: #fafafa;
-        }
-
-        .group-info {
-            display: flex;
-
-            align-items: center;
-
-            gap: 12px;
-        }
-
-        .group-icon {
-            width: 43px;
-            height: 43px;
-
-            border-radius: 12px;
-
-            background: #eef2ff;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            font-size: 20px;
-        }
-
-        .group-title {
-            font-weight: 700;
-            color: #111827;
-        }
-
-        .group-type {
-            font-size: 12px;
-            color: #6b7280;
-        }
-
-        .join {
-            text-decoration: none;
-
-            background: #4f46e5;
-
-            color: white;
-
-            padding: 9px 14px;
-
-            border-radius: 9px;
-
-            font-size: 13px;
-
-            font-weight: 700;
-
-            white-space: nowrap;
-        }
-
-        .join:hover {
-            background: #4338ca;
-        }
-
-        /* POST ACTIONS */
-
-        .post-actions {
-            border-top: 1px solid #f0f0f0;
-
-            padding-top: 13px;
-
-            display: flex;
-
-            gap: 25px;
-        }
-
-        .post-action {
-            border: none;
-            background: transparent;
-
-            cursor: pointer;
-
-            color: #6b7280;
-
-            font-size: 13px;
-        }
-
-        .post-action:hover {
-            color: #4f46e5;
-        }
-
-        /* ABOUT */
-
-        #about {
-            background: white;
-        }
-
-        .about-content {
-            max-width: 820px;
-            margin: auto;
-            text-align: center;
-        }
-
-        .about-content h2 {
-            font-size: 40px;
-            margin-bottom: 20px;
-        }
-
-        .about-content p {
-            color: #6b7280;
-            font-size: 17px;
-            margin-bottom: 18px;
-        }
-
-        .notice {
-            background: #eef2ff;
-
-            border: 1px solid #c7d2fe;
-
-            padding: 20px;
-
-            border-radius: 14px;
-
-            color: #3730a3;
-
-            margin-top: 25px;
-        }
-
-        /* SUPPORT */
-
-        #support {
-            background: #f5f6fa;
-        }
-
-        .support-box {
-            max-width: 700px;
-
-            margin: auto;
-
-            text-align: center;
-
-            background: white;
-
-            border: 1px solid #e5e7eb;
-
-            border-radius: 20px;
-
-            padding: 45px 25px;
-        }
-
-        .support-box h2 {
-            font-size: 36px;
-
-            margin-bottom: 12px;
-        }
-
-        .support-box p {
-            color: #6b7280;
-
-            margin-bottom: 20px;
-        }
-
-        .email {
-            display: inline-block;
-
-            color: #4f46e5;
-
-            font-weight: 700;
-
-            text-decoration: none;
-
-            margin-bottom: 22px;
-        }
-
-        /* FOOTER */
-
-        footer {
-            background: #111827;
-
-            color: #9ca3af;
-
-            text-align: center;
-
-            padding: 35px 20px;
-        }
-
-        footer strong {
-            color: white;
-        }
-
-        footer p {
-            margin: 6px;
-            font-size: 14px;
-        }
-
-        /* MOBILE */
-
-        @media(max-width: 700px) {
-
-            .nav-container {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            nav {
-                gap: 15px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            .hero {
-                padding: 70px 20px;
-            }
-
-            .hero h1 {
-                font-size: 48px;
-            }
-
-            .section {
-                padding: 65px 15px;
-            }
-
-            .group-card {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
-            .join {
-                width: 100%;
-                text-align: center;
-            }
-
-            .post-actions {
-                gap: 15px;
-            }
-
-            .post-bottom {
-                align-items: stretch;
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .media-button,
-            .post-bottom .btn {
-                width: 100%;
-                text-align: center;
-            }
-
-        }
-
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FriendHub</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f5f7fb;
+  color: #172033;
+  line-height: 1.5;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 24px;
+}
+
+.navbar {
+  max-width: 1150px;
+  margin: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 25px;
+  font-weight: 800;
+  color: #5865f2;
+  cursor: pointer;
+}
+
+nav {
+  display: flex;
+  gap: 22px;
+}
+
+nav a {
+  text-decoration: none;
+  color: #374151;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+nav a:hover {
+  color: #5865f2;
+}
+
+.hero {
+  max-width: 1150px;
+  margin: auto;
+  padding: 90px 24px 70px;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 52px;
+  margin-bottom: 18px;
+  color: #111827;
+}
+
+.hero p {
+  max-width: 700px;
+  margin: auto;
+  font-size: 19px;
+  color: #667085;
+}
+
+.buttons {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 13px 22px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  background: #5865f2;
+  color: white;
+}
+
+.primary:hover {
+  background: #4752c4;
+}
+
+.secondary {
+  background: white;
+  color: #374151;
+  border: 1px solid #d9dee8;
+}
+
+section {
+  max-width: 1150px;
+  margin: auto;
+  padding: 70px 24px;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.section-title h2 {
+  font-size: 34px;
+  margin-bottom: 10px;
+}
+
+.section-title p {
+  color: #667085;
+}
+
+.search-box {
+  max-width: 700px;
+  margin: 0 auto 25px;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 15px 18px;
+  border: 1px solid #d9dee8;
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+}
+
+.filters {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.filter {
+  padding: 9px 16px;
+  border: 1px solid #d9dee8;
+  background: white;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.filter.active,
+.filter:hover {
+  background: #5865f2;
+  color: white;
+  border-color: #5865f2;
+}
+
+.composer {
+  background: white;
+  border: 1px solid #e4e7ec;
+  border-radius: 16px;
+  padding: 20px;
+  max-width: 750px;
+  margin: 0 auto 30px;
+  box-shadow: 0 5px 18px rgba(20, 30, 50, 0.05);
+}
+
+.composer h3 {
+  margin-bottom: 14px;
+}
+
+.composer textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  border: 1px solid #d9dee8;
+  border-radius: 12px;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+.post-types {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 13px;
+}
+
+.type-btn {
+  border: 1px solid #d9dee8;
+  background: #fff;
+  padding: 9px 13px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.type-btn.selected {
+  background: #eef0ff;
+  border-color: #5865f2;
+  color: #4752c4;
+  font-weight: 700;
+}
+
+.link-input {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #d9dee8;
+  border-radius: 10px;
+  display: none;
+  font-size: 14px;
+}
+
+.composer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.media-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.media-btn {
+  background: #f1f3f7;
+  border: 1px solid #d9dee8;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.media-btn:hover {
+  background: #e7eaf0;
+}
+
+.hidden-file {
+  display: none;
+}
+
+.post-btn {
+  background: #5865f2;
+  color: white;
+  border: none;
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.post-btn:hover {
+  background: #4752c4;
+}
+
+.media-preview {
+  display: none;
+  position: relative;
+  margin-top: 15px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111827;
+}
+
+.media-preview.show {
+  display: block;
+}
+
+.media-preview img,
+.media-preview video {
+  display: block;
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+.remove-media {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 5;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,.7);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.feed {
+  max-width: 750px;
+  margin: auto;
+}
+
+.post {
+  background: white;
+  border: 1px solid #e4e7ec;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 18px;
+  box-shadow: 0 5px 18px rgba(20, 30, 50, 0.04);
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: #eef0ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+}
+
+.post-name {
+  font-weight: 800;
+}
+
+.post-meta {
+  font-size: 13px;
+  color: #667085;
+}
+
+.post-text {
+  font-size: 16px;
+  margin-bottom: 14px;
+  white-space: pre-wrap;
+}
+
+.post-media {
+  margin: 14px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111827;
+}
+
+.post-media img,
+.post-media video {
+  display: block;
+  width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+}
+
+.connection-card {
+  border: 1px solid #e4e7ec;
+  background: #f8f9fc;
+  padding: 14px;
+  border-radius: 12px;
+  margin: 14px 0;
+}
+
+.connection-title {
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.connection-link {
+  color: #5865f2;
+  text-decoration: none;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.post-actions {
+  display: flex;
+  gap: 18px;
+  padding-top: 13px;
+  border-top: 1px solid #eef0f3;
+}
+
+.post-action {
+  background: none;
+  border: none;
+  color: #667085;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.post-action:hover {
+  color: #5865f2;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.card {
+  background: white;
+  padding: 28px;
+  border-radius: 16px;
+  border: 1px solid #e4e7ec;
+  text-align: center;
+}
+
+.card-icon {
+  font-size: 38px;
+  margin-bottom: 15px;
+}
+
+.card h3 {
+  margin-bottom: 8px;
+}
+
+.card p {
+  color: #667085;
+}
+
+.about-box,
+.support-box {
+  max-width: 800px;
+  margin: auto;
+  background: white;
+  border: 1px solid #e4e7ec;
+  border-radius: 16px;
+  padding: 30px;
+}
+
+.about-box p,
+.support-box p {
+  margin-bottom: 15px;
+  color: #596273;
+}
+
+footer {
+  background: #111827;
+  color: #d1d5db;
+  text-align: center;
+  padding: 35px 20px;
+  margin-top: 50px;
+}
+
+footer strong {
+  color: white;
+}
+
+@media (max-width: 800px) {
+  .hero h1 {
+    font-size: 39px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  nav {
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  header {
+    padding: 13px 15px;
+  }
+
+  .navbar {
+    gap: 10px;
+  }
+
+  .logo {
+    font-size: 21px;
+  }
+}
+</style>
 </head>
 
 <body>
 
-
-<!-- HEADER -->
-
 <header>
+  <div class="navbar">
+    <div class="logo" onclick="goToSection('home')">FriendHub</div>
 
-    <div class="nav-container">
-
-        <a
-            class="logo"
-            href="#home"
-            onclick="goToSection('home'); return false;">
-            FriendHub
-        </a>
-
-        <nav>
-
-            <a
-                href="#home"
-                onclick="goToSection('home'); return false;">
-                Home
-            </a>
-
-            <a
-                href="#discover"
-                onclick="goToSection('discover'); return false;">
-                Discover
-            </a>
-
-            <a
-                href="#about"
-                onclick="goToSection('about'); return false;">
-                About
-            </a>
-
-            <a
-                href="#support"
-                onclick="goToSection('support'); return false;">
-                Support
-            </a>
-
-        </nav>
-
-    </div>
-
+    <nav>
+      <a onclick="goToSection('home')">Home</a>
+      <a onclick="goToSection('discover')">Discover</a>
+      <a onclick="goToSection('about')">About</a>
+      <a onclick="goToSection('support')">Support</a>
+    </nav>
+  </div>
 </header>
 
 
 <!-- HOME -->
+<section id="home">
+  <div class="hero">
+    <h1>Meet People. Make Friends.</h1>
 
-<section id="home" class="hero">
+    <p>
+      Discover people, friendships and communities based on your interests
+      and the platforms you use.
+    </p>
 
-    <div class="hero-content">
+    <div class="buttons">
+      <button class="btn primary" onclick="goToSection('discover')">
+        Discover People
+      </button>
 
-        <h1>
-            Meet People.<br>
-            <span>Make Friends.</span>
-        </h1>
-
-        <p>
-            Discover people, friendships and communities
-            based on your interests and the platforms you use.
-        </p>
-
-        <div class="hero-buttons">
-
-            <a
-                class="btn btn-primary"
-                href="#discover"
-                onclick="goToSection('discover'); return false;">
-                Discover People
-            </a>
-
-            <a
-                class="btn btn-secondary"
-                href="#about"
-                onclick="goToSection('about'); return false;">
-                Learn More
-            </a>
-
-        </div>
-
+      <button class="btn secondary" onclick="goToSection('about')">
+        Learn More
+      </button>
     </div>
-
+  </div>
 </section>
 
 
 <!-- DISCOVER -->
-
 <section id="discover">
 
-    <div class="section">
-
-        <div class="section-title">
-
-            <h2>Discover</h2>
-
-            <p>
-                Find people, conversations and communities
-                that match your interests.
-            </p>
-
-        </div>
-
-
-        <div class="discover-layout">
-
-
-            <!-- SEARCH -->
-
-            <div class="search-box">
-
-                <span>🔎</span>
-
-                <input
-                    type="text"
-                    placeholder="Search people, interests or groups...">
-
-            </div>
-
-
-            <!-- FILTERS -->
-
-            <div class="filters">
-
-                <button class="filter active">
-                    All
-                </button>
-
-                <button class="filter">
-                    👤 People
-                </button>
-
-                <button class="filter">
-                    🟢 WhatsApp
-                </button>
-
-                <button class="filter">
-                    🔵 Telegram
-                </button>
-
-                <button class="filter">
-                    👻 Snapchat
-                </button>
-
-            </div>
-
-
-            <!-- CREATE POST -->
-
-            <div class="create-post">
-
-                <div class="create-top">
-
-                    <div class="avatar">
-                        👤
-                    </div>
-
-                    <textarea
-                        class="post-input"
-                        placeholder="What are you looking for?"></textarea>
-
-                </div>
-
-
-                <!-- MEDIA PREVIEW -->
-
-                <div
-                    id="mediaPreview"
-                    class="media-preview">
-
-                    <button
-                        class="remove-media"
-                        onclick="removeMedia()">
-                        ×
-                    </button>
-
-                    <div id="previewContent"></div>
-
-                </div>
-
-
-                <!-- POST OPTIONS -->
-
-                <div class="post-options">
-
-                    <button
-                        class="post-option"
-                        onclick="selectType('👤 Personal contact')">
-                        👤 Personal contact
-                    </button>
-
-                    <button
-                        class="post-option"
-                        onclick="selectType('🟢 WhatsApp group')">
-                        🟢 WhatsApp group
-                    </button>
-
-                    <button
-                        class="post-option"
-                        onclick="selectType('🔵 Telegram group')">
-                        🔵 Telegram group
-                    </button>
-
-                    <button
-                        class="post-option"
-                        onclick="selectType('👻 Snapchat')">
-                        👻 Snapchat
-                    </button>
-
-                </div>
-
-
-                <!-- POST BUTTONS -->
-
-                <div class="post-bottom">
-
-                    <div>
-
-                        <input
-                            id="mediaInput"
-                            class="hidden-file"
-                            type="file"
-                            accept="image/*,video/*"
-                            onchange="previewMedia(event)">
-
-                        <button
-                            class="media-button"
-                            onclick="document.getElementById('mediaInput').click()">
-                            📎 Add media
-                        </button>
-
-                    </div>
-
-
-                    <button
-                        class="btn btn-primary"
-                        onclick="createDemoPost()">
-                        Post
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            <!-- POST 1 -->
-
-            <article class="post">
-
-                <div class="post-header">
-
-                    <div class="user-info">
-
-                        <div class="avatar">
-                            🎮
-                        </div>
-
-                        <div>
-
-                            <div class="user-name">
-                                Alex, 24 🇺🇸
-                            </div>
-
-                            <div class="user-meta">
-                                Gaming · Music · 2h ago
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div class="more">
-                        ⋯
-                    </div>
-
-                </div>
-
-
-                <div class="post-text">
-
-                    Looking for people who enjoy gaming,
-                    music and meeting new friends! 🎮🎵
-
-                    We also have a gaming community for
-                    anyone interested.
-
-                </div>
-
-
-                <div class="tags">
-
-                    <span class="tag">
-                        🎮 Gaming
-                    </span>
-
-                    <span class="tag">
-                        🎵 Music
-                    </span>
-
-                    <span class="tag">
-                        🌎 Friends
-                    </span>
-
-                </div>
-
-
-                <div class="group-card">
-
-                    <div class="group-info">
-
-                        <div class="group-icon">
-                            🟢
-                        </div>
-
-                        <div>
-
-                            <div class="group-title">
-                                Gaming Friends
-                            </div>
-
-                            <div class="group-type">
-                                WhatsApp Group
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <a
-                        class="join"
-                        href="#"
-                        onclick="joinDemo('WhatsApp'); return false;">
-                        Join Group
-                    </a>
-
-                </div>
-
-
-                <div class="post-actions">
-
-                    <button
-                        class="post-action"
-                        onclick="likePost(this)">
-                        ❤️ Like
-                    </button>
-
-                    <button
-                        class="post-action">
-                        💬 Comment
-                    </button>
-
-                    <button
-                        class="post-action">
-                        🚩 Report
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <!-- POST 2 -->
-
-            <article class="post">
-
-                <div class="post-header">
-
-                    <div class="user-info">
-
-                        <div class="avatar">
-                            🌎
-                        </div>
-
-                        <div>
-
-                            <div class="user-name">
-                                Sofia, 21 🇺🇸
-                            </div>
-
-                            <div class="user-meta">
-                                Languages · 5h ago
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div class="more">
-                        ⋯
-                    </div>
-
-                </div>
-
-
-                <div class="post-text">
-
-                    Looking for people who speak Spanish
-                    and English. Let's practice together
-                    and make new friends! 😊
-
-                </div>
-
-
-                <div class="tags">
-
-                    <span class="tag">
-                        🇪🇸 Spanish
-                    </span>
-
-                    <span class="tag">
-                        🇺🇸 English
-                    </span>
-
-                    <span class="tag">
-                        🗣️ Language Exchange
-                    </span>
-
-                </div>
-
-
-                <div class="group-card">
-
-                    <div class="group-info">
-
-                        <div class="group-icon">
-                            🔵
-                        </div>
-
-                        <div>
-
-                            <div class="group-title">
-                                Language Exchange
-                            </div>
-
-                            <div class="group-type">
-                                Telegram Group
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <a
-                        class="join"
-                        href="#"
-                        onclick="joinDemo('Telegram'); return false;">
-                        Join Group
-                    </a>
-
-                </div>
-
-
-                <div class="post-actions">
-
-                    <button
-                        class="post-action"
-                        onclick="likePost(this)">
-                        ❤️ Like
-                    </button>
-
-                    <button
-                        class="post-action">
-                        💬 Comment
-                    </button>
-
-                    <button
-                        class="post-action">
-                        🚩 Report
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <!-- POST 3 -->
-
-            <article class="post">
-
-                <div class="post-header">
-
-                    <div class="user-info">
-
-                        <div class="avatar">
-                            👻
-                        </div>
-
-                        <div>
-
-                            <div class="user-name">
-                                Jordan, 19 🇨🇦
-                            </div>
-
-                            <div class="user-meta">
-                                Snapchat · 1d ago
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div class="more">
-                        ⋯
-                    </div>
-
-                </div>
-
-
-                <div class="post-text">
-
-                    Looking for new Snapchat friends!
-                    I'm into movies, anime and gaming.
-                    Feel free to connect. 👻🎬🎮
-
-                </div>
-
-
-                <div class="tags">
-
-                    <span class="tag">
-                        👻 Snapchat
-                    </span>
-
-                    <span class="tag">
-                        🎬 Movies
-                    </span>
-
-                    <span class="tag">
-                        🎮 Gaming
-                    </span>
-
-                </div>
-
-
-                <div class="post-actions">
-
-                    <button
-                        class="post-action"
-                        onclick="likePost(this)">
-                        ❤️ Like
-                    </button>
-
-                    <button
-                        class="post-action">
-                        💬 Comment
-                    </button>
-
-                    <button
-                        class="post-action">
-                        🚩 Report
-                    </button>
-
-                </div>
-
-            </article>
-
-
-        </div>
+  <div class="section-title">
+    <h2>Discover</h2>
+    <p>Find people and communities that match your interests.</p>
+  </div>
+
+  <div class="search-box">
+    <input
+      id="searchInput"
+      type="text"
+      placeholder="Search people, interests, groups..."
+      oninput="searchPosts()"
+    >
+  </div>
+
+  <div class="filters">
+    <button class="filter active" onclick="filterPosts('all', this)">All</button>
+    <button class="filter" onclick="filterPosts('people', this)">People</button>
+    <button class="filter" onclick="filterPosts('whatsapp', this)">WhatsApp</button>
+    <button class="filter" onclick="filterPosts('telegram', this)">Telegram</button>
+    <button class="filter" onclick="filterPosts('snapchat', this)">Snapchat</button>
+  </div>
+
+
+  <!-- CREATE POST -->
+  <div class="composer">
+
+    <h3>Create a post</h3>
+
+    <textarea
+      id="postText"
+      placeholder="What are you looking for?"
+    ></textarea>
+
+    <div class="post-types">
+
+      <button class="type-btn selected" onclick="selectType('people', this)">
+        👤 Personal contact
+      </button>
+
+      <button class="type-btn" onclick="selectType('whatsapp', this)">
+        🟢 WhatsApp group
+      </button>
+
+      <button class="type-btn" onclick="selectType('telegram', this)">
+        🔵 Telegram group
+      </button>
+
+      <button class="type-btn" onclick="selectType('snapchat', this)">
+        👻 Snapchat
+      </button>
 
     </div>
+
+    <input
+      id="linkInput"
+      class="link-input"
+      type="text"
+      placeholder="Paste your WhatsApp or Telegram group link..."
+    >
+
+    <input
+      id="mediaInput"
+      class="hidden-file"
+      type="file"
+      accept="image/*,video/*"
+      onchange="previewMedia(event)"
+    >
+
+    <div id="mediaPreview" class="media-preview">
+      <button class="remove-media" onclick="removeMedia()">×</button>
+      <div id="previewContent"></div>
+    </div>
+
+    <div class="composer-bottom">
+
+      <div class="media-actions">
+        <button
+          class="media-btn"
+          onclick="document.getElementById('mediaInput').click()"
+        >
+          📎 Add media
+        </button>
+      </div>
+
+      <button class="post-btn" onclick="createPost()">
+        Post
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- FEED -->
+  <div id="feed" class="feed">
+
+    <!-- SAMPLE POST -->
+    <article class="post" data-type="whatsapp" data-search="Alex gaming music whatsapp friends">
+
+      <div class="post-header">
+        <div class="avatar">👨🏻</div>
+
+        <div>
+          <div class="post-name">Alex, 24 🇺🇸</div>
+          <div class="post-meta">Gaming · Music</div>
+        </div>
+      </div>
+
+      <div class="post-text">
+        Looking for Snapchat and gaming friends! 🎮
+      </div>
+
+      <div class="connection-card">
+        <div class="connection-title">🟢 WhatsApp Gaming Friends</div>
+        <div class="post-meta">Community</div>
+      </div>
+
+      <div class="post-actions">
+        <button class="post-action" onclick="likePost(this)">♡ Like</button>
+        <button class="post-action">💬 Comment</button>
+        <button class="post-action">⚠️ Report</button>
+      </div>
+
+    </article>
+
+
+    <!-- SAMPLE POST -->
+    <article class="post" data-type="telegram" data-search="Sofia Spanish English telegram language exchange">
+
+      <div class="post-header">
+        <div class="avatar">👩🏻</div>
+
+        <div>
+          <div class="post-name">Sofia, 21 🇺🇸</div>
+          <div class="post-meta">Spanish · English</div>
+        </div>
+      </div>
+
+      <div class="post-text">
+        Looking for people to practice languages and make new friends. 🌎
+      </div>
+
+      <div class="connection-card">
+        <div class="connection-title">🔵 Telegram Language Exchange</div>
+        <div class="post-meta">Community</div>
+      </div>
+
+      <div class="post-actions">
+        <button class="post-action" onclick="likePost(this)">♡ Like</button>
+        <button class="post-action">💬 Comment</button>
+        <button class="post-action">⚠️ Report</button>
+      </div>
+
+    </article>
+
+
+    <!-- SAMPLE POST -->
+    <article class="post" data-type="snapchat" data-search="Jordan Canada Snapchat movies gaming">
+
+      <div class="post-header">
+        <div class="avatar">🧑🏻</div>
+
+        <div>
+          <div class="post-name">Jordan, 19 🇨🇦</div>
+          <div class="post-meta">Snapchat · Movies · Gaming</div>
+        </div>
+      </div>
+
+      <div class="post-text">
+        Looking for people to talk to and share movie recommendations. 🍿
+      </div>
+
+      <div class="connection-card">
+        <div class="connection-title">👻 Snapchat</div>
+        <div class="post-meta">Looking for friends</div>
+      </div>
+
+      <div class="post-actions">
+        <button class="post-action" onclick="likePost(this)">♡ Like</button>
+        <button class="post-action">💬 Comment</button>
+        <button class="post-action">⚠️ Report</button>
+      </div>
+
+    </article>
+
+  </div>
 
 </section>
 
 
 <!-- ABOUT -->
-
 <section id="about">
 
-    <div class="section">
+  <div class="section-title">
+    <h2>About FriendHub</h2>
+    <p>A place to discover friendships and communities.</p>
+  </div>
 
-        <div class="about-content">
+  <div class="about-box">
 
-            <h2>About FriendHub</h2>
+    <p>
+      FriendHub is a social discovery platform designed to help people
+      discover new friendships, communities and connections based on
+      shared interests.
+    </p>
 
-            <p>
-                FriendHub is a social discovery platform
-                designed to help people find new friends,
-                conversations and communities.
-            </p>
+    <p>
+      Users can create posts, discover people and find WhatsApp,
+      Telegram and Snapchat connections.
+    </p>
 
-            <p>
-                Users will be able to create posts,
-                discover people with shared interests
-                and find WhatsApp, Telegram and Snapchat
-                connections.
-            </p>
+    <p>
+      FriendHub is an independent platform and is not affiliated with
+      Snapchat, WhatsApp or Telegram.
+    </p>
 
-            <p>
-                FriendHub is an independent platform and
-                is not affiliated with, sponsored by, or
-                endorsed by Snapchat, WhatsApp or Telegram.
-            </p>
+    <p>
+      <strong>Safety matters.</strong>
+      FriendHub is designed with reporting, privacy and age-appropriate
+      interactions in mind.
+    </p>
 
-            <div class="notice">
-
-                <strong>Safety matters.</strong>
-
-                <br>
-
-                FriendHub is being designed with reporting,
-                blocking, moderation and age-appropriate
-                experiences in mind.
-
-            </div>
-
-        </div>
-
-    </div>
+  </div>
 
 </section>
 
 
 <!-- SUPPORT -->
-
 <section id="support">
 
-    <div class="section">
+  <div class="section-title">
+    <h2>Support</h2>
+    <p>Need help? Contact the FriendHub team.</p>
+  </div>
 
-        <div class="support-box">
+  <div class="support-box">
 
-            <h2>Need Help?</h2>
+    <p>
+      For questions, technical problems or reports, contact:
+    </p>
 
-            <p>
-                Have a question, found a problem,
-                or want to report something?
-            </p>
+    <p>
+      <strong>friendhub.support@gmail.com</strong>
+    </p>
 
-            <a
-                class="email"
-                href="mailto:friendhub.support@gmail.com">
-                friendhub.support@gmail.com
-            </a>
+    <button
+      class="btn primary"
+      onclick="window.location.href='mailto:friendhub.support@gmail.com?subject=FriendHub%20Support'"
+    >
+      Report a Problem
+    </button>
 
-            <br>
-
-            <a
-                class="btn btn-primary"
-                href="mailto:friendhub.support@gmail.com?subject=FriendHub%20Report">
-                Report a Problem
-            </a>
-
-        </div>
-
-    </div>
+  </div>
 
 </section>
 
 
-<!-- FOOTER -->
-
 <footer>
-
-    <p>
-        <strong>FriendHub</strong>
-        — Meet People. Make Friends.
-    </p>
-
-    <p>
-        © 2026 FriendHub. All rights reserved.
-    </p>
-
-    <p>
-        Independent platform.
-        Not affiliated with Snapchat,
-        WhatsApp or Telegram.
-    </p>
-
+  <strong>FriendHub</strong>
+  <p>© 2026 FriendHub. Independent platform.</p>
 </footer>
 
 
-<!-- JAVASCRIPT -->
-
 <script>
 
-    function goToSection(sectionId) {
+let selectedType = "people";
+let selectedMediaURL = null;
 
-        const section =
-            document.getElementById(sectionId);
 
-        if (section) {
+/* NAVIGATION */
 
-            section.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-            });
+function goToSection(sectionId) {
+  document.getElementById(sectionId).scrollIntoView({
+    behavior: "smooth"
+  });
+}
 
-            history.replaceState(
-                null,
-                null,
-                "#" + sectionId
-            );
 
-        }
+/* SELECT POST TYPE */
 
+function selectType(type, button) {
+
+  selectedType = type;
+
+  document.querySelectorAll(".type-btn").forEach(function(btn) {
+    btn.classList.remove("selected");
+  });
+
+  button.classList.add("selected");
+
+  const linkInput = document.getElementById("linkInput");
+
+  if (type === "whatsapp" || type === "telegram") {
+    linkInput.style.display = "block";
+
+    if (type === "whatsapp") {
+      linkInput.placeholder =
+        "Paste your WhatsApp group link...";
+    } else {
+      linkInput.placeholder =
+        "Paste your Telegram group link...";
     }
 
-
-    /* MEDIA PREVIEW */
-
-    function previewMedia(event) {
-
-        const file =
-            event.target.files[0];
-
-        if (!file) {
-            return;
-        }
-
-        const preview =
-            document.getElementById("mediaPreview");
-
-        const content =
-            document.getElementById("previewContent");
-
-        content.innerHTML = "";
-
-        const fileURL =
-            URL.createObjectURL(file);
+  } else {
+    linkInput.style.display = "none";
+    linkInput.value = "";
+  }
+}
 
 
-        if (file.type.startsWith("image/")) {
+/* MEDIA PREVIEW */
 
-            const image =
-                document.createElement("img");
+function previewMedia(event) {
 
-            image.src = fileURL;
+  const file = event.target.files[0];
 
-            image.alt = "Selected image";
+  if (!file) {
+    return;
+  }
 
-            content.appendChild(image);
+  if (!file.type.startsWith("image/") &&
+      !file.type.startsWith("video/")) {
 
-        }
+    alert("Please select an image or video.");
+    return;
+  }
+
+  if (selectedMediaURL) {
+    URL.revokeObjectURL(selectedMediaURL);
+  }
+
+  selectedMediaURL = URL.createObjectURL(file);
+
+  const preview = document.getElementById("mediaPreview");
+  const content = document.getElementById("previewContent");
+
+  content.innerHTML = "";
+
+  if (file.type.startsWith("image/")) {
+
+    const img = document.createElement("img");
+    img.src = selectedMediaURL;
+
+    content.appendChild(img);
+
+  } else {
+
+    const video = document.createElement("video");
+
+    video.src = selectedMediaURL;
+    video.controls = true;
+    video.playsInline = true;
+
+    content.appendChild(video);
+  }
+
+  preview.classList.add("show");
+}
 
 
-        else if (file.type.startsWith("video/")) {
+/* REMOVE MEDIA */
 
-            const video =
-                document.createElement("video");
+function removeMedia() {
 
-            video.src = fileURL;
+  const input = document.getElementById("mediaInput");
 
-            video.controls = true;
+  input.value = "";
 
-            video.playsInline = true;
+  document.getElementById("previewContent").innerHTML = "";
 
-            content.appendChild(video);
+  document.getElementById("mediaPreview").classList.remove("show");
 
-        }
-
-
-        else {
-
-            alert(
-                "Please select an image or video."
-            );
-
-            return;
-
-        }
+  if (selectedMediaURL) {
+    URL.revokeObjectURL(selectedMediaURL);
+    selectedMediaURL = null;
+  }
+}
 
 
-        preview.classList.add("show");
+/* CREATE REAL FEED POST */
 
+function createPost() {
+
+  const text = document.getElementById("postText").value.trim();
+  const link = document.getElementById("linkInput").value.trim();
+  const mediaInput = document.getElementById("mediaInput");
+
+  const hasMedia = mediaInput.files.length > 0;
+
+  if (!text && !hasMedia) {
+    alert("Please write something or add a photo/video.");
+    return;
+  }
+
+  if ((selectedType === "whatsapp" || selectedType === "telegram") && !link) {
+    alert("Please add your WhatsApp or Telegram group link.");
+    return;
+  }
+
+  const feed = document.getElementById("feed");
+
+  const post = document.createElement("article");
+
+  post.className = "post";
+
+  let typeName = "";
+  let emoji = "";
+
+  if (selectedType === "people") {
+    typeName = "Personal contact";
+    emoji = "👤";
+  }
+
+  if (selectedType === "whatsapp") {
+    typeName = "WhatsApp group";
+    emoji = "🟢";
+  }
+
+  if (selectedType === "telegram") {
+    typeName = "Telegram group";
+    emoji = "🔵";
+  }
+
+  if (selectedType === "snapchat") {
+    typeName = "Snapchat";
+    emoji = "👻";
+  }
+
+  post.dataset.type = selectedType;
+
+  post.dataset.search =
+    (text + " " + typeName + " " + link).toLowerCase();
+
+
+  let html = `
+    <div class="post-header">
+
+      <div class="avatar">🙂</div>
+
+      <div>
+        <div class="post-name">You</div>
+        <div class="post-meta">${emoji} ${typeName}</div>
+      </div>
+
+    </div>
+  `;
+
+
+  if (text) {
+    html += `
+      <div class="post-text"></div>
+    `;
+  }
+
+
+  if (hasMedia) {
+
+    const file = mediaInput.files[0];
+
+    const mediaContainer =
+      document.createElement("div");
+
+    mediaContainer.className = "post-media";
+
+    if (file.type.startsWith("image/")) {
+
+      const img = document.createElement("img");
+
+      img.src = selectedMediaURL;
+
+      mediaContainer.appendChild(img);
+
+    } else {
+
+      const video = document.createElement("video");
+
+      video.src = selectedMediaURL;
+      video.controls = true;
+      video.playsInline = true;
+
+      mediaContainer.appendChild(video);
     }
 
+    post.innerHTML = html;
 
-    /* REMOVE MEDIA */
-
-    function removeMedia() {
-
-        const input =
-            document.getElementById("mediaInput");
-
-        const preview =
-            document.getElementById("mediaPreview");
-
-        const content =
-            document.getElementById("previewContent");
-
-        input.value = "";
-
-        content.innerHTML = "";
-
-        preview.classList.remove("show");
-
+    if (text) {
+      post.querySelector(".post-text").textContent = text;
     }
 
+    post.appendChild(mediaContainer);
 
-    /* POST TYPE */
+  } else {
 
-    function selectType(type) {
+    post.innerHTML = html;
 
-        alert(
-            type +
-            " selected. This option will be connected to your post when accounts are added."
-        );
+    if (text) {
+      post.querySelector(".post-text").textContent = text;
+    }
+  }
 
+
+  if (selectedType === "whatsapp" ||
+      selectedType === "telegram") {
+
+    const card = document.createElement("div");
+
+    card.className = "connection-card";
+
+    const title =
+      document.createElement("div");
+
+    title.className = "connection-title";
+
+    title.textContent =
+      emoji + " " + typeName;
+
+    const linkElement =
+      document.createElement("a");
+
+    linkElement.className = "connection-link";
+
+    linkElement.href = link;
+    linkElement.target = "_blank";
+    linkElement.rel = "noopener noreferrer";
+
+    linkElement.textContent = link;
+
+    card.appendChild(title);
+    card.appendChild(linkElement);
+
+    post.appendChild(card);
+  }
+
+
+  const actions =
+    document.createElement("div");
+
+  actions.className = "post-actions";
+
+  actions.innerHTML = `
+    <button class="post-action" onclick="likePost(this)">
+      ♡ Like
+    </button>
+
+    <button class="post-action">
+      💬 Comment
+    </button>
+
+    <button class="post-action">
+      ⚠️ Report
+    </button>
+  `;
+
+  post.appendChild(actions);
+
+
+  /* NEW POSTS GO TO THE TOP */
+
+  feed.prepend(post);
+
+
+  /* RESET COMPOSER */
+
+  document.getElementById("postText").value = "";
+
+  document.getElementById("linkInput").value = "";
+
+  removeMedia();
+
+
+  /* RETURN TO FEED */
+
+  feed.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+
+}
+
+
+/* LIKE */
+
+function likePost(button) {
+
+  if (button.textContent.includes("Like")) {
+
+    button.textContent = "♥ Liked";
+
+  } else {
+
+    button.textContent = "♡ Like";
+
+  }
+}
+
+
+/* SEARCH */
+
+function searchPosts() {
+
+  const search =
+    document.getElementById("searchInput")
+      .value
+      .toLowerCase()
+      .trim();
+
+  const posts =
+    document.querySelectorAll(".post");
+
+  posts.forEach(function(post) {
+
+    const content =
+      (post.dataset.search || post.textContent)
+      .toLowerCase();
+
+    if (!search || content.includes(search)) {
+      post.style.display = "";
+    } else {
+      post.style.display = "none";
     }
 
+  });
+}
 
-    /* CREATE POST */
 
-    function createDemoPost() {
+/* FILTER */
 
-        const input =
-            document.querySelector(".post-input");
+function filterPosts(type, button) {
 
-        const media =
-            document.getElementById("mediaInput");
+  document.querySelectorAll(".filter").forEach(function(btn) {
+    btn.classList.remove("active");
+  });
 
-        if (!input.value.trim() && !media.files.length) {
+  button.classList.add("active");
 
-            alert(
-                "Write something or add a photo/video before creating your post."
-            );
+  const posts =
+    document.querySelectorAll(".post");
 
-            return;
+  posts.forEach(function(post) {
 
-        }
-
-        alert(
-            "Your post is ready! 🚀\n\n" +
-            "Real posts will be saved when we connect FriendHub to a database."
-        );
-
-        input.value = "";
-
-        removeMedia();
-
+    if (type === "all") {
+      post.style.display = "";
+      return;
     }
 
-
-    /* LIKE */
-
-    function likePost(button) {
-
-        if (button.innerText.includes("❤️ Like")) {
-
-            button.innerText = "❤️ Liked";
-
-        }
-
+    if (post.dataset.type === type) {
+      post.style.display = "";
+    } else {
+      post.style.display = "none";
     }
 
+  });
 
-    /* GROUP */
-
-    function joinDemo(platform) {
-
-        alert(
-            platform +
-            " group links will open here when real group links are added."
-        );
-
-    }
+}
 
 </script>
 
 </body>
 </html>
+```
