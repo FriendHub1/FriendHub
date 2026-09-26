@@ -1758,22 +1758,26 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
 }
 
 
-/* FriendHub DM FIX5 — structural message stack */
+/* FriendHub DM FIX6 — normal-flow message stack */
 .dm-message-stack {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: stretch;
-  gap: 10px;
-  width: 100%;
-  height: max-content;
-  min-height: 0;
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
 }
-.dm-message-stack .dm-row {
-  flex: none;
-  margin: 0;
-  min-height: 0;
-  height: auto;
+.dm-message-stack > .dm-row {
+  display: flex !important;
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 0 10px 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+.dm-message-stack > .dm-row:last-child {
+  margin-bottom: 0 !important;
 }
 
 </style>
