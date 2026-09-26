@@ -2157,6 +2157,56 @@ button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
   button, .btn, .file-label, .option-btn, .post-action { touch-action: manipulation; }
 }
 
+
+/* =========================================================
+FRIENDHUB GLOBAL SEARCH
+========================================================= */
+.global-search-wrap { position: relative; margin-bottom: 15px; }
+.global-search-wrap .search-box { margin-bottom: 0; }
+.global-search-results {
+  display: none;
+  margin-top: 10px;
+  border: 1px solid var(--fh-border, #dfe3eb);
+  border-radius: 16px;
+  background: var(--fh-surface, #fff);
+  box-shadow: var(--fh-shadow, 0 12px 34px rgba(0,0,0,.10));
+  overflow: hidden;
+}
+.global-search-results.show { display: block; }
+.global-search-section { padding: 13px 14px; border-bottom: 1px solid var(--fh-border, #edf0f4); }
+.global-search-section:last-child { border-bottom: 0; }
+.global-search-title {
+  font-size: 12px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--fh-muted, #667085); margin-bottom: 9px;
+}
+.global-search-items { display: grid; gap: 7px; }
+.global-search-item {
+  width: 100%; border: 0; background: transparent; color: var(--fh-text, #172033);
+  display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 9px 10px; border-radius: 11px; cursor: pointer;
+}
+.global-search-item:hover { background: var(--fh-soft, #f0f2ff); }
+.global-search-avatar {
+  width: 38px; height: 38px; border-radius: 50%; overflow: hidden; flex: 0 0 38px;
+  display: grid; place-items: center; background: var(--fh-soft, #eef0ff);
+  color: var(--fh-primary, #5865f2); font-weight: 800;
+}
+.global-search-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.global-search-main { min-width: 0; flex: 1; }
+.global-search-name { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.global-search-meta { color: var(--fh-muted, #667085); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.global-search-chip {
+  border: 1px solid var(--fh-border, #dfe3eb); border-radius: 999px;
+  padding: 7px 10px; background: var(--fh-surface-strong, #fff);
+  color: var(--fh-primary, #5865f2); font-weight: 700; cursor: pointer;
+}
+.global-search-chip:hover { background: var(--fh-soft, #eef0ff); }
+.global-search-chips { display: flex; gap: 7px; flex-wrap: wrap; }
+.global-search-empty { padding: 18px; text-align: center; color: var(--fh-muted, #667085); }
+@media (max-width: 600px) {
+  .global-search-results { max-height: 62vh; overflow-y: auto; }
+}
+
 </style>
 </head>
 <body>
@@ -2298,13 +2348,18 @@ and backgrounds.
 </div>
 <div id="friendSuggestionsList" class="friend-suggestions-list"></div>
 </div>
+<div class="global-search-wrap">
 <input
 id="searchInput"
 class="search-box"
 type="text"
+autocomplete="off"
 placeholder="Search people, interests, groups..."
-oninput="renderPosts()"
+oninput="handleGlobalSearchInput()"
+onkeydown="handleGlobalSearchKeydown(event)"
 >
+<div id="globalSearchResults" class="global-search-results" aria-live="polite"></div>
+</div>
 <div class="filters">
 <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">
 All
@@ -4483,6 +4538,250 @@ if (el) el.value = "";
 const results = document.getElementById("discoverPeopleResults");
 if (results) results.innerHTML = "";
 }
+
+
+/* =========================================================
+FRIENDHUB GLOBAL SEARCH
+People + posts + hashtags + interests + communities
+========================================================= */
+let friendHubGlobalSearchTimer = null;
+let friendHubGlobalSearchRequest = 0;
+
+function handleGlobalSearchInput() {
+  renderPosts();
+  clearTimeout(friendHubGlobalSearchTimer);
+  friendHubGlobalSearchTimer = setTimeout(runFriendHubGlobalSearch, 220);
+}
+
+function handleGlobalSearchKeydown(event) {
+  if (event.key === "Escape") {
+    closeFriendHubGlobalSearch();
+    event.currentTarget.blur();
+  }
+}
+
+function closeFriendHubGlobalSearch() {
+  const box = document.getElementById("globalSearchResults");
+  if (!box) return;
+  box.classList.remove("show");
+  box.innerHTML = "";
+}
+
+function friendHubSearchList(value) {
+  return normalizeDiscoverStoredList(value).map(item => getOptionTextWithoutEmoji(item));
+}
+
+function friendHubSearchPost(post, query) {
+  const haystack = [
+    post.username || "",
+    post.text || "",
+    ...(post.tags || []),
+    post.type || ""
+  ].join(" ").toLowerCase();
+  return haystack.includes(query);
+}
+
+function openGlobalSearchProfile(userId) {
+  closeFriendHubGlobalSearch();
+  openPublicProfile(String(userId));
+}
+
+function openGlobalSearchPost(postId) {
+  closeFriendHubGlobalSearch();
+  const search = document.getElementById("searchInput");
+  if (search) search.value = "";
+  showPage("discover");
+  renderPosts();
+  requestAnimationFrame(() => {
+    const el = document.getElementById(`post-${String(postId)}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("shared-post-highlight");
+      setTimeout(() => el.classList.remove("shared-post-highlight"), 2300);
+    }
+  });
+}
+
+function searchGlobalHashtag(tag) {
+  const search = document.getElementById("searchInput");
+  if (search) search.value = tag;
+  closeFriendHubGlobalSearch();
+  renderPosts();
+}
+
+function searchGlobalInterest(value) {
+  const select = document.getElementById("discoverInterestFilter");
+  if (select) {
+    const wanted = String(value || "").toLowerCase();
+    const option = Array.from(select.options).find(opt => String(opt.value).toLowerCase() === wanted);
+    if (option) select.value = option.value;
+  }
+  closeFriendHubGlobalSearch();
+  applyDiscoverPeopleFilters();
+}
+
+function searchGlobalCommunity(type) {
+  const button = document.querySelector(`.filter-btn[data-filter="${String(type)}"]`);
+  closeFriendHubGlobalSearch();
+  if (button) button.click();
+}
+
+async function runFriendHubGlobalSearch() {
+  const input = document.getElementById("searchInput");
+  const results = document.getElementById("globalSearchResults");
+  if (!input || !results) return;
+
+  const raw = input.value.trim();
+  const query = raw.toLowerCase();
+  const requestId = ++friendHubGlobalSearchRequest;
+
+  if (!query) {
+    closeFriendHubGlobalSearch();
+    return;
+  }
+
+  results.classList.add("show");
+  results.innerHTML = '<div class="global-search-empty">Searching FriendHub...</div>';
+
+  const matchedPosts = (posts || []).filter(post => friendHubSearchPost(post, query)).slice(0, 5);
+
+  const hashtagCounts = new Map();
+  (posts || []).forEach(post => {
+    const tags = new Set();
+    (post.tags || []).forEach(tag => tags.add(String(tag).startsWith("#") ? String(tag) : `#${tag}`));
+    const fromText = String(post.text || "").match(/#[\p{L}\p{N}_]{1,50}/gu) || [];
+    fromText.forEach(tag => tags.add(tag));
+    tags.forEach(tag => {
+      if (tag.toLowerCase().includes(query.replace(/^#/, ""))) {
+        hashtagCounts.set(tag, (hashtagCounts.get(tag) || 0) + 1);
+      }
+    });
+  });
+  const hashtags = Array.from(hashtagCounts.entries())
+    .sort((a,b) => b[1] - a[1]).slice(0, 8);
+
+  let profiles = [];
+  if (currentUser && query.length >= 2) {
+    const { data, error } = await supabaseClient
+      .from("friendhub_public_profiles")
+      .select("user_id, username, country, languages, interests, looking_for, profile_photo")
+      .limit(100);
+
+    if (requestId !== friendHubGlobalSearchRequest) return;
+    if (!error) {
+      profiles = (data || []).filter(profile => {
+        if (!profile?.user_id || String(profile.user_id) === String(currentUser.id)) return false;
+        const searchable = [
+          profile.username || "",
+          profile.country || "",
+          ...friendHubSearchList(profile.languages),
+          ...friendHubSearchList(profile.interests),
+          ...friendHubSearchList(profile.looking_for)
+        ].join(" ").toLowerCase();
+        return searchable.includes(query);
+      }).slice(0, 6);
+    } else {
+      console.error("Global search profile error:", error);
+    }
+  }
+
+  if (requestId !== friendHubGlobalSearchRequest) return;
+
+  const interests = [];
+  const seenInterests = new Set();
+  profiles.forEach(profile => {
+    friendHubSearchList(profile.interests).forEach(interest => {
+      if (interest.toLowerCase().includes(query) && !seenInterests.has(interest.toLowerCase())) {
+        seenInterests.add(interest.toLowerCase());
+        interests.push(interest);
+      }
+    });
+  });
+
+  const communityTypes = [
+    ["whatsapp", "🟢 WhatsApp"],
+    ["telegram", "🟣 Telegram"],
+    ["snapchat", "👻 Snapchat"],
+    ["discord", "🔵 Discord"]
+  ].filter(([type, label]) => type.includes(query) || label.toLowerCase().includes(query));
+
+  const sections = [];
+
+  if (profiles.length) {
+    sections.push(`<div class="global-search-section">
+      <div class="global-search-title">People</div>
+      <div class="global-search-items">${profiles.map(profile => {
+        const username = profile.username || "@User";
+        const initial = escapeHtml(username.replace("@","").charAt(0).toUpperCase() || "U");
+        const avatar = profile.profile_photo
+          ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+          : initial;
+        const meta = [profile.country, friendHubSearchList(profile.interests).slice(0,2).join(" · ")]
+          .filter(Boolean).join(" · ");
+        return `<button class="global-search-item" type="button" onclick="openGlobalSearchProfile('${escapeHtmlAttribute(String(profile.user_id))}')">
+          <span class="global-search-avatar">${avatar}</span>
+          <span class="global-search-main">
+            <span class="global-search-name">${escapeHtml(username)}</span>
+            <span class="global-search-meta">${escapeHtml(meta || "FriendHub member")}</span>
+          </span>
+        </button>`;
+      }).join("")}</div>
+    </div>`);
+  }
+
+  if (hashtags.length) {
+    sections.push(`<div class="global-search-section">
+      <div class="global-search-title">Hashtags</div>
+      <div class="global-search-chips">${hashtags.map(([tag,count]) =>
+        `<button class="global-search-chip" type="button" onclick="searchGlobalHashtag('${escapeHtmlAttribute(tag)}')">${escapeHtml(tag)} · ${count}</button>`
+      ).join("")}</div>
+    </div>`);
+  }
+
+  if (interests.length) {
+    sections.push(`<div class="global-search-section">
+      <div class="global-search-title">Interests</div>
+      <div class="global-search-chips">${interests.slice(0,8).map(interest =>
+        `<button class="global-search-chip" type="button" onclick="searchGlobalInterest('${escapeHtmlAttribute(interest)}')">✨ ${escapeHtml(interest)}</button>`
+      ).join("")}</div>
+    </div>`);
+  }
+
+  if (communityTypes.length) {
+    sections.push(`<div class="global-search-section">
+      <div class="global-search-title">Communities</div>
+      <div class="global-search-chips">${communityTypes.map(([type,label]) =>
+        `<button class="global-search-chip" type="button" onclick="searchGlobalCommunity('${type}')">${label}</button>`
+      ).join("")}</div>
+    </div>`);
+  }
+
+  if (matchedPosts.length) {
+    sections.push(`<div class="global-search-section">
+      <div class="global-search-title">Posts</div>
+      <div class="global-search-items">${matchedPosts.map(post => {
+        const preview = String(post.text || "").replace(/\s+/g," ").trim().slice(0,90);
+        return `<button class="global-search-item" type="button" onclick="openGlobalSearchPost('${escapeHtmlAttribute(String(post.id))}')">
+          <span class="global-search-avatar">📝</span>
+          <span class="global-search-main">
+            <span class="global-search-name">${escapeHtml(post.username || "@User")}</span>
+            <span class="global-search-meta">${escapeHtml(preview || (post.type || "Post"))}</span>
+          </span>
+        </button>`;
+      }).join("")}</div>
+    </div>`);
+  }
+
+  results.innerHTML = sections.length
+    ? sections.join("")
+    : '<div class="global-search-empty">No results found yet.</div>';
+}
+
+document.addEventListener("click", function(event) {
+  const wrap = document.querySelector(".global-search-wrap");
+  if (wrap && !wrap.contains(event.target)) closeFriendHubGlobalSearch();
+});
+
 
 function setFilter(filter, button) {
 currentFilter =
