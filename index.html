@@ -1,10 +1,29 @@
+```{=html}
 <html lang="en">
+```
+```{=html}
 <head>
+```
+```{=html}
 <meta charset="UTF-8">
+```
+```{=html}
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FriendHub</title>
+```
+```{=html}
+<title>
+```
+FriendHub
+```{=html}
+</title>
+```
+```{=html}
 <meta name="description" content="Meet people, make friends, and discover communities on FriendHub.">
+```
+```{=html}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+```
+```{=html}
 <style>
 * {
 box-sizing: border-box;
@@ -1155,53 +1174,52 @@ width: 248px;
 grid-template-columns: repeat(7, 1fr);
 }
 }
-
 /* =========================================================
 FRIENDHUB DAY / NIGHT NEON THEMES
 ========================================================= */
 :root {
-  --fh-bg: #f2fbff;
-  --fh-surface: rgba(255,255,255,.82);
-  --fh-surface-strong: #ffffff;
-  --fh-text: #10243d;
-  --fh-muted: #60748d;
-  --fh-border: rgba(0,184,255,.22);
-  --fh-primary: #00aef0;
-  --fh-secondary: #12d87a;
-  --fh-accent: #f1df19;
-  --fh-soft: rgba(0,174,240,.09);
-  --fh-shadow: 0 12px 34px rgba(0,150,210,.10);
-  --fh-glow: 0 0 18px rgba(0,174,240,.20);
+--fh-bg: #f2fbff;
+--fh-surface: rgba(255,255,255,.82);
+--fh-surface-strong: #ffffff;
+--fh-text: #10243d;
+--fh-muted: #60748d;
+--fh-border: rgba(0,184,255,.22);
+--fh-primary: #00aef0;
+--fh-secondary: #12d87a;
+--fh-accent: #f1df19;
+--fh-soft: rgba(0,174,240,.09);
+--fh-shadow: 0 12px 34px rgba(0,150,210,.10);
+--fh-glow: 0 0 18px rgba(0,174,240,.20);
 }
 html[data-theme="night"] {
-  --fh-bg: #07091c;
-  --fh-surface: rgba(18,20,53,.84);
-  --fh-surface-strong: #11142f;
-  --fh-text: #f6f4ff;
-  --fh-muted: #b8b4d3;
-  --fh-border: rgba(112,95,255,.34);
-  --fh-primary: #18c8ff;
-  --fh-secondary: #8b5cff;
-  --fh-accent: #ff3fd1;
-  --fh-soft: rgba(139,92,255,.13);
-  --fh-shadow: 0 16px 45px rgba(0,0,0,.34);
-  --fh-glow: 0 0 24px rgba(255,63,209,.22);
+--fh-bg: #07091c;
+--fh-surface: rgba(18,20,53,.84);
+--fh-surface-strong: #11142f;
+--fh-text: #f6f4ff;
+--fh-muted: #b8b4d3;
+--fh-border: rgba(112,95,255,.34);
+--fh-primary: #18c8ff;
+--fh-secondary: #8b5cff;
+--fh-accent: #ff3fd1;
+--fh-soft: rgba(139,92,255,.13);
+--fh-shadow: 0 16px 45px rgba(0,0,0,.34);
+--fh-glow: 0 0 24px rgba(255,63,209,.22);
 }
 body {
-  background:
-    radial-gradient(circle at 12% 8%, rgba(18,216,122,.10), transparent 28%),
-    radial-gradient(circle at 88% 18%, rgba(0,174,240,.13), transparent 30%),
-    radial-gradient(circle at 55% 88%, rgba(241,223,25,.08), transparent 30%),
-    var(--fh-bg);
-  color: var(--fh-text);
-  transition: background .35s ease, color .35s ease;
+background:
+radial-gradient(circle at 12% 8%, rgba(18,216,122,.10), transparent 28%),
+radial-gradient(circle at 88% 18%, rgba(0,174,240,.13), transparent 30%),
+radial-gradient(circle at 55% 88%, rgba(241,223,25,.08), transparent 30%),
+var(--fh-bg);
+color: var(--fh-text);
+transition: background .35s ease, color .35s ease;
 }
 html[data-theme="night"] body {
-  background:
-    radial-gradient(circle at 14% 8%, rgba(139,92,255,.22), transparent 28%),
-    radial-gradient(circle at 88% 18%, rgba(24,200,255,.16), transparent 30%),
-    radial-gradient(circle at 52% 88%, rgba(255,63,209,.16), transparent 30%),
-    #07091c;
+background:
+radial-gradient(circle at 14% 8%, rgba(139,92,255,.22), transparent 28%),
+radial-gradient(circle at 88% 18%, rgba(24,200,255,.16), transparent 30%),
+radial-gradient(circle at 52% 88%, rgba(255,63,209,.16), transparent 30%),
+#07091c;
 }
 header { background: color-mix(in srgb, var(--fh-surface-strong) 88%, transparent); border-bottom-color: var(--fh-border); box-shadow: 0 5px 24px rgba(0,0,0,.04); }
 .logo { color: var(--fh-primary); text-shadow: 0 0 14px color-mix(in srgb, var(--fh-primary) 48%, transparent); }
@@ -1242,187 +1260,166 @@ html[data-theme="night"] .theme-toggle { box-shadow:0 0 16px rgba(139,92,255,.25
 html[data-theme="night"] .btn-secondary, html[data-theme="night"] .filter-btn, html[data-theme="night"] .post-type, html[data-theme="night"] .file-label, html[data-theme="night"] .emoji-picker-btn, html[data-theme="night"] .comment-attach-btn, html[data-theme="night"] .option-btn, html[data-theme="night"] .language-select, html[data-theme="night"] .theme-toggle, html[data-theme="night"] .search-box, html[data-theme="night"] .composer textarea, html[data-theme="night"] .comment-form textarea, html[data-theme="night"] .form-group input, html[data-theme="night"] .form-group select, html[data-theme="night"] .edit-post-modal textarea { background:#11142f; }
 html[data-theme="night"] .post-media img, html[data-theme="night"] .post-media video, html[data-theme="night"] .comment-media img, html[data-theme="night"] .comment-media video { background:#090b20; }
 @media (max-width:560px) { .theme-toggle { width:40px; height:40px; } }
-
-
 /* =========================================================
 FRIENDHUB FINAL NEON VISUAL TOUCHES
 Only: Home top spacing + stronger Night active controls
 ========================================================= */
 #home.page {
-  padding-top: 0;
+padding-top: 0;
 }
-
 html[data-theme="night"] .filter-btn.active,
 html[data-theme="night"] .post-type.active,
 html[data-theme="night"] .option-btn.selected {
-  background: linear-gradient(135deg, #18c8ff 0%, #8b5cff 52%, #ff3fd1 100%);
-  color: #ffffff;
-  border-color: rgba(255,255,255,.12);
-  box-shadow:
-    0 0 18px rgba(24,200,255,.22),
-    0 0 24px rgba(139,92,255,.24),
-    0 0 30px rgba(255,63,209,.16);
+background: linear-gradient(135deg, #18c8ff 0%, #8b5cff 52%, #ff3fd1 100%);
+color: #ffffff;
+border-color: rgba(255,255,255,.12);
+box-shadow:
+0 0 18px rgba(24,200,255,.22),
+0 0 24px rgba(139,92,255,.24),
+0 0 30px rgba(255,63,209,.16);
 }
-
-
 /* SHARE POST */
 .post-action.share-post-action:hover {
-  color: var(--fh-accent, #5865f2);
+color: var(--fh-accent, #5865f2);
 }
 .shared-post-highlight {
-  animation: friendHubSharedPostGlow 2.2s ease;
+animation: friendHubSharedPostGlow 2.2s ease;
 }
 @keyframes friendHubSharedPostGlow {
-  0%, 100% { box-shadow: var(--fh-card-shadow, 0 3px 12px rgba(16,24,40,.035)); }
-  35% { box-shadow: 0 0 0 2px rgba(65, 210, 255, .72), 0 0 34px rgba(139, 92, 246, .34); }
+0%, 100% { box-shadow: var(--fh-card-shadow, 0 3px 12px rgba(16,24,40,.035)); }
+35% { box-shadow: 0 0 0 2px rgba(65, 210, 255, .72), 0 0 34px rgba(139, 92, 246, .34); }
 }
-
-
 /* SHARE FRIENDHUB / INVITE FRIENDS */
 .friendhub-invite-btn {
-  margin-left: 10px;
-  min-height: 52px;
-  padding: 0 22px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255,255,255,.72);
-  color: #0b6f9f;
-  border: 1px solid rgba(24,200,255,.42);
-  box-shadow: 0 8px 24px rgba(24,200,255,.10);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+margin-left: 10px;
+min-height: 52px;
+padding: 0 22px;
+border-radius: 14px;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+background: rgba(255,255,255,.72);
+color: #0b6f9f;
+border: 1px solid rgba(24,200,255,.42);
+box-shadow: 0 8px 24px rgba(24,200,255,.10);
+backdrop-filter: blur(12px);
+-webkit-backdrop-filter: blur(12px);
 }
 .friendhub-invite-btn:hover {
-  transform: translateY(-1px);
-  border-color: rgba(24,200,255,.72);
-  box-shadow: 0 10px 28px rgba(24,200,255,.20);
+transform: translateY(-1px);
+border-color: rgba(24,200,255,.72);
+box-shadow: 0 10px 28px rgba(24,200,255,.20);
 }
 html[data-theme="night"] .friendhub-invite-btn {
-  background: rgba(17,24,50,.68);
-  color: #ffffff;
-  border-color: rgba(139,92,255,.60);
-  box-shadow:
-    0 0 16px rgba(24,200,255,.12),
-    0 0 22px rgba(139,92,255,.16);
+background: rgba(17,24,50,.68);
+color: #ffffff;
+border-color: rgba(139,92,255,.60);
+box-shadow:
+0 0 16px rgba(24,200,255,.12),
+0 0 22px rgba(139,92,255,.16);
 }
 html[data-theme="night"] .friendhub-invite-btn:hover {
-  border-color: rgba(255,63,209,.68);
-  box-shadow:
-    0 0 18px rgba(24,200,255,.20),
-    0 0 26px rgba(139,92,255,.24),
-    0 0 30px rgba(255,63,209,.14);
+border-color: rgba(255,63,209,.68);
+box-shadow:
+0 0 18px rgba(24,200,255,.20),
+0 0 26px rgba(139,92,255,.24),
+0 0 30px rgba(255,63,209,.14);
 }
 @media (max-width: 640px) {
-  .friendhub-invite-btn {
-    margin-left: 0;
-    margin-top: 10px;
-    min-height: 52px;
-  }
+.friendhub-invite-btn {
+margin-left: 0;
+margin-top: 10px;
+min-height: 52px;
 }
-
-
+}
 /* HOME INTERACTIVE: MEET PEOPLE */
 #home .feature-card[onclick="openDiscoverPeople()"] {
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 #home .feature-card[onclick="openDiscoverPeople()"]:hover,
 #home .feature-card[onclick="openDiscoverPeople()"]:focus-visible {
-  transform: translateY(-3px);
-  outline: none;
-  box-shadow: 0 12px 30px rgba(24,200,255,.14);
+transform: translateY(-3px);
+outline: none;
+box-shadow: 0 12px 30px rgba(24,200,255,.14);
 }
 html[data-theme="night"] #home .feature-card[onclick="openDiscoverPeople()"]:hover,
 html[data-theme="night"] #home .feature-card[onclick="openDiscoverPeople()"]:focus-visible {
-  box-shadow: 0 0 18px rgba(24,200,255,.16), 0 0 26px rgba(139,92,255,.18);
+box-shadow: 0 0 18px rgba(24,200,255,.16), 0 0 26px rgba(139,92,255,.18);
 }
-
-
 /* HOME INTERACTIVE: FIND COMMUNITIES */
 #home .feature-card[onclick="openDiscoverCommunities()"] {
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 #home .feature-card[onclick="openDiscoverCommunities()"]:hover,
 #home .feature-card[onclick="openDiscoverCommunities()"]:focus-visible {
-  transform: translateY(-3px);
-  outline: none;
-  box-shadow: 0 12px 30px rgba(139,92,255,.14);
+transform: translateY(-3px);
+outline: none;
+box-shadow: 0 12px 30px rgba(139,92,255,.14);
 }
 html[data-theme="night"] #home .feature-card[onclick="openDiscoverCommunities()"]:hover,
 html[data-theme="night"] #home .feature-card[onclick="openDiscoverCommunities()"]:focus-visible {
-  box-shadow: 0 0 18px rgba(139,92,255,.18), 0 0 26px rgba(255,63,209,.14);
+box-shadow: 0 0 18px rgba(139,92,255,.18), 0 0 26px rgba(255,63,209,.14);
 }
-
-
 /* HOME INTERACTIVE: MAKE CONNECTIONS */
 #home .feature-card[onclick="openDiscoverAll()"] {
-  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 #home .feature-card[onclick="openDiscoverAll()"]:hover,
 #home .feature-card[onclick="openDiscoverAll()"]:focus-visible {
-  transform: translateY(-3px);
-  outline: none;
-  box-shadow: 0 12px 30px rgba(24,200,255,.12);
+transform: translateY(-3px);
+outline: none;
+box-shadow: 0 12px 30px rgba(24,200,255,.12);
 }
 html[data-theme="night"] #home .feature-card[onclick="openDiscoverAll()"]:hover,
 html[data-theme="night"] #home .feature-card[onclick="openDiscoverAll()"]:focus-visible {
-  box-shadow: 0 0 18px rgba(24,200,255,.14), 0 0 26px rgba(139,92,255,.18);
+box-shadow: 0 0 18px rgba(24,200,255,.14), 0 0 26px rgba(139,92,255,.18);
 }
-
-
 /* BLOCK USER */
 .public-profile-block {
-  margin-top: 10px;
-  border: 1px solid rgba(239,68,68,.45);
-  background: rgba(239,68,68,.07);
-  color: #b42318;
+margin-top: 10px;
+border: 1px solid rgba(239,68,68,.45);
+background: rgba(239,68,68,.07);
+color: #b42318;
 }
 .public-profile-block:hover {
-  background: rgba(239,68,68,.12);
-  border-color: rgba(239,68,68,.72);
+background: rgba(239,68,68,.12);
+border-color: rgba(239,68,68,.72);
 }
 .public-profile-block.blocked {
-  border-color: rgba(24,200,255,.42);
-  background: rgba(24,200,255,.08);
-  color: #0b6f9f;
+border-color: rgba(24,200,255,.42);
+background: rgba(24,200,255,.08);
+color: #0b6f9f;
 }
 html[data-theme="night"] .public-profile-block {
-  color: #ff9aab;
-  border-color: rgba(255,74,116,.48);
-  background: rgba(255,74,116,.08);
+color: #ff9aab;
+border-color: rgba(255,74,116,.48);
+background: rgba(255,74,116,.08);
 }
 html[data-theme="night"] .public-profile-block.blocked {
-  color: #ffffff;
-  border-color: rgba(139,92,255,.58);
-  background: rgba(139,92,255,.12);
+color: #ffffff;
+border-color: rgba(139,92,255,.58);
+background: rgba(139,92,255,.12);
 }
-
-
 /* @ MENTIONS */
 .mention-link {
-  appearance: none;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  color: #0b84c6;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline;
+appearance: none;
+border: 0;
+padding: 0;
+margin: 0;
+background: transparent;
+color: #0b84c6;
+font: inherit;
+font-weight: 700;
+cursor: pointer;
+display: inline;
 }
 .mention-link:hover { text-decoration: underline; }
 .mention-link { position: relative; z-index: 2; }
-
 html[data-theme="night"] .mention-link {
-  color: #6fdcff;
-  text-shadow: 0 0 10px rgba(24,200,255,.18);
+color: #6fdcff;
+text-shadow: 0 0 10px rgba(24,200,255,.18);
 }
-
-
 /* DIRECT MESSAGES V1 */
-
 .dm-composer-main { flex: 1; min-width: 0; }
 .dm-attach-button {
 width:46px;height:46px;flex:0 0 46px;align-self:flex-end;border-radius:13px;
@@ -1443,198 +1440,193 @@ color:#ff2fa8;font-size:1.25rem;cursor:pointer;box-shadow:0 0 12px rgba(255,47,1
 .dm-attachment-link { display:block; }
 .dm-attachment-missing { padding:10px;border-radius:10px;background:rgba(255,47,168,.08);color:#ff2fa8;font-size:.84rem; }
 @media (max-width:640px) { .dm-composer { align-items:flex-end; } .dm-attach-button { width:42px;height:42px;flex-basis:42px; } }
-
-
 .messages-unread-badge,
 .dm-unread-badge {
-  min-width: 21px;
-  height: 21px;
-  padding: 0 6px;
-  margin-left: 6px;
-  border-radius: 999px;
-  display: inline-grid;
-  place-items: center;
-  vertical-align: middle;
-  font-size: .72rem;
-  line-height: 1;
-  font-weight: 900;
-  color: #fff;
-  background: linear-gradient(135deg, #ff2fa8, #ff5fc8);
-  border: 1px solid rgba(255,255,255,.72);
-  box-shadow: 0 0 12px rgba(255,47,168,.48);
+min-width: 21px;
+height: 21px;
+padding: 0 6px;
+margin-left: 6px;
+border-radius: 999px;
+display: inline-grid;
+place-items: center;
+vertical-align: middle;
+font-size: .72rem;
+line-height: 1;
+font-weight: 900;
+color: #fff;
+background: linear-gradient(135deg, #ff2fa8, #ff5fc8);
+border: 1px solid rgba(255,255,255,.72);
+box-shadow: 0 0 12px rgba(255,47,168,.48);
 }
 html[data-theme="night"] .messages-unread-badge,
 html[data-theme="night"] .dm-unread-badge {
-  background: linear-gradient(135deg, #ff2fa8, #ff66d4);
-  box-shadow: 0 0 15px rgba(255,47,168,.68);
+background: linear-gradient(135deg, #ff2fa8, #ff66d4);
+box-shadow: 0 0 15px rgba(255,47,168,.68);
 }
-
-
 .dm-inbox-wrap {
-  max-width: 820px;
-  margin: 0 auto;
+max-width: 820px;
+margin: 0 auto;
 }
 .dm-inbox {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+display: flex;
+flex-direction: column;
+gap: 10px;
 }
 .dm-inbox-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 17px;
-  background: var(--card);
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-  box-shadow: var(--shadow);
-  transition: transform .16s ease, border-color .16s ease;
+width: 100%;
+display: flex;
+align-items: center;
+gap: 13px;
+padding: 14px;
+border: 1px solid var(--border);
+border-radius: 17px;
+background: var(--card);
+color: inherit;
+text-align: left;
+cursor: pointer;
+box-shadow: var(--shadow);
+transition: transform .16s ease, border-color .16s ease;
 }
 .dm-inbox-item:hover {
-  transform: translateY(-1px);
-  border-color: rgba(24,200,255,.42);
+transform: translateY(-1px);
+border-color: rgba(24,200,255,.42);
 }
 .dm-inbox-item.unread {
-  border-color: rgba(24,200,255,.5);
+border-color: rgba(24,200,255,.5);
 }
 html[data-theme="night"] .dm-inbox-item.unread {
-  border-color: rgba(139,92,255,.6);
-  box-shadow: 0 0 20px rgba(139,92,255,.10);
+border-color: rgba(139,92,255,.6);
+box-shadow: 0 0 20px rgba(139,92,255,.10);
 }
 .dm-inbox-avatar {
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  background: rgba(24,200,255,.12);
-  border: 1px solid rgba(24,200,255,.25);
+width: 48px;
+height: 48px;
+flex: 0 0 48px;
+border-radius: 50%;
+overflow: hidden;
+display: grid;
+place-items: center;
+font-weight: 800;
+background: rgba(24,200,255,.12);
+border: 1px solid rgba(24,200,255,.25);
 }
 .dm-inbox-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+width: 100%;
+height: 100%;
+object-fit: cover;
 }
 .dm-inbox-main {
-  min-width: 0;
-  flex: 1;
+min-width: 0;
+flex: 1;
 }
 .dm-inbox-top,
 .dm-inbox-bottom {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+display: flex;
+align-items: center;
+gap: 10px;
 }
 .dm-inbox-top {
-  justify-content: space-between;
-  margin-bottom: 5px;
+justify-content: space-between;
+margin-bottom: 5px;
 }
 .dm-inbox-time {
-  flex: 0 0 auto;
-  font-size: .76rem;
-  opacity: .58;
+flex: 0 0 auto;
+font-size: .76rem;
+opacity: .58;
 }
 .dm-inbox-preview {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  opacity: .72;
+min-width: 0;
+flex: 1;
+overflow: hidden;
+white-space: nowrap;
+text-overflow: ellipsis;
+opacity: .72;
 }
 .dm-unread-badge {
-  font-weight: 900;
+font-weight: 900;
 }
-
 .public-profile-message {
-  margin-top: 10px;
-  margin-left: 8px;
-  border: 1px solid rgba(24,200,255,.42);
-  background: rgba(24,200,255,.08);
-  color: #0b6f9f;
+margin-top: 10px;
+margin-left: 8px;
+border: 1px solid rgba(24,200,255,.42);
+background: rgba(24,200,255,.08);
+color: #0b6f9f;
 }
 .public-profile-message:hover {
-  border-color: rgba(24,200,255,.72);
-  background: rgba(24,200,255,.14);
+border-color: rgba(24,200,255,.72);
+background: rgba(24,200,255,.14);
 }
 html[data-theme="night"] .public-profile-message {
-  color: #fff;
-  border-color: rgba(139,92,255,.58);
-  background: rgba(139,92,255,.12);
-  box-shadow: 0 0 18px rgba(24,200,255,.10), 0 0 22px rgba(139,92,255,.12);
+color: #fff;
+border-color: rgba(139,92,255,.58);
+background: rgba(139,92,255,.12);
+box-shadow: 0 0 18px rgba(24,200,255,.10), 0 0 22px rgba(139,92,255,.12);
 }
 .dm-chat {
-  max-width: 820px;
-  margin: 0 auto;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  overflow: hidden;
-  background: var(--card);
-  box-shadow: var(--shadow);
+max-width: 820px;
+margin: 0 auto;
+border: 1px solid var(--border);
+border-radius: 20px;
+overflow: hidden;
+background: var(--card);
+box-shadow: var(--shadow);
 }
 .dm-chat-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
+display: flex;
+align-items: center;
+gap: 14px;
+padding: 16px;
+border-bottom: 1px solid var(--border);
 }
 .dm-back-btn { padding: 9px 13px; }
 .dm-chat-username { font-weight: 800; font-size: 1.05rem; }
 .dm-chat-private { font-size: .82rem; opacity: .65; margin-top: 2px; }
 .dm-messages {
-  height: min(58vh, 560px);
-  min-height: 320px;
-  overflow-y: auto;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+height: min(58vh, 560px);
+min-height: 320px;
+overflow-y: auto;
+padding: 18px;
+display: flex;
+flex-direction: column;
+gap: 10px;
 }
 .dm-row { display: flex; width: 100%; }
 .dm-row.mine { justify-content: flex-end; }
 .dm-row.theirs { justify-content: flex-start; }
 .dm-bubble {
-  max-width: min(76%, 560px);
-  padding: 10px 13px 7px;
-  border-radius: 16px;
-  background: rgba(120,120,140,.12);
-  border: 1px solid var(--border);
+max-width: min(76%, 560px);
+padding: 10px 13px 7px;
+border-radius: 16px;
+background: rgba(120,120,140,.12);
+border: 1px solid var(--border);
 }
 .dm-row.mine .dm-bubble {
-  background: linear-gradient(135deg, rgba(24,200,255,.18), rgba(66,211,146,.18));
-  border-color: rgba(24,200,255,.28);
+background: linear-gradient(135deg, rgba(24,200,255,.18), rgba(66,211,146,.18));
+border-color: rgba(24,200,255,.28);
 }
 html[data-theme="night"] .dm-row.mine .dm-bubble {
-  background: linear-gradient(135deg, rgba(24,200,255,.18), rgba(139,92,255,.24), rgba(255,63,209,.14));
-  border-color: rgba(139,92,255,.35);
+background: linear-gradient(135deg, rgba(24,200,255,.18), rgba(139,92,255,.24), rgba(255,63,209,.14));
+border-color: rgba(139,92,255,.35);
 }
 .dm-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
 .dm-time { font-size: .72rem; opacity: .58; margin-top: 5px; text-align: right; }
 .dm-composer {
-  display: flex;
-  gap: 10px;
-  padding: 14px;
-  border-top: 1px solid var(--border);
+display: flex;
+gap: 10px;
+padding: 14px;
+border-top: 1px solid var(--border);
 }
 .dm-composer textarea {
-  flex: 1;
-  resize: none;
-  min-height: 48px;
-  max-height: 130px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: var(--input-bg, rgba(255,255,255,.72));
-  color: inherit;
-  font: inherit;
+flex: 1;
+resize: none;
+min-height: 48px;
+max-height: 130px;
+padding: 12px 14px;
+border-radius: 14px;
+border: 1px solid var(--border);
+background: var(--input-bg, rgba(255,255,255,.72));
+color: inherit;
+font: inherit;
 }
 html[data-theme="night"] .dm-composer textarea { background: rgba(10,16,38,.72); }
 .dm-status { min-height: 24px; padding: 0 14px 10px; font-size: .86rem; }
@@ -1642,13 +1634,11 @@ html[data-theme="night"] .dm-composer textarea { background: rgba(10,16,38,.72);
 .dm-empty-state { max-width: 820px; margin: 0 auto; text-align: center; }
 .dm-no-messages { margin: auto; opacity: .65; text-align: center; }
 @media (max-width: 640px) {
-  .public-profile-message { margin-left: 0; }
-  .dm-messages { min-height: 280px; height: 52vh; padding: 12px; }
-  .dm-bubble { max-width: 86%; }
-  .dm-composer { padding: 10px; }
+.public-profile-message { margin-left: 0; }
+.dm-messages { min-height: 280px; height: 52vh; padding: 12px; }
+.dm-bubble { max-width: 86%; }
+.dm-composer { padding: 10px; }
 }
-
-
 .friendhub-presence {
 display: inline-flex;
 align-items: center;
@@ -1704,741 +1694,1339 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
 60% { transform: scale(1.22); opacity: 1; filter: drop-shadow(0 0 7px rgba(255,47,168,.9)); }
 100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px rgba(255,47,168,.35)); }
 }
-
-
-
 /* FriendHub DM final layout cleanup */
 .dm-messages {
-  height: min(58vh, 560px);
-  min-height: 320px;
-  overflow-y: auto;
-  padding: 18px;
-  display: block;
+height: min(58vh, 560px);
+min-height: 320px;
+overflow-y: auto;
+padding: 18px;
+display: block;
 }
 .dm-row {
-  display: flex;
-  width: 100%;
-  min-height: 0;
-  height: auto;
-  margin: 0 0 10px 0;
-  padding: 0;
+display: flex;
+width: 100%;
+min-height: 0;
+height: auto;
+margin: 0 0 10px 0;
+padding: 0;
 }
 .dm-row:last-child { margin-bottom: 0; }
 .dm-row.mine { justify-content: flex-end; }
 .dm-row.theirs { justify-content: flex-start; }
 .dm-bubble {
-  flex: 0 0 auto;
-  min-height: 0;
-  height: auto;
+flex: 0 0 auto;
+min-height: 0;
+height: auto;
 }
 .dm-attachment,
 .dm-attachment-image,
 .dm-attachment-video {
-  height: auto;
+height: auto;
 }
 .dm-checks {
-  display: inline-block;
-  font-size: 1rem;
-  line-height: 1;
-  letter-spacing: -2px;
-  padding-right: 2px;
-  font-weight: 900;
+display: inline-block;
+font-size: 1rem;
+line-height: 1;
+letter-spacing: -2px;
+padding-right: 2px;
+font-weight: 900;
 }
 .dm-delivery-status.seen .dm-checks {
-  color: #ff2fa8;
-  opacity: 1;
-  text-shadow: 0 0 7px rgba(255,47,168,.55);
+color: #ff2fa8;
+opacity: 1;
+text-shadow: 0 0 7px rgba(255,47,168,.55);
 }
 @media (max-width: 640px) {
-  .dm-messages {
-    min-height: 280px;
-    height: 52vh;
-    padding: 12px;
-  }
+.dm-messages {
+min-height: 280px;
+height: 52vh;
+padding: 12px;
 }
-
-
+}
 /* FriendHub DM FIX6 — normal-flow message stack */
 .dm-message-stack {
-  display: block !important;
-  width: 100% !important;
-  height: auto !important;
-  min-height: 0 !important;
+display: block !important;
+width: 100% !important;
+height: auto !important;
+min-height: 0 !important;
 }
 .dm-message-stack > .dm-row {
-  display: flex !important;
-  position: static !important;
-  width: 100% !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  margin: 0 0 10px 0 !important;
-  padding: 0 !important;
-  transform: none !important;
+display: flex !important;
+position: static !important;
+width: 100% !important;
+height: auto !important;
+min-height: 0 !important;
+max-height: none !important;
+margin: 0 0 10px 0 !important;
+padding: 0 !important;
+transform: none !important;
 }
 .dm-message-stack > .dm-row:last-child {
-  margin-bottom: 0 !important;
+margin-bottom: 0 !important;
 }
-
 </style>
+```
+```{=html}
 </head>
+```
+```{=html}
 <body>
+```
+```{=html}
 <header>
-<div class="container nav">
-<div class="logo" onclick="showPage('home')">
+```
+::: {.container .nav}
+::: {.logo onclick="showPage('home')"}
 FriendHub
-</div>
-<nav class="nav-links">
-<button onclick="showPage('home')">Home</button>
-<button onclick="showPage('discover')">Discover</button>
-<button onclick="showPage('profile')">Profile</button>
-<button onclick="showPage('saved')">Saved</button>
-<button id="messagesNavBtn" onclick="openMessagesPage()">Messages<span id="messagesUnreadBadge" class="messages-unread-badge" style="display:none;">0</span></button>
-<button onclick="showPage('about')">About</button>
-<button onclick="showPage('support')">Support</button>
-</nav>
-<div class="auth-buttons">
-<select id="languageSelect" class="language-select" onchange="changeFriendHubLanguage(this.value)" aria-label="Language" title="Language">
-<option value="en">&#127482;&#127480; English</option>
-<option value="es">&#127466;&#127480; Español</option>
-</select>
-<button type="button" id="themeToggle" class="theme-toggle" onclick="toggleFriendHubTheme()" aria-label="Switch theme" title="Switch theme">&#127769;</button>
-<div class="notification-wrap" id="notificationWrap">
-<button class="notification-bell" id="notificationBell" onclick="toggleNotifications(event)" aria-label="Notifications" title="Notifications">
-&#128276;
-<span class="notification-badge" id="notificationBadge">0</span>
-</button>
-<div class="notification-panel" id="notificationPanel">
-<div class="notification-panel-header">
-<div class="notification-panel-title">Notifications</div>
-</div>
-<div class="notification-list" id="notificationList">
-<div class="notification-empty">No notifications yet.</div>
-</div>
-</div>
-</div>
-<button class="btn btn-secondary" id="loginBtn" onclick="openAuth('login')">
-Log In
-</button>
-<button class="btn btn-primary" id="signupBtn" onclick="openAuth('signup')">
-Create Account
-</button>
-<button class="btn btn-secondary" id="logoutBtn" onclick="logout()" style="display:none;">
-Log Out
-</button>
-</div>
-</div>
-</header>
-<main>
-<section id="home" class="page active">
-<div class="hero">
-<div class="container hero-content">
-<div class="hero-badge">
-A place to meet people
-</div>
-<h1>
-Meet People.<br>
-<span>Make Friends.</span>
-</h1>
-<p>
-Discover people, friendships and communities based on
-your interests and the platforms you use.
-</p>
-<div class="hero-buttons">
-<button class="btn btn-primary" onclick="showPage('discover')">
-Discover People
-</button>
+:::
 
+```{=html}
+<nav class="nav-links">
+```
+```{=html}
+<button onclick="showPage(&#39;home&#39;)">
+```
+Home
+```{=html}
+</button>
+```
+```{=html}
+<button onclick="showPage(&#39;discover&#39;)">
+```
+Discover
+```{=html}
+</button>
+```
+```{=html}
+<button onclick="showPage(&#39;profile&#39;)">
+```
+Profile
+```{=html}
+</button>
+```
+```{=html}
+<button onclick="showPage(&#39;saved&#39;)">
+```
+Saved
+```{=html}
+</button>
+```
+```{=html}
+<button id="messagesNavBtn" onclick="openMessagesPage()">
+```
+Messages[0]{#messagesUnreadBadge .messages-unread-badge style="display:none;"}
+```{=html}
+</button>
+```
+```{=html}
+<button onclick="showPage(&#39;about&#39;)">
+```
+About
+```{=html}
+</button>
+```
+```{=html}
+<button onclick="showPage(&#39;support&#39;)">
+```
+Support
+```{=html}
+</button>
+```
+```{=html}
+</nav>
+```
+::: auth-buttons
+`<select id="languageSelect" class="language-select" onchange="changeFriendHubLanguage(this.value)" aria-label="Language" title="Language">`{=html} `<option value="en">`{=html}🇺🇸 English`</option>`{=html} `<option value="es">`{=html}🇪🇸 Español`</option>`{=html} `</select>`{=html} `<button type="button" id="themeToggle" class="theme-toggle" onclick="toggleFriendHubTheme()" aria-label="Switch theme" title="Switch theme">`{=html}🌙`</button>`{=html}
+
+::: {#notificationWrap .notification-wrap}
+```{=html}
+<button class="notification-bell" id="notificationBell" onclick="toggleNotifications(event)" aria-label="Notifications" title="Notifications">
+```
+🔔 [0]{#notificationBadge .notification-badge}
+```{=html}
+</button>
+```
+::: {#notificationPanel .notification-panel}
+::: notification-panel-header
+::: notification-panel-title
+Notifications
+:::
+:::
+
+::: {#notificationList .notification-list}
+::: notification-empty
+No notifications yet.
+:::
+:::
+:::
+:::
+
+```{=html}
+<button class="btn btn-secondary" id="loginBtn" onclick="openAuth(&#39;login&#39;)">
+```
+Log In
+```{=html}
+</button>
+```
+```{=html}
+<button class="btn btn-primary" id="signupBtn" onclick="openAuth(&#39;signup&#39;)">
+```
+Create Account
+```{=html}
+</button>
+```
+```{=html}
+<button class="btn btn-secondary" id="logoutBtn" onclick="logout()" style="display:none;">
+```
+Log Out
+```{=html}
+</button>
+```
+:::
+:::
+
+```{=html}
+</header>
+```
+```{=html}
+<main>
+```
+```{=html}
+<section id="home" class="page active">
+```
+::: hero
+::: {.container .hero-content}
+::: hero-badge
+A place to meet people
+:::
+
+```{=html}
+<h1>
+```
+Meet People.`<br>`{=html} Make Friends.
+```{=html}
+</h1>
+```
+```{=html}
+<p>
+```
+Discover people, friendships and communities based on your interests and the platforms you use.
+```{=html}
+</p>
+```
+::: hero-buttons
+```{=html}
+<button class="btn btn-primary" onclick="showPage(&#39;discover&#39;)">
+```
+Discover People
+```{=html}
+</button>
+```
+```{=html}
 <button class="primary-btn friendhub-invite-btn" onclick="shareFriendHub()">
-&#128640; Share FriendHub
+```
+🚀 Share FriendHub
+```{=html}
 </button>
-<button class="btn btn-secondary" onclick="showPage('about')">
+```
+```{=html}
+<button class="btn btn-secondary" onclick="showPage(&#39;about&#39;)">
+```
 Learn More
+```{=html}
 </button>
-</div>
-</div>
-</div>
-<div class="features">
-<div class="container">
-<div class="section-title">
-<h2>Find Your Community</h2>
-<p>Connect around the things you enjoy.</p>
-</div>
-<div class="feature-grid">
-<div class="feature-card" onclick="openDiscoverPeople()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverPeople();}" style="cursor:pointer;">
-<div class="feature-icon"></div>
-<h3>Meet People</h3>
+```
+:::
+:::
+:::
+
+::: features
+::: container
+::: section-title
+```{=html}
+<h2>
+```
+Find Your Community
+```{=html}
+</h2>
+```
+```{=html}
 <p>
-Discover people with similar interests,
-languages, hobbies and goals.
+```
+Connect around the things you enjoy.
+```{=html}
 </p>
-</div>
-<div class="feature-card" onclick="openDiscoverCommunities()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverCommunities();}" style="cursor:pointer;">
-<div class="feature-icon"></div>
-<h3>Find Communities</h3>
+```
+:::
+
+::: feature-grid
+::: {.feature-card onclick="openDiscoverPeople()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverPeople();}" style="cursor:pointer;"}
+::: feature-icon
+:::
+
+```{=html}
+<h3>
+```
+Meet People
+```{=html}
+</h3>
+```
+```{=html}
 <p>
-Discover WhatsApp and Telegram communities
-that match your interests.
+```
+Discover people with similar interests, languages, hobbies and goals.
+```{=html}
 </p>
-</div>
-<div class="feature-card" onclick="openDiscoverAll()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverAll();}" style="cursor:pointer;">
-<div class="feature-icon"></div>
-<h3>Make Connections</h3>
+```
+:::
+
+::: {.feature-card onclick="openDiscoverCommunities()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverCommunities();}" style="cursor:pointer;"}
+::: feature-icon
+:::
+
+```{=html}
+<h3>
+```
+Find Communities
+```{=html}
+</h3>
+```
+```{=html}
 <p>
-Find new friends from different countries
-and backgrounds.
+```
+Discover WhatsApp and Telegram communities that match your interests.
+```{=html}
 </p>
-</div>
-</div>
-</div>
-</div>
+```
+:::
+
+::: {.feature-card onclick="openDiscoverAll()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverAll();}" style="cursor:pointer;"}
+::: feature-icon
+:::
+
+```{=html}
+<h3>
+```
+Make Connections
+```{=html}
+</h3>
+```
+```{=html}
+<p>
+```
+Find new friends from different countries and backgrounds.
+```{=html}
+</p>
+```
+:::
+:::
+:::
+:::
+
+```{=html}
 </section>
+```
+```{=html}
 <section id="discover" class="page">
-<div class="container">
-<div class="page-header">
-<h1>Discover</h1>
-<p>Find people and communities that match what you're looking for.</p>
-</div>
-<input
+```
+::: container
+::: page-header
+```{=html}
+<h1>
+```
+Discover
+```{=html}
+</h1>
+```
+```{=html}
+<p>
+```
+Find people and communities that match what you're looking for.
+```{=html}
+</p>
+```
+:::
+
+`<input
 id="searchInput"
 class="search-box"
 type="text"
 placeholder="Search people, interests, groups..."
 oninput="renderPosts()"
->
-<div class="filters">
-<button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">
+>`{=html}
+
+::: filters
+```{=html}
+<button class="filter-btn active" data-filter="all" onclick="setFilter(&#39;all&#39;, this)">
+```
 All
+```{=html}
 </button>
-<button class="filter-btn" data-filter="people" onclick="setFilter('people', this)">
+```
+```{=html}
+<button class="filter-btn" data-filter="people" onclick="setFilter(&#39;people&#39;, this)">
+```
 People
+```{=html}
 </button>
-<button class="filter-btn" data-filter="whatsapp" onclick="setFilter('whatsapp', this)">
-&#128994; WhatsApp
+```
+```{=html}
+<button class="filter-btn" data-filter="whatsapp" onclick="setFilter(&#39;whatsapp&#39;, this)">
+```
+🟢 WhatsApp
+```{=html}
 </button>
-<button class="filter-btn" data-filter="telegram" onclick="setFilter('telegram', this)">
-&#128995; Telegram
+```
+```{=html}
+<button class="filter-btn" data-filter="telegram" onclick="setFilter(&#39;telegram&#39;, this)">
+```
+🟣 Telegram
+```{=html}
 </button>
-<button class="filter-btn" data-filter="snapchat" onclick="setFilter('snapchat', this)">
-&#128123; Snapchat
+```
+```{=html}
+<button class="filter-btn" data-filter="snapchat" onclick="setFilter(&#39;snapchat&#39;, this)">
+```
+👻 Snapchat
+```{=html}
 </button>
-<button class="filter-btn" data-filter="discord" onclick="setFilter('discord', this)">
-&#128998; Discord
+```
+```{=html}
+<button class="filter-btn" data-filter="discord" onclick="setFilter(&#39;discord&#39;, this)">
+```
+🟦 Discord
+```{=html}
 </button>
-</div>
-<div class="composer">
-<h3>Create a post</h3>
-<div id="loginRequiredMessage" class="message error">
+```
+:::
+
+::: composer
+```{=html}
+<h3>
+```
+Create a post
+```{=html}
+</h3>
+```
+::: {#loginRequiredMessage .message .error}
 Please log in or create an account before creating a post.
-</div>
+:::
+
+```{=html}
 <textarea
 id="postText"
 placeholder="What are you looking for?"
 ></textarea>
-<div class="post-types">
-<button
-class="post-type active"
-data-post-type="personal"
-onclick="selectPostType('personal', this)"
->
+```
+::: post-types
+```{=html}
+<button class="post-type active" data-post-type="personal" onclick="selectPostType(&#39;personal&#39;, this)">
+```
 Personal contact
+```{=html}
 </button>
-<button
-class="post-type"
-data-post-type="whatsapp"
-onclick="selectPostType('whatsapp', this)"
->
-&#128994; WhatsApp
+```
+```{=html}
+<button class="post-type" data-post-type="whatsapp" onclick="selectPostType(&#39;whatsapp&#39;, this)">
+```
+🟢 WhatsApp
+```{=html}
 </button>
-<button
-class="post-type"
-data-post-type="telegram"
-onclick="selectPostType('telegram', this)"
->
-&#128995; Telegram
+```
+```{=html}
+<button class="post-type" data-post-type="telegram" onclick="selectPostType(&#39;telegram&#39;, this)">
+```
+🟣 Telegram
+```{=html}
 </button>
-<button
-class="post-type"
-data-post-type="snapchat"
-onclick="selectPostType('snapchat', this)"
->
-&#128123; Snapchat
+```
+```{=html}
+<button class="post-type" data-post-type="snapchat" onclick="selectPostType(&#39;snapchat&#39;, this)">
+```
+👻 Snapchat
+```{=html}
 </button>
-<button
-class="post-type"
-data-post-type="discord"
-onclick="selectPostType('discord', this)"
->
-&#128998; Discord
+```
+```{=html}
+<button class="post-type" data-post-type="discord" onclick="selectPostType(&#39;discord&#39;, this)">
+```
+🟦 Discord
+```{=html}
 </button>
-</div>
-<div class="composer-actions">
-<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-<div class="emoji-picker-wrap">
-<button type="button" class="emoji-picker-btn" onclick="toggleEmojiPicker('postEmojiPicker', event)" title="Add emoji" aria-label="Add emoji">&#128522;</button>
-<div id="postEmojiPicker" class="emoji-picker-panel" data-target="postText"></div>
-</div>
+```
+:::
+
+::: composer-actions
+::: {style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"}
+::: emoji-picker-wrap
+```{=html}
+<button type="button" class="emoji-picker-btn" onclick="toggleEmojiPicker(&#39;postEmojiPicker&#39;, event)" title="Add emoji" aria-label="Add emoji">
+```
+😊
+```{=html}
+</button>
+```
+::: {#postEmojiPicker .emoji-picker-panel data-target="postText"}
+:::
+:::
+
 <div>
-<label class="file-label" for="mediaInput">
-&#128206; Add media
-</label>
-<input
+
+`<label class="file-label" for="mediaInput">`{=html} 📎 Add media `</label>`{=html} `<input
 id="mediaInput"
 type="file"
 accept="image/*,video/*"
 onchange="handleMedia(event)"
->
+>`{=html}
+
 </div>
-</div>
+:::
+
+```{=html}
 <button class="btn btn-primary" onclick="createPost()">
+```
 Post
+```{=html}
 </button>
-</div>
-<div id="mediaPreview" class="media-preview">
-<button
-class="remove-media"
-onclick="removeMedia()"
->
+```
+:::
+
+::: {#mediaPreview .media-preview}
+```{=html}
+<button class="remove-media" onclick="removeMedia()">
+```
 ×
+```{=html}
 </button>
-<div id="mediaPreviewContent"></div>
-</div>
-</div>
-<div id="feed" class="feed"></div>
-</div>
+```
+::: {#mediaPreviewContent}
+:::
+:::
+:::
+
+::: {#feed .feed}
+:::
+:::
+
+```{=html}
 </section>
+```
+```{=html}
 <section id="profile" class="page">
-<div class="container">
-<div class="page-header">
-<h1>Your Profile</h1>
-<p>Customize how people discover you on FriendHub.</p>
-</div>
-<div id="profileLoginMessage" class="content-card" style="display:none;">
-<h2>Create an account first</h2>
+```
+::: container
+::: page-header
+```{=html}
+<h1>
+```
+Your Profile
+```{=html}
+</h1>
+```
+```{=html}
 <p>
-Your profile is connected to your FriendHub account.
-Please log in or create an account to continue.
+```
+Customize how people discover you on FriendHub.
+```{=html}
 </p>
-<button class="btn btn-primary" onclick="openAuth('signup')">
+```
+:::
+
+::: {#profileLoginMessage .content-card style="display:none;"}
+```{=html}
+<h2>
+```
+Create an account first
+```{=html}
+</h2>
+```
+```{=html}
+<p>
+```
+Your profile is connected to your FriendHub account. Please log in or create an account to continue.
+```{=html}
+</p>
+```
+```{=html}
+<button class="btn btn-primary" onclick="openAuth(&#39;signup&#39;)">
+```
 Create Account
+```{=html}
 </button>
-</div>
-<div id="profileCard" class="profile-card">
-<div class="profile-photo-section">
-<div id="profileAvatar" class="profile-avatar">
-</div>
-<label class="profile-photo-label" for="profilePhotoInput">
-Change profile photo
-</label>
-<input
+```
+:::
+
+::: {#profileCard .profile-card}
+::: profile-photo-section
+::: {#profileAvatar .profile-avatar}
+:::
+
+`<label class="profile-photo-label" for="profilePhotoInput">`{=html} Change profile photo `</label>`{=html} `<input
 id="profilePhotoInput"
 type="file"
 accept="image/*"
 onchange="handleProfilePhoto(event)"
->
-</div>
-<div class="form-group">
-<label for="username">
-Username
-</label>
-<input
+>`{=html}
+:::
+
+::: form-group
+`<label for="username">`{=html} Username `</label>`{=html} `<input
 id="username"
 type="text"
 maxlength="20"
 placeholder="@username"
->
-<div class="help-text">
+>`{=html}
+
+::: help-text
 Your username is public. You can change it once every 30 days.
-</div>
-</div>
-<div class="form-group">
-<label for="age">
-Age
-</label>
-<input
+:::
+:::
+
+::: form-group
+`<label for="age">`{=html} Age `</label>`{=html} `<input
 id="age"
 type="number"
 min="1"
 max="120"
 placeholder="Your age"
->
-<div class="help-text">
+>`{=html}
+
+::: help-text
 Your exact age is private and is not displayed publicly.
-</div>
-</div>
-<div class="form-group">
-<label for="country">
-Country
-</label>
-<input
+:::
+:::
+
+::: form-group
+`<label for="country">`{=html} Country `</label>`{=html} `<input
 id="country"
 type="text"
 maxlength="80"
 placeholder="Your country"
->
-</div>
-<div class="form-group">
-<label>
-Languages
-</label>
-<div id="languagesOptions" class="option-grid"></div>
-</div>
-<div class="form-group">
-<label>
-Interests
-</label>
-<div id="interestsOptions" class="option-grid"></div>
-</div>
-<div class="form-group">
-<label>
-What are you looking for?
-</label>
-<div id="lookingForOptions" class="option-grid"></div>
-</div>
-<div class="profile-actions">
+>`{=html}
+:::
+
+::: form-group
+`<label>`{=html} Languages `</label>`{=html}
+
+::: {#languagesOptions .option-grid}
+:::
+:::
+
+::: form-group
+`<label>`{=html} Interests `</label>`{=html}
+
+::: {#interestsOptions .option-grid}
+:::
+:::
+
+::: form-group
+`<label>`{=html} What are you looking for? `</label>`{=html}
+
+::: {#lookingForOptions .option-grid}
+:::
+:::
+
+::: profile-actions
+```{=html}
 <button class="btn btn-primary" onclick="saveProfile()">
+```
 Save Profile
+```{=html}
 </button>
-<button
-class="btn btn-secondary"
-onclick="loadCurrentProfile()"
->
+```
+```{=html}
+<button class="btn btn-secondary" onclick="loadCurrentProfile()">
+```
 Reset
+```{=html}
 </button>
-</div>
-<div
-id="profileMessage"
-class="message"
-style="margin-top:15px;"
-></div>
-</div>
-</div>
+```
+:::
+
+::: {#profileMessage .message style="margin-top:15px;"}
+:::
+:::
+:::
+
+```{=html}
 </section>
+```
+```{=html}
 <section id="publicProfile" class="page">
-<div class="container">
-<div id="publicProfileContent"><div class="empty-state">Loading profile...</div></div>
-<h2 class="public-profile-posts-title">Posts</h2>
-<div id="publicProfilePosts" class="feed"></div>
-</div>
+```
+::: container
+::: {#publicProfileContent}
+::: empty-state
+Loading profile...
+:::
+:::
+
+```{=html}
+<h2 class="public-profile-posts-title">
+```
+Posts
+```{=html}
+</h2>
+```
+::: {#publicProfilePosts .feed}
+:::
+:::
+
+```{=html}
 </section>
+```
+```{=html}
 <section id="messages" class="page">
-<div class="container">
-<div class="page-header messages-page-header">
-<h1 id="messagesPageTitle">Messages</h1>
-<p id="messagesPageSubtitle">Private conversations on FriendHub.</p>
-</div>
-<div id="dmEmptyState" class="dm-inbox-wrap">
-<div id="dmInbox" class="dm-inbox">
-<div class="content-card dm-empty-state">
-<p>Loading conversations...</p>
-</div>
-</div>
-</div>
-<div id="dmChat" class="dm-chat" style="display:none;">
-<div class="dm-chat-header">
-<button class="btn btn-secondary dm-back-btn" type="button" onclick="closeDirectChat()">&#8592; Back</button>
+```
+::: container
+::: {.page-header .messages-page-header}
+```{=html}
+<h1 id="messagesPageTitle">
+```
+Messages
+```{=html}
+</h1>
+```
+```{=html}
+<p id="messagesPageSubtitle">
+```
+Private conversations on FriendHub.
+```{=html}
+</p>
+```
+:::
+
+::: {#dmEmptyState .dm-inbox-wrap}
+::: {#dmInbox .dm-inbox}
+::: {.content-card .dm-empty-state}
+```{=html}
+<p>
+```
+Loading conversations...
+```{=html}
+</p>
+```
+:::
+:::
+:::
+
+::: {#dmChat .dm-chat style="display:none;"}
+::: dm-chat-header
+```{=html}
+<button class="btn btn-secondary dm-back-btn" type="button" onclick="closeDirectChat()">
+```
+← Back
+```{=html}
+</button>
+```
 <div>
-<div id="dmChatUsername" class="dm-chat-username">@User</div>
-<div id="dmChatPresence" class="friendhub-presence friendhub-presence-dm">—</div>
-<div class="dm-chat-private">Private conversation</div>
+
+::: {#dmChatUsername .dm-chat-username}
+@User
+:::
+
+::: {#dmChatPresence .friendhub-presence .friendhub-presence-dm}
+---
+:::
+
+::: dm-chat-private
+Private conversation
+:::
+
 </div>
-</div>
-<div id="dmMessages" class="dm-messages"></div>
+:::
+
+::: {#dmMessages .dm-messages}
+:::
+
+```{=html}
 <form id="dmForm" class="dm-composer" onsubmit="sendDirectMessage(event)">
-<input id="dmMediaInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleDmMediaSelected(event)">
-<div class="dm-composer-main">
+```
+`<input id="dmMediaInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleDmMediaSelected(event)">`{=html}
+
+::: dm-composer-main
+```{=html}
 <textarea id="dmInput" maxlength="2000" rows="2" placeholder="Write a message..."></textarea>
-<div id="dmAttachmentPreview" class="dm-attachment-preview" style="display:none;"></div>
-</div>
-<button id="dmAttachButton" class="dm-attach-button" type="button" onclick="document.getElementById('dmMediaInput').click()" aria-label="Attach photo or video" title="Attach photo or video">&#128206;</button>
-<button id="dmSendButton" class="btn btn-primary" type="submit">Send</button>
+```
+::: {#dmAttachmentPreview .dm-attachment-preview style="display:none;"}
+:::
+:::
+
+```{=html}
+<button id="dmAttachButton" class="dm-attach-button" type="button" onclick="document.getElementById(&#39;dmMediaInput&#39;).click()" aria-label="Attach photo or video" title="Attach photo or video">
+```
+📎
+```{=html}
+</button>
+```
+```{=html}
+<button id="dmSendButton" class="btn btn-primary" type="submit">
+```
+Send
+```{=html}
+</button>
+```
+```{=html}
 </form>
-<div id="dmStatus" class="dm-status"></div>
-</div>
-</div>
+```
+::: {#dmStatus .dm-status}
+:::
+:::
+:::
+
+```{=html}
 </section>
+```
+```{=html}
 <section id="saved" class="page">
-<div class="container">
-<div class="page-header saved-posts-header">
-<h1>Saved Posts</h1>
-<p>Posts you save are private and only visible to you.</p>
-</div>
-<div id="savedPostsFeed" class="feed"></div>
-</div>
+```
+::: container
+::: {.page-header .saved-posts-header}
+```{=html}
+<h1>
+```
+Saved Posts
+```{=html}
+</h1>
+```
+```{=html}
+<p>
+```
+Posts you save are private and only visible to you.
+```{=html}
+</p>
+```
+:::
+
+::: {#savedPostsFeed .feed}
+:::
+:::
+
+```{=html}
 </section>
+```
+```{=html}
 <section id="about" class="page">
-<div class="container">
-<div class="page-header">
-<h1>About FriendHub</h1>
-<p>A simple place to discover people and communities.</p>
-</div>
-<div class="content-card">
-<h2>What is FriendHub?</h2>
+```
+::: container
+::: page-header
+```{=html}
+<h1>
+```
+About FriendHub
+```{=html}
+</h1>
+```
+```{=html}
 <p>
-FriendHub is a social discovery platform designed to help
-people discover friendships, communities and connections
-based on shared interests.
+```
+A simple place to discover people and communities.
+```{=html}
 </p>
+```
+:::
+
+::: content-card
+```{=html}
+<h2>
+```
+What is FriendHub?
+```{=html}
+</h2>
+```
+```{=html}
 <p>
-Users can create posts, discover people and find
-WhatsApp, Telegram and Snapchat connections.
+```
+FriendHub is a social discovery platform designed to help people discover friendships, communities and connections based on shared interests.
+```{=html}
 </p>
-<h2>What you can do</h2>
+```
+```{=html}
+<p>
+```
+Users can create posts, discover people and find WhatsApp, Telegram and Snapchat connections.
+```{=html}
+</p>
+```
+```{=html}
+<h2>
+```
+What you can do
+```{=html}
+</h2>
+```
+```{=html}
 <ul>
-<li>Create a personal profile.</li>
-<li>Discover people with similar interests.</li>
-<li>Find WhatsApp communities.</li>
-<li>Find Telegram communities.</li>
-<li>Share Snapchat-related posts.</li>
-<li>Create posts and interact with the community.</li>
+```
+```{=html}
+<li>
+```
+Create a personal profile.
+```{=html}
+</li>
+```
+```{=html}
+<li>
+```
+Discover people with similar interests.
+```{=html}
+</li>
+```
+```{=html}
+<li>
+```
+Find WhatsApp communities.
+```{=html}
+</li>
+```
+```{=html}
+<li>
+```
+Find Telegram communities.
+```{=html}
+</li>
+```
+```{=html}
+<li>
+```
+Share Snapchat-related posts.
+```{=html}
+</li>
+```
+```{=html}
+<li>
+```
+Create posts and interact with the community.
+```{=html}
+</li>
+```
+```{=html}
 </ul>
-<br>
-<h2>Important</h2>
+```
+`<br>`{=html}
+```{=html}
+<h2>
+```
+Important
+```{=html}
+</h2>
+```
+```{=html}
 <p>
-FriendHub is an independent platform and is not affiliated
-with Snapchat, WhatsApp or Telegram.
+```
+FriendHub is an independent platform and is not affiliated with Snapchat, WhatsApp or Telegram.
+```{=html}
 </p>
+```
+```{=html}
 <p>
-FriendHub is designed with safety, privacy and
-age-appropriate interactions in mind.
+```
+FriendHub is designed with safety, privacy and age-appropriate interactions in mind.
+```{=html}
 </p>
-</div>
-</div>
+```
+:::
+:::
+
+```{=html}
 </section>
+```
+```{=html}
 <section id="support" class="page">
-<div class="container">
-<div class="page-header">
-<h1>Support</h1>
-<p>Need help with FriendHub?</p>
-</div>
-<div class="content-card">
-<h2>Contact FriendHub Support</h2>
+```
+::: container
+::: page-header
+```{=html}
+<h1>
+```
+Support
+```{=html}
+</h1>
+```
+```{=html}
 <p>
-If you have a question, experience a problem or need
-assistance with your account, contact us by email.
+```
+Need help with FriendHub?
+```{=html}
 </p>
-<a
+```
+:::
+
+::: content-card
+```{=html}
+<h2>
+```
+Contact FriendHub Support
+```{=html}
+</h2>
+```
+```{=html}
+<p>
+```
+If you have a question, experience a problem or need assistance with your account, contact us by email.
+```{=html}
+</p>
+```
+`<a
 class="support-email"
 href="mailto:friendhub.support@gmail.com"
->
-friendhub.support@gmail.com
-</a>
-</div>
-</div>
+>`{=html} friendhub.support@gmail.com `</a>`{=html}
+:::
+:::
+
+```{=html}
 </section>
+```
+```{=html}
 </main>
+```
+```{=html}
 <footer>
-<div class="container footer-inner">
+```
+::: {.container .footer-inner}
 <div>
-<div class="footer-brand">
+
+::: footer-brand
 FriendHub
-</div>
-<div class="footer-small">
+:::
+
+::: footer-small
 Meet People. Make Friends.
+:::
+
 </div>
-</div>
-<div class="footer-small">
+
+::: footer-small
 © 2026 FriendHub. All rights reserved.
-</div>
-</div>
+:::
+:::
+
+```{=html}
 </footer>
-<div id="authModal" class="modal-overlay">
-<div class="modal">
-<button
-class="modal-close"
-onclick="closeModal('authModal')"
->
+```
+::: {#authModal .modal-overlay}
+::: modal
+```{=html}
+<button class="modal-close" onclick="closeModal(&#39;authModal&#39;)">
+```
 ×
+```{=html}
 </button>
+```
+```{=html}
 <h2 id="authTitle">
+```
 Log In
+```{=html}
 </h2>
+```
+```{=html}
 <p id="authSubtitle" class="modal-subtitle">
+```
 Welcome back to FriendHub.
+```{=html}
 </p>
-<div id="authMessage" class="message"></div>
-<div class="form-group">
-<label for="authEmail">
-Email
-</label>
-<input
+```
+::: {#authMessage .message}
+:::
+
+::: form-group
+`<label for="authEmail">`{=html} Email `</label>`{=html} `<input
 id="authEmail"
 type="email"
 placeholder="you@example.com"
 autocomplete="email"
->
-</div>
-<div class="form-group">
-<label for="authPassword">
-Password
-</label>
-<input
+>`{=html}
+:::
+
+::: form-group
+`<label for="authPassword">`{=html} Password `</label>`{=html} `<input
 id="authPassword"
 type="password"
 placeholder="Password"
 autocomplete="current-password"
->
-</div>
-<div id="confirmPasswordGroup" class="form-group" style="display:none;">
-<label for="authConfirmPassword">
-Confirm Password
-</label>
-<input
+>`{=html}
+:::
+
+::: {#confirmPasswordGroup .form-group style="display:none;"}
+`<label for="authConfirmPassword">`{=html} Confirm Password `</label>`{=html} `<input
 id="authConfirmPassword"
 type="password"
 placeholder="Confirm password"
 autocomplete="new-password"
->
-</div>
-<div id="forgotWrap" class="forgot-wrap">
-<button
-class="forgot-btn"
-onclick="openResetPassword()"
->
+>`{=html}
+:::
+
+::: {#forgotWrap .forgot-wrap}
+```{=html}
+<button class="forgot-btn" onclick="openResetPassword()">
+```
 Forgot password?
+```{=html}
 </button>
-</div>
-<button
-id="authSubmitBtn"
-class="btn btn-primary"
-style="width:100%;"
-onclick="submitAuth()"
->
+```
+:::
+
+```{=html}
+<button id="authSubmitBtn" class="btn btn-primary" style="width:100%;" onclick="submitAuth()">
+```
 Log In
+```{=html}
 </button>
-<div class="auth-switch">
-<span id="authSwitchText">
-Don't have an account?
-</span>
-<button
+```
+::: auth-switch
+[ Don't have an account? ]{#authSwitchText} `<button
 id="authSwitchButton"
 onclick="toggleAuthMode()"
->
-Create Account
-</button>
-</div>
-</div>
-</div>
-<div id="resetModal" class="modal-overlay">
-<div class="modal">
-<button
-class="modal-close"
-onclick="closeModal('resetModal')"
->
+>`{=html} Create Account `</button>`{=html}
+:::
+:::
+:::
+
+::: {#resetModal .modal-overlay}
+::: modal
+```{=html}
+<button class="modal-close" onclick="closeModal(&#39;resetModal&#39;)">
+```
 ×
+```{=html}
 </button>
-<h2>Reset Password</h2>
+```
+```{=html}
+<h2>
+```
+Reset Password
+```{=html}
+</h2>
+```
+```{=html}
 <p class="modal-subtitle">
+```
 Enter your email and we'll send you a password reset link.
+```{=html}
 </p>
-<div id="resetMessage" class="message"></div>
-<div class="form-group">
-<label for="resetEmail">
-Email
-</label>
-<input
+```
+::: {#resetMessage .message}
+:::
+
+::: form-group
+`<label for="resetEmail">`{=html} Email `</label>`{=html} `<input
 id="resetEmail"
 type="email"
 placeholder="you@example.com"
->
-</div>
-<button
-class="btn btn-primary"
-style="width:100%;"
-onclick="sendPasswordReset()"
->
+>`{=html}
+:::
+
+```{=html}
+<button class="btn btn-primary" style="width:100%;" onclick="sendPasswordReset()">
+```
 Send Reset Link
+```{=html}
 </button>
-</div>
-</div>
-<div id="newPasswordModal" class="modal-overlay">
-<div class="modal">
-<h2>Create New Password</h2>
+```
+:::
+:::
+
+::: {#newPasswordModal .modal-overlay}
+::: modal
+```{=html}
+<h2>
+```
+Create New Password
+```{=html}
+</h2>
+```
+```{=html}
 <p class="modal-subtitle">
+```
 Choose a new password for your FriendHub account.
+```{=html}
 </p>
-<div id="newPasswordMessage" class="message"></div>
-<div class="form-group">
-<label for="newPassword">
-New Password
-</label>
-<input
+```
+::: {#newPasswordMessage .message}
+:::
+
+::: form-group
+`<label for="newPassword">`{=html} New Password `</label>`{=html} `<input
 id="newPassword"
 type="password"
 placeholder="New password"
->
-</div>
-<div class="form-group">
-<label for="newPasswordConfirm">
-Confirm New Password
-</label>
-<input
+>`{=html}
+:::
+
+::: form-group
+`<label for="newPasswordConfirm">`{=html} Confirm New Password `</label>`{=html} `<input
 id="newPasswordConfirm"
 type="password"
 placeholder="Confirm new password"
->
-</div>
-<button
-class="btn btn-primary"
-style="width:100%;"
-onclick="updatePassword()"
->
+>`{=html}
+:::
+
+```{=html}
+<button class="btn btn-primary" style="width:100%;" onclick="updatePassword()">
+```
 Update Password
+```{=html}
 </button>
-</div>
-</div>
-<div id="commentsModal" class="modal-overlay">
-<div class="modal comments-modal">
-<button class="modal-close" onclick="closeCommentsModal()">×</button>
-<h2>Comments</h2>
-<p id="commentsSubtitle" class="modal-subtitle">Join the conversation.</p>
-<div id="commentsMessage" class="message"></div>
-<div id="commentsList" class="comments-list"></div>
-<div id="commentForm" class="comment-form" style="display:none;">
-<div class="comment-compose">
-<div id="replyingBanner" class="replying-banner">
-<span id="replyingText"></span>
-<button type="button" class="replying-cancel" onclick="cancelReply()" aria-label="Cancel reply">&times;</button>
-</div>
-<div class="comment-compose-row">
-<div class="emoji-picker-wrap">
-<button type="button" class="emoji-picker-btn" onclick="toggleEmojiPicker('commentEmojiPicker', event)" title="Add emoji" aria-label="Add emoji">&#128522;</button>
-<div id="commentEmojiPicker" class="emoji-picker-panel" data-target="commentInput"></div>
-</div>
-<label class="comment-attach-btn" for="commentMediaInput" title="Add photo or video" aria-label="Add photo or video">&#128206;</label>
-<input id="commentMediaInput" type="file" accept="image/*,video/*" onchange="handleCommentMedia(event)">
+```
+:::
+:::
+
+::: {#commentsModal .modal-overlay}
+::: {.modal .comments-modal}
+```{=html}
+<button class="modal-close" onclick="closeCommentsModal()">
+```
+×
+```{=html}
+</button>
+```
+```{=html}
+<h2>
+```
+Comments
+```{=html}
+</h2>
+```
+```{=html}
+<p id="commentsSubtitle" class="modal-subtitle">
+```
+Join the conversation.
+```{=html}
+</p>
+```
+::: {#commentsMessage .message}
+:::
+
+::: {#commentsList .comments-list}
+:::
+
+::: {#commentForm .comment-form style="display:none;"}
+::: comment-compose
+::: {#replyingBanner .replying-banner}
+[]{#replyingText} `<button type="button" class="replying-cancel" onclick="cancelReply()" aria-label="Cancel reply">`{=html}×`</button>`{=html}
+:::
+
+::: comment-compose-row
+::: emoji-picker-wrap
+```{=html}
+<button type="button" class="emoji-picker-btn" onclick="toggleEmojiPicker(&#39;commentEmojiPicker&#39;, event)" title="Add emoji" aria-label="Add emoji">
+```
+😊
+```{=html}
+</button>
+```
+::: {#commentEmojiPicker .emoji-picker-panel data-target="commentInput"}
+:::
+:::
+
+`<label class="comment-attach-btn" for="commentMediaInput" title="Add photo or video" aria-label="Add photo or video">`{=html}📎`</label>`{=html} `<input id="commentMediaInput" type="file" accept="image/*,video/*" onchange="handleCommentMedia(event)">`{=html}
+```{=html}
 <textarea id="commentInput" maxlength="1000" placeholder="Write a comment..."></textarea>
-<button class="btn btn-primary" onclick="submitComment()">Post</button>
-</div>
-<div id="commentMediaPreview" class="comment-media-preview">
-<div id="commentMediaPreviewContent"></div>
-<button type="button" class="comment-media-remove" onclick="removeCommentMedia()" aria-label="Remove attachment">×</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div id="editPostModal" class="modal-overlay">
-<div class="modal edit-post-modal">
-<button class="modal-close" onclick="closeEditPost()">×</button>
-<h2>Edit Post</h2>
-<p class="modal-subtitle">Update the text of your post.</p>
-<div id="editPostMessage" class="message"></div>
+```
+```{=html}
+<button class="btn btn-primary" onclick="submitComment()">
+```
+Post
+```{=html}
+</button>
+```
+:::
+
+::: {#commentMediaPreview .comment-media-preview}
+::: {#commentMediaPreviewContent}
+:::
+
+```{=html}
+<button type="button" class="comment-media-remove" onclick="removeCommentMedia()" aria-label="Remove attachment">
+```
+×
+```{=html}
+</button>
+```
+:::
+:::
+:::
+:::
+:::
+
+::: {#editPostModal .modal-overlay}
+::: {.modal .edit-post-modal}
+```{=html}
+<button class="modal-close" onclick="closeEditPost()">
+```
+×
+```{=html}
+</button>
+```
+```{=html}
+<h2>
+```
+Edit Post
+```{=html}
+</h2>
+```
+```{=html}
+<p class="modal-subtitle">
+```
+Update the text of your post.
+```{=html}
+</p>
+```
+::: {#editPostMessage .message}
+:::
+
+```{=html}
 <textarea id="editPostText" maxlength="5000" placeholder="Edit your post..."></textarea>
-<div class="edit-post-actions">
-<button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
-<button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
-</div>
-</div>
-</div>
-<div id="followListModal" class="modal-overlay">
-<div class="modal">
-<button class="modal-close" onclick="closeFollowList()">×</button>
-<h2 id="followListTitle">Followers</h2>
-<p class="modal-subtitle">FriendHub connections</p>
-<div id="followListContent" class="follow-list"></div>
-</div>
-</div>
+```
+::: edit-post-actions
+```{=html}
+<button class="btn btn-secondary" onclick="closeEditPost()">
+```
+Cancel
+```{=html}
+</button>
+```
+```{=html}
+<button class="btn btn-primary" onclick="saveEditedPost()">
+```
+Save
+```{=html}
+</button>
+```
+:::
+:::
+:::
+
+::: {#followListModal .modal-overlay}
+::: modal
+```{=html}
+<button class="modal-close" onclick="closeFollowList()">
+```
+×
+```{=html}
+</button>
+```
+```{=html}
+<h2 id="followListTitle">
+```
+Followers
+```{=html}
+</h2>
+```
+```{=html}
+<p class="modal-subtitle">
+```
+FriendHub connections
+```{=html}
+</p>
+```
+::: {#followListContent .follow-list}
+:::
+:::
+:::
+
+```{=html}
 <script>
 const SUPABASE_URL =
 "https://cxosofpxfmjkrhfabrqc.supabase.co";
@@ -2774,7 +3362,7 @@ await loadNotifications();
 startNotificationRefresh();
 updateAuthUI();
 /* If this login came from a shared-post URL, focus the post only
-   after the login modal has closed and the feed has fully loaded. */
+after the login modal has closed and the feed has fully loaded. */
 await openSharedPostFromUrl();
 }, 700);
 }
@@ -3898,7 +4486,6 @@ const encoded = encodeURIComponent(username);
 return `${prefix}<span class="mention-link" role="button" tabindex="0" onclick="event.stopPropagation(); openMentionProfile(decodeURIComponent('${encoded}'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openMentionProfile(decodeURIComponent('${encoded}'));}">${username}</span>`;
 });
 }
-
 async function openMentionProfile(username) {
 if (!currentUser || !username) {
 if (!currentUser) openAuth("login");
@@ -3906,50 +4493,41 @@ return;
 }
 await openPublicProfileByUsername(username);
 }
-
 function extractMentionUsernames(text) {
 const matches = [...String(text || "").matchAll(/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{1,20})(?![A-Za-z0-9_])/g)];
 return [...new Set(matches.map(match => match[2]))];
 }
-
 async function createMentionNotifications(text, postId) {
 if (!currentUser || !postId || !text) return;
 const usernames = extractMentionUsernames(text);
 if (!usernames.length) return;
-
 const { data: profiles, error: profileError } = await supabaseClient
 .from("friendhub_public_profiles")
 .select("user_id, username")
 .in("username", usernames);
-
 if (profileError) {
 console.error("Mention profile lookup error:", profileError);
 return;
 }
-
 const actorUsername = currentProfile?.username || "@User";
 for (const profile of (profiles || [])) {
 const targetId = String(profile.user_id || "");
 if (!targetId || targetId === String(currentUser.id)) continue;
-
 /* Respect Block User in both directions. */
 const { data: blockRows, error: blockError } = await supabaseClient
 .from("user_blocks")
 .select("id")
 .or(`and(blocker_id.eq.${currentUser.id},blocked_id.eq.${targetId}),and(blocker_id.eq.${targetId},blocked_id.eq.${currentUser.id})`)
 .limit(1);
-
 if (blockError) {
 console.error("Mention block check error:", blockError);
 continue;
 }
 if ((blockRows || []).length) continue;
-
 const language = getFriendHubLanguage();
 const message = language === "es"
 ? `${actorUsername} te mencionó en FriendHub.`
 : `${actorUsername} mentioned you on FriendHub.`;
-
 const { error: notificationError } = await supabaseClient
 .from("notifications")
 .insert({
@@ -3959,11 +4537,9 @@ post_id: String(postId),
 type: "mention",
 message
 });
-
 if (notificationError) console.error("Mention notification error:", notificationError);
 }
 }
-
 function renderPost(post) {
 const username =
 escapeHtml(
@@ -4405,55 +4981,45 @@ const page = document.getElementById(pageId);
 if (page) page.classList.add("active");
 window.scrollTo({ top:0, behavior:"smooth" });
 }
-
 function formatFriendHubPresence(lastActiveAt) {
 const lang = getFriendHubLanguage();
 if (!lastActiveAt) {
 return { online: false, text: lang === "es" ? "Última conexión no disponible" : "Last seen unavailable" };
 }
-
 const last = new Date(lastActiveAt);
 if (Number.isNaN(last.getTime())) {
 return { online: false, text: lang === "es" ? "Última conexión no disponible" : "Last seen unavailable" };
 }
-
 const now = new Date();
 const diffMs = now.getTime() - last.getTime();
 const online = diffMs >= 0 && diffMs <= 90000;
-
 if (online) {
 return { online: true, text: lang === "es" ? "En línea" : "Online" };
 }
-
 const time = last.toLocaleTimeString(lang === "es" ? "es-US" : "en-US", {
 hour: "numeric",
 minute: "2-digit",
 hour12: true
 });
-
 const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
 const dayDiff = Math.round((today - lastDay) / 86400000);
-
 if (dayDiff === 0) {
 return {
 online: false,
 text: lang === "es" ? `Última conexión a las ${time}` : `Last seen at ${time}`
 };
 }
-
 if (dayDiff === 1) {
 return {
 online: false,
 text: lang === "es" ? `Última conexión ayer a las ${time}` : `Last seen yesterday at ${time}`
 };
 }
-
 const date = last.toLocaleDateString(lang === "es" ? "es-US" : "en-US", {
 month: "short",
 day: "numeric"
 });
-
 return {
 online: false,
 text: lang === "es"
@@ -4461,7 +5027,6 @@ text: lang === "es"
 : `Last seen ${date} at ${time}`
 };
 }
-
 function renderFriendHubPresence(lastActiveAt, extraClass = "") {
 const presence = formatFriendHubPresence(lastActiveAt);
 return `<div class="friendhub-presence ${presence.online ? "online" : "offline"} ${extraClass}">
@@ -4469,7 +5034,6 @@ return `<div class="friendhub-presence ${presence.online ? "online" : "offline"}
 <span>${escapeHtml(presence.text)}</span>
 </div>`;
 }
-
 async function updateFriendHubPresence() {
 if (!currentUser || document.visibilityState === "hidden") return;
 const { error } = await supabaseClient
@@ -4480,62 +5044,52 @@ const { error } = await supabaseClient
 );
 if (error) console.error("Presence update error:", error);
 }
-
 function stopFriendHubPresence() {
 if (friendhubPresenceTimer) {
 clearInterval(friendhubPresenceTimer);
 friendhubPresenceTimer = null;
 }
 }
-
 function startFriendHubPresence() {
 stopFriendHubPresence();
 if (!currentUser || document.visibilityState === "hidden") return;
 updateFriendHubPresence();
 friendhubPresenceTimer = setInterval(updateFriendHubPresence, 45000);
 }
-
 async function loadDmPresence() {
 const el = document.getElementById("dmChatPresence");
 if (!el || !currentDmUserId) return;
-
 const { data, error } = await supabaseClient
 .from("user_presence")
 .select("last_active_at")
 .eq("user_id", currentDmUserId)
 .maybeSingle();
-
 if (error) {
 console.error("DM presence load error:", error);
 return;
 }
-
 const presence = formatFriendHubPresence(data?.last_active_at || null);
 el.className = `friendhub-presence friendhub-presence-dm ${presence.online ? "online" : "offline"}`;
 el.innerHTML = `<span class="friendhub-presence-dot"></span><span>${escapeHtml(presence.text)}</span>`;
 }
-
 function stopDmPresenceRefresh() {
 if (dmPresenceRefreshTimer) {
 clearInterval(dmPresenceRefreshTimer);
 dmPresenceRefreshTimer = null;
 }
 }
-
 function startDmPresenceRefresh() {
 stopDmPresenceRefresh();
 if (!currentDmUserId) return;
 loadDmPresence();
 dmPresenceRefreshTimer = setInterval(loadDmPresence, 30000);
 }
-
 function stopDmChatRefresh() {
 if (dmChatRefreshTimer) {
 clearInterval(dmChatRefreshTimer);
 dmChatRefreshTimer = null;
 }
 }
-
 function startDmChatRefresh() {
 stopDmChatRefresh();
 if (!currentDmUserId) return;
@@ -4543,7 +5097,6 @@ dmChatRefreshTimer = setInterval(() => {
 if (currentDmUserId && document.visibilityState !== "hidden") loadDirectMessages();
 }, 5000);
 }
-
 document.addEventListener("visibilitychange", () => {
 if (!currentUser) return;
 if (document.visibilityState === "hidden") {
@@ -4557,47 +5110,39 @@ loadDirectMessages();
 }
 }
 });
-
 async function refreshDmUnreadCount() {
 const badge = document.getElementById("messagesUnreadBadge");
 if (!badge) return;
-
 if (!currentUser) {
 badge.style.display = "none";
 badge.textContent = "0";
 return;
 }
-
 const { count, error } = await supabaseClient
 .from("direct_messages")
 .select("id", { count: "exact", head: true })
 .eq("recipient_id", currentUser.id)
 .eq("is_read", false);
-
 if (error) {
 console.error("DM unread count error:", error);
 return;
 }
-
 const unreadCount = count || 0;
 badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
 badge.style.display = unreadCount > 0 ? "inline-grid" : "none";
 }
-
 function startDmUnreadRefresh() {
 stopDmUnreadRefresh();
 if (!currentUser) return;
 refreshDmUnreadCount();
 dmUnreadRefreshTimer = setInterval(refreshDmUnreadCount, 15000);
 }
-
 function stopDmUnreadRefresh() {
 if (dmUnreadRefreshTimer) {
 clearInterval(dmUnreadRefreshTimer);
 dmUnreadRefreshTimer = null;
 }
 }
-
 async function openMessagesPage() {
 if (!currentUser) {
 openAuth("login");
@@ -4611,7 +5156,6 @@ if (title) title.textContent = language === "es" ? "Mensajes" : "Messages";
 if (subtitle) subtitle.textContent = language === "es"
 ? "Conversaciones privadas en FriendHub."
 : "Private conversations on FriendHub.";
-
 if (!currentDmUserId) {
 const chat = document.getElementById("dmChat");
 const empty = document.getElementById("dmEmptyState");
@@ -4620,42 +5164,33 @@ if (empty) empty.style.display = "block";
 await loadDmInbox();
 }
 }
-
 async function loadDmInbox() {
 if (!currentUser) return;
 await refreshDmUnreadCount();
-
 const inbox = document.getElementById("dmInbox");
 if (!inbox) return;
-
 const language = getFriendHubLanguage();
 inbox.innerHTML = `<div class="content-card dm-empty-state"><p>${language === "es" ? "Cargando conversaciones..." : "Loading conversations..."}</p></div>`;
-
 const { data: messages, error } = await supabaseClient
 .from("direct_messages")
 .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, attachment_path, attachment_type, attachment_name, attachment_size")
 .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
 .order("created_at", { ascending: false });
-
 if (error) {
 console.error("DM inbox load error:", error);
 inbox.innerHTML = `<div class="content-card dm-empty-state"><p>${language === "es" ? "No se pudieron cargar tus conversaciones." : "Could not load your conversations."}</p></div>`;
 return;
 }
-
 if (!messages || !messages.length) {
 inbox.innerHTML = `<div class="content-card dm-empty-state"><p>${language === "es"
 ? 'Todavía no tienes conversaciones. Abre el perfil público de alguien y pulsa <strong>Mensaje</strong>.'
 : 'You do not have any conversations yet. Open someone\'s public profile and choose <strong>Message</strong>.'}</p></div>`;
 return;
 }
-
 const conversations = new Map();
-
 messages.forEach(message => {
 const mine = String(message.sender_id) === String(currentUser.id);
 const otherUserId = String(mine ? message.recipient_id : message.sender_id);
-
 if (!conversations.has(otherUserId)) {
 conversations.set(otherUserId, {
 userId: otherUserId,
@@ -4663,24 +5198,19 @@ lastMessage: message,
 unread: 0
 });
 }
-
 if (!mine && !message.is_read) {
 conversations.get(otherUserId).unread += 1;
 }
 });
-
 const userIds = [...conversations.keys()];
 const { data: profiles, error: profileError } = await supabaseClient
 .from("friendhub_public_profiles")
 .select("user_id, username, profile_photo")
 .in("user_id", userIds);
-
 if (profileError) console.error("DM inbox profile load error:", profileError);
-
 const profileMap = new Map(
 (profiles || []).map(profile => [String(profile.user_id), profile])
 );
-
 inbox.innerHTML = [...conversations.values()].map(conversation => {
 const profile = profileMap.get(conversation.userId) || {};
 const username = profile.username || "@User";
@@ -4691,14 +5221,13 @@ const avatar = photo
 : initial;
 const preview = conversation.lastMessage.content
 || (conversation.lastMessage.attachment_type === "video"
-? "🎥 Video"
+? "�� Video"
 : conversation.lastMessage.attachment_type === "image"
-? "📷 Photo"
+? "�� Photo"
 : "");
 const unreadBadge = conversation.unread
 ? `<span class="dm-unread-badge">${conversation.unread > 99 ? "99+" : conversation.unread}</span>`
 : "";
-
 return `
 <button type="button" class="dm-inbox-item${conversation.unread ? " unread" : ""}"
 onclick="openDirectChat('${escapeHtmlAttribute(conversation.userId)}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(photo)}')">
@@ -4716,20 +5245,16 @@ ${unreadBadge}
 </button>`;
 }).join("");
 }
-
 async function openDirectChat(userId, username, profilePhoto = "") {
 if (!currentUser) {
 openAuth("login");
 return;
 }
 if (!userId || String(userId) === String(currentUser.id)) return;
-
 currentDmUserId = String(userId);
 currentDmUsername = username || "@User";
 currentDmProfilePhoto = profilePhoto || null;
-
 openMessagesPage();
-
 const empty = document.getElementById("dmEmptyState");
 const chat = document.getElementById("dmChat");
 const name = document.getElementById("dmChatUsername");
@@ -4750,7 +5275,6 @@ await loadDirectMessages();
 startDmPresenceRefresh();
 startDmChatRefresh();
 }
-
 async function closeDirectChat() {
 stopDmPresenceRefresh();
 stopDmChatRefresh();
@@ -4765,36 +5289,30 @@ if (chat) chat.style.display = "none";
 if (empty) empty.style.display = "block";
 await loadDmInbox();
 }
-
 function setDmStatus(message, isError = false) {
 const status = document.getElementById("dmStatus");
 if (!status) return;
 status.textContent = message || "";
 status.classList.toggle("error", !!isError);
 }
-
 async function loadDirectMessages() {
 if (!currentUser || !currentDmUserId || dmChatLoadInProgress) return;
 dmChatLoadInProgress = true;
-
 const activeChatUserId = String(currentDmUserId);
 const { data, error } = await supabaseClient
 .from("direct_messages")
 .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, attachment_path, attachment_type, attachment_name, attachment_size")
 .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentDmUserId}),and(sender_id.eq.${currentDmUserId},recipient_id.eq.${currentUser.id})`)
 .order("created_at", { ascending: true });
-
 if (error) {
 console.error("Direct messages load error:", error);
 setDmStatus(getFriendHubLanguage() === "es" ? "No se pudieron cargar los mensajes." : "Could not load messages.", true);
 dmChatLoadInProgress = false;
 return;
 }
-
 const unreadIds = (data || [])
 .filter(item => String(item.recipient_id) === String(currentUser.id) && !item.is_read)
 .map(item => item.id);
-
 if (unreadIds.length) {
 const readAt = new Date().toISOString();
 const { error: readError } = await supabaseClient
@@ -4814,14 +5332,11 @@ item.read_at = readAt;
 await refreshDmUnreadCount();
 }
 }
-
 if (String(currentDmUserId || "") === activeChatUserId) {
 await renderDirectMessages(data || []);
 }
 dmChatLoadInProgress = false;
 }
-
-
 function formatDmSeenTime(readAt) {
 if (!readAt) return "";
 return new Date(readAt).toLocaleTimeString(getFriendHubLanguage() === "es" ? "es-US" : "en-US", {
@@ -4830,41 +5345,31 @@ minute: "2-digit",
 hour12: true
 });
 }
-
 function renderDmSeenStatus(message, mine) {
 if (!mine) return "";
-
 if (!message.is_read) {
 return `<div class="dm-delivery-status sent" aria-label="${getFriendHubLanguage() === "es" ? "Enviado" : "Sent"}"><span class="dm-checks">✓</span></div>`;
 }
-
 const isNewSeen = !dmSeenMessageIds.has(String(message.id));
 dmSeenMessageIds.add(String(message.id));
-
 return `<div class="dm-delivery-status seen ${isNewSeen ? "seen-pop" : ""}" aria-label="${getFriendHubLanguage() === "es" ? "Visto" : "Seen"}">
 <span class="dm-checks">✓✓</span>
 </div>`;
 }
-
 async function renderDirectMessages(messages) {
 const container = document.getElementById("dmMessages");
 if (!container) return;
-
 if (!messages.length) {
 dmLastRenderedSignature = "";
-container.innerHTML = `<div class="dm-no-messages">${getFriendHubLanguage() === "es" ? "Todavía no hay mensajes. Di hola 👋" : "No messages yet. Say hello 👋"}</div>`;
+container.innerHTML = `<div class="dm-no-messages">${getFriendHubLanguage() === "es" ? "Todavía no hay mensajes. Di hola ��" : "No messages yet. Say hello ��"}</div>`;
 return;
 }
-
 const renderSignature = messages.map(message =>
 `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.attachment_path || ""}:${message.content || ""}`
 ).join("|");
-
 if (renderSignature === dmLastRenderedSignature) return;
-
 const wasNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 const isFirstRender = !dmLastRenderedSignature;
-
 const renderedRows = (await Promise.all(messages.map(async message => {
 const mine = String(message.sender_id) === String(currentUser.id);
 const attachmentHtml = await renderDmAttachment(message);
@@ -4878,11 +5383,9 @@ ${renderDmSeenStatus(message, mine)}
 </div>
 </div>`;
 }))).join("");
-
 container.innerHTML = `<div class="dm-message-stack">${renderedRows}</div>`;
-
 /* DM FIX7: normalize the rendered message layout directly in the DOM.
-   This bypasses any conflicting stylesheet rule elsewhere on the page. */
+This bypasses any conflicting stylesheet rule elsewhere on the page. */
 const dmStack = container.querySelector(".dm-message-stack");
 if (dmStack) {
 dmStack.style.setProperty("display", "grid", "important");
@@ -4894,7 +5397,6 @@ dmStack.style.setProperty("gap", "10px", "important");
 dmStack.style.setProperty("width", "100%", "important");
 dmStack.style.setProperty("height", "auto", "important");
 dmStack.style.setProperty("min-height", "0", "important");
-
 dmStack.querySelectorAll(":scope > .dm-row").forEach(row => {
 row.style.setProperty("display", "flex", "important");
 row.style.setProperty("position", "static", "important");
@@ -4908,9 +5410,7 @@ row.style.setProperty("transform", "none", "important");
 row.style.setProperty("align-self", "auto", "important");
 });
 }
-
 dmLastRenderedSignature = renderSignature;
-
 const shouldStickToBottom = isFirstRender || wasNearBottom;
 requestAnimationFrame(() => {
 if (shouldStickToBottom) {
@@ -4919,19 +5419,15 @@ container.scrollTop = container.scrollHeight;
 });
 stabilizeDmMediaScroll(container, shouldStickToBottom);
 }
-
-
 function stabilizeDmMediaScroll(container, shouldStickToBottom) {
 if (!container) return;
 const mediaItems = container.querySelectorAll(".dm-attachment-image, .dm-attachment-video");
-
 const settle = () => {
 if (!shouldStickToBottom) return;
 requestAnimationFrame(() => {
 container.scrollTop = container.scrollHeight;
 });
 };
-
 mediaItems.forEach(media => {
 if (media.tagName === "VIDEO") {
 if (media.readyState >= 1) settle();
@@ -4942,7 +5438,6 @@ else media.addEventListener("load", settle, { once: true });
 }
 });
 }
-
 function clearDmAttachment() {
 if (dmSelectedAttachment?.previewUrl) URL.revokeObjectURL(dmSelectedAttachment.previewUrl);
 dmSelectedAttachment = null;
@@ -4954,13 +5449,11 @@ preview.innerHTML = "";
 preview.style.display = "none";
 }
 }
-
 async function handleDmMediaSelected(event) {
 const file = event?.target?.files?.[0];
 if (!file) return;
 const maxSize = 25 * 1024 * 1024;
 const allowed = ["image/jpeg","image/png","image/gif","image/webp","video/mp4","video/webm","video/quicktime"];
-
 if (!allowed.includes(file.type)) {
 setDmStatus(getFriendHubLanguage() === "es" ? "Ese tipo de archivo no está permitido." : "That file type is not allowed.", true);
 clearDmAttachment();
@@ -4971,18 +5464,15 @@ setDmStatus(getFriendHubLanguage() === "es" ? "El archivo supera el límite de 2
 clearDmAttachment();
 return;
 }
-
 clearDmAttachment();
 dmSelectedAttachment = {
 file,
 previewUrl: URL.createObjectURL(file),
 type: file.type.startsWith("video/") ? "video" : "image"
 };
-
 const preview = document.getElementById("dmAttachmentPreview");
 if (!preview) return;
 const label = escapeHtml(file.name);
-
 preview.innerHTML = `
 <div class="dm-attachment-preview-inner">
 <div class="dm-attachment-preview-media">
@@ -4998,18 +5488,15 @@ ${dmSelectedAttachment.type === "video"
 preview.style.display = "block";
 setDmStatus("");
 }
-
 async function uploadDmAttachment(file) {
 const extension = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
 const randomPart = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const path = `${currentUser.id}/${randomPart}.${extension}`;
-
 const { error } = await supabaseClient.storage.from("dm-media").upload(path, file, {
 contentType: file.type,
 upsert: false
 });
 if (error) throw error;
-
 return {
 path,
 type: file.type.startsWith("video/") ? "video" : "image",
@@ -5017,53 +5504,43 @@ name: file.name,
 size: file.size
 };
 }
-
 async function renderDmAttachment(message) {
 if (!message?.attachment_path) return "";
 const { data, error } = await supabaseClient.storage
 .from("dm-media")
 .createSignedUrl(message.attachment_path, 60 * 60);
-
 if (error || !data?.signedUrl) {
 console.error("DM attachment URL error:", error);
 return `<div class="dm-attachment-missing">${getFriendHubLanguage() === "es" ? "Archivo no disponible." : "Attachment unavailable."}</div>`;
 }
-
 const url = escapeHtmlAttribute(data.signedUrl);
 const type = message.attachment_type === "video" ? "video" : "image";
 const name = escapeHtml(message.attachment_name || "Attachment");
-
 return `<div class="dm-attachment">${
 type === "video"
 ? `<video class="dm-attachment-video" src="${url}" controls preload="metadata"></video>`
 : `<a href="${url}" target="_blank" rel="noopener noreferrer" class="dm-attachment-link"><img class="dm-attachment-image" src="${url}" alt="${name}"></a>`
 }</div>`;
 }
-
 async function sendDirectMessage(event) {
 if (event) event.preventDefault();
 if (!currentUser || !currentDmUserId) return;
-
 const input = document.getElementById("dmInput");
 const button = document.getElementById("dmSendButton");
 const attachButton = document.getElementById("dmAttachButton");
 const content = input ? input.value.trim() : "";
 const attachment = dmSelectedAttachment?.file || null;
-
 if (!content && !attachment) return;
 if (content.length > 2000) {
 setDmStatus(getFriendHubLanguage() === "es" ? "El mensaje es demasiado largo." : "Message is too long.", true);
 return;
 }
-
 if (button) button.disabled = true;
 if (attachButton) attachButton.disabled = true;
 setDmStatus(getFriendHubLanguage() === "es" ? "Enviando..." : "Sending...");
-
 let uploaded = null;
 try {
 if (attachment) uploaded = await uploadDmAttachment(attachment);
-
 const payload = { sender_id: currentUser.id, recipient_id: currentDmUserId, content: content || "" };
 if (uploaded) {
 payload.attachment_path = uploaded.path;
@@ -5071,12 +5548,33 @@ payload.attachment_type = uploaded.type;
 payload.attachment_name = uploaded.name;
 payload.attachment_size = uploaded.size;
 }
-
 const { error } = await supabaseClient.from("direct_messages").insert(payload);
-
 if (error) {
 if (uploaded?.path) await supabaseClient.storage.from("dm-media").remove([uploaded.path]).catch(() => {});
 throw error;
+}
+/* DM NOTIFICATION — separate from message delivery so a notification
+   problem never makes a successfully sent DM look failed. */
+try {
+const actorUsername = currentProfile?.username || "@User";
+const language = getFriendHubLanguage();
+const notificationMessage = language === "es"
+? `${actorUsername} te envió un mensaje.`
+: `${actorUsername} sent you a message.`;
+
+const { error: dmNotificationError } = await supabaseClient
+.from("notifications")
+.insert({
+user_id: currentDmUserId,
+actor_id: currentUser.id,
+post_id: null,
+type: "dm",
+message: notificationMessage
+});
+
+if (dmNotificationError) console.error("DM notification error:", dmNotificationError);
+} catch (notificationError) {
+console.error("DM notification error:", notificationError);
 }
 
 if (input) input.value = "";
@@ -5098,20 +5596,16 @@ if (button) button.disabled = false;
 if (attachButton) attachButton.disabled = false;
 }
 }
-
 async function toggleBlockUser(userId, username) {
 if (!currentUser || !userId || String(currentUser.id) === String(userId)) return;
-
 const language = getFriendHubLanguage();
 const currentlyBlocked = blockedUserIds.has(String(userId));
 const displayName = username || "@User";
-
 if (!currentlyBlocked) {
 const confirmed = confirm(language === "es"
 ? `¿Bloquear a ${displayName}? Sus publicaciones dejarán de aparecer en tu Discover.`
 : `Block ${displayName}? Their posts will stop appearing in your Discover.`);
 if (!confirmed) return;
-
 const { error } = await supabaseClient.from("user_blocks").insert({
 blocker_id: currentUser.id,
 blocked_id: String(userId)
@@ -5133,11 +5627,9 @@ return;
 }
 blockedUserIds.delete(String(userId));
 }
-
 await loadPosts();
 await openPublicProfile(String(userId));
 }
-
 function renderPublicProfilePosts(userId, profilePhoto) {
 const container = document.getElementById("publicProfilePosts");
 if (!container) return;
@@ -5181,9 +5673,11 @@ list.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
 return;
 }
 list.innerHTML = notifications.map(item => {
-const icon = item.type === "mention" ? "@" : "";
+const icon = item.type === "mention" ? "@" : (item.type === "dm" ? "💬" : "");
 const clickAction = item.type === "follow"
 ? `openFollowNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}')`
+: item.type === "dm"
+? `openDmNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}')`
 : `openNotification('${escapeHtmlAttribute(String(item.post_id || ""))}', '${escapeHtmlAttribute(String(item.type || ""))}', '${escapeHtmlAttribute(String(item.actor_id || ""))}')`;
 return `
 <div class="notification-item ${item.is_read ? "" : "unread"}" onclick="${clickAction}" role="button" tabindex="0">
@@ -5201,6 +5695,28 @@ const panel = document.getElementById("notificationPanel");
 if (panel) panel.classList.remove("open");
 if (!actorId) return;
 await openPublicProfile(String(actorId));
+}
+async function openDmNotification(actorId) {
+const panel = document.getElementById("notificationPanel");
+if (panel) panel.classList.remove("open");
+if (!currentUser || !actorId || String(actorId) === String(currentUser.id)) return;
+
+const { data: profile, error } = await supabaseClient
+.from("friendhub_public_profiles")
+.select("user_id, username, profile_photo")
+.eq("user_id", String(actorId))
+.maybeSingle();
+
+if (error) {
+console.error("DM notification profile load error:", error);
+return;
+}
+
+await openDirectChat(
+String(actorId),
+profile?.username || "@User",
+profile?.profile_photo || ""
+);
 }
 async function openNotification(postId, type, actorId) {
 const panel = document.getElementById("notificationPanel");
@@ -5900,195 +6416,166 @@ alert(
 HOME: MEET PEOPLE -> DISCOVER / PEOPLE
 ========================================================= */
 function openDiscoverPeople() {
-  showPageWithoutReload("discover");
-
-  const peopleButton = document.querySelector('.filter-btn[data-filter="people"]');
-  if (peopleButton) {
-    peopleButton.click();
-    return;
-  }
-
-  /* Safe fallback if the filter button is not available yet. */
-  document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
-  const fallback = Array.from(document.querySelectorAll(".filter-btn"))
-    .find(btn => btn.textContent.trim().toLowerCase() === "people");
-  if (fallback) fallback.click();
+showPageWithoutReload("discover");
+const peopleButton = document.querySelector('.filter-btn[data-filter="people"]');
+if (peopleButton) {
+peopleButton.click();
+return;
 }
-
+/* Safe fallback if the filter button is not available yet. */
+document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+const fallback = Array.from(document.querySelectorAll(".filter-btn"))
+.find(btn => btn.textContent.trim().toLowerCase() === "people");
+if (fallback) fallback.click();
+}
 function openDiscoverCommunities() {
-  showPageWithoutReload("discover");
-
-  /* Keep all community platforms available instead of choosing one for the user. */
-  const allButton = document.querySelector('.filter-btn[data-filter="all"]');
-  if (allButton) allButton.click();
-
-  requestAnimationFrame(() => {
-    const filters = document.querySelector(".filters");
-    if (filters) {
-      filters.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  });
+showPageWithoutReload("discover");
+/* Keep all community platforms available instead of choosing one for the user. */
+const allButton = document.querySelector('.filter-btn[data-filter="all"]');
+if (allButton) allButton.click();
+requestAnimationFrame(() => {
+const filters = document.querySelector(".filters");
+if (filters) {
+filters.scrollIntoView({ behavior: "smooth", block: "center" });
 }
-
-
+});
+}
 /* =========================================================
 HOME: MAKE CONNECTIONS -> DISCOVER / ALL
 ========================================================= */
 function openDiscoverAll() {
-  showPageWithoutReload("discover");
-
-  const allButton = document.querySelector('.filter-btn[data-filter="all"]');
-  if (allButton) allButton.click();
-
-  requestAnimationFrame(() => {
-    const discover = document.getElementById("discover");
-    if (discover) discover.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+showPageWithoutReload("discover");
+const allButton = document.querySelector('.filter-btn[data-filter="all"]');
+if (allButton) allButton.click();
+requestAnimationFrame(() => {
+const discover = document.getElementById("discover");
+if (discover) discover.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 }
-
 /* =========================================================
 SHARE FRIENDHUB / INVITE FRIENDS
 Shares the main FriendHub URL. No database changes required.
 ========================================================= */
 async function shareFriendHub() {
-  const language = getFriendHubLanguage();
-  const url = `${window.location.origin}${window.location.pathname}`;
-  const title = "FriendHub";
-  const text = language === "es"
-    ? "¡Únete a FriendHub! Conoce gente, descubre comunidades y haz nuevos amigos."
-    : "Join me on FriendHub — meet people, discover communities and make new friends!";
-
-  try {
-    if (navigator.share) {
-      await navigator.share({ title, text, url });
-      return;
-    }
-  } catch (error) {
-    if (error && error.name === "AbortError") return;
-    console.warn("Native FriendHub share failed; using copy fallback.", error);
-  }
-
-  try {
-    await navigator.clipboard.writeText(url);
-    alert(language === "es"
-      ? "Enlace de FriendHub copiado."
-      : "FriendHub link copied.");
-  } catch (error) {
-    console.error("FriendHub share copy error:", error);
-    window.prompt(
-      language === "es"
-        ? "Copia este enlace para invitar a alguien a FriendHub:"
-        : "Copy this link to invite someone to FriendHub:",
-      url
-    );
-  }
+const language = getFriendHubLanguage();
+const url = `${window.location.origin}${window.location.pathname}`;
+const title = "FriendHub";
+const text = language === "es"
+? "¡Únete a FriendHub! Conoce gente, descubre comunidades y haz nuevos amigos."
+: "Join me on FriendHub — meet people, discover communities and make new friends!";
+try {
+if (navigator.share) {
+await navigator.share({ title, text, url });
+return;
 }
-
+} catch (error) {
+if (error && error.name === "AbortError") return;
+console.warn("Native FriendHub share failed; using copy fallback.", error);
+}
+try {
+await navigator.clipboard.writeText(url);
+alert(language === "es"
+? "Enlace de FriendHub copiado."
+: "FriendHub link copied.");
+} catch (error) {
+console.error("FriendHub share copy error:", error);
+window.prompt(
+language === "es"
+? "Copia este enlace para invitar a alguien a FriendHub:"
+: "Copy this link to invite someone to FriendHub:",
+url
+);
+}
+}
 /* =========================================================
 SHARE POST
 Native share when available; otherwise copies a direct post link.
 No database changes required.
 ========================================================= */
 let sharedPostLoginPromptShown = false;
-
 function getFriendHubLanguage() {
-  return localStorage.getItem("friendhub_language") === "es" ? "es" : "en";
+return localStorage.getItem("friendhub_language") === "es" ? "es" : "en";
 }
-
 function buildSharedPostUrl(postId) {
-  const url = new URL(window.location.href);
-  url.search = "";
-  url.hash = "";
-  url.searchParams.set("post", String(postId));
-  return url.toString();
+const url = new URL(window.location.href);
+url.search = "";
+url.hash = "";
+url.searchParams.set("post", String(postId));
+return url.toString();
 }
-
 async function sharePost(postId) {
-  const post = posts.find(item => String(item.id) === String(postId));
-  const language = getFriendHubLanguage();
-  const url = buildSharedPostUrl(postId);
-  const title = "FriendHub";
-  const text = language === "es"
-    ? `Mira esta publicación de ${post?.username || "FriendHub"} en FriendHub.`
-    : `Check out this post from ${post?.username || "FriendHub"} on FriendHub.`;
-
-  try {
-    if (navigator.share) {
-      await navigator.share({ title, text, url });
-      return;
-    }
-  } catch (error) {
-    if (error && error.name === "AbortError") return;
-    console.warn("Native share failed; using copy fallback.", error);
-  }
-
-  try {
-    await navigator.clipboard.writeText(url);
-    alert(language === "es"
-      ? "Enlace de la publicación copiado."
-      : "Post link copied.");
-  } catch (error) {
-    console.error("Share copy error:", error);
-    window.prompt(
-      language === "es"
-        ? "Copia este enlace para compartir la publicación:"
-        : "Copy this link to share the post:",
-      url
-    );
-  }
+const post = posts.find(item => String(item.id) === String(postId));
+const language = getFriendHubLanguage();
+const url = buildSharedPostUrl(postId);
+const title = "FriendHub";
+const text = language === "es"
+? `Mira esta publicación de ${post?.username || "FriendHub"} en FriendHub.`
+: `Check out this post from ${post?.username || "FriendHub"} on FriendHub.`;
+try {
+if (navigator.share) {
+await navigator.share({ title, text, url });
+return;
 }
-
+} catch (error) {
+if (error && error.name === "AbortError") return;
+console.warn("Native share failed; using copy fallback.", error);
+}
+try {
+await navigator.clipboard.writeText(url);
+alert(language === "es"
+? "Enlace de la publicación copiado."
+: "Post link copied.");
+} catch (error) {
+console.error("Share copy error:", error);
+window.prompt(
+language === "es"
+? "Copia este enlace para compartir la publicación:"
+: "Copy this link to share the post:",
+url
+);
+}
+}
 async function openSharedPostFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const postId = params.get("post");
-  if (!postId) return;
-
-  showPageWithoutReload("discover");
-
-  if (!currentUser && !String(postId).startsWith("sample-")) {
-    if (!sharedPostLoginPromptShown) {
-      sharedPostLoginPromptShown = true;
-      const language = getFriendHubLanguage();
-      alert(language === "es"
-        ? "Inicia sesión para ver esta publicación compartida."
-        : "Log in to view this shared post.");
-      openAuth("login");
-    }
-    return;
-  }
-
-  /* A shared link can be processed before the async post query has finished.
-     Reload once the user is authenticated, then locate the requested post. */
-  let target = posts.find(item => String(item.id) === String(postId));
-
-  if (!target && currentUser && !String(postId).startsWith("sample-")) {
-    await loadPosts();
-    target = posts.find(item => String(item.id) === String(postId));
-  }
-
-  if (!target) return;
-
-  renderPosts();
-
-  /* Give Discover/renderPosts time to place the card in the DOM. */
-  let attempts = 0;
-  const focusSharedPost = () => {
-    const element = document.getElementById(`post-${CSS.escape(String(postId))}`);
-    if (!element && attempts < 12) {
-      attempts += 1;
-      setTimeout(focusSharedPost, 100);
-      return;
-    }
-    if (!element) return;
-
-    element.scrollIntoView({ behavior: "smooth", block: "center" });
-    element.classList.add("shared-post-highlight");
-    setTimeout(() => element.classList.remove("shared-post-highlight"), 2200);
-  };
-
-  requestAnimationFrame(focusSharedPost);
+const params = new URLSearchParams(window.location.search);
+const postId = params.get("post");
+if (!postId) return;
+showPageWithoutReload("discover");
+if (!currentUser && !String(postId).startsWith("sample-")) {
+if (!sharedPostLoginPromptShown) {
+sharedPostLoginPromptShown = true;
+const language = getFriendHubLanguage();
+alert(language === "es"
+? "Inicia sesión para ver esta publicación compartida."
+: "Log in to view this shared post.");
+openAuth("login");
 }
-
+return;
+}
+/* A shared link can be processed before the async post query has finished.
+Reload once the user is authenticated, then locate the requested post. */
+let target = posts.find(item => String(item.id) === String(postId));
+if (!target && currentUser && !String(postId).startsWith("sample-")) {
+await loadPosts();
+target = posts.find(item => String(item.id) === String(postId));
+}
+if (!target) return;
+renderPosts();
+/* Give Discover/renderPosts time to place the card in the DOM. */
+let attempts = 0;
+const focusSharedPost = () => {
+const element = document.getElementById(`post-${CSS.escape(String(postId))}`);
+if (!element && attempts < 12) {
+attempts += 1;
+setTimeout(focusSharedPost, 100);
+return;
+}
+if (!element) return;
+element.scrollIntoView({ behavior: "smooth", block: "center" });
+element.classList.add("shared-post-highlight");
+setTimeout(() => element.classList.remove("shared-post-highlight"), 2200);
+};
+requestAnimationFrame(focusSharedPost);
+}
 function escapeHtml(value) {
 return String(value ?? "")
 .replace(/&/g, "&amp;")
@@ -6120,6 +6607,8 @@ renderOptionButtons();
 renderPosts();
 checkSession();
 </script>
+```
+```{=html}
 <script>
 /* =========================================================
 FRIENDHUB EMOJI PICKER — POSTS + COMMENTS
@@ -6187,6 +6676,8 @@ if (event.key === 'Escape') closeEmojiPickers();
 buildEmojiPickers();
 })();
 </script>
+```
+```{=html}
 <script>
 /* =========================================================
 FRIENDHUB BILINGUAL INTERFACE — ENGLISH / ESPAÑOL
@@ -6219,8 +6710,8 @@ const translations = {
 "Find people and communities that match what you're looking for.":"Encuentra personas y comunidades que coincidan con lo que buscas.",
 "All":"Todos", "People":"Personas", "Create a post":"Crear una publicación",
 "Please log in or create an account before creating a post.":"Inicia sesión o crea una cuenta antes de crear una publicación.",
-"Personal contact":"Contacto personal", "WhatsApp":"WhatsApp", "Telegram":"Telegram", "Discord":"Discord", "🟦 Discord":"🟦 Discord", "🟢 WhatsApp":"🟢 WhatsApp", "🟣 Telegram":"🟣 Telegram", "WhatsApp group":"WhatsApp", "Telegram group":"Telegram", "🟢 WhatsApp group":"🟢 WhatsApp", "🟣 Telegram group":"🟣 Telegram",
-"Add media":"Agregar archivo", "📎 Add media":"📎 Agregar archivo", "Post":"Publicar", "Your Profile":"Tu perfil",
+"Personal contact":"Contacto personal", "WhatsApp":"WhatsApp", "Telegram":"Telegram", "Discord":"Discord", "�� Discord":"�� Discord", "�� WhatsApp":"�� WhatsApp", "�� Telegram":"�� Telegram", "WhatsApp group":"WhatsApp", "Telegram group":"Telegram", "�� WhatsApp group":"�� WhatsApp", "�� Telegram group":"�� Telegram",
+"Add media":"Agregar archivo", "�� Add media":"�� Agregar archivo", "Post":"Publicar", "Your Profile":"Tu perfil",
 "Customize how people discover you on FriendHub.":"Personaliza cómo te descubren otras personas en FriendHub.",
 "Create an account first":"Primero crea una cuenta", "Your profile is connected to your FriendHub account. Please log in or create an account to continue.":"Tu perfil está conectado a tu cuenta de FriendHub. Inicia sesión o crea una cuenta para continuar.",
 "Change profile photo":"Cambiar foto de perfil", "Username":"Nombre de usuario",
@@ -6342,41 +6833,47 @@ return originalConfirm(translations[text] || translateDynamicText(text));
 };
 })();
 </script>
+```
+```{=html}
 <script>
 /* FriendHub automatic Day / Night theme */
 (function () {
-  const STORAGE_KEY = "friendhubThemePreference";
-  function automaticTheme() {
-    const hour = new Date().getHours();
-    return (hour >= 7 && hour < 19) ? "day" : "night";
-  }
-  function savedTheme() {
-    const value = localStorage.getItem(STORAGE_KEY);
-    return value === "day" || value === "night" ? value : null;
-  }
-  function applyTheme(theme) {
-    const safeTheme = theme === "night" ? "night" : "day";
-    document.documentElement.setAttribute("data-theme", safeTheme);
-    const button = document.getElementById("themeToggle");
-    if (button) {
-      const isNight = safeTheme === "night";
-      button.innerHTML = isNight ? "&#9728;&#65039;" : "&#127769;";
-      button.setAttribute("aria-label", isNight ? "Switch to day mode" : "Switch to night mode");
-      button.setAttribute("title", isNight ? "Switch to day mode" : "Switch to night mode");
-    }
-  }
-  window.toggleFriendHubTheme = function () {
-    const current = document.documentElement.getAttribute("data-theme") || automaticTheme();
-    const next = current === "night" ? "day" : "night";
-    localStorage.setItem(STORAGE_KEY, next);
-    applyTheme(next);
-  };
-  applyTheme(savedTheme() || automaticTheme());
-  document.addEventListener("DOMContentLoaded", function () {
-    applyTheme(savedTheme() || automaticTheme());
-  });
+const STORAGE_KEY = "friendhubThemePreference";
+function automaticTheme() {
+const hour = new Date().getHours();
+return (hour >= 7 && hour < 19) ? "day" : "night";
+}
+function savedTheme() {
+const value = localStorage.getItem(STORAGE_KEY);
+return value === "day" || value === "night" ? value : null;
+}
+function applyTheme(theme) {
+const safeTheme = theme === "night" ? "night" : "day";
+document.documentElement.setAttribute("data-theme", safeTheme);
+const button = document.getElementById("themeToggle");
+if (button) {
+const isNight = safeTheme === "night";
+button.innerHTML = isNight ? "&#9728;&#65039;" : "&#127769;";
+button.setAttribute("aria-label", isNight ? "Switch to day mode" : "Switch to night mode");
+button.setAttribute("title", isNight ? "Switch to day mode" : "Switch to night mode");
+}
+}
+window.toggleFriendHubTheme = function () {
+const current = document.documentElement.getAttribute("data-theme") || automaticTheme();
+const next = current === "night" ? "day" : "night";
+localStorage.setItem(STORAGE_KEY, next);
+applyTheme(next);
+};
+applyTheme(savedTheme() || automaticTheme());
+document.addEventListener("DOMContentLoaded", function () {
+applyTheme(savedTheme() || automaticTheme());
+});
 })();
 </script>
-
+```
+```{=html}
 </body>
+```
+```{=html}
 </html>
+```
