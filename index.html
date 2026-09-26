@@ -701,6 +701,32 @@ padding: 3px 5px;
 .comment-delete:hover {
 color: #b91c1c;
 }
+
+.comment-actions {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-top: 8px;
+}
+
+.comment-like {
+border: none;
+background: transparent;
+color: #667085;
+font-size: 13px;
+font-weight: 700;
+padding: 4px 6px;
+border-radius: 8px;
+cursor: pointer;
+}
+
+.comment-like:hover {
+background: #f4f5f8;
+}
+
+.comment-like.liked {
+color: #e11d48;
+}
 .comment-form {
 display: flex;
 gap: 8px;
@@ -978,19 +1004,19 @@ EDIT POST
 ========================================================= */
 .edit-post-modal { width: min(560px, 100%); }
 .edit-post-modal textarea {
-  width: 100%;
-  min-height: 150px;
-  resize: vertical;
-  border: 1px solid #dfe3eb;
-  border-radius: 12px;
-  padding: 13px;
-  outline: none;
+    width: 100%;
+    min-height: 150px;
+    resize: vertical;
+    border: 1px solid #dfe3eb;
+    border-radius: 12px;
+    padding: 13px;
+    outline: none;
 }
 .edit-post-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
 }
 .post-action.edit-post-action { color: #5865f2; }
 .post-action.edit-post-action:hover { background: #eef0ff; }
@@ -1013,7 +1039,7 @@ FriendHub
 <div class="auth-buttons">
 <div class="notification-wrap" id="notificationWrap">
 <button class="notification-bell" id="notificationBell" onclick="toggleNotifications(event)" aria-label="Notifications" title="Notifications">
-🔔
+?
 <span class="notification-badge" id="notificationBadge">0</span>
 </button>
 <div class="notification-panel" id="notificationPanel">
@@ -1557,17 +1583,17 @@ Update Password
 </div>
 
 <div id="editPostModal" class="modal-overlay">
-  <div class="modal edit-post-modal">
-    <button class="modal-close" onclick="closeEditPost()">×</button>
-    <h2>Edit Post</h2>
-    <p class="modal-subtitle">Update the text of your post.</p>
-    <div id="editPostMessage" class="message"></div>
-    <textarea id="editPostText" maxlength="5000" placeholder="Edit your post..."></textarea>
-    <div class="edit-post-actions">
-      <button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
+    <div class="modal edit-post-modal">
+        <button class="modal-close" onclick="closeEditPost()">×</button>
+        <h2>Edit Post</h2>
+        <p class="modal-subtitle">Update the text of your post.</p>
+        <div id="editPostMessage" class="message"></div>
+        <textarea id="editPostText" maxlength="5000" placeholder="Edit your post..."></textarea>
+        <div class="edit-post-actions">
+            <button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
+        </div>
     </div>
-  </div>
 </div>
 
 <script>
@@ -3540,7 +3566,41 @@ currentComments = [];
 renderComments();
 return;
 }
+
 currentComments = data || [];
+
+if (currentComments.length) {
+const commentIds = currentComments.map(comment => comment.id);
+
+const { data: commentLikes, error: likesError } =
+await supabaseClient
+.from("comment_likes")
+.select("comment_id, user_id")
+.in("comment_id", commentIds);
+
+if (likesError) {
+console.error("Comment Likes load error:", likesError);
+} else {
+const likes = commentLikes || [];
+
+currentComments = currentComments.map(comment => {
+const likesForComment = likes.filter(
+like => String(like.comment_id) === String(comment.id)
+);
+
+return {
+...comment,
+likesCount: likesForComment.length,
+liked: currentUser
+? likesForComment.some(
+like => String(like.user_id) === String(currentUser.id)
+)
+: false
+};
+});
+}
+}
+
 renderComments();
 }
 function renderComments() {
@@ -3572,6 +3632,15 @@ ${comment.media_type === "video"
 : `<img src="${escapeHtmlAttribute(comment.media_url)}" alt="Comment attachment" loading="lazy">`}
 </div>
 ` : ""}
+<div class="comment-actions">
+<button
+class="comment-like${comment.liked ? " liked" : ""}"
+onclick="toggleCommentLike('${escapeHtmlAttribute(String(comment.id))}')"
+aria-label="${comment.liked ? "Remove Like from comment" : "Like comment"}"
+>
+${comment.liked ? "❤️" : "♡"} ${Number(comment.likesCount || 0)}
+</button>
+</div>
 </div>
 ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${escapeHtmlAttribute(String(comment.id))}')">Delete</button>` : ""}
 </div>
@@ -3579,6 +3648,69 @@ ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${escapeHt
 }).join("");
 list.scrollTop = list.scrollHeight;
 }
+async function toggleCommentLike(commentId) {
+if (!currentUser || !commentId) {
+if (!currentUser) openAuth("login");
+return;
+}
+
+const comment = currentComments.find(
+item => String(item.id) === String(commentId)
+);
+
+if (!comment) return;
+
+const { data: existingLike, error: checkError } =
+await supabaseClient
+.from("comment_likes")
+.select("id")
+.eq("comment_id", commentId)
+.eq("user_id", currentUser.id)
+.maybeSingle();
+
+if (checkError) {
+console.error("Check comment Like error:", checkError);
+showCommentsMessage("Could not check your Like.", "error");
+return;
+}
+
+if (existingLike) {
+const { error } =
+await supabaseClient
+.from("comment_likes")
+.delete()
+.eq("comment_id", commentId)
+.eq("user_id", currentUser.id);
+
+if (error) {
+console.error("Remove comment Like error:", error);
+showCommentsMessage("Could not remove your Like.", "error");
+return;
+}
+} else {
+const { error } =
+await supabaseClient
+.from("comment_likes")
+.insert({
+comment_id: commentId,
+user_id: currentUser.id
+});
+
+if (error) {
+if (error.code === "23505" || error.status === 409) {
+console.warn("Comment Like already exists. Reloading Likes.");
+} else {
+console.error("Add comment Like error:", error);
+showCommentsMessage("Could not add your Like.", "error");
+return;
+}
+}
+}
+
+clearCommentsMessage();
+await loadComments(currentCommentsPostId);
+}
+
 async function submitComment() {
 if (!currentUser || !currentCommentsPostId) {
 return;
@@ -3630,7 +3762,11 @@ console.error("Comment insert error:", error);
 showCommentsMessage("Could not post your comment: " + error.message, "error");
 return;
 }
-currentComments.push(data);
+currentComments.push({
+...data,
+likesCount: 0,
+liked: false
+});
 input.value = "";
 removeCommentMedia();
 clearCommentsMessage();
