@@ -1338,6 +1338,22 @@ html[data-theme="night"] #home .feature-card[onclick="openDiscoverPeople()"]:foc
   box-shadow: 0 0 18px rgba(24,200,255,.16), 0 0 26px rgba(139,92,255,.18);
 }
 
+
+/* HOME INTERACTIVE: FIND COMMUNITIES */
+#home .feature-card[onclick="openDiscoverCommunities()"] {
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+#home .feature-card[onclick="openDiscoverCommunities()"]:hover,
+#home .feature-card[onclick="openDiscoverCommunities()"]:focus-visible {
+  transform: translateY(-3px);
+  outline: none;
+  box-shadow: 0 12px 30px rgba(139,92,255,.14);
+}
+html[data-theme="night"] #home .feature-card[onclick="openDiscoverCommunities()"]:hover,
+html[data-theme="night"] #home .feature-card[onclick="openDiscoverCommunities()"]:focus-visible {
+  box-shadow: 0 0 18px rgba(139,92,255,.18), 0 0 26px rgba(255,63,209,.14);
+}
+
 </style>
 </head>
 <body>
@@ -1430,7 +1446,7 @@ Discover people with similar interests,
 languages, hobbies and goals.
 </p>
 </div>
-<div class="feature-card">
+<div class="feature-card" onclick="openDiscoverCommunities()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverCommunities();}" style="cursor:pointer;">
 <div class="feature-icon"></div>
 <h3>Find Communities</h3>
 <p>
@@ -4576,6 +4592,22 @@ function openDiscoverPeople() {
     .find(btn => btn.textContent.trim().toLowerCase() === "people");
   if (fallback) fallback.click();
 }
+
+function openDiscoverCommunities() {
+  showPageWithoutReload("discover");
+
+  /* Keep all community platforms available instead of choosing one for the user. */
+  const allButton = document.querySelector('.filter-btn[data-filter="all"]');
+  if (allButton) allButton.click();
+
+  requestAnimationFrame(() => {
+    const filters = document.querySelector(".filters");
+    if (filters) {
+      filters.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  });
+}
+
 
 /* =========================================================
 SHARE FRIENDHUB / INVITE FRIENDS
