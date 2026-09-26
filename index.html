@@ -4409,6 +4409,7 @@ ${profile.bio ? `<div class="public-profile-bio">${escapeHtml(profile.bio)}</div
 </div>
 ${isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary public-profile-follow${isFollowing ? " following" : ""}" onclick="toggleFollow('${escapeHtmlAttribute(String(userId))}')">${isFollowing ? "Following" : "Follow"}</button>`}
 ${isOwnProfile ? "" : `<button id="publicBlockButton" class="btn public-profile-block${isBlocked ? " blocked" : ""}" onclick="toggleBlockUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">${isBlocked ? "Unblock" : "Block"}</button>`}
+${isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${getFriendHubLanguage() === "es" ? "Reportar usuario" : "Report user"}</button>`}
 ${isOwnProfile || isBlocked ? "" : `<button id="publicMessageButton" class="btn public-profile-message" onclick="openDirectChat('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(profile.profile_photo || "")}')">&#128172; ${getFriendHubLanguage() === "es" ? "Mensaje" : "Message"}</button>`}
 <div class="public-profile-details">
 <div class="public-profile-detail"><strong>Languages</strong><span>${escapeHtml(formatPublicProfileList(profile.languages))}</span></div>
@@ -4424,6 +4425,64 @@ if (postsContainer) postsContainer.innerHTML = '<div class="empty-state">You blo
 renderPublicProfilePosts(String(userId), profile.profile_photo || null);
 }
 }
+async function openReportUser(userId, username = "@User") {
+if (!currentUser || !userId) {
+if (!currentUser) openAuth("login");
+return;
+}
+if (String(currentUser.id) === String(userId)) return;
+
+const isSpanish = getFriendHubLanguage() === "es";
+const reasonInput = prompt(
+isSpanish
+? `Reportar a ${username}\n\nEscribe uno de estos motivos:\nspam\nharassment\ninappropriate_content\nfake_profile\nother`
+: `Report ${username}\n\nEnter one of these reasons:\nspam\nharassment\ninappropriate_content\nfake_profile\nother`
+);
+if (!reasonInput) return;
+
+const reason = reasonInput.trim().toLowerCase();
+const allowedReasons = ["spam", "harassment", "inappropriate_content", "fake_profile", "other"];
+if (!allowedReasons.includes(reason)) {
+alert(isSpanish ? "Motivo no válido. El reporte no fue enviado." : "Invalid reason. The report was not sent.");
+return;
+}
+
+const detailsInput = prompt(
+isSpanish
+? "Agrega detalles sobre el reporte (opcional):"
+: "Add details about the report (optional):"
+);
+if (detailsInput === null) return;
+
+const [reporterProfileResult, reportedProfileResult] = await Promise.all([
+supabaseClient.from("profiles").select("id").eq("user_id", currentUser.id).maybeSingle(),
+supabaseClient.from("profiles").select("id").eq("user_id", String(userId)).maybeSingle()
+]);
+
+if (reporterProfileResult.error || reportedProfileResult.error || !reporterProfileResult.data?.id || !reportedProfileResult.data?.id) {
+console.error("Report profile lookup error:", reporterProfileResult.error, reportedProfileResult.error);
+alert(isSpanish ? "No se pudo preparar el reporte. Inténtalo de nuevo." : "Could not prepare the report. Please try again.");
+return;
+}
+
+const { error } = await supabaseClient
+.from("reports")
+.insert({
+reporter_id: reporterProfileResult.data.id,
+reported_user_id: reportedProfileResult.data.id,
+reason,
+details: detailsInput.trim() || null
+});
+
+if (error) {
+console.error("Report user error:", error);
+alert(isSpanish ? "No se pudo enviar el reporte. Inténtalo de nuevo." : "Could not send the report. Please try again.");
+return;
+}
+
+alert(isSpanish ? "Reporte enviado. Gracias." : "Report submitted. Thank you.");
+}
+
 async function toggleFollow(userId) {
 if (!currentUser || !userId || String(currentUser.id) === String(userId)) return;
 const button = document.getElementById("publicFollowButton");
