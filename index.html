@@ -1368,7 +1368,7 @@
  class="remove-media"
  onclick="removeMedia()"
  >
- �
+ ×
  </button>
 
  <div id="mediaPreviewContent"></div>
@@ -1645,7 +1645,7 @@
  </div>
 
  <div class="footer-small">
- � 2026 FriendHub. All rights reserved.
+ © 2026 FriendHub. All rights reserved.
  </div>
 
  </div>
@@ -1661,7 +1661,7 @@
  class="modal-close"
  onclick="closeModal('authModal')"
  >
- �
+ ×
  </button>
 
  <h2 id="authTitle">
@@ -1767,7 +1767,7 @@
  class="modal-close"
  onclick="closeModal('resetModal')"
  >
- �
+ ×
  </button>
 
  <h2>Reset Password</h2>
@@ -1862,7 +1862,7 @@
 
  <div class="modal comments-modal">
 
- <button class="modal-close" onclick="closeCommentsModal()">�</button>
+ <button class="modal-close" onclick="closeCommentsModal()">×</button>
 
  <h2>Comments</h2>
  <p id="commentsSubtitle" class="modal-subtitle">Join the conversation.</p>
@@ -1881,7 +1881,7 @@
  </div>
  <div id="commentMediaPreview" class="comment-media-preview">
  <div id="commentMediaPreviewContent"></div>
- <button type="button" class="comment-media-remove" onclick="removeCommentMedia()" aria-label="Remove attachment">�</button>
+ <button type="button" class="comment-media-remove" onclick="removeCommentMedia()" aria-label="Remove attachment">×</button>
  </div>
  </div>
  </div>
@@ -4103,7 +4103,7 @@ function renderPost(post) {
 
  <div class="post-meta">
  ${typeLabels[post.type] || "Post"}
- � ${escapeHtml(post.time)}
+ · ${escapeHtml(post.time)}
  </div>
 
  </div>
@@ -4546,7 +4546,7 @@ function renderComments() {
  <div class="comment-body">
  <div>
  <span class="comment-user">${username}</span>
- <span class="comment-time">� ${escapeHtml(formatPostTime(comment.created_at))}</span>
+ <span class="comment-time">· ${escapeHtml(formatPostTime(comment.created_at))}</span>
  </div>
  ${comment.content ? `<div class="comment-content">${escapeHtml(comment.content)}</div>` : ""}
  ${comment.media_url ? `
