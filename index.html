@@ -1243,6 +1243,27 @@ html[data-theme="night"] .btn-secondary, html[data-theme="night"] .filter-btn, h
 html[data-theme="night"] .post-media img, html[data-theme="night"] .post-media video, html[data-theme="night"] .comment-media img, html[data-theme="night"] .comment-media video { background:#090b20; }
 @media (max-width:560px) { .theme-toggle { width:40px; height:40px; } }
 
+
+/* =========================================================
+FRIENDHUB FINAL NEON VISUAL TOUCHES
+Only: Home top spacing + stronger Night active controls
+========================================================= */
+#home.page {
+  padding-top: 0;
+}
+
+html[data-theme="night"] .filter-btn.active,
+html[data-theme="night"] .post-type.active,
+html[data-theme="night"] .option-btn.selected {
+  background: linear-gradient(135deg, #18c8ff 0%, #8b5cff 52%, #ff3fd1 100%);
+  color: #ffffff;
+  border-color: rgba(255,255,255,.12);
+  box-shadow:
+    0 0 18px rgba(24,200,255,.22),
+    0 0 24px rgba(139,92,255,.24),
+    0 0 30px rgba(255,63,209,.16);
+}
+
 </style>
 </head>
 <body>
