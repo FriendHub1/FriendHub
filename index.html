@@ -4731,18 +4731,12 @@ list.innerHTML = "";
 return;
 }
 
-section.style.display = "";
-const suggestionLoadToken = String(Date.now()) + Math.random();
-list.dataset.loadToken = suggestionLoadToken;
-list.innerHTML = `<div class="empty-state">${getFriendHubLanguage() === "es" ? "Buscando sugerencias..." : "Looking for suggestions..."}</div>`;
-
-/* Do not leave a permanent loading box if a network request stalls. */
-setTimeout(() => {
-if (list.dataset.loadToken === suggestionLoadToken && list.querySelector(".empty-state")) {
+/* Keep the suggestions box hidden while data is loading.
+   It becomes visible only after at least one eligible profile is found. */
 section.style.display = "none";
 list.innerHTML = "";
-}
-}, 5000);
+const suggestionLoadToken = String(Date.now()) + Math.random();
+list.dataset.loadToken = suggestionLoadToken;
 
 try {
 const myId = String(currentUser.id);
@@ -4825,7 +4819,9 @@ return;
 }
 
 const isSpanish = getFriendHubLanguage() === "es";
-if (list.dataset.loadToken === suggestionLoadToken) list.dataset.loadToken = "";
+if (list.dataset.loadToken !== suggestionLoadToken) return;
+list.dataset.loadToken = "";
+section.style.display = "";
 list.innerHTML = profiles.map(profile => {
 const id = String(profile.user_id);
 const username = profile.username || "@User";
