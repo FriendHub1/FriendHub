@@ -2984,11 +2984,11 @@ initial;
 return `
 <article class="post" id="post-${escapeHtmlAttribute(String(post.id))}" data-post-id="${escapeHtmlAttribute(String(post.id))}">
 <div class="post-header">
-<div class="avatar ${post.userId ? "clickable-user" : ""}" ${post.userId ? `onclick="openPublicProfile('${escapeHtmlAttribute(String(post.userId))}')"` : ""}>
+<div class="avatar ${String(post.id).startsWith("sample-") ? "" : "clickable-user"}" ${String(post.id).startsWith("sample-") ? "" : `data-public-username="${escapeHtmlAttribute(String(post.username || ""))}" onclick="openPublicProfileByUsername(this.dataset.publicUsername)"`}>
 ${avatarHtml}
 </div>
 <div>
-<div class="post-user ${post.userId ? "clickable-user" : ""}" ${post.userId ? `onclick="openPublicProfile('${escapeHtmlAttribute(String(post.userId))}')"` : ""}>
+<div class="post-user ${String(post.id).startsWith("sample-") ? "" : "clickable-user"}" ${String(post.id).startsWith("sample-") ? "" : `data-public-username="${escapeHtmlAttribute(String(post.username || ""))}" onclick="openPublicProfileByUsername(this.dataset.publicUsername)"`}>
 ${username}
 </div>
 <div class="post-meta">
@@ -3032,6 +3032,21 @@ Report
 /* =========================================================
 PUBLIC PROFILES
 ========================================================= */
+async function openPublicProfileByUsername(username) {
+if (!currentUser || !username) { if (!currentUser) openAuth("login"); return; }
+const normalizedUsername = String(username).trim();
+const { data: profile, error } = await supabaseClient
+.from("friendhub_public_profiles")
+.select("user_id")
+.eq("username", normalizedUsername)
+.maybeSingle();
+if (error || !profile?.user_id) {
+console.error("Public profile username lookup error:", error);
+alert("This profile could not be loaded.");
+return;
+}
+await openPublicProfile(String(profile.user_id));
+}
 async function openPublicProfile(userId) {
 if (!currentUser || !userId) { if (!currentUser) openAuth("login"); return; }
 showPageWithoutReload("publicProfile");
