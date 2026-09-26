@@ -3071,14 +3071,31 @@ renderPublicProfilePosts(currentPublicProfileUserId, null);
 }
 function formatPublicProfileList(value) {
 if (value === null || value === undefined || value === "") return "Not added";
-if (Array.isArray(value)) return value.length ? value.join(", ") : "Not added";
-const text = String(value).trim();
+
+let current = value;
+for (let i = 0; i < 4; i++) {
+if (Array.isArray(current)) {
+const cleanItems = current.map(item => String(item).trim()).filter(Boolean);
+return cleanItems.length ? cleanItems.join(", ") : "Not added";
+}
+if (typeof current !== "string") return String(current).trim() || "Not added";
+const text = current.trim();
 if (!text) return "Not added";
 try {
 const parsed = JSON.parse(text);
-if (Array.isArray(parsed)) return parsed.length ? parsed.join(", ") : "Not added";
-} catch (error) {}
-return text;
+if (parsed === current) break;
+current = parsed;
+continue;
+} catch (error) {
+const cleanItems = text
+.replace(/^\s*\[|\]\s*$/g, "")
+.split(",")
+.map(item => item.trim().replace(/^['"]+|['"]+$/g, "").trim())
+.filter(Boolean);
+return cleanItems.length ? cleanItems.join(", ") : "Not added";
+}
+}
+return String(current).trim() || "Not added";
 }
 
 /* =========================================================
