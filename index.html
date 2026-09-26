@@ -1264,6 +1264,19 @@ html[data-theme="night"] .option-btn.selected {
     0 0 30px rgba(255,63,209,.16);
 }
 
+
+/* SHARE POST */
+.post-action.share-post-action:hover {
+  color: var(--fh-accent, #5865f2);
+}
+.shared-post-highlight {
+  animation: friendHubSharedPostGlow 2.2s ease;
+}
+@keyframes friendHubSharedPostGlow {
+  0%, 100% { box-shadow: var(--fh-card-shadow, 0 3px 12px rgba(16,24,40,.035)); }
+  35% { box-shadow: 0 0 0 2px rgba(65, 210, 255, .72), 0 0 34px rgba(139, 92, 246, .34); }
+}
+
 </style>
 </head>
 <body>
@@ -2336,6 +2349,7 @@ posts = [...samplePosts];
 renderPosts();
 }
 updateProfileVisibility();
+await openSharedPostFromUrl();
 }
 );
 async function checkSession() {
@@ -2362,6 +2376,7 @@ posts = [...samplePosts];
 renderPosts();
 }
 updateProfileVisibility();
+await openSharedPostFromUrl();
 }
 function updateAuthUI() {
 const loginBtn =
@@ -3416,6 +3431,12 @@ onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"
 >
 ${saveText}
 </button>
+<button
+class="post-action share-post-action"
+onclick="sharePost('${escapeHtmlAttribute(String(post.id))}')"
+>
+Share
+</button>
 ${currentUser && !String(post.id).startsWith("sample-") && String(post.userId || "") === String(currentUser.id) ? `
 <button
 class="post-action edit-post-action"
@@ -4469,6 +4490,90 @@ alert(
 "Thank you. Reporting tools will be expanded as FriendHub grows."
 );
 }
+/* =========================================================
+SHARE POST
+Native share when available; otherwise copies a direct post link.
+No database changes required.
+========================================================= */
+let sharedPostLoginPromptShown = false;
+
+function getFriendHubLanguage() {
+  return localStorage.getItem("friendhub_language") === "es" ? "es" : "en";
+}
+
+function buildSharedPostUrl(postId) {
+  const url = new URL(window.location.href);
+  url.search = "";
+  url.hash = "";
+  url.searchParams.set("post", String(postId));
+  return url.toString();
+}
+
+async function sharePost(postId) {
+  const post = posts.find(item => String(item.id) === String(postId));
+  const language = getFriendHubLanguage();
+  const url = buildSharedPostUrl(postId);
+  const title = "FriendHub";
+  const text = language === "es"
+    ? `Mira esta publicación de ${post?.username || "FriendHub"} en FriendHub.`
+    : `Check out this post from ${post?.username || "FriendHub"} on FriendHub.`;
+
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text, url });
+      return;
+    }
+  } catch (error) {
+    if (error && error.name === "AbortError") return;
+    console.warn("Native share failed; using copy fallback.", error);
+  }
+
+  try {
+    await navigator.clipboard.writeText(url);
+    alert(language === "es"
+      ? "Enlace de la publicación copiado."
+      : "Post link copied.");
+  } catch (error) {
+    console.error("Share copy error:", error);
+    window.prompt(
+      language === "es"
+        ? "Copia este enlace para compartir la publicación:"
+        : "Copy this link to share the post:",
+      url
+    );
+  }
+}
+
+async function openSharedPostFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const postId = params.get("post");
+  if (!postId) return;
+
+  showPageWithoutReload("discover");
+
+  const target = posts.find(item => String(item.id) === String(postId));
+  if (!target) {
+    if (!currentUser && !String(postId).startsWith("sample-") && !sharedPostLoginPromptShown) {
+      sharedPostLoginPromptShown = true;
+      const language = getFriendHubLanguage();
+      alert(language === "es"
+        ? "Inicia sesión para ver esta publicación compartida."
+        : "Log in to view this shared post.");
+      openAuth("login");
+    }
+    return;
+  }
+
+  renderPosts();
+  requestAnimationFrame(() => {
+    const element = document.getElementById(`post-${CSS.escape(String(postId))}`);
+    if (!element) return;
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+    element.classList.add("shared-post-highlight");
+    setTimeout(() => element.classList.remove("shared-post-highlight"), 2200);
+  });
+}
+
 function escapeHtml(value) {
 return String(value ?? "")
 .replace(/&/g, "&amp;")
@@ -4628,7 +4733,7 @@ const translations = {
 "New Password":"Nueva contraseña", "Confirm New Password":"Confirmar nueva contraseña", "Update Password":"Actualizar contraseña",
 "Comments":"Comentarios", "Join the conversation.":"Únete a la conversación.", "Edit Post":"Editar publicación", "Update the text of your post.":"Actualiza el texto de tu publicación.",
 "Cancel":"Cancelar", "Save":"Guardar", "Followers":"Seguidores", "Following":"Siguiendo", "FriendHub connections":"Conexiones de FriendHub",
-"Follow":"Seguir", "Unfollow":"Dejar de seguir", "Like":"Me gusta", "Comment":"Comentar", "Report":"Reportar", "Reply":"Responder",
+"Follow":"Seguir", "Unfollow":"Dejar de seguir", "Like":"Me gusta", "Comment":"Comentar", "Share":"Compartir", "Report":"Reportar", "Reply":"Responder",
 "Edited":"Editado", "Delete":"Eliminar", "No posts yet.":"Aún no hay publicaciones.", "No saved posts yet.":"Aún no tienes publicaciones guardadas.",
 "No followers yet.":"Aún no hay seguidores.", "Not following anyone yet.":"Aún no sigue a nadie.", "Profile not found.":"Perfil no encontrado.",
 "Public profile":"Perfil público", "Looking for":"Busca", "Remove":"Eliminar", "Replying to":"Respondiendo a",
