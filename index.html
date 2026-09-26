@@ -840,6 +840,86 @@
       outline: none;
     }
 
+    .comment-compose {
+      display: grid;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .comment-compose-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .comment-attach-btn {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 48px;
+      border: 1px solid #dfe3eb;
+      border-radius: 10px;
+      background: white;
+      font-size: 21px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .comment-attach-btn:hover {
+      background: #f4f5f8;
+    }
+
+    #commentMediaInput {
+      display: none;
+    }
+
+    .comment-media-preview {
+      position: relative;
+      display: none;
+      width: fit-content;
+      max-width: 100%;
+    }
+
+    .comment-media-preview img,
+    .comment-media-preview video {
+      display: block;
+      max-width: 100%;
+      max-height: 220px;
+      border-radius: 12px;
+      object-fit: contain;
+      background: #f5f6f8;
+    }
+
+    .comment-media-remove {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(17, 24, 39, 0.78);
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .comment-media {
+      margin-top: 8px;
+    }
+
+    .comment-media img,
+    .comment-media video {
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      max-height: 360px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #f5f6f8;
+    }
+
     /* ===============================
        DOUBLE-TAP / DOUBLE-CLICK LIKE
        =============================== */
@@ -1681,8 +1761,18 @@
     <div id="commentsList" class="comments-list"></div>
 
     <div id="commentForm" class="comment-form" style="display:none;">
-      <textarea id="commentInput" maxlength="1000" placeholder="Write a comment..."></textarea>
-      <button class="btn btn-primary" onclick="submitComment()">Post</button>
+      <div class="comment-compose">
+        <div class="comment-compose-row">
+          <label class="comment-attach-btn" for="commentMediaInput" title="Add photo or video" aria-label="Add photo or video">📎</label>
+          <input id="commentMediaInput" type="file" accept="image/*,video/*" onchange="handleCommentMedia(event)">
+          <textarea id="commentInput" maxlength="1000" placeholder="Write a comment..."></textarea>
+          <button class="btn btn-primary" onclick="submitComment()">Post</button>
+        </div>
+        <div id="commentMediaPreview" class="comment-media-preview">
+          <div id="commentMediaPreviewContent"></div>
+          <button type="button" class="comment-media-remove" onclick="removeCommentMedia()" aria-label="Remove attachment">×</button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -1725,6 +1815,9 @@ let selectedProfilePhoto = null;
 
 let currentCommentsPostId = null;
 let currentComments = [];
+let selectedCommentMediaFile = null;
+let selectedCommentMediaType = null;
+let selectedCommentMediaPreviewUrl = null;
 const lastTapTimes = new Map();
 const doubleTapLikeBusy = new Set();
 const recentDoubleTapTriggers = new Map();
@@ -4116,6 +4209,7 @@ async function commentPost(id) {
   currentCommentsPostId = String(id);
   clearCommentsMessage();
   document.getElementById("commentInput").value = "";
+  removeCommentMedia();
   document.getElementById("commentForm").style.display = "flex";
   document.getElementById("commentsSubtitle").textContent = "Join the conversation.";
   openModal("commentsModal");
@@ -4128,7 +4222,7 @@ async function loadComments(postId) {
   const { data, error } =
     await supabaseClient
       .from("post_comments")
-      .select("id, post_id, user_id, username, content, created_at")
+      .select("id, post_id, user_id, username, content, media_url, media_type, created_at")
       .eq("post_id", String(postId))
       .order("created_at", { ascending: true });
 
@@ -4170,7 +4264,14 @@ function renderComments() {
             <span class="comment-user">${username}</span>
             <span class="comment-time">· ${escapeHtml(formatPostTime(comment.created_at))}</span>
           </div>
-          <div class="comment-content">${escapeHtml(comment.content)}</div>
+          ${comment.content ? `<div class="comment-content">${escapeHtml(comment.content)}</div>` : ""}
+          ${comment.media_url ? `
+            <div class="comment-media">
+              ${comment.media_type === "video"
+                ? `<video src="${escapeHtmlAttribute(comment.media_url)}" controls playsinline preload="metadata"></video>`
+                : `<img src="${escapeHtmlAttribute(comment.media_url)}" alt="Comment attachment" loading="lazy">`}
+            </div>
+          ` : ""}
         </div>
         ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${escapeHtmlAttribute(String(comment.id))}')">Delete</button>` : ""}
       </div>
@@ -4190,8 +4291,8 @@ async function submitComment() {
   const input = document.getElementById("commentInput");
   const content = input.value.trim();
 
-  if (!content) {
-    showCommentsMessage("Please write a comment first.", "error");
+  if (!content && !selectedCommentMediaFile) {
+    showCommentsMessage("Write a comment or attach a photo/video first.", "error");
     return;
   }
 
@@ -4212,10 +4313,18 @@ async function submitComment() {
   const button = document.querySelector("#commentForm .btn-primary");
   if (button) {
     button.disabled = true;
-    button.textContent = "Posting...";
+    button.textContent = selectedCommentMediaFile ? "Uploading..." : "Posting...";
   }
 
   try {
+    let mediaUrl = null;
+    let mediaType = null;
+
+    if (selectedCommentMediaFile) {
+      mediaType = selectedCommentMediaType;
+      mediaUrl = await uploadCommentMedia(selectedCommentMediaFile);
+    }
+
     const { data, error } =
       await supabaseClient
         .from("post_comments")
@@ -4223,7 +4332,9 @@ async function submitComment() {
           post_id: String(currentCommentsPostId),
           user_id: currentUser.id,
           username: currentProfile.username,
-          content
+          content,
+          media_url: mediaUrl,
+          media_type: mediaType
         })
         .select()
         .single();
@@ -4236,9 +4347,13 @@ async function submitComment() {
 
     currentComments.push(data);
     input.value = "";
+    removeCommentMedia();
     clearCommentsMessage();
     renderComments();
     updateCommentCounter(currentCommentsPostId, currentComments.length);
+  } catch (error) {
+    console.error("Comment media/upload error:", error);
+    showCommentsMessage(error.message || "Could not post your comment.", "error");
   } finally {
     if (button) {
       button.disabled = false;
@@ -4247,6 +4362,104 @@ async function submitComment() {
   }
 }
 
+
+function handleCommentMedia(event) {
+  const input = event.target;
+  const file = input.files && input.files[0];
+
+  if (!file) return;
+
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+
+  if (!isImage && !isVideo) {
+    showCommentsMessage("Please choose an image or video.", "error");
+    input.value = "";
+    return;
+  }
+
+  const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+  if (file.size > maxSize) {
+    showCommentsMessage(
+      isVideo ? "Videos can be up to 50 MB." : "Images can be up to 10 MB.",
+      "error"
+    );
+    input.value = "";
+    return;
+  }
+
+  removeCommentMedia(false);
+  selectedCommentMediaFile = file;
+  selectedCommentMediaType = isVideo ? "video" : "image";
+  selectedCommentMediaPreviewUrl = URL.createObjectURL(file);
+
+  const preview = document.getElementById("commentMediaPreview");
+  const content = document.getElementById("commentMediaPreviewContent");
+
+  content.innerHTML = selectedCommentMediaType === "video"
+    ? `<video src="${escapeHtmlAttribute(selectedCommentMediaPreviewUrl)}" controls playsinline></video>`
+    : `<img src="${escapeHtmlAttribute(selectedCommentMediaPreviewUrl)}" alt="Selected comment attachment">`;
+
+  preview.style.display = "block";
+  clearCommentsMessage();
+}
+
+
+function removeCommentMedia(clearInput = true) {
+  if (selectedCommentMediaPreviewUrl) {
+    URL.revokeObjectURL(selectedCommentMediaPreviewUrl);
+  }
+
+  selectedCommentMediaFile = null;
+  selectedCommentMediaType = null;
+  selectedCommentMediaPreviewUrl = null;
+
+  const preview = document.getElementById("commentMediaPreview");
+  const content = document.getElementById("commentMediaPreviewContent");
+  const input = document.getElementById("commentMediaInput");
+
+  if (preview) preview.style.display = "none";
+  if (content) content.innerHTML = "";
+  if (clearInput && input) input.value = "";
+}
+
+
+async function uploadCommentMedia(file) {
+  if (!file || !currentUser) return null;
+
+  const originalName = file.name || "media";
+  const dotIndex = originalName.lastIndexOf(".");
+  const extension = dotIndex > -1
+    ? originalName.substring(dotIndex + 1).toLowerCase().replace(/[^a-z0-9]/g, "")
+    : "bin";
+
+  const uniqueName = `${Date.now()}-${crypto.randomUUID()}.${extension || "bin"}`;
+  const filePath = `${currentUser.id}/comments/${uniqueName}`;
+
+  const { error: uploadError } =
+    await supabaseClient.storage
+      .from("comment-media")
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+  if (uploadError) {
+    console.error("Comment media upload error:", uploadError);
+    throw new Error("Could not upload the image/video: " + uploadError.message);
+  }
+
+  const { data } =
+    supabaseClient.storage
+      .from("comment-media")
+      .getPublicUrl(filePath);
+
+  if (!data || !data.publicUrl) {
+    throw new Error("Could not create the comment media URL.");
+  }
+
+  return data.publicUrl;
+}
 
 async function deleteComment(commentId) {
 
@@ -4275,6 +4488,7 @@ async function deleteComment(commentId) {
 
 
 function closeCommentsModal() {
+  removeCommentMedia();
   closeModal("commentsModal");
   currentCommentsPostId = null;
   currentComments = [];
