@@ -1065,6 +1065,12 @@ margin-top: 15px;
 }
 .post-action.edit-post-action { color: #5865f2; }
 .post-action.edit-post-action:hover { background: #eef0ff; }
+/* =========================================================
+SAVED POSTS
+========================================================= */
+.post-action.saved-post-action.saved { color: #5865f2; }
+.post-action.saved-post-action:hover { background: #eef0ff; }
+.saved-posts-header { margin-bottom: 25px; }
 </style>
 </head>
 <body>
@@ -1077,6 +1083,7 @@ FriendHub
 <button onclick="showPage('home')">Home</button>
 <button onclick="showPage('discover')">Discover</button>
 <button onclick="showPage('profile')">Profile</button>
+<button onclick="showPage('saved')">Saved</button>
 <button onclick="showPage('about')">About</button>
 <button onclick="showPage('support')">Support</button>
 </nav>
@@ -1377,6 +1384,15 @@ style="margin-top:15px;"
 <div id="publicProfileContent"><div class="empty-state">Loading profile...</div></div>
 <h2 class="public-profile-posts-title">Posts</h2>
 <div id="publicProfilePosts" class="feed"></div>
+</div>
+</section>
+<section id="saved" class="page">
+<div class="container">
+<div class="page-header saved-posts-header">
+<h1>Saved Posts</h1>
+<p>Posts you save are private and only visible to you.</p>
+</div>
+<div id="savedPostsFeed" class="feed"></div>
 </div>
 </section>
 <section id="about" class="page">
@@ -1688,6 +1704,7 @@ const doubleTapLikeBusy = new Set();
 const recentDoubleTapTriggers = new Map();
 let authMode = "login";
 let posts = [];
+let savedPostIds = new Set();
 let samplePosts = [
 {
 id: "sample-1",
@@ -1798,6 +1815,14 @@ behavior: "smooth"
 });
 if (pageId === "discover") {
 loadPosts();
+}
+if (pageId === "saved") {
+if (!currentUser) {
+const savedFeed = document.getElementById("savedPostsFeed");
+if (savedFeed) savedFeed.innerHTML = '<div class="empty-state">Log in to see your saved posts.</div>';
+} else {
+loadPosts().then(() => renderSavedPosts());
+}
 }
 if (pageId === "profile") {
 updateProfileVisibility();
@@ -2088,6 +2113,7 @@ startNotificationRefresh();
 stopNotificationRefresh();
 clearNotifications();
 currentProfile = null;
+savedPostIds = new Set();
 posts = [...samplePosts];
 renderPosts();
 }
@@ -2154,6 +2180,7 @@ async function logout() {
 await supabaseClient.auth.signOut();
 currentUser = null;
 currentProfile = null;
+savedPostIds = new Set();
 stopNotificationRefresh();
 clearNotifications();
 const notificationPanel = document.getElementById("notificationPanel");
@@ -2690,6 +2717,7 @@ LOAD POSTS + LIKES FROM SUPABASE
 ========================================================= */
 async function loadPosts() {
 if (!currentUser) {
+savedPostIds = new Set();
 posts = [...samplePosts];
 renderPosts();
 return;
@@ -2724,6 +2752,17 @@ error: commentError
 } = await supabaseClient
 .from("post_comments")
 .select("post_id");
+const {
+data: savedData,
+error: savedError
+} = await supabaseClient
+.from("saved_posts")
+.select("post_id")
+.eq("user_id", currentUser.id);
+if (savedError) {
+console.error("Saved posts load error:", savedError);
+}
+savedPostIds = new Set((savedData || []).map(item => String(item.post_id)));
 if (commentError) {
 console.error("Comments load error:", commentError);
 }
@@ -2796,6 +2835,8 @@ comments:
 commentCounts[rowId] || 0,
 liked:
 userLikedPosts.has(rowId),
+saved:
+savedPostIds.has(rowId),
 userId:
 row.user_id,
 profilePhoto:
@@ -3098,6 +3139,9 @@ const likeText =
 post.liked
 ? " Liked"
 : " Like";
+const saved = savedPostIds.has(String(post.id));
+const savedClass = saved ? "saved" : "";
+const saveText = saved ? "Saved" : "Save";
 let avatarHtml;
 if (post.profilePhoto) {
 avatarHtml =
@@ -3146,6 +3190,12 @@ onclick="commentPost('${escapeHtmlAttribute(String(post.id))}')"
 >
 Comment${post.comments ? ` ${post.comments}` : ""}
 </button>
+<button
+class="post-action saved-post-action ${savedClass}"
+onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"
+>
+${saveText}
+</button>
 ${currentUser && !String(post.id).startsWith("sample-") && String(post.userId || "") === String(currentUser.id) ? `
 <button
 class="post-action edit-post-action"
@@ -3168,6 +3218,40 @@ Report
 </div>
 </article>
 `;
+}
+function renderSavedPosts() {
+const container = document.getElementById("savedPostsFeed");
+if (!container) return;
+if (!currentUser) {
+container.innerHTML = '<div class="empty-state">Log in to see your saved posts.</div>';
+return;
+}
+const savedPosts = posts.filter(post => !String(post.id).startsWith("sample-") && savedPostIds.has(String(post.id)));
+if (!savedPosts.length) {
+container.innerHTML = '<div class="empty-state">No saved posts yet.</div>';
+return;
+}
+container.innerHTML = savedPosts.map(post => renderPost(post)).join("");
+}
+async function toggleSavePost(id) {
+if (!currentUser) { openAuth("login"); return; }
+const postId = String(id || "");
+if (!postId || postId.startsWith("sample-")) return;
+const isSaved = savedPostIds.has(postId);
+if (isSaved) {
+const { error } = await supabaseClient.from("saved_posts").delete().eq("post_id", postId).eq("user_id", currentUser.id);
+if (error) { console.error("Remove saved post error:", error); alert("Could not remove this saved post."); return; }
+savedPostIds.delete(postId);
+} else {
+const { error } = await supabaseClient.from("saved_posts").insert({ post_id: postId, user_id: currentUser.id });
+if (error && error.code !== "23505") { console.error("Save post error:", error); alert("Could not save this post."); return; }
+savedPostIds.add(postId);
+}
+const post = posts.find(item => String(item.id) === postId);
+if (post) post.saved = savedPostIds.has(postId);
+renderPosts();
+renderSavedPosts();
+if (currentPublicProfileUserId) renderPublicProfilePosts(currentPublicProfileUserId, null);
 }
 function openEditPost(id) {
 if (!currentUser || !id || String(id).startsWith("sample-")) return;
