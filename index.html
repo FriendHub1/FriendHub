@@ -1098,6 +1098,7 @@
 
  .notification-item {
  display: flex;
+ cursor: pointer;
  gap: 11px;
  padding: 14px 16px;
  border-bottom: 1px solid #f0f2f6;
@@ -4086,7 +4087,7 @@ function renderPost(post) {
 
  return `
 
- <article class="post">
+ <article class="post" id="post-${escapeHtmlAttribute(String(post.id))}" data-post-id="${escapeHtmlAttribute(String(post.id))}">
 
  <div class="post-header">
 
@@ -4207,7 +4208,7 @@ function renderNotifications() {
  list.innerHTML = notifications.map(item => {
  const icon = item.type === "like" ? "" : "";
  return `
- <div class="notification-item ${item.is_read ? "" : "unread"}">
+ <div class="notification-item ${item.is_read ? "" : "unread"}" onclick="openNotification('${escapeHtmlAttribute(String(item.post_id || ""))}', '${escapeHtmlAttribute(String(item.type || ""))}')" role="button" tabindex="0">
  <div class="notification-icon">${icon}</div>
  <div class="notification-text">
  <div class="notification-message">${escapeHtml(item.message || "New notification")}</div>
@@ -4217,6 +4218,26 @@ function renderNotifications() {
  `;
  }).join("");
 }
+
+async function openNotification(postId, type) {
+ if (!postId) return;
+
+ const panel = document.getElementById("notificationPanel");
+ if (panel) panel.classList.remove("open");
+
+ showPage("discover");
+ await loadPosts();
+
+ const postElement = document.getElementById(`post-${String(postId)}`);
+ if (postElement) {
+ postElement.scrollIntoView({ behavior: "smooth", block: "center" });
+ }
+
+ if (type === "comment") {
+ await commentPost(String(postId));
+ }
+}
+
 
 async function toggleNotifications(event) {
  if (event) event.stopPropagation();
