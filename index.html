@@ -1103,6 +1103,106 @@ background: white;
 .notification-message { color: #263043; font-size: 14px; line-height: 1.4; }
 .notification-time { color: #8a94a6; font-size: 12px; margin-top: 4px; }
 .notification-empty { padding: 28px 18px; text-align: center; color: #7b8495; }
+.notification-panel {
+width: min(430px, calc(100vw - 24px));
+max-height: 560px;
+}
+.notification-panel-header {
+align-items: flex-start;
+}
+.notification-panel-subtitle {
+font-size: 12px;
+color: #8a94a6;
+margin-top: 2px;
+}
+.notification-tabs {
+display: flex;
+gap: 7px;
+padding: 10px 12px;
+overflow-x: auto;
+border-bottom: 1px solid #eef0f5;
+background: white;
+}
+.notification-tab {
+border: 1px solid #e1e5ee;
+background: white;
+border-radius: 999px;
+padding: 7px 11px;
+font-size: 12px;
+font-weight: 700;
+white-space: nowrap;
+cursor: pointer;
+color: #4b5565;
+}
+.notification-tab.active {
+background: #5865f2;
+border-color: #5865f2;
+color: white;
+}
+.notification-list { max-height: 430px; }
+.notification-item {
+align-items: center;
+padding: 13px 15px;
+}
+.notification-avatar {
+width: 44px;
+height: 44px;
+border-radius: 50%;
+background: #eef0ff;
+color: #5865f2;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: 800;
+overflow: hidden;
+flex: 0 0 44px;
+position: relative;
+}
+.notification-avatar img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+.notification-type-icon {
+position: absolute;
+right: -2px;
+bottom: -2px;
+width: 20px;
+height: 20px;
+border-radius: 50%;
+background: white;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 12px;
+box-shadow: 0 1px 5px rgba(0,0,0,.16);
+}
+.notification-unread-dot {
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background: #5865f2;
+flex: 0 0 8px;
+}
+.notification-mark-read {
+border: none;
+background: transparent;
+color: #5865f2;
+font-size: 12px;
+font-weight: 700;
+cursor: pointer;
+}
+@media (max-width: 600px) {
+.notification-panel {
+position: fixed;
+top: 70px;
+left: 10px;
+right: 10px;
+width: auto;
+max-height: calc(100vh - 90px);
+}
+.notification-list { max-height: calc(100vh - 190px); }
+}
 /* =========================================================
 EDIT POST
 ========================================================= */
@@ -2087,7 +2187,19 @@ FriendHub
 </button>
 <div class="notification-panel" id="notificationPanel">
 <div class="notification-panel-header">
-<div class="notification-panel-title">Notifications</div>
+<div>
+<div class="notification-panel-title" id="notificationPanelTitle">Notifications</div>
+<div class="notification-panel-subtitle" id="notificationPanelSubtitle">See what’s happening on FriendHub.</div>
+</div>
+<button class="notification-mark-read" type="button" onclick="markNotificationsAsRead(); event.stopPropagation();">Mark all read</button>
+</div>
+<div class="notification-tabs" id="notificationTabs">
+<button class="notification-tab active" type="button" data-notification-filter="all" onclick="setNotificationFilter('all', this); event.stopPropagation();">All</button>
+<button class="notification-tab" type="button" data-notification-filter="like" onclick="setNotificationFilter('like', this); event.stopPropagation();">❤️ Likes</button>
+<button class="notification-tab" type="button" data-notification-filter="comment" onclick="setNotificationFilter('comment', this); event.stopPropagation();">💬 Comments</button>
+<button class="notification-tab" type="button" data-notification-filter="follow" onclick="setNotificationFilter('follow', this); event.stopPropagation();">👤 Follows</button>
+<button class="notification-tab" type="button" data-notification-filter="mention" onclick="setNotificationFilter('mention', this); event.stopPropagation();">@ Mentions</button>
+<button class="notification-tab" type="button" data-notification-filter="dm" onclick="setNotificationFilter('dm', this); event.stopPropagation();">✉️ Messages</button>
 </div>
 <div class="notification-list" id="notificationList">
 <div class="notification-empty">No notifications yet.</div>
@@ -5995,6 +6107,23 @@ LIKES
 /* =========================================================
 NOTIFICATIONS
 ========================================================= */
+let currentNotificationFilter = "all";
+let notificationActorProfiles = new Map();
+
+function notificationTypeIcon(type) {
+if (type === "like") return "❤️";
+if (type === "comment") return "💬";
+if (type === "follow") return "👤";
+if (type === "mention") return "@";
+if (type === "dm") return "✉️";
+return "🔔";
+}
+function setNotificationFilter(filter, button) {
+currentNotificationFilter = filter || "all";
+document.querySelectorAll(".notification-tab").forEach(tab => tab.classList.remove("active"));
+if (button) button.classList.add("active");
+renderNotifications();
+}
 async function loadNotifications() {
 if (!currentUser) {
 clearNotifications();
@@ -6011,6 +6140,19 @@ console.error("Notifications load error:", error);
 return;
 }
 notifications = data || [];
+const actorIds = [...new Set(notifications.map(item => String(item.actor_id || "")).filter(Boolean))];
+notificationActorProfiles = new Map();
+if (actorIds.length) {
+const { data: actorProfiles, error: actorError } = await supabaseClient
+.from("friendhub_public_profiles")
+.select("user_id, username, profile_photo")
+.in("user_id", actorIds);
+if (actorError) {
+console.error("Notification actor profiles error:", actorError);
+} else {
+notificationActorProfiles = new Map((actorProfiles || []).map(profile => [String(profile.user_id), profile]));
+}
+}
 renderNotifications();
 }
 function renderNotifications() {
@@ -6020,12 +6162,23 @@ if (!list || !badge) return;
 const unreadCount = notifications.filter(item => !item.is_read).length;
 badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
 badge.style.display = unreadCount > 0 ? "block" : "none";
-if (!notifications.length) {
-list.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
+
+const visibleNotifications = currentNotificationFilter === "all"
+? notifications
+: notifications.filter(item => String(item.type || "") === currentNotificationFilter);
+
+if (!visibleNotifications.length) {
+list.innerHTML = `<div class="notification-empty">${currentNotificationFilter === "all" ? "No notifications yet." : "No notifications in this category yet."}</div>`;
 return;
 }
-list.innerHTML = notifications.map(item => {
-const icon = item.type === "mention" ? "@" : (item.type === "dm" ? "💬" : "");
+list.innerHTML = visibleNotifications.map(item => {
+const actor = notificationActorProfiles.get(String(item.actor_id || ""));
+const username = actor?.username || "";
+const initial = escapeHtml((username || "U").replace("@", "").charAt(0).toUpperCase() || "U");
+const avatar = actor?.profile_photo
+? `<img src="${escapeHtmlAttribute(actor.profile_photo)}" alt="Profile photo">`
+: initial;
+const icon = notificationTypeIcon(String(item.type || ""));
 const clickAction = item.type === "follow"
 ? `openFollowNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}')`
 : item.type === "dm"
@@ -6033,13 +6186,13 @@ const clickAction = item.type === "follow"
 : `openNotification('${escapeHtmlAttribute(String(item.post_id || ""))}', '${escapeHtmlAttribute(String(item.type || ""))}', '${escapeHtmlAttribute(String(item.actor_id || ""))}')`;
 return `
 <div class="notification-item ${item.is_read ? "" : "unread"}" onclick="${clickAction}" role="button" tabindex="0">
-<div class="notification-icon">${icon}</div>
+<div class="notification-avatar">${avatar}<span class="notification-type-icon">${icon}</span></div>
 <div class="notification-text">
 <div class="notification-message">${escapeHtml(item.message || "New notification")}</div>
 <div class="notification-time">${escapeHtml(formatPostTime(item.created_at))}</div>
 </div>
-</div>
-`;
+${item.is_read ? "" : '<span class="notification-unread-dot" aria-label="Unread"></span>'}
+</div>`;
 }).join("");
 }
 async function openDmNotification(actorId) {
@@ -6098,7 +6251,11 @@ const opening = !panel.classList.contains("open");
 panel.classList.toggle("open");
 if (opening) {
 await loadNotifications();
-await markNotificationsAsRead();
+setTimeout(() => {
+if (document.getElementById("notificationPanel")?.classList.contains("open")) {
+markNotificationsAsRead();
+}
+}, 1800);
 }
 }
 async function markNotificationsAsRead() {
