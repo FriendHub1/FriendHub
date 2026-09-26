@@ -4551,9 +4551,8 @@ async function openSharedPostFromUrl() {
 
   showPageWithoutReload("discover");
 
-  const target = posts.find(item => String(item.id) === String(postId));
-  if (!target) {
-    if (!currentUser && !String(postId).startsWith("sample-") && !sharedPostLoginPromptShown) {
+  if (!currentUser && !String(postId).startsWith("sample-")) {
+    if (!sharedPostLoginPromptShown) {
       sharedPostLoginPromptShown = true;
       const language = getFriendHubLanguage();
       alert(language === "es"
@@ -4564,14 +4563,36 @@ async function openSharedPostFromUrl() {
     return;
   }
 
+  /* A shared link can be processed before the async post query has finished.
+     Reload once the user is authenticated, then locate the requested post. */
+  let target = posts.find(item => String(item.id) === String(postId));
+
+  if (!target && currentUser && !String(postId).startsWith("sample-")) {
+    await loadPosts();
+    target = posts.find(item => String(item.id) === String(postId));
+  }
+
+  if (!target) return;
+
   renderPosts();
-  requestAnimationFrame(() => {
+
+  /* Give Discover/renderPosts time to place the card in the DOM. */
+  let attempts = 0;
+  const focusSharedPost = () => {
     const element = document.getElementById(`post-${CSS.escape(String(postId))}`);
+    if (!element && attempts < 12) {
+      attempts += 1;
+      setTimeout(focusSharedPost, 100);
+      return;
+    }
     if (!element) return;
+
     element.scrollIntoView({ behavior: "smooth", block: "center" });
     element.classList.add("shared-post-highlight");
     setTimeout(() => element.classList.remove("shared-post-highlight"), 2200);
-  });
+  };
+
+  requestAnimationFrame(focusSharedPost);
 }
 
 function escapeHtml(value) {
