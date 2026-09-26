@@ -1370,6 +1370,34 @@ html[data-theme="night"] #home .feature-card[onclick="openDiscoverAll()"]:focus-
   box-shadow: 0 0 18px rgba(24,200,255,.14), 0 0 26px rgba(139,92,255,.18);
 }
 
+
+/* BLOCK USER */
+.public-profile-block {
+  margin-top: 10px;
+  border: 1px solid rgba(239,68,68,.45);
+  background: rgba(239,68,68,.07);
+  color: #b42318;
+}
+.public-profile-block:hover {
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.72);
+}
+.public-profile-block.blocked {
+  border-color: rgba(24,200,255,.42);
+  background: rgba(24,200,255,.08);
+  color: #0b6f9f;
+}
+html[data-theme="night"] .public-profile-block {
+  color: #ff9aab;
+  border-color: rgba(255,74,116,.48);
+  background: rgba(255,74,116,.08);
+}
+html[data-theme="night"] .public-profile-block.blocked {
+  color: #ffffff;
+  border-color: rgba(139,92,255,.58);
+  background: rgba(139,92,255,.12);
+}
+
 </style>
 </head>
 <body>
@@ -2022,6 +2050,7 @@ let selectedProfilePhoto = null;
 let currentCommentsPostId = null;
 let currentComments = [];
 let currentPublicProfileUserId = null;
+let blockedUserIds = new Set();
 let currentEditingPostId = null;
 let selectedCommentMediaFile = null;
 let selectedCommentMediaType = null;
@@ -3051,9 +3080,19 @@ LOAD POSTS + LIKES FROM SUPABASE
 async function loadPosts() {
 if (!currentUser) {
 savedPostIds = new Set();
+blockedUserIds = new Set();
 posts = [...samplePosts];
 renderPosts();
 return;
+}
+const { data: blockData, error: blockError } = await supabaseClient
+.from("user_blocks")
+.select("blocked_id")
+.eq("blocker_id", currentUser.id);
+if (blockError) {
+console.error("Blocked users load error:", blockError);
+} else {
+blockedUserIds = new Set((blockData || []).map(item => String(item.blocked_id)));
 }
 const {
 data: postData,
@@ -3182,7 +3221,7 @@ row.edited_at || null
 });
 posts =
 [
-...databasePosts,
+...databasePosts.filter(post => !blockedUserIds.has(String(post.userId || ""))),
 ...samplePosts
 ];
 renderPosts();
@@ -3736,20 +3775,25 @@ console.error("Public profile load error:", error);
 if (content) content.innerHTML = '<div class="empty-state">This profile could not be loaded.</div>';
 return;
 }
-const [followersResult, followingResult, myFollowResult] = await Promise.all([
+const [followersResult, followingResult, myFollowResult, myBlockResult] = await Promise.all([
 supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("following_id", String(userId)),
 supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("follower_id", String(userId)),
 String(currentUser.id) === String(userId)
 ? Promise.resolve({ data: null, error: null })
-: supabaseClient.from("user_follows").select("id").eq("follower_id", currentUser.id).eq("following_id", String(userId)).maybeSingle()
+: supabaseClient.from("user_follows").select("id").eq("follower_id", currentUser.id).eq("following_id", String(userId)).maybeSingle(),
+String(currentUser.id) === String(userId)
+? Promise.resolve({ data: null, error: null })
+: supabaseClient.from("user_blocks").select("id").eq("blocker_id", currentUser.id).eq("blocked_id", String(userId)).maybeSingle()
 ]);
 if (followersResult.error) console.error("Followers count error:", followersResult.error);
 if (followingResult.error) console.error("Following count error:", followingResult.error);
 if (myFollowResult.error) console.error("Follow status error:", myFollowResult.error);
+if (myBlockResult.error) console.error("Block status error:", myBlockResult.error);
 const followersCount = followersResult.count || 0;
 const followingCount = followingResult.count || 0;
 const isOwnProfile = String(currentUser.id) === String(userId);
 const isFollowing = !!myFollowResult.data;
+const isBlocked = !!myBlockResult.data;
 const username = profile.username || "@User";
 const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
 const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : initial;
@@ -3763,6 +3807,7 @@ content.innerHTML = `
 <button class="public-profile-stat" onclick="openFollowList('following', '${escapeHtmlAttribute(String(userId))}')"><strong>${followingCount}</strong>Following</button>
 </div>
 ${isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary public-profile-follow${isFollowing ? " following" : ""}" onclick="toggleFollow('${escapeHtmlAttribute(String(userId))}')">${isFollowing ? "Following" : "Follow"}</button>`}
+${isOwnProfile ? "" : `<button id="publicBlockButton" class="btn public-profile-block${isBlocked ? " blocked" : ""}" onclick="toggleBlockUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">${isBlocked ? "Unblock" : "Block"}</button>`}
 <div class="public-profile-details">
 <div class="public-profile-detail"><strong>Languages</strong><span>${escapeHtml(formatPublicProfileList(profile.languages))}</span></div>
 <div class="public-profile-detail"><strong>Interests</strong><span>${escapeHtml(formatPublicProfileList(profile.interests))}</span></div>
@@ -3771,7 +3816,11 @@ ${isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary pu
 </div>`;
 await loadPosts();
 showPageWithoutReload("publicProfile");
+if (isBlocked) {
+if (postsContainer) postsContainer.innerHTML = '<div class="empty-state">You blocked this user. Unblock them to see their posts.</div>';
+} else {
 renderPublicProfilePosts(String(userId), profile.profile_photo || null);
+}
 }
 async function toggleFollow(userId) {
 if (!currentUser || !userId || String(currentUser.id) === String(userId)) return;
@@ -3833,6 +3882,45 @@ const page = document.getElementById(pageId);
 if (page) page.classList.add("active");
 window.scrollTo({ top:0, behavior:"smooth" });
 }
+async function toggleBlockUser(userId, username) {
+if (!currentUser || !userId || String(currentUser.id) === String(userId)) return;
+
+const language = getFriendHubLanguage();
+const currentlyBlocked = blockedUserIds.has(String(userId));
+const displayName = username || "@User";
+
+if (!currentlyBlocked) {
+const confirmed = confirm(language === "es"
+? `¿Bloquear a ${displayName}? Sus publicaciones dejarán de aparecer en tu Discover.`
+: `Block ${displayName}? Their posts will stop appearing in your Discover.`);
+if (!confirmed) return;
+
+const { error } = await supabaseClient.from("user_blocks").insert({
+blocker_id: currentUser.id,
+blocked_id: String(userId)
+});
+if (error) {
+console.error("Block user error:", error);
+alert(language === "es" ? "No se pudo bloquear a este usuario." : "Could not block this user.");
+return;
+}
+blockedUserIds.add(String(userId));
+} else {
+const { error } = await supabaseClient.from("user_blocks").delete()
+.eq("blocker_id", currentUser.id)
+.eq("blocked_id", String(userId));
+if (error) {
+console.error("Unblock user error:", error);
+alert(language === "es" ? "No se pudo desbloquear a este usuario." : "Could not unblock this user.");
+return;
+}
+blockedUserIds.delete(String(userId));
+}
+
+await loadPosts();
+await openPublicProfile(String(userId));
+}
+
 function renderPublicProfilePosts(userId, profilePhoto) {
 const container = document.getElementById("publicProfilePosts");
 if (!container) return;
@@ -4942,7 +5030,7 @@ const translations = {
 "New Password":"Nueva contraseña", "Confirm New Password":"Confirmar nueva contraseña", "Update Password":"Actualizar contraseña",
 "Comments":"Comentarios", "Join the conversation.":"Únete a la conversación.", "Edit Post":"Editar publicación", "Update the text of your post.":"Actualiza el texto de tu publicación.",
 "Cancel":"Cancelar", "Save":"Guardar", "Followers":"Seguidores", "Following":"Siguiendo", "FriendHub connections":"Conexiones de FriendHub",
-"Follow":"Seguir", "Unfollow":"Dejar de seguir", "Like":"Me gusta", "Comment":"Comentar", "Share":"Compartir", "Report":"Reportar", "Reply":"Responder",
+"Follow":"Seguir", "Unfollow":"Dejar de seguir", "Block":"Bloquear", "Unblock":"Desbloquear", "Like":"Me gusta", "Comment":"Comentar", "Share":"Compartir", "Report":"Reportar", "Reply":"Responder",
 "Edited":"Editado", "Delete":"Eliminar", "No posts yet.":"Aún no hay publicaciones.", "No saved posts yet.":"Aún no tienes publicaciones guardadas.",
 "No followers yet.":"Aún no hay seguidores.", "Not following anyone yet.":"Aún no sigue a nadie.", "Profile not found.":"Perfil no encontrado.",
 "Public profile":"Perfil público", "Looking for":"Busca", "Remove":"Eliminar", "Replying to":"Respondiendo a",
