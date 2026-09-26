@@ -4899,9 +4899,7 @@ setDmTypingIndicator(false);
 })
 .subscribe((status) => {
 if (status !== "SUBSCRIBED") {
-console.warn("DM typing channel status:", status);
-}
-});
+console.warn("DM typing channel status:", status, "channel:", channelName, "socket:", supabaseClient?.realtime?.isConnected?.());
 
 const input = document.getElementById("dmInput");
 if (input && !dmTypingInputBound) {
