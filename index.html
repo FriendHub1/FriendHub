@@ -1281,6 +1281,32 @@ html[data-theme="night"] .option-btn.selected {
 /* SHARE FRIENDHUB / INVITE FRIENDS */
 .friendhub-invite-btn {
   margin-left: 10px;
+  background: rgba(255,255,255,.72);
+  color: #0b6f9f;
+  border: 1px solid rgba(24,200,255,.42);
+  box-shadow: 0 8px 24px rgba(24,200,255,.10);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.friendhub-invite-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(24,200,255,.72);
+  box-shadow: 0 10px 28px rgba(24,200,255,.20);
+}
+html[data-theme="night"] .friendhub-invite-btn {
+  background: rgba(17,24,50,.68);
+  color: #ffffff;
+  border-color: rgba(139,92,255,.60);
+  box-shadow:
+    0 0 16px rgba(24,200,255,.12),
+    0 0 22px rgba(139,92,255,.16);
+}
+html[data-theme="night"] .friendhub-invite-btn:hover {
+  border-color: rgba(255,63,209,.68);
+  box-shadow:
+    0 0 18px rgba(24,200,255,.20),
+    0 0 26px rgba(139,92,255,.24),
+    0 0 30px rgba(255,63,209,.14);
 }
 @media (max-width: 640px) {
   .friendhub-invite-btn {
