@@ -472,19 +472,13 @@ font-weight: 700;
 margin-bottom: 7px;
 }
 .form-group input,
-.form-group select,
-.form-group textarea {
+.form-group select {
 width: 100%;
 border: 1px solid #dfe3eb;
 border-radius: 10px;
 padding: 12px;
 outline: none;
 background: white;
-}
-.form-group textarea {
-min-height: 96px;
-resize: vertical;
-font: inherit;
 }
 .help-text {
 color: #8a94a6;
@@ -945,8 +939,7 @@ PUBLIC PROFILE
 .public-profile-avatar { width:110px; height:110px; border-radius:50%; margin:0 auto 12px; background:#eef0ff; color:#5865f2; display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:800; overflow:hidden; }
 .public-profile-avatar img { width:100%; height:100%; object-fit:cover; }
 .public-profile-username { font-size:28px; font-weight:800; margin-bottom:6px; }
-.public-profile-country { color:#667085; margin-bottom:10px; }
-.public-profile-bio { color:#475467; max-width:620px; margin:0 auto 18px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
+.public-profile-country { color:#667085; margin-bottom:18px; }
 .public-profile-details { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; text-align:left; margin-top:20px; }
 .public-profile-detail { background:#f8f9fc; border-radius:12px; padding:14px; }
 .public-profile-detail strong { display:block; margin-bottom:5px; color:#263043; }
@@ -1595,6 +1588,23 @@ html[data-theme="night"] .public-profile-message {
 }
 .dm-back-btn { padding: 9px 13px; }
 .dm-chat-username { font-weight: 800; font-size: 1.05rem; }
+.dm-typing-indicator {
+  min-height: 16px;
+  margin-top: 2px;
+  font-size: .76rem;
+  font-weight: 700;
+  color: var(--muted, #8a8f98);
+  opacity: .95;
+}
+.dm-typing-indicator::after {
+  content: " •••";
+  letter-spacing: 2px;
+  animation: friendhubTypingDots 1.2s ease-in-out infinite;
+}
+@keyframes friendhubTypingDots {
+  0%, 100% { opacity: .35; }
+  50% { opacity: 1; }
+}
 .dm-chat-private { font-size: .82rem; opacity: .65; margin-top: 2px; }
 .dm-messages {
   height: min(58vh, 560px);
@@ -2121,21 +2131,6 @@ placeholder="Your country"
 >
 </div>
 <div class="form-group">
-<label for="bio">
-Bio
-</label>
-<textarea
-id="bio"
-maxlength="160"
-rows="3"
-placeholder="Tell people a little about yourself..."
-oninput="updateBioCount()"
-></textarea>
-<div class="help-text">
-<span id="bioCount">0</span> / 160
-</div>
-</div>
-<div class="form-group">
 <label>
 Languages
 </label>
@@ -2198,6 +2193,7 @@ style="margin-top:15px;"
 <div>
 <div id="dmChatUsername" class="dm-chat-username">@User</div>
 <div id="dmChatPresence" class="friendhub-presence friendhub-presence-dm">—</div>
+<div id="dmTypingIndicator" class="dm-typing-indicator" aria-live="polite" style="display:none;"></div>
 <div class="dm-chat-private">Private conversation</div>
 </div>
 </div>
@@ -2539,6 +2535,11 @@ let dmChatLoadInProgress = false;
 let dmLastRenderedSignature = "";
 let dmSeenMessageIds = new Set();
 let dmSelectedAttachment = null;
+let dmTypingChannel = null;
+let dmTypingStopTimer = null;
+let dmTypingClearTimer = null;
+let dmTypingLastSentAt = 0;
+let dmTypingInputBound = false;
 let currentEditingPostId = null;
 let selectedCommentMediaFile = null;
 let selectedCommentMediaType = null;
@@ -3144,9 +3145,6 @@ document.getElementById("age").value =
 data.age || "";
 document.getElementById("country").value =
 data.country || "";
-const bioInput = document.getElementById("bio");
-if (bioInput) bioInput.value = data.bio || "";
-updateBioCount();
 let languages = [];
 let interests = [];
 let lookingFor = [];
@@ -3193,11 +3191,6 @@ data.username,
 data.profile_photo
 );
 }
-function updateBioCount() {
-const bioInput = document.getElementById("bio");
-const bioCount = document.getElementById("bioCount");
-if (bioCount) bioCount.textContent = String((bioInput?.value || "").length);
-}
 function clearProfileForm() {
 document.getElementById("username").value =
 "";
@@ -3205,9 +3198,6 @@ document.getElementById("age").value =
 "";
 document.getElementById("country").value =
 "";
-const bioInput = document.getElementById("bio");
-if (bioInput) bioInput.value = "";
-updateBioCount();
 setSelectedOptions(
 "languages",
 []
@@ -3267,14 +3257,6 @@ const country =
 document.getElementById("country")
 .value
 .trim();
-const bio = (document.getElementById("bio")?.value || "").trim();
-if (bio.length > 160) {
-showProfileMessage(
-"Bio must be 160 characters or fewer.",
-"error"
-);
-return;
-}
 const languages =
 getSelectedOptions("languages");
 const interests =
@@ -3316,7 +3298,6 @@ currentUser.id,
 username,
 age,
 country,
-bio,
 languages:
 JSON.stringify(languages),
 interests:
@@ -4364,7 +4345,7 @@ if (content) content.innerHTML = '<div class="empty-state">Loading profile...</d
 if (postsContainer) postsContainer.innerHTML = '';
 const { data: profile, error } = await supabaseClient
 .from("friendhub_public_profiles")
-.select("user_id, username, country, languages, interests, looking_for, profile_photo, bio")
+.select("user_id, username, country, languages, interests, looking_for, profile_photo")
 .eq("user_id", String(userId))
 .maybeSingle();
 if (error || !profile) {
@@ -4402,7 +4383,6 @@ content.innerHTML = `
 <div class="public-profile-username">${escapeHtml(username)}</div>
 ${renderFriendHubPresence(presenceResult.data?.last_active_at || null, "friendhub-presence-profile")}
 <div class="public-profile-country">${escapeHtml(profile.country || "Country not added")}</div>
-${profile.bio ? `<div class="public-profile-bio">${escapeHtml(profile.bio)}</div>` : ""}
 <div class="public-profile-social">
 <button class="public-profile-stat" onclick="openFollowList('followers', '${escapeHtmlAttribute(String(userId))}')"><strong>${followersCount}</strong>Followers</button>
 <button class="public-profile-stat" onclick="openFollowList('following', '${escapeHtmlAttribute(String(userId))}')"><strong>${followingCount}</strong>Following</button>
@@ -4805,6 +4785,168 @@ ${unreadBadge}
 }).join("");
 }
 
+
+function getDmTypingChannelName() {
+if (!currentUser || !currentDmUserId) return null;
+const ids = [String(currentUser.id), String(currentDmUserId)].sort();
+return `friendhub-dm-typing-${ids[0]}-${ids[1]}`;
+}
+
+function setDmTypingIndicator(isTyping) {
+const indicator = document.getElementById("dmTypingIndicator");
+if (!indicator) return;
+if (!isTyping) {
+indicator.style.display = "none";
+indicator.textContent = "";
+return;
+}
+const language = getFriendHubLanguage();
+indicator.textContent = language === "es"
+? `${currentDmUsername || "@User"} está escribiendo`
+: `${currentDmUsername || "@User"} is typing`;
+indicator.style.display = "block";
+}
+
+async function stopDmTypingBroadcast() {
+if (dmTypingStopTimer) {
+clearTimeout(dmTypingStopTimer);
+dmTypingStopTimer = null;
+}
+if (!dmTypingChannel || !currentUser || !currentDmUserId) return;
+try {
+await dmTypingChannel.send({
+type: "broadcast",
+event: "typing",
+payload: {
+sender_id: String(currentUser.id),
+typing: false
+}
+});
+} catch (error) {
+console.error("DM typing stop error:", error);
+}
+}
+
+function scheduleDmTypingStop() {
+if (dmTypingStopTimer) clearTimeout(dmTypingStopTimer);
+dmTypingStopTimer = setTimeout(() => {
+stopDmTypingBroadcast();
+}, 1800);
+}
+
+async function broadcastDmTyping(isTyping) {
+if (!dmTypingChannel || !currentUser || !currentDmUserId) return;
+try {
+await dmTypingChannel.send({
+type: "broadcast",
+event: "typing",
+payload: {
+sender_id: String(currentUser.id),
+typing: !!isTyping
+}
+});
+} catch (error) {
+console.error("DM typing broadcast error:", error);
+}
+}
+
+function handleDmTypingInput() {
+if (!currentUser || !currentDmUserId) return;
+const input = document.getElementById("dmInput");
+if (!input) return;
+
+if (!input.value.trim()) {
+stopDmTypingBroadcast();
+return;
+}
+
+const now = Date.now();
+if (now - dmTypingLastSentAt >= 1000) {
+dmTypingLastSentAt = now;
+broadcastDmTyping(true);
+}
+scheduleDmTypingStop();
+}
+
+async function startDmTyping() {
+if (!currentUser || !currentDmUserId) return;
+
+await stopDmTyping();
+
+const channelName = getDmTypingChannelName();
+if (!channelName) return;
+
+dmTypingChannel = supabaseClient.channel(channelName);
+
+dmTypingChannel
+.on("broadcast", { event: "typing" }, ({ payload }) => {
+const senderId = String(payload?.sender_id || "");
+if (!currentDmUserId || senderId !== String(currentDmUserId)) return;
+
+if (payload?.typing) {
+setDmTypingIndicator(true);
+if (dmTypingClearTimer) clearTimeout(dmTypingClearTimer);
+dmTypingClearTimer = setTimeout(() => {
+setDmTypingIndicator(false);
+}, 2200);
+} else {
+if (dmTypingClearTimer) {
+clearTimeout(dmTypingClearTimer);
+dmTypingClearTimer = null;
+}
+setDmTypingIndicator(false);
+}
+})
+.subscribe((status) => {
+if (status !== "SUBSCRIBED") {
+console.warn("DM typing channel status:", status);
+}
+});
+
+const input = document.getElementById("dmInput");
+if (input && !dmTypingInputBound) {
+input.addEventListener("input", handleDmTypingInput);
+dmTypingInputBound = true;
+}
+}
+
+async function stopDmTyping() {
+if (dmTypingStopTimer) {
+clearTimeout(dmTypingStopTimer);
+dmTypingStopTimer = null;
+}
+if (dmTypingClearTimer) {
+clearTimeout(dmTypingClearTimer);
+dmTypingClearTimer = null;
+}
+setDmTypingIndicator(false);
+
+const channel = dmTypingChannel;
+dmTypingChannel = null;
+
+if (channel && currentUser && currentDmUserId) {
+try {
+await channel.send({
+type: "broadcast",
+event: "typing",
+payload: {
+sender_id: String(currentUser.id),
+typing: false
+}
+});
+} catch (error) {
+console.error("DM typing cleanup error:", error);
+}
+try {
+await supabaseClient.removeChannel(channel);
+} catch (error) {
+console.error("DM typing channel cleanup error:", error);
+}
+}
+
+dmTypingLastSentAt = 0;
+}
+
 async function openDirectChat(userId, username, profilePhoto = "") {
 if (!currentUser) {
 openAuth("login");
@@ -4835,6 +4977,7 @@ dmLastRenderedSignature = "";
 dmChatLoadInProgress = false;
 await loadDmPresence();
 await loadDirectMessages();
+await startDmTyping();
 startDmPresenceRefresh();
 startDmChatRefresh();
 }
@@ -4842,6 +4985,7 @@ startDmChatRefresh();
 async function closeDirectChat() {
 stopDmPresenceRefresh();
 stopDmChatRefresh();
+await stopDmTyping();
 dmSeenMessageIds = new Set();
 clearDmAttachment();
 currentDmUserId = null;
@@ -5142,6 +5286,8 @@ type === "video"
 async function sendDirectMessage(event) {
 if (event) event.preventDefault();
 if (!currentUser || !currentDmUserId) return;
+
+await stopDmTyping();
 
 const input = document.getElementById("dmInput");
 const button = document.getElementById("dmSendButton");
@@ -6374,7 +6520,7 @@ const translations = {
 "Change profile photo":"Cambiar foto de perfil", "Username":"Nombre de usuario",
 "Your username is public. You can change it once every 30 days.":"Tu nombre de usuario es público. Puedes cambiarlo una vez cada 30 días.",
 "Age":"Edad", "Your exact age is private and is not displayed publicly.":"Tu edad exacta es privada y no se muestra públicamente.",
-"Country":"País", "Bio":"Biografía", "Tell people a little about yourself...":"Cuéntales a los demás un poco sobre ti...", "Languages":"Idiomas", "Interests":"Intereses", "What are you looking for?":"¿Qué estás buscando?",
+"Country":"País", "Languages":"Idiomas", "Interests":"Intereses", "What are you looking for?":"¿Qué estás buscando?",
 "Save Profile":"Guardar perfil", "Reset":"Restablecer", "Loading profile...":"Cargando perfil...", "Posts":"Publicaciones",
 "Saved Posts":"Publicaciones guardadas", "Posts you save are private and only visible to you.":"Las publicaciones que guardas son privadas y solo tú puedes verlas.",
 "About FriendHub":"Acerca de FriendHub", "A simple place to discover people and communities.":"Un lugar sencillo para descubrir personas y comunidades.",
