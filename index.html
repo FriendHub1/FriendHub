@@ -4732,7 +4732,17 @@ return;
 }
 
 section.style.display = "";
-list.innerHTML = '<div class="empty-state">Loading suggestions...</div>';
+const suggestionLoadToken = String(Date.now()) + Math.random();
+list.dataset.loadToken = suggestionLoadToken;
+list.innerHTML = `<div class="empty-state">${getFriendHubLanguage() === "es" ? "Buscando sugerencias..." : "Looking for suggestions..."}</div>`;
+
+/* Do not leave a permanent loading box if a network request stalls. */
+setTimeout(() => {
+if (list.dataset.loadToken === suggestionLoadToken && list.querySelector(".empty-state")) {
+section.style.display = "none";
+list.innerHTML = "";
+}
+}, 5000);
 
 try {
 const myId = String(currentUser.id);
@@ -4808,12 +4818,14 @@ profiles.sort((a, b) => (mutualCounts.get(String(b.user_id)) || 0) - (mutualCoun
 profiles = profiles.slice(0, 6);
 
 if (!profiles.length) {
+if (list.dataset.loadToken === suggestionLoadToken) list.dataset.loadToken = "";
 section.style.display = "none";
 list.innerHTML = "";
 return;
 }
 
 const isSpanish = getFriendHubLanguage() === "es";
+if (list.dataset.loadToken === suggestionLoadToken) list.dataset.loadToken = "";
 list.innerHTML = profiles.map(profile => {
 const id = String(profile.user_id);
 const username = profile.username || "@User";
@@ -4839,6 +4851,7 @@ return `<div class="friend-suggestion-card" data-suggestion-user="${escapeHtmlAt
 }).join("");
 } catch (error) {
 console.error("Friend suggestions error:", error);
+if (list.dataset.loadToken === suggestionLoadToken) list.dataset.loadToken = "";
 section.style.display = "none";
 list.innerHTML = "";
 }
