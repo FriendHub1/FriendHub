@@ -6635,152 +6635,66 @@ const willOpen = !picker.classList.contains("show");
 closeReactionPickers();
 if (willOpen) picker.classList.add("show");
 }
-async function setPostReaction(id, reaction) {
-if (!currentUser) { openAuth("login"); return; }
-if (String(id).startsWith("sample-")) return;
-const allowed = ["❤️", "😂", "😮", "😢", "🔥"];
-if (!allowed.includes(reaction)) return;
-const { data: existing, error: checkError } = await supabaseClient
-.from("post_likes")
-.select("id, reaction")
-.eq("post_id", id)
-.eq("user_id", currentUser.id)
-.maybeSingle();
-if (checkError) { console.error("Reaction check error:", checkError); alert("Could not save your reaction."); return; }
-let error = null;
-if (existing && (existing.reaction || "❤️") === reaction) {
-({ error } = await supabaseClient.from("post_likes").delete().eq("id", existing.id));
-} else if (existing) {
-({ error } = await supabaseClient.from("post_likes").update({ reaction }).eq("id", existing.id));
-} else {
-({ error } = await supabaseClient.from("post_likes").insert({ post_id: id, user_id: currentUser.id, reaction }));
-}
-if (error) { console.error("Reaction save error:", error); alert("Could not save your reaction."); return; }
-closeReactionPickers();
-await loadPosts();
+async function setPostReaction(postId, reaction) {
+  if (!currentUser) {
+    openAuthModal("login");
+    return;
+  }
+
+  const allowedReactions = ["❤️", "😂", "😮", "😢", "🔥"];
+  if (!allowedReactions.includes(reaction)) return;
+
+  try {
+    const { data: existingRows, error: existingError } = await supabaseClient
+      .from("post_likes")
+      .select("id, reaction")
+      .eq("post_id", postId)
+      .eq("user_id", currentUser.id);
+
+    if (existingError) throw existingError;
+
+    const existing = Array.isArray(existingRows) && existingRows.length
+      ? existingRows[0]
+      : null;
+
+    // Always remove every existing reaction from this user on this post.
+    // This also cleans up duplicate rows that may have been created before this fix.
+    if (Array.isArray(existingRows) && existingRows.length) {
+      const { error: deleteError } = await supabaseClient
+        .from("post_likes")
+        .delete()
+        .eq("post_id", postId)
+        .eq("user_id", currentUser.id);
+
+      if (deleteError) throw deleteError;
+    }
+
+    // Tapping the same reaction again toggles it off.
+    if (!existing || existing.reaction !== reaction) {
+      const { error: insertError } = await supabaseClient
+        .from("post_likes")
+        .insert({
+          post_id: postId,
+          user_id: currentUser.id,
+          reaction
+        });
+
+      if (insertError) throw insertError;
+    }
+
+    closePostReactionPickers();
+    await loadPosts();
+  } catch (error) {
+    console.error("Could not update reaction:", error);
+    alert("Could not update your reaction. Please try again.");
+  }
 }
 document.addEventListener("click", event => {
 if (!event.target.closest(".post-reaction-wrap")) closeReactionPickers();
 });
 
 async function toggleLike(id) {
-if (!currentUser) {
-openAuth("login");
-return;
-}
-if (
-String(id).startsWith("sample-")
-) {
-return;
-}
-const post =
-posts.find(
-item =>
-String(item.id) ===
-String(id)
-);
-if (!post) {
-return;
-}
-/*
-Always check Supabase first.
-This keeps the button synchronized with the
-real Like saved in the database, even if the
-page state is stale or the user has logged in
-from another device/browser.
-*/
-const {
-data: existingLike,
-error: checkError
-} =
-await supabaseClient
-.from("post_likes")
-.select("id")
-.eq("post_id", id)
-.eq("user_id", currentUser.id)
-.maybeSingle();
-if (checkError) {
-console.error(
-"Check like error:",
-checkError
-);
-alert(
-"Could not check your Like."
-);
-return;
-}
-if (existingLike) {
-/*
-The Like already exists.
-Clicking again removes it, just like
-a normal social network.
-*/
-const {
-error
-} =
-await supabaseClient
-.from("post_likes")
-.delete()
-.eq("post_id", id)
-.eq("user_id", currentUser.id);
-if (error) {
-console.error(
-"Remove like error:",
-error
-);
-alert(
-"Could not remove your Like."
-);
-return;
-}
-} else {
-/*
-No Like exists yet, so create one.
-*/
-const {
-error
-} =
-await supabaseClient
-.from("post_likes")
-.insert({
-post_id:
-id,
-user_id:
-currentUser.id,
-reaction: "❤️"
-});
-if (error) {
-/*
-PostgreSQL code 23505 / HTTP 409 means
-the Like was already created by another
-request, for example from a double click.
-We do not show an error to the user.
-*/
-if (
-error.code === "23505" ||
-error.status === 409
-) {
-console.warn(
-"Like already exists. Reloading Likes."
-);
-} else {
-console.error(
-"Add like error:",
-error
-);
-alert(
-"Could not add your Like."
-);
-return;
-}
-}
-}
-/*
-Reload everything from Supabase so the
-Like count and heart state are always
-based on the real database.
-*/
-await loadPosts();
+  return setPostReaction(id, "❤️");
 }
 async function commentPost(id) {
 if (!currentUser) {
