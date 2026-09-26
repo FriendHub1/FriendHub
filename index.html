@@ -3452,8 +3452,11 @@ return;
 }
 list.innerHTML = notifications.map(item => {
 const icon = item.type === "like" ? "" : "";
+const clickAction = item.type === "follow"
+? `openFollowNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}')`
+: `openNotification('${escapeHtmlAttribute(String(item.post_id || ""))}', '${escapeHtmlAttribute(String(item.type || ""))}', '${escapeHtmlAttribute(String(item.actor_id || ""))}')`;
 return `
-<div class="notification-item ${item.is_read ? "" : "unread"}" onclick="openNotification('${escapeHtmlAttribute(String(item.post_id || ""))}', '${escapeHtmlAttribute(String(item.type || ""))}', '${escapeHtmlAttribute(String(item.actor_id || ""))}')" role="button" tabindex="0">
+<div class="notification-item ${item.is_read ? "" : "unread"}" onclick="${clickAction}" role="button" tabindex="0">
 <div class="notification-icon">${icon}</div>
 <div class="notification-text">
 <div class="notification-message">${escapeHtml(item.message || "New notification")}</div>
@@ -3463,16 +3466,20 @@ return `
 `;
 }).join("");
 }
+async function openFollowNotification(actorId) {
+const panel = document.getElementById("notificationPanel");
+if (panel) panel.classList.remove("open");
+if (!actorId) return;
+await openPublicProfile(String(actorId));
+}
 async function openNotification(postId, type, actorId) {
 const panel = document.getElementById("notificationPanel");
 if (panel) panel.classList.remove("open");
-
 if (type === "follow") {
 if (!actorId) return;
 await openPublicProfile(String(actorId));
 return;
 }
-
 if (!postId) return;
 showPage("discover");
 await loadPosts();
