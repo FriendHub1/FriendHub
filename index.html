@@ -3638,7 +3638,7 @@ class="comment-like${comment.liked ? " liked" : ""}"
 onclick="toggleCommentLike('${escapeHtmlAttribute(String(comment.id))}')"
 aria-label="${comment.liked ? "Remove Like from comment" : "Like comment"}"
 >
-${comment.liked ? "" : ""} ${Number(comment.likesCount || 0)}
+${comment.liked ? "&#10084;&#65039;" : "&#9825;"} ${Number(comment.likesCount || 0)}
 </button>
 </div>
 </div>
