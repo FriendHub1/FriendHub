@@ -1706,94 +1706,55 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
 }
 
 
-/* FriendHub DM compact chat + clearer read receipts */
+
+/* FriendHub DM final layout cleanup */
 .dm-messages {
-  justify-content: flex-start;
-  align-content: flex-start;
+  height: min(58vh, 560px);
+  min-height: 320px;
+  overflow-y: auto;
+  padding: 18px;
+  display: block;
 }
 .dm-row {
-  flex: 0 0 auto;
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  margin: 0 0 10px 0;
+  padding: 0;
 }
+.dm-row:last-child { margin-bottom: 0; }
+.dm-row.mine { justify-content: flex-end; }
+.dm-row.theirs { justify-content: flex-start; }
 .dm-bubble {
   flex: 0 0 auto;
+  min-height: 0;
+  height: auto;
 }
-.dm-delivery-status {
-  min-height: 16px;
+.dm-attachment,
+.dm-attachment-image,
+.dm-attachment-video {
+  height: auto;
 }
 .dm-checks {
   display: inline-block;
-  font-size: 0.92rem;
+  font-size: 1rem;
   line-height: 1;
   letter-spacing: -2px;
   padding-right: 2px;
+  font-weight: 900;
 }
 .dm-delivery-status.seen .dm-checks {
   color: #ff2fa8;
   opacity: 1;
   text-shadow: 0 0 7px rgba(255,47,168,.55);
 }
-
-
-/* FriendHub DM FIX2: compact rows + stable media sizing */
-.dm-messages {
-  justify-content: flex-start !important;
-  align-content: flex-start !important;
-  align-items: stretch;
-}
-.dm-row {
-  flex: 0 0 auto !important;
-  min-height: 0 !important;
-  height: auto !important;
-  margin: 0 !important;
-}
-.dm-bubble {
-  flex: 0 0 auto !important;
-  min-height: 0 !important;
-  height: auto !important;
-}
-.dm-attachment {
-  height: auto !important;
-}
-.dm-attachment-image,
-.dm-attachment-video {
-  display: block;
-  width: min(100%, 360px);
-  height: auto !important;
-  max-height: 360px;
-}
-.dm-checks {
-  font-size: 1rem !important;
-  line-height: 1 !important;
-}
-
-
-/* FriendHub DM FIX3 — layout only.
-   The message list itself is block flow so rows cannot stretch/distribute vertically.
-   Individual rows stay flex for left/right bubble alignment. */
-.dm-messages {
-  display: block !important;
-}
-.dm-row {
-  display: flex !important;
-  width: 100% !important;
-  margin: 0 0 10px 0 !important;
-  padding: 0 !important;
-  min-height: 0 !important;
-  height: auto !important;
-}
-.dm-row:last-child {
-  margin-bottom: 0 !important;
-}
-.dm-row.mine {
-  justify-content: flex-end !important;
-}
-.dm-row.theirs {
-  justify-content: flex-start !important;
-}
-.dm-bubble {
-  display: block;
-  min-height: 0 !important;
-  height: auto !important;
+@media (max-width: 640px) {
+  .dm-messages {
+    min-height: 280px;
+    height: 52vh;
+    padding: 12px;
+  }
 }
 
 </style>
