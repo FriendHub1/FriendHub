@@ -972,6 +972,29 @@ background: white;
 .notification-message { color: #263043; font-size: 14px; line-height: 1.4; }
 .notification-time { color: #8a94a6; font-size: 12px; margin-top: 4px; }
 .notification-empty { padding: 28px 18px; text-align: center; color: #7b8495; }
+
+/* =========================================================
+EDIT POST
+========================================================= */
+.edit-post-modal { width: min(560px, 100%); }
+.edit-post-modal textarea {
+  width: 100%;
+  min-height: 150px;
+  resize: vertical;
+  border: 1px solid #dfe3eb;
+  border-radius: 12px;
+  padding: 13px;
+  outline: none;
+}
+.edit-post-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+.post-action.edit-post-action { color: #5865f2; }
+.post-action.edit-post-action:hover { background: #eef0ff; }
+
 </style>
 </head>
 <body>
@@ -1532,6 +1555,21 @@ Update Password
 </div>
 </div>
 </div>
+
+<div id="editPostModal" class="modal-overlay">
+  <div class="modal edit-post-modal">
+    <button class="modal-close" onclick="closeEditPost()">×</button>
+    <h2>Edit Post</h2>
+    <p class="modal-subtitle">Update the text of your post.</p>
+    <div id="editPostMessage" class="message"></div>
+    <textarea id="editPostText" maxlength="5000" placeholder="Edit your post..."></textarea>
+    <div class="edit-post-actions">
+      <button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL =
 "https://cxosofpxfmjkrhfabrqc.supabase.co";
@@ -1562,6 +1600,7 @@ let selectedProfilePhoto = null;
 let currentCommentsPostId = null;
 let currentComments = [];
 let currentPublicProfileUserId = null;
+let currentEditingPostId = null;
 let selectedCommentMediaFile = null;
 let selectedCommentMediaType = null;
 let selectedCommentMediaPreviewUrl = null;
@@ -2683,7 +2722,9 @@ row.user_id,
 profilePhoto:
 row.user_id === currentUser.id
 ? currentProfile?.profile_photo || null
-: null
+: null,
+editedAt:
+row.edited_at || null
 };
 });
 posts =
@@ -3001,7 +3042,7 @@ ${username}
 </div>
 <div class="post-meta">
 ${typeLabels[post.type] || "Post"}
-· ${escapeHtml(post.time)}
+· ${escapeHtml(post.time)}${post.editedAt ? " · Edited" : ""}
 </div>
 </div>
 </div>
@@ -3028,6 +3069,12 @@ Comment${post.comments ? ` ${post.comments}` : ""}
 </button>
 ${currentUser && !String(post.id).startsWith("sample-") && String(post.userId || "") === String(currentUser.id) ? `
 <button
+class="post-action edit-post-action"
+onclick="openEditPost('${escapeHtmlAttribute(String(post.id))}')"
+>
+Edit
+</button>
+<button
 class="post-action delete-post-action"
 onclick="deletePost('${escapeHtmlAttribute(String(post.id))}')"
 >
@@ -3042,6 +3089,63 @@ Report
 </div>
 </article>
 `;
+}
+
+function openEditPost(id) {
+if (!currentUser || !id || String(id).startsWith("sample-")) return;
+const post = posts.find(item => String(item.id) === String(id));
+if (!post || String(post.userId || "") !== String(currentUser.id)) {
+alert("You can only edit your own posts.");
+return;
+}
+currentEditingPostId = String(id);
+const textarea = document.getElementById("editPostText");
+const message = document.getElementById("editPostMessage");
+if (textarea) textarea.value = post.text || "";
+if (message) { message.textContent = ""; message.className = "message"; }
+openModal("editPostModal");
+}
+
+function closeEditPost() {
+currentEditingPostId = null;
+const textarea = document.getElementById("editPostText");
+if (textarea) textarea.value = "";
+closeModal("editPostModal");
+}
+
+async function saveEditedPost() {
+if (!currentUser || !currentEditingPostId) return;
+const textarea = document.getElementById("editPostText");
+const message = document.getElementById("editPostMessage");
+const newText = textarea ? textarea.value.trim() : "";
+if (!newText) {
+if (message) { message.textContent = "Please write something before saving."; message.className = "message error show"; }
+return;
+}
+const post = posts.find(item => String(item.id) === String(currentEditingPostId));
+if (!post || String(post.userId || "") !== String(currentUser.id)) {
+alert("You can only edit your own posts.");
+closeEditPost();
+return;
+}
+const editedAt = new Date().toISOString();
+const { error } = await supabaseClient
+.from("posts")
+.update({ content: newText, edited_at: editedAt })
+.eq("id", String(currentEditingPostId))
+.eq("user_id", currentUser.id);
+if (error) {
+console.error("Edit post error:", error);
+if (message) { message.textContent = "Could not save your changes."; message.className = "message error show"; }
+return;
+}
+post.text = newText;
+post.editedAt = editedAt;
+closeEditPost();
+renderPosts();
+if (currentPublicProfileUserId) {
+renderPublicProfilePosts(currentPublicProfileUserId, null);
+}
 }
 
 async function deletePost(id) {
