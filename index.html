@@ -701,14 +701,12 @@ padding: 3px 5px;
 .comment-delete:hover {
 color: #b91c1c;
 }
-
 .comment-actions {
 display: flex;
 align-items: center;
 gap: 8px;
 margin-top: 8px;
 }
-
 .comment-like {
 border: none;
 background: transparent;
@@ -719,14 +717,58 @@ padding: 4px 6px;
 border-radius: 8px;
 cursor: pointer;
 }
-
 .comment-like:hover {
 background: #f4f5f8;
 }
-
 .comment-like.liked {
 color: #e11d48;
 }
+.comment-reply {
+border: none;
+background: transparent;
+color: #667085;
+font-size: 13px;
+font-weight: 700;
+padding: 4px 6px;
+border-radius: 8px;
+cursor: pointer;
+}
+
+.comment-reply:hover {
+background: #f4f5f8;
+color: #5865f2;
+}
+
+.comment-replies {
+margin-left: 44px;
+}
+
+.comment-item.comment-reply-item {
+padding-top: 8px;
+}
+
+.replying-banner {
+display: none;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+padding: 8px 10px;
+border-radius: 10px;
+background: #f4f5ff;
+color: #5865f2;
+font-size: 13px;
+font-weight: 700;
+}
+
+.replying-cancel {
+border: none;
+background: transparent;
+color: #667085;
+font-size: 18px;
+line-height: 1;
+cursor: pointer;
+}
+
 .comment-form {
 display: flex;
 gap: 8px;
@@ -896,7 +938,6 @@ padding: 8px 7px;
 padding: 18px;
 }
 }
-
 /* =========================================================
 PUBLIC PROFILE
 ========================================================= */
@@ -913,7 +954,6 @@ PUBLIC PROFILE
 .clickable-user { cursor:pointer; }
 .clickable-user:hover { color:#5865f2; }
 @media (max-width:700px) { .public-profile-details { grid-template-columns:1fr; } }
-
 /* =========================================================
 NOTIFICATIONS
 ========================================================= */
@@ -998,29 +1038,27 @@ background: white;
 .notification-message { color: #263043; font-size: 14px; line-height: 1.4; }
 .notification-time { color: #8a94a6; font-size: 12px; margin-top: 4px; }
 .notification-empty { padding: 28px 18px; text-align: center; color: #7b8495; }
-
 /* =========================================================
 EDIT POST
 ========================================================= */
 .edit-post-modal { width: min(560px, 100%); }
 .edit-post-modal textarea {
- width: 100%;
- min-height: 150px;
- resize: vertical;
- border: 1px solid #dfe3eb;
- border-radius: 12px;
- padding: 13px;
- outline: none;
+width: 100%;
+min-height: 150px;
+resize: vertical;
+border: 1px solid #dfe3eb;
+border-radius: 12px;
+padding: 13px;
+outline: none;
 }
 .edit-post-actions {
- display: flex;
- justify-content: flex-end;
- gap: 10px;
- margin-top: 15px;
+display: flex;
+justify-content: flex-end;
+gap: 10px;
+margin-top: 15px;
 }
 .post-action.edit-post-action { color: #5865f2; }
 .post-action.edit-post-action:hover { background: #eef0ff; }
-
 </style>
 </head>
 <body>
@@ -1328,7 +1366,6 @@ style="margin-top:15px;"
 </div>
 </div>
 </section>
-
 <section id="publicProfile" class="page">
 <div class="container">
 <div id="publicProfileContent"><div class="empty-state">Loading profile...</div></div>
@@ -1336,7 +1373,6 @@ style="margin-top:15px;"
 <div id="publicProfilePosts" class="feed"></div>
 </div>
 </section>
-
 <section id="about" class="page">
 <div class="container">
 <div class="page-header">
@@ -1567,6 +1603,10 @@ Update Password
 <div id="commentsList" class="comments-list"></div>
 <div id="commentForm" class="comment-form" style="display:none;">
 <div class="comment-compose">
+<div id="replyingBanner" class="replying-banner">
+<span id="replyingText"></span>
+<button type="button" class="replying-cancel" onclick="cancelReply()" aria-label="Cancel reply">&times;</button>
+</div>
 <div class="comment-compose-row">
 <label class="comment-attach-btn" for="commentMediaInput" title="Add photo or video" aria-label="Add photo or video"></label>
 <input id="commentMediaInput" type="file" accept="image/*,video/*" onchange="handleCommentMedia(event)">
@@ -1581,21 +1621,19 @@ Update Password
 </div>
 </div>
 </div>
-
 <div id="editPostModal" class="modal-overlay">
- <div class="modal edit-post-modal">
- <button class="modal-close" onclick="closeEditPost()">×</button>
- <h2>Edit Post</h2>
- <p class="modal-subtitle">Update the text of your post.</p>
- <div id="editPostMessage" class="message"></div>
- <textarea id="editPostText" maxlength="5000" placeholder="Edit your post..."></textarea>
- <div class="edit-post-actions">
- <button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
- <button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
- </div>
- </div>
+<div class="modal edit-post-modal">
+<button class="modal-close" onclick="closeEditPost()">×</button>
+<h2>Edit Post</h2>
+<p class="modal-subtitle">Update the text of your post.</p>
+<div id="editPostMessage" class="message"></div>
+<textarea id="editPostText" maxlength="5000" placeholder="Edit your post..."></textarea>
+<div class="edit-post-actions">
+<button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
+<button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
 </div>
-
+</div>
+</div>
 <script>
 const SUPABASE_URL =
 "https://cxosofpxfmjkrhfabrqc.supabase.co";
@@ -1630,6 +1668,7 @@ let currentEditingPostId = null;
 let selectedCommentMediaFile = null;
 let selectedCommentMediaType = null;
 let selectedCommentMediaPreviewUrl = null;
+let currentReplyTarget = null;
 const lastTapTimes = new Map();
 const doubleTapLikeBusy = new Set();
 const recentDoubleTapTriggers = new Map();
@@ -3116,7 +3155,6 @@ Report
 </article>
 `;
 }
-
 function openEditPost(id) {
 if (!currentUser || !id || String(id).startsWith("sample-")) return;
 const post = posts.find(item => String(item.id) === String(id));
@@ -3131,14 +3169,12 @@ if (textarea) textarea.value = post.text || "";
 if (message) { message.textContent = ""; message.className = "message"; }
 openModal("editPostModal");
 }
-
 function closeEditPost() {
 currentEditingPostId = null;
 const textarea = document.getElementById("editPostText");
 if (textarea) textarea.value = "";
 closeModal("editPostModal");
 }
-
 async function saveEditedPost() {
 if (!currentUser || !currentEditingPostId) return;
 const textarea = document.getElementById("editPostText");
@@ -3173,7 +3209,6 @@ if (currentPublicProfileUserId) {
 renderPublicProfilePosts(currentPublicProfileUserId, null);
 }
 }
-
 async function deletePost(id) {
 if (!currentUser || !id || String(id).startsWith("sample-")) return;
 const post = posts.find(item => String(item.id) === String(id));
@@ -3201,7 +3236,6 @@ renderPublicProfilePosts(currentPublicProfileUserId, null);
 }
 function formatPublicProfileList(value) {
 if (value === null || value === undefined || value === "") return "Not added";
-
 let current = value;
 for (let i = 0; i < 4; i++) {
 if (Array.isArray(current)) {
@@ -3227,7 +3261,6 @@ return cleanItems.length ? cleanItems.join(", ") : "Not added";
 }
 return String(current).trim() || "Not added";
 }
-
 /* =========================================================
 PUBLIC PROFILES
 ========================================================= */
@@ -3295,7 +3328,6 @@ const userPosts = posts.filter(post => String(post.userId || "") === String(user
 if (!userPosts.length) { container.innerHTML = '<div class="empty-state">No posts yet.</div>'; return; }
 container.innerHTML = userPosts.map(post => renderPost({ ...post, profilePhoto: profilePhoto || post.profilePhoto })).join("");
 }
-
 /* =========================================================
 LIKES
 ========================================================= */
@@ -3546,6 +3578,7 @@ return;
 currentCommentsPostId = String(id);
 clearCommentsMessage();
 document.getElementById("commentInput").value = "";
+cancelReply(false);
 removeCommentMedia();
 document.getElementById("commentForm").style.display = "flex";
 document.getElementById("commentsSubtitle").textContent = "Join the conversation.";
@@ -3556,7 +3589,7 @@ async function loadComments(postId) {
 const { data, error } =
 await supabaseClient
 .from("post_comments")
-.select("id, post_id, user_id, username, content, media_url, media_type, created_at")
+.select("id, post_id, user_id, username, content, media_url, media_type, parent_comment_id, created_at")
 .eq("post_id", String(postId))
 .order("created_at", { ascending: true });
 if (error) {
@@ -3566,28 +3599,22 @@ currentComments = [];
 renderComments();
 return;
 }
-
 currentComments = data || [];
-
 if (currentComments.length) {
 const commentIds = currentComments.map(comment => comment.id);
-
 const { data: commentLikes, error: likesError } =
 await supabaseClient
 .from("comment_likes")
 .select("comment_id, user_id")
 .in("comment_id", commentIds);
-
 if (likesError) {
 console.error("Comment Likes load error:", likesError);
 } else {
 const likes = commentLikes || [];
-
 currentComments = currentComments.map(comment => {
 const likesForComment = likes.filter(
 like => String(like.comment_id) === String(comment.id)
 );
-
 return {
 ...comment,
 likesCount: likesForComment.length,
@@ -3600,7 +3627,6 @@ like => String(like.user_id) === String(currentUser.id)
 });
 }
 }
-
 renderComments();
 }
 function renderComments() {
@@ -3610,19 +3636,33 @@ if (!currentComments.length) {
 list.innerHTML = `<div class="empty-state">No comments yet. Be the first to comment! </div>`;
 return;
 }
-list.innerHTML = currentComments.map(comment => {
+
+const topLevelComments = currentComments.filter(comment => !comment.parent_comment_id);
+const repliesByParent = new Map();
+
+currentComments
+.filter(comment => comment.parent_comment_id)
+.forEach(comment => {
+const key = String(comment.parent_comment_id);
+if (!repliesByParent.has(key)) repliesByParent.set(key, []);
+repliesByParent.get(key).push(comment);
+});
+
+function renderCommentItem(comment, isReply = false) {
 const username = escapeHtml(comment.username || "@User");
 const initial = escapeHtml(
 (comment.username || "U").replace("@", "").charAt(0).toUpperCase()
 );
 const canDelete = currentUser && String(comment.user_id) === String(currentUser.id);
+const replies = !isReply ? (repliesByParent.get(String(comment.id)) || []) : [];
+
 return `
-<div class="comment-item">
+<div class="comment-item${isReply ? " comment-reply-item" : ""}">
 <div class="comment-avatar clickable-user" onclick="closeCommentsModal(); openPublicProfile('${escapeHtmlAttribute(String(comment.user_id))}')">${initial}</div>
 <div class="comment-body">
 <div>
 <span class="comment-user clickable-user" onclick="closeCommentsModal(); openPublicProfile('${escapeHtmlAttribute(String(comment.user_id))}')">${username}</span>
-<span class="comment-time">· ${escapeHtml(formatPostTime(comment.created_at))}</span>
+<span class="comment-time">&middot; ${escapeHtml(formatPostTime(comment.created_at))}</span>
 </div>
 ${comment.content ? `<div class="comment-content">${escapeHtml(comment.content)}</div>` : ""}
 ${comment.media_url ? `
@@ -3640,26 +3680,90 @@ aria-label="${comment.liked ? "Remove Like from comment" : "Like comment"}"
 >
 ${comment.liked ? "&#10084;&#65039;" : "&#9825;"} ${Number(comment.likesCount || 0)}
 </button>
+<button
+class="comment-reply"
+onclick="startReply('${escapeHtmlAttribute(String(comment.id))}')"
+aria-label="Reply to ${username}"
+>Reply</button>
 </div>
+${replies.length ? `<div class="comment-replies">${replies.map(reply => renderCommentItem(reply, true)).join("")}</div>` : ""}
 </div>
 ${canDelete ? `<button class="comment-delete" onclick="deleteComment('${escapeHtmlAttribute(String(comment.id))}')">Delete</button>` : ""}
 </div>
 `;
-}).join("");
+}
+
+const orphanReplies = currentComments.filter(comment =>
+comment.parent_comment_id &&
+!currentComments.some(parent => String(parent.id) === String(comment.parent_comment_id))
+);
+
+list.innerHTML =
+topLevelComments.map(comment => renderCommentItem(comment)).join("") +
+orphanReplies.map(comment => renderCommentItem(comment, true)).join("");
+
 list.scrollTop = list.scrollHeight;
 }
-async function toggleCommentLike(commentId) {
-if (!currentUser || !commentId) {
-if (!currentUser) openAuth("login");
+
+function startReply(commentId) {
+if (!currentUser) {
+openAuth("login");
 return;
 }
 
 const comment = currentComments.find(
 item => String(item.id) === String(commentId)
 );
-
 if (!comment) return;
 
+const rootParentId = comment.parent_comment_id || comment.id;
+currentReplyTarget = {
+commentId: String(comment.id),
+parentCommentId: String(rootParentId),
+username: comment.username || "@User"
+};
+
+const banner = document.getElementById("replyingBanner");
+const text = document.getElementById("replyingText");
+const input = document.getElementById("commentInput");
+
+if (banner) banner.style.display = "flex";
+if (text) text.textContent = `Replying to ${currentReplyTarget.username}`;
+
+if (input) {
+const mention = `${currentReplyTarget.username} `;
+if (!input.value.trim()) input.value = mention;
+input.focus();
+input.setSelectionRange(input.value.length, input.value.length);
+}
+}
+
+function cancelReply(clearMention = true) {
+const oldTarget = currentReplyTarget;
+currentReplyTarget = null;
+
+const banner = document.getElementById("replyingBanner");
+const text = document.getElementById("replyingText");
+const input = document.getElementById("commentInput");
+
+if (banner) banner.style.display = "none";
+if (text) text.textContent = "";
+
+if (clearMention && input && oldTarget) {
+const mention = `${oldTarget.username} `;
+if (input.value === mention) input.value = "";
+}
+}
+
+async function toggleCommentLike(commentId) {
+if (!currentUser || !commentId) {
+if (!currentUser) openAuth("login");
+return;
+}
+const comment = currentComments.find(
+item => String(item.id) === String(commentId)
+);
+if (!comment) return;
 const { data: existingLike, error: checkError } =
 await supabaseClient
 .from("comment_likes")
@@ -3667,13 +3771,11 @@ await supabaseClient
 .eq("comment_id", commentId)
 .eq("user_id", currentUser.id)
 .maybeSingle();
-
 if (checkError) {
 console.error("Check comment Like error:", checkError);
 showCommentsMessage("Could not check your Like.", "error");
 return;
 }
-
 if (existingLike) {
 const { error } =
 await supabaseClient
@@ -3681,7 +3783,6 @@ await supabaseClient
 .delete()
 .eq("comment_id", commentId)
 .eq("user_id", currentUser.id);
-
 if (error) {
 console.error("Remove comment Like error:", error);
 showCommentsMessage("Could not remove your Like.", "error");
@@ -3695,7 +3796,6 @@ await supabaseClient
 comment_id: commentId,
 user_id: currentUser.id
 });
-
 if (error) {
 if (error.code === "23505" || error.status === 409) {
 console.warn("Comment Like already exists. Reloading Likes.");
@@ -3706,11 +3806,9 @@ return;
 }
 }
 }
-
 clearCommentsMessage();
 await loadComments(currentCommentsPostId);
 }
-
 async function submitComment() {
 if (!currentUser || !currentCommentsPostId) {
 return;
@@ -3753,7 +3851,8 @@ user_id: currentUser.id,
 username: currentProfile.username,
 content,
 media_url: mediaUrl,
-media_type: mediaType
+media_type: mediaType,
+parent_comment_id: currentReplyTarget ? currentReplyTarget.parentCommentId : null
 })
 .select()
 .single();
@@ -3768,6 +3867,7 @@ likesCount: 0,
 liked: false
 });
 input.value = "";
+cancelReply(false);
 removeCommentMedia();
 clearCommentsMessage();
 renderComments();
@@ -3877,6 +3977,7 @@ renderComments();
 updateCommentCounter(currentCommentsPostId, currentComments.length);
 }
 function closeCommentsModal() {
+cancelReply(false);
 removeCommentMedia();
 closeModal("commentsModal");
 currentCommentsPostId = null;
