@@ -2841,55 +2841,55 @@ profilePhoto: null
 }
 ];
 const languageOptions = [
-" English",
-" Spanish",
-" Portuguese",
-" French",
-" German",
-" Italian",
-" Japanese",
-" Korean",
-" Chinese",
-" Other"
+"🇺🇸 English",
+"🇪🇸 Spanish",
+"🇵🇹 Portuguese",
+"🇫🇷 French",
+"🇩🇪 German",
+"🇮🇹 Italian",
+"🇯🇵 Japanese",
+"🇰🇷 Korean",
+"🇨🇳 Chinese",
+"🌐 Other"
 ];
 const interestOptions = [
-" Gaming",
-" Music",
-" Movies & TV",
-" Books",
-" Sports",
-" Technology",
-" Art",
-" Travel",
-" Food",
-" Photography",
-" Psychology",
-" Fitness",
-" Nature",
-" Entertainment",
-" Languages",
-" Culture",
-" Other"
+"🎮 Gaming",
+"🎵 Music",
+"🎬 Movies & TV",
+"📚 Books",
+"⚽ Sports",
+"💻 Technology",
+"🎨 Art",
+"✈️ Travel",
+"🍕 Food",
+"📸 Photography",
+"🧠 Psychology",
+"💪 Fitness",
+"🌿 Nature",
+"🎭 Entertainment",
+"🗣️ Languages",
+"🌎 Culture",
+"✨ Other"
 ];
 const lookingForOptions = [
-" New friends",
-" Someone to talk to",
-" Gaming partners",
-" People with similar music taste",
-" Movie & TV friends",
-" Study partners",
-" Language exchange",
-" Friends from other countries",
-" Communities & groups",
-" WhatsApp groups",
-" Telegram groups",
-" Snapchat friends",
-" People with similar interests",
-" Sports partners",
-" Travel friends",
-" Networking",
-" Meet new people",
-" Other"
+"👋 New friends",
+"💬 Someone to talk to",
+"🎮 Gaming partners",
+"🎵 People with similar music taste",
+"🎬 Movie & TV friends",
+"📚 Study partners",
+"🗣️ Language exchange",
+"🌎 Friends from other countries",
+"👥 Communities & groups",
+"💚 WhatsApp groups",
+"✈️ Telegram groups",
+"👻 Snapchat friends",
+"✨ People with similar interests",
+"⚽ Sports partners",
+"🧳 Travel friends",
+"🤝 Networking",
+"🌟 Meet new people",
+"🔎 Other"
 ];
 function showPage(pageId) {
 document.querySelectorAll(".page").forEach(page => {
@@ -3349,13 +3349,19 @@ return [
 )
 ].map(button => button.dataset.value);
 }
+function getOptionTextWithoutEmoji(value) {
+return String(value || "")
+.replace(/^\s*(?:\p{Extended_Pictographic}|\p{Regional_Indicator})+(?:\uFE0F|\u200D|\p{Extended_Pictographic}|\p{Regional_Indicator})*\s*/u, "")
+.trim();
+}
 function setSelectedOptions(category, values) {
+const normalizedValues = (values || []).map(getOptionTextWithoutEmoji);
 document.querySelectorAll(
 `.option-btn[data-category="${category}"]`
 ).forEach(button => {
 button.classList.toggle(
 "selected",
-values.includes(button.dataset.value)
+normalizedValues.includes(getOptionTextWithoutEmoji(button.dataset.value))
 );
 });
 }
