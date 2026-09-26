@@ -1413,6 +1413,8 @@ html[data-theme="night"] .public-profile-block.blocked {
   display: inline;
 }
 .mention-link:hover { text-decoration: underline; }
+.mention-link { position: relative; z-index: 2; }
+
 html[data-theme="night"] .mention-link {
   color: #6fdcff;
   text-shadow: 0 0 10px rgba(24,200,255,.18);
@@ -3468,9 +3470,9 @@ filtered
 }
 function renderTextWithMentions(value) {
 const safe = escapeHtml(value || "");
-return safe.replace(/(^|[\s(])(@[A-Za-z0-9._-]{2,40})/g, (match, prefix, username) => {
+return safe.replace(/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{1,20})(?![A-Za-z0-9_])/g, (match, prefix, username) => {
 const encoded = encodeURIComponent(username);
-return `${prefix}<button class="mention-link" type="button" onclick="event.stopPropagation(); openMentionProfile(decodeURIComponent('${encoded}'))">${username}</button>`;
+return `${prefix}<span class="mention-link" role="button" tabindex="0" onclick="event.stopPropagation(); openMentionProfile(decodeURIComponent('${encoded}'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openMentionProfile(decodeURIComponent('${encoded}'));}">${username}</span>`;
 });
 }
 
@@ -3483,8 +3485,8 @@ await openPublicProfileByUsername(username);
 }
 
 function extractMentionUsernames(text) {
-const matches = String(text || "").match(/(^|[\s(])@[A-Za-z0-9._-]{2,40}/g) || [];
-return [...new Set(matches.map(item => item.trim().replace(/^[^(]*\(/, "").trim()).filter(item => item.startsWith("@")))];
+const matches = [...String(text || "").matchAll(/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{1,20})(?![A-Za-z0-9_])/g)];
+return [...new Set(matches.map(match => match[2]))];
 }
 
 async function createMentionNotifications(text, postId) {
@@ -5018,3 +5020,242 @@ if (!exceptId || panel.id !== exceptId) panel.classList.remove('show');
 }
 function insertEmoji(targetId, emoji) {
 const input = document.getElementById(targetId);
+if (!input) return;
+const start = typeof input.selectionStart === 'number' ? input.selectionStart : input.value.length;
+const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : input.value.length;
+input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+const nextPosition = start + emoji.length;
+input.focus();
+if (input.setSelectionRange) input.setSelectionRange(nextPosition, nextPosition);
+input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+function buildEmojiPickers() {
+document.querySelectorAll('.emoji-picker-panel').forEach(function (panel) {
+if (panel.dataset.ready === 'true') return;
+const targetId = panel.dataset.target;
+FRIENDHUB_EMOJIS.forEach(function (emoji) {
+const button = document.createElement('button');
+button.type = 'button';
+button.className = 'emoji-option';
+button.textContent = emoji;
+button.setAttribute('aria-label', 'Insert emoji ' + emoji);
+button.addEventListener('click', function (event) {
+event.stopPropagation();
+insertEmoji(targetId, emoji);
+});
+panel.appendChild(button);
+});
+panel.dataset.ready = 'true';
+});
+}
+window.toggleEmojiPicker = function (pickerId, event) {
+if (event) event.stopPropagation();
+buildEmojiPickers();
+const panel = document.getElementById(pickerId);
+if (!panel) return;
+const shouldOpen = !panel.classList.contains('show');
+closeEmojiPickers();
+if (shouldOpen) panel.classList.add('show');
+};
+document.addEventListener('click', function (event) {
+if (!event.target.closest('.emoji-picker-wrap')) closeEmojiPickers();
+});
+document.addEventListener('keydown', function (event) {
+if (event.key === 'Escape') closeEmojiPickers();
+});
+buildEmojiPickers();
+})();
+</script>
+<script>
+/* =========================================================
+FRIENDHUB BILINGUAL INTERFACE — ENGLISH / ESPAÑOL
+This layer translates interface text only. User posts/comments
+and stored values are intentionally left unchanged.
+========================================================= */
+(function () {
+const FRIENDHUB_LANGUAGE_KEY = "friendhub_language";
+const selectedLanguage = localStorage.getItem(FRIENDHUB_LANGUAGE_KEY) || "en";
+window.changeFriendHubLanguage = function (language) {
+const safeLanguage = language === "es" ? "es" : "en";
+localStorage.setItem(FRIENDHUB_LANGUAGE_KEY, safeLanguage);
+window.location.reload();
+};
+const languageSelect = document.getElementById("languageSelect");
+if (languageSelect) languageSelect.value = selectedLanguage;
+document.documentElement.lang = selectedLanguage;
+if (selectedLanguage !== "es") return;
+const translations = {
+"Home":"Inicio", "Discover":"Descubrir", "Profile":"Perfil", "Saved":"Guardados", "About":"Acerca de", "Support":"Soporte",
+"Notifications":"Notificaciones", "No notifications yet.":"Aún no hay notificaciones.",
+"Log In":"Iniciar sesión", "Create Account":"Crear cuenta", "Log Out":"Cerrar sesión",
+"A place to meet people":"Un lugar para conocer personas", "Meet People.":"Conoce personas.", "Make Friends.":"Haz amigos.",
+"Discover people, friendships and communities based on your interests and the platforms you use.":"Descubre personas, amistades y comunidades según tus intereses y las plataformas que usas.",
+"Discover People":"Descubrir personas", "Share FriendHub":"Compartir FriendHub", "Learn More":"Más información", "Find Your Community":"Encuentra tu comunidad",
+"Connect around the things you enjoy.":"Conéctate con personas que disfrutan lo mismo que tú.", "Meet People":"Conoce personas",
+"Discover people with similar interests, languages, hobbies and goals.":"Descubre personas con intereses, idiomas, pasatiempos y objetivos similares.",
+"Find Communities":"Encuentra comunidades", "Discover WhatsApp and Telegram communities that match your interests.":"Descubre comunidades de WhatsApp y Telegram que coincidan con tus intereses.",
+"Make Connections":"Crea conexiones", "Find new friends from different countries and backgrounds.":"Encuentra nuevos amigos de diferentes países y orígenes.",
+"Find people and communities that match what you're looking for.":"Encuentra personas y comunidades que coincidan con lo que buscas.",
+"All":"Todos", "People":"Personas", "Create a post":"Crear una publicación",
+"Please log in or create an account before creating a post.":"Inicia sesión o crea una cuenta antes de crear una publicación.",
+"Personal contact":"Contacto personal", "WhatsApp":"WhatsApp", "Telegram":"Telegram", "Discord":"Discord", "🟦 Discord":"🟦 Discord", "🟢 WhatsApp":"🟢 WhatsApp", "🟣 Telegram":"🟣 Telegram", "WhatsApp group":"WhatsApp", "Telegram group":"Telegram", "🟢 WhatsApp group":"🟢 WhatsApp", "🟣 Telegram group":"🟣 Telegram",
+"Add media":"Agregar archivo", "📎 Add media":"📎 Agregar archivo", "Post":"Publicar", "Your Profile":"Tu perfil",
+"Customize how people discover you on FriendHub.":"Personaliza cómo te descubren otras personas en FriendHub.",
+"Create an account first":"Primero crea una cuenta", "Your profile is connected to your FriendHub account. Please log in or create an account to continue.":"Tu perfil está conectado a tu cuenta de FriendHub. Inicia sesión o crea una cuenta para continuar.",
+"Change profile photo":"Cambiar foto de perfil", "Username":"Nombre de usuario",
+"Your username is public. You can change it once every 30 days.":"Tu nombre de usuario es público. Puedes cambiarlo una vez cada 30 días.",
+"Age":"Edad", "Your exact age is private and is not displayed publicly.":"Tu edad exacta es privada y no se muestra públicamente.",
+"Country":"País", "Languages":"Idiomas", "Interests":"Intereses", "What are you looking for?":"¿Qué estás buscando?",
+"Save Profile":"Guardar perfil", "Reset":"Restablecer", "Loading profile...":"Cargando perfil...", "Posts":"Publicaciones",
+"Saved Posts":"Publicaciones guardadas", "Posts you save are private and only visible to you.":"Las publicaciones que guardas son privadas y solo tú puedes verlas.",
+"About FriendHub":"Acerca de FriendHub", "A simple place to discover people and communities.":"Un lugar sencillo para descubrir personas y comunidades.",
+"What is FriendHub?":"¿Qué es FriendHub?", "FriendHub is a social discovery platform designed to help people discover friendships, communities and connections based on shared interests.":"FriendHub es una plataforma de descubrimiento social diseñada para ayudar a las personas a encontrar amistades, comunidades y conexiones basadas en intereses compartidos.",
+"Users can create posts, discover people and find WhatsApp, Telegram and Snapchat connections.":"Los usuarios pueden crear publicaciones, descubrir personas y encontrar conexiones de WhatsApp, Telegram y Snapchat.",
+"What you can do":"Lo que puedes hacer", "Create a personal profile.":"Crear un perfil personal.", "Discover people with similar interests.":"Descubrir personas con intereses similares.",
+"Find WhatsApp communities.":"Encontrar comunidades de WhatsApp.", "Find Telegram communities.":"Encontrar comunidades de Telegram.",
+"Share Snapchat-related posts.":"Compartir publicaciones relacionadas con Snapchat.", "Create posts and interact with the community.":"Crear publicaciones e interactuar con la comunidad.",
+"Important":"Importante", "FriendHub is an independent platform and is not affiliated with Snapchat, WhatsApp or Telegram.":"FriendHub es una plataforma independiente y no está afiliada con Snapchat, WhatsApp ni Telegram.",
+"FriendHub is designed with safety, privacy and age-appropriate interactions in mind.":"FriendHub está diseñado teniendo en cuenta la seguridad, la privacidad y las interacciones apropiadas para cada edad.",
+"Need help with FriendHub?":"¿Necesitas ayuda con FriendHub?", "Contact FriendHub Support":"Contactar al soporte de FriendHub",
+"If you have a question, experience a problem or need assistance with your account, contact us by email.":"Si tienes una pregunta, tienes algún problema o necesitas ayuda con tu cuenta, contáctanos por correo electrónico.",
+"Meet People. Make Friends.":"Conoce personas. Haz amigos.", "All rights reserved.":"Todos los derechos reservados.",
+"Welcome back to FriendHub.":"Bienvenido de nuevo a FriendHub.", "Email":"Correo electrónico", "Password":"Contraseña",
+"Confirm Password":"Confirmar contraseña", "Forgot password?":"¿Olvidaste tu contraseña?", "Don't have an account?":"¿No tienes una cuenta?",
+"Already have an account?":"¿Ya tienes una cuenta?", "Reset Password":"Restablecer contraseña",
+"Enter your email and we'll send you a password reset link.":"Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
+"Send Reset Link":"Enviar enlace", "Create New Password":"Crear nueva contraseña", "Choose a new password for your FriendHub account.":"Elige una nueva contraseña para tu cuenta de FriendHub.",
+"New Password":"Nueva contraseña", "Confirm New Password":"Confirmar nueva contraseña", "Update Password":"Actualizar contraseña",
+"Comments":"Comentarios", "Join the conversation.":"Únete a la conversación.", "Edit Post":"Editar publicación", "Update the text of your post.":"Actualiza el texto de tu publicación.",
+"Cancel":"Cancelar", "Save":"Guardar", "Followers":"Seguidores", "Following":"Siguiendo", "FriendHub connections":"Conexiones de FriendHub",
+"Follow":"Seguir", "Unfollow":"Dejar de seguir", "Block":"Bloquear", "Unblock":"Desbloquear", "Like":"Me gusta", "Comment":"Comentar", "Share":"Compartir", "Report":"Reportar", "Reply":"Responder",
+"Edited":"Editado", "Delete":"Eliminar", "No posts yet.":"Aún no hay publicaciones.", "No saved posts yet.":"Aún no tienes publicaciones guardadas.",
+"No followers yet.":"Aún no hay seguidores.", "Not following anyone yet.":"Aún no sigue a nadie.", "Profile not found.":"Perfil no encontrado.",
+"Public profile":"Perfil público", "Looking for":"Busca", "Remove":"Eliminar", "Replying to":"Respondiendo a",
+"Personal":"Personal", "Just now":"Ahora mismo"
+};
+const attributeTranslations = {
+"Search people, interests, groups...":"Buscar personas, intereses, grupos...",
+"What are you looking for?":"¿Qué estás buscando?", "Your age":"Tu edad", "Your country":"Tu país",
+"Password":"Contraseña", "Confirm password":"Confirmar contraseña", "New password":"Nueva contraseña",
+"Confirm new password":"Confirmar nueva contraseña", "Write a comment...":"Escribe un comentario...", "Edit your post...":"Edita tu publicación...",
+"Notifications":"Notificaciones", "Add photo or video":"Agregar foto o video", "Cancel reply":"Cancelar respuesta",
+"Remove attachment":"Eliminar archivo adjunto", "Add emoji":"Agregar emoji", "Language":"Idioma"
+};
+function isUserContent(node) {
+const parent = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+if (!parent) return false;
+return !!parent.closest(".post-content, .comment-content, .post-user, .comment-user, .public-profile-username, .follow-list-name, .support-email");
+}
+function translateDynamicText(text) {
+let value = text;
+value = value.replace(/ liked your post\.$/, " indicó que le gusta tu publicación.");
+value = value.replace(/ commented on your post\.$/, " comentó en tu publicación.");
+value = value.replace(/ started following you\.$/, " comenzó a seguirte.");
+value = value.replace(/^Replying to /, "Respondiendo a ");
+value = value.replace(/^Are you sure you want to delete this post\?$/, "¿Seguro que quieres eliminar esta publicación?");
+value = value.replace(/^Are you sure you want to delete this comment\?$/, "¿Seguro que quieres eliminar este comentario?");
+return value;
+}
+function translateTextNode(node) {
+if (!node || node.nodeType !== Node.TEXT_NODE || isUserContent(node)) return;
+const raw = node.nodeValue;
+const trimmed = raw.trim();
+if (!trimmed) return;
+const translated = translations[trimmed] || translateDynamicText(trimmed);
+if (translated !== trimmed) {
+node.nodeValue = raw.replace(trimmed, translated);
+}
+}
+function translateElement(element) {
+if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
+if (isUserContent(element)) return;
+["placeholder", "title", "aria-label"].forEach(function (attribute) {
+const current = element.getAttribute && element.getAttribute(attribute);
+if (!current) return;
+const translated = attributeTranslations[current] || translations[current] || translateDynamicText(current);
+if (translated !== current) element.setAttribute(attribute, translated);
+});
+Array.from(element.childNodes).forEach(function (child) {
+if (child.nodeType === Node.TEXT_NODE) translateTextNode(child);
+});
+}
+function translateTree(root) {
+if (!root) return;
+if (root.nodeType === Node.TEXT_NODE) { translateTextNode(root); return; }
+if (root.nodeType !== Node.ELEMENT_NODE && root.nodeType !== Node.DOCUMENT_NODE) return;
+if (root.nodeType === Node.ELEMENT_NODE) translateElement(root);
+if (root.querySelectorAll) root.querySelectorAll("*").forEach(translateElement);
+}
+translateTree(document.body);
+/* Direct translation for multiline About and Support content. */
+function setFriendHubSectionText(selector, texts) {
+document.querySelectorAll(selector).forEach(function (element, index) {
+if (texts[index] !== undefined) element.textContent = texts[index];
+});
+}
+setFriendHubSectionText("#about .page-header h1", ["Acerca de FriendHub"]);
+setFriendHubSectionText("#about .page-header p", ["Un lugar sencillo para descubrir personas y comunidades."]);
+setFriendHubSectionText("#about .content-card h2", ["¿Qué es FriendHub?", "Lo que puedes hacer", "Importante"]);
+setFriendHubSectionText("#about .content-card p", ["FriendHub es una plataforma de descubrimiento social diseñada para ayudar a las personas a encontrar amistades, comunidades y conexiones basadas en intereses compartidos.", "Los usuarios pueden crear publicaciones, descubrir personas y encontrar conexiones de WhatsApp, Telegram y Snapchat.", "FriendHub es una plataforma independiente y no está afiliada con Snapchat, WhatsApp ni Telegram.", "FriendHub está diseñado teniendo en cuenta la seguridad, la privacidad y las interacciones apropiadas para cada edad."]);
+setFriendHubSectionText("#about .content-card li", ["Crear un perfil personal.", "Descubrir personas con intereses similares.", "Encontrar comunidades de WhatsApp.", "Encontrar comunidades de Telegram.", "Compartir publicaciones relacionadas con Snapchat.", "Crear publicaciones e interactuar con la comunidad."]);
+setFriendHubSectionText("#support .page-header h1", ["Soporte"]);
+setFriendHubSectionText("#support .page-header p", ["¿Necesitas ayuda con FriendHub?"]);
+setFriendHubSectionText("#support .content-card h2", ["Contactar al soporte de FriendHub"]);
+setFriendHubSectionText("#support .content-card p", ["Si tienes una pregunta, tienes algún problema o necesitas ayuda con tu cuenta, contáctanos por correo electrónico."]);
+const observer = new MutationObserver(function (mutations) {
+mutations.forEach(function (mutation) {
+mutation.addedNodes.forEach(translateTree);
+if (mutation.type === "characterData") translateTextNode(mutation.target);
+});
+});
+observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+const originalAlert = window.alert.bind(window);
+window.alert = function (message) {
+const text = String(message ?? "");
+originalAlert(translations[text] || translateDynamicText(text));
+};
+const originalConfirm = window.confirm.bind(window);
+window.confirm = function (message) {
+const text = String(message ?? "");
+return originalConfirm(translations[text] || translateDynamicText(text));
+};
+})();
+</script>
+<script>
+/* FriendHub automatic Day / Night theme */
+(function () {
+  const STORAGE_KEY = "friendhubThemePreference";
+  function automaticTheme() {
+    const hour = new Date().getHours();
+    return (hour >= 7 && hour < 19) ? "day" : "night";
+  }
+  function savedTheme() {
+    const value = localStorage.getItem(STORAGE_KEY);
+    return value === "day" || value === "night" ? value : null;
+  }
+  function applyTheme(theme) {
+    const safeTheme = theme === "night" ? "night" : "day";
+    document.documentElement.setAttribute("data-theme", safeTheme);
+    const button = document.getElementById("themeToggle");
+    if (button) {
+      const isNight = safeTheme === "night";
+      button.innerHTML = isNight ? "&#9728;&#65039;" : "&#127769;";
+      button.setAttribute("aria-label", isNight ? "Switch to day mode" : "Switch to night mode");
+      button.setAttribute("title", isNight ? "Switch to day mode" : "Switch to night mode");
+    }
+  }
+  window.toggleFriendHubTheme = function () {
+    const current = document.documentElement.getAttribute("data-theme") || automaticTheme();
+    const next = current === "night" ? "day" : "night";
+    localStorage.setItem(STORAGE_KEY, next);
+    applyTheme(next);
+  };
+  applyTheme(savedTheme() || automaticTheme());
+  document.addEventListener("DOMContentLoaded", function () {
+    applyTheme(savedTheme() || automaticTheme());
+  });
+})();
+</script>
+
+</body>
+</html>
