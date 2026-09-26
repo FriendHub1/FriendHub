@@ -4454,13 +4454,14 @@ isSpanish
 );
 if (detailsInput === null) return;
 
-const [reporterProfileResult, reportedProfileResult] = await Promise.all([
+const [reporterProfileResult, reportedProfileIdResult] = await Promise.all([
 supabaseClient.from("profiles").select("id").eq("user_id", currentUser.id).maybeSingle(),
-supabaseClient.from("profiles").select("id").eq("user_id", String(userId)).maybeSingle()
+supabaseClient.rpc("get_profile_id_for_report", { target_user_id: String(userId) })
 ]);
 
-if (reporterProfileResult.error || reportedProfileResult.error || !reporterProfileResult.data?.id || !reportedProfileResult.data?.id) {
-console.error("Report profile lookup error:", reporterProfileResult.error, reportedProfileResult.error);
+const reportedProfileId = reportedProfileIdResult.data;
+if (reporterProfileResult.error || reportedProfileIdResult.error || !reporterProfileResult.data?.id || !reportedProfileId) {
+console.error("Report profile lookup error:", reporterProfileResult.error, reportedProfileIdResult.error);
 alert(isSpanish ? "No se pudo preparar el reporte. Inténtalo de nuevo." : "Could not prepare the report. Please try again.");
 return;
 }
@@ -4469,7 +4470,7 @@ const { error } = await supabaseClient
 .from("reports")
 .insert({
 reporter_id: reporterProfileResult.data.id,
-reported_user_id: reportedProfileResult.data.id,
+reported_user_id: reportedProfileId,
 reason,
 details: detailsInput.trim() || null
 });
