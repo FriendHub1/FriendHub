@@ -1354,6 +1354,22 @@ html[data-theme="night"] #home .feature-card[onclick="openDiscoverCommunities()"
   box-shadow: 0 0 18px rgba(139,92,255,.18), 0 0 26px rgba(255,63,209,.14);
 }
 
+
+/* HOME INTERACTIVE: MAKE CONNECTIONS */
+#home .feature-card[onclick="openDiscoverAll()"] {
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+#home .feature-card[onclick="openDiscoverAll()"]:hover,
+#home .feature-card[onclick="openDiscoverAll()"]:focus-visible {
+  transform: translateY(-3px);
+  outline: none;
+  box-shadow: 0 12px 30px rgba(24,200,255,.12);
+}
+html[data-theme="night"] #home .feature-card[onclick="openDiscoverAll()"]:hover,
+html[data-theme="night"] #home .feature-card[onclick="openDiscoverAll()"]:focus-visible {
+  box-shadow: 0 0 18px rgba(24,200,255,.14), 0 0 26px rgba(139,92,255,.18);
+}
+
 </style>
 </head>
 <body>
@@ -1454,7 +1470,7 @@ Discover WhatsApp and Telegram communities
 that match your interests.
 </p>
 </div>
-<div class="feature-card">
+<div class="feature-card" onclick="openDiscoverAll()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverAll();}" style="cursor:pointer;">
 <div class="feature-icon"></div>
 <h3>Make Connections</h3>
 <p>
@@ -4608,6 +4624,21 @@ function openDiscoverCommunities() {
   });
 }
 
+
+/* =========================================================
+HOME: MAKE CONNECTIONS -> DISCOVER / ALL
+========================================================= */
+function openDiscoverAll() {
+  showPageWithoutReload("discover");
+
+  const allButton = document.querySelector('.filter-btn[data-filter="all"]');
+  if (allButton) allButton.click();
+
+  requestAnimationFrame(() => {
+    const discover = document.getElementById("discover");
+    if (discover) discover.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
 
 /* =========================================================
 SHARE FRIENDHUB / INVITE FRIENDS
