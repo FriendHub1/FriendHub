@@ -974,6 +974,19 @@ padding: 18px;
 }
 }
 /* =========================================================
+POST REACTIONS
+========================================================= */
+.post-reaction-wrap { position: relative; display: inline-flex; align-items: center; }
+.post-reaction-picker { position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 1300; display: none; gap: 5px; padding: 8px; border: 1px solid var(--fh-border, #dfe3eb); border-radius: 999px; background: var(--fh-surface-strong, #fff); box-shadow: var(--fh-shadow, 0 10px 30px rgba(0,0,0,.14)); }
+.post-reaction-picker.show { display: flex; }
+.post-reaction-option { border: 0; background: transparent; width: 38px; height: 38px; border-radius: 50%; font-size: 24px; line-height: 1; display: grid; place-items: center; transition: transform .15s ease, background .15s ease; }
+.post-reaction-option:hover, .post-reaction-option.selected { transform: scale(1.18); background: var(--fh-soft, #f4f5f8); }
+.post-reaction-summary { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 10px; font-size: 13px; color: var(--fh-muted, #667085); }
+.post-reaction-count { white-space: nowrap; }
+.post-action.reacted { color: #e11d48; }
+@media (max-width: 560px) { .post-reaction-picker { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); } }
+
+/* =========================================================
 PUBLIC PROFILE
 ========================================================= */
 .public-profile-card { background:white; border:1px solid #e3e7ef; border-radius:18px; padding:28px; margin-bottom:25px; text-align:center; }
@@ -4190,7 +4203,7 @@ data: likeData,
 error: likeError
 } = await supabaseClient
 .from("post_likes")
-.select("post_id, user_id");
+.select("post_id, user_id, reaction");
 const {
 data: commentData,
 error: commentError
@@ -4218,26 +4231,24 @@ likeError
 );
 }
 const likeCounts = {};
+const reactionCounts = {};
+const userReactions = new Map();
 const commentCounts = {};
 (commentData || []).forEach(comment => {
 const postId = String(comment.post_id);
 commentCounts[postId] =
 (commentCounts[postId] || 0) + 1;
 });
-const userLikedPosts =
-new Set();
+const userLikedPosts = new Set();
 (likeData || []).forEach(like => {
-const postId =
-String(like.post_id);
-likeCounts[postId] =
-(likeCounts[postId] || 0) + 1;
-if (
-String(like.user_id) ===
-String(currentUser.id)
-) {
-userLikedPosts.add(
-postId
-);
+const postId = String(like.post_id);
+const reaction = like.reaction || "❤️";
+likeCounts[postId] = (likeCounts[postId] || 0) + 1;
+if (!reactionCounts[postId]) reactionCounts[postId] = {};
+reactionCounts[postId][reaction] = (reactionCounts[postId][reaction] || 0) + 1;
+if (String(like.user_id) === String(currentUser.id)) {
+userLikedPosts.add(postId);
+userReactions.set(postId, reaction);
 }
 });
 const databasePosts =
@@ -4280,6 +4291,10 @@ comments:
 commentCounts[rowId] || 0,
 liked:
 userLikedPosts.has(rowId),
+reaction:
+userReactions.get(rowId) || null,
+reactionCounts:
+reactionCounts[rowId] || {},
 saved:
 savedPostIds.has(rowId),
 userId:
@@ -5019,14 +5034,16 @@ draggable="false"
 </div>`;
 }
 }
-const likedClass =
-post.liked
-? "liked"
-: "";
-const likeText =
-post.liked
-? " Liked"
-: " Like";
+const likedClass = post.reaction ? "reacted" : "";
+const likeText = post.reaction ? `${post.reaction} Reacted` : "♡ React";
+const reactionChoices = ["❤️", "😂", "😮", "😢", "🔥"];
+const reactionPickerHtml = reactionChoices.map(reaction =>
+`<button type="button" class="post-reaction-option ${post.reaction === reaction ? "selected" : ""}" onclick="event.stopPropagation(); setPostReaction('${escapeHtmlAttribute(String(post.id))}', '${reaction}')" aria-label="React ${reaction}">${reaction}</button>`
+).join("");
+const reactionSummary = reactionChoices
+.filter(reaction => Number(post.reactionCounts?.[reaction] || 0) > 0)
+.map(reaction => `<span class="post-reaction-count">${reaction} ${Number(post.reactionCounts[reaction])}</span>`)
+.join("");
 const saved = savedPostIds.has(String(post.id));
 const savedClass = saved ? "saved" : "";
 const saveText = saved ? "Saved" : "Save";
@@ -5064,14 +5081,19 @@ ${tags}
 ${renderTextWithMentions(post.text)}
 </div>
 ${mediaHtml}
+${reactionSummary ? `<div class="post-reaction-summary">${reactionSummary}</div>` : ""}
 <div class="post-actions">
+<div class="post-reaction-wrap">
 <button
 class="post-action ${likedClass}"
-onclick="toggleLike('${escapeHtmlAttribute(String(post.id))}')"
+onclick="toggleReactionPicker('${escapeHtmlAttribute(String(post.id))}', event)"
 >
-${likeText}
-${post.likes ? ` ${post.likes}` : ""}
+${likeText}${post.likes ? ` ${post.likes}` : ""}
 </button>
+<div class="post-reaction-picker" id="reaction-picker-${escapeHtmlAttribute(String(post.id))}">
+${reactionPickerHtml}
+</div>
+</div>
 <button
 class="post-action"
 onclick="commentPost('${escapeHtmlAttribute(String(post.id))}')"
@@ -6598,6 +6620,49 @@ panel.classList.remove("open");
 window.addEventListener("focus", () => {
 if (currentUser) loadNotifications();
 });
+function closeReactionPickers(exceptId = null) {
+document.querySelectorAll(".post-reaction-picker.show").forEach(picker => {
+if (!exceptId || picker.id !== `reaction-picker-${exceptId}`) picker.classList.remove("show");
+});
+}
+function toggleReactionPicker(id, event) {
+if (event) event.stopPropagation();
+if (!currentUser) { openAuth("login"); return; }
+if (String(id).startsWith("sample-")) return;
+const picker = document.getElementById(`reaction-picker-${id}`);
+if (!picker) return;
+const willOpen = !picker.classList.contains("show");
+closeReactionPickers();
+if (willOpen) picker.classList.add("show");
+}
+async function setPostReaction(id, reaction) {
+if (!currentUser) { openAuth("login"); return; }
+if (String(id).startsWith("sample-")) return;
+const allowed = ["❤️", "😂", "😮", "😢", "🔥"];
+if (!allowed.includes(reaction)) return;
+const { data: existing, error: checkError } = await supabaseClient
+.from("post_likes")
+.select("id, reaction")
+.eq("post_id", id)
+.eq("user_id", currentUser.id)
+.maybeSingle();
+if (checkError) { console.error("Reaction check error:", checkError); alert("Could not save your reaction."); return; }
+let error = null;
+if (existing && (existing.reaction || "❤️") === reaction) {
+({ error } = await supabaseClient.from("post_likes").delete().eq("id", existing.id));
+} else if (existing) {
+({ error } = await supabaseClient.from("post_likes").update({ reaction }).eq("id", existing.id));
+} else {
+({ error } = await supabaseClient.from("post_likes").insert({ post_id: id, user_id: currentUser.id, reaction }));
+}
+if (error) { console.error("Reaction save error:", error); alert("Could not save your reaction."); return; }
+closeReactionPickers();
+await loadPosts();
+}
+document.addEventListener("click", event => {
+if (!event.target.closest(".post-reaction-wrap")) closeReactionPickers();
+});
+
 async function toggleLike(id) {
 if (!currentUser) {
 openAuth("login");
@@ -6681,7 +6746,8 @@ await supabaseClient
 post_id:
 id,
 user_id:
-currentUser.id
+currentUser.id,
+reaction: "❤️"
 });
 if (error) {
 /*
@@ -7198,7 +7264,8 @@ await supabaseClient
 .from("post_likes")
 .insert({
 post_id: id,
-user_id: currentUser.id
+user_id: currentUser.id,
+reaction: "❤️"
 });
 if (error) {
 if (error.code === "23505" || error.status === 409) {
@@ -7209,6 +7276,9 @@ return;
 }
 } else {
 post.liked = true;
+post.reaction = "❤️";
+post.reactionCounts = post.reactionCounts || {};
+post.reactionCounts["❤️"] = (post.reactionCounts["❤️"] || 0) + 1;
 post.likes = (post.likes || 0) + 1;
 }
 renderPosts();
