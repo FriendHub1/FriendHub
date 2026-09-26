@@ -1423,6 +1423,28 @@ html[data-theme="night"] .mention-link {
 
 /* DIRECT MESSAGES V1 */
 
+.dm-composer-main { flex: 1; min-width: 0; }
+.dm-attach-button {
+width:46px;height:46px;flex:0 0 46px;align-self:flex-end;border-radius:13px;
+border:1px solid rgba(255,47,168,.38);background:rgba(255,47,168,.08);
+color:#ff2fa8;font-size:1.25rem;cursor:pointer;box-shadow:0 0 12px rgba(255,47,168,.10);
+}
+.dm-attach-button:hover { background:rgba(255,47,168,.15);border-color:rgba(255,47,168,.65); }
+.dm-attach-button:disabled { opacity:.55;cursor:not-allowed; }
+.dm-attachment-preview { margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:13px;background:rgba(120,120,140,.07); }
+.dm-attachment-preview-inner { display:flex;align-items:center;gap:10px; }
+.dm-attachment-preview-media { width:74px;height:74px;flex:0 0 74px;border-radius:10px;overflow:hidden;background:#111; }
+.dm-attachment-preview-media img,.dm-attachment-preview-media video { width:100%;height:100%;object-fit:cover; }
+.dm-attachment-preview-info { min-width:0;flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px; }
+.dm-attachment-preview-info span { overflow:hidden;white-space:nowrap;text-overflow:ellipsis;opacity:.78; }
+.dm-remove-attachment { border:0;background:transparent;color:#ff2fa8;cursor:pointer;font-size:1rem; }
+.dm-attachment { margin-bottom:7px;max-width:360px; }
+.dm-attachment-image,.dm-attachment-video { display:block;width:min(100%,360px);max-height:360px;object-fit:contain;border-radius:13px;background:#0b0b12; }
+.dm-attachment-link { display:block; }
+.dm-attachment-missing { padding:10px;border-radius:10px;background:rgba(255,47,168,.08);color:#ff2fa8;font-size:.84rem; }
+@media (max-width:640px) { .dm-composer { align-items:flex-end; } .dm-attach-button { width:42px;height:42px;flex-basis:42px; } }
+
+
 .messages-unread-badge,
 .dm-unread-badge {
   min-width: 21px;
@@ -1990,7 +2012,12 @@ style="margin-top:15px;"
 </div>
 <div id="dmMessages" class="dm-messages"></div>
 <form id="dmForm" class="dm-composer" onsubmit="sendDirectMessage(event)">
-<textarea id="dmInput" maxlength="2000" rows="2" placeholder="Write a message..." required></textarea>
+<input id="dmMediaInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleDmMediaSelected(event)">
+<div class="dm-composer-main">
+<textarea id="dmInput" maxlength="2000" rows="2" placeholder="Write a message..."></textarea>
+<div id="dmAttachmentPreview" class="dm-attachment-preview" style="display:none;"></div>
+</div>
+<button id="dmAttachButton" class="dm-attach-button" type="button" onclick="document.getElementById('dmMediaInput').click()" aria-label="Attach photo or video" title="Attach photo or video">&#128206;</button>
 <button id="dmSendButton" class="btn btn-primary" type="submit">Send</button>
 </form>
 <div id="dmStatus" class="dm-status"></div>
@@ -2314,6 +2341,7 @@ let currentDmUserId = null;
 let currentDmUsername = "";
 let currentDmProfilePhoto = null;
 let dmUnreadRefreshTimer = null;
+let dmSelectedAttachment = null;
 let currentEditingPostId = null;
 let selectedCommentMediaFile = null;
 let selectedCommentMediaType = null;
@@ -4414,6 +4442,7 @@ await loadDirectMessages();
 }
 
 async function closeDirectChat() {
+clearDmAttachment();
 currentDmUserId = null;
 currentDmUsername = "";
 currentDmProfilePhoto = null;
@@ -4466,7 +4495,7 @@ await refreshDmUnreadCount();
 }
 }
 
-function renderDirectMessages(messages) {
+async function renderDirectMessages(messages) {
 const container = document.getElementById("dmMessages");
 if (!container) return;
 
@@ -4475,18 +4504,117 @@ container.innerHTML = `<div class="dm-no-messages">${getFriendHubLanguage() === 
 return;
 }
 
-container.innerHTML = messages.map(message => {
+container.innerHTML = (await Promise.all(messages.map(async message => {
 const mine = String(message.sender_id) === String(currentUser.id);
+const attachmentHtml = await renderDmAttachment(message);
 return `
 <div class="dm-row ${mine ? "mine" : "theirs"}">
 <div class="dm-bubble">
-<div class="dm-text">${escapeHtml(message.content || "")}</div>
+${attachmentHtml}
+${message.content ? `<div class="dm-text">${escapeHtml(message.content)}</div>` : ""}
 <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
 </div>
 </div>`;
-}).join("");
+}))).join("");
 
 container.scrollTop = container.scrollHeight;
+}
+
+function clearDmAttachment() {
+if (dmSelectedAttachment?.previewUrl) URL.revokeObjectURL(dmSelectedAttachment.previewUrl);
+dmSelectedAttachment = null;
+const input = document.getElementById("dmMediaInput");
+const preview = document.getElementById("dmAttachmentPreview");
+if (input) input.value = "";
+if (preview) {
+preview.innerHTML = "";
+preview.style.display = "none";
+}
+}
+
+async function handleDmMediaSelected(event) {
+const file = event?.target?.files?.[0];
+if (!file) return;
+const maxSize = 25 * 1024 * 1024;
+const allowed = ["image/jpeg","image/png","image/gif","image/webp","video/mp4","video/webm","video/quicktime"];
+
+if (!allowed.includes(file.type)) {
+setDmStatus(getFriendHubLanguage() === "es" ? "Ese tipo de archivo no está permitido." : "That file type is not allowed.", true);
+clearDmAttachment();
+return;
+}
+if (file.size > maxSize) {
+setDmStatus(getFriendHubLanguage() === "es" ? "El archivo supera el límite de 25 MB." : "The file is larger than the 25 MB limit.", true);
+clearDmAttachment();
+return;
+}
+
+clearDmAttachment();
+dmSelectedAttachment = {
+file,
+previewUrl: URL.createObjectURL(file),
+type: file.type.startsWith("video/") ? "video" : "image"
+};
+
+const preview = document.getElementById("dmAttachmentPreview");
+if (!preview) return;
+const label = escapeHtml(file.name);
+
+preview.innerHTML = `
+<div class="dm-attachment-preview-inner">
+<div class="dm-attachment-preview-media">
+${dmSelectedAttachment.type === "video"
+? `<video src="${escapeHtmlAttribute(dmSelectedAttachment.previewUrl)}" controls muted></video>`
+: `<img src="${escapeHtmlAttribute(dmSelectedAttachment.previewUrl)}" alt="Attachment preview">`}
+</div>
+<div class="dm-attachment-preview-info">
+<span title="${label}">${label}</span>
+<button type="button" class="dm-remove-attachment" onclick="clearDmAttachment()" aria-label="Remove attachment">&#10005;</button>
+</div>
+</div>`;
+preview.style.display = "block";
+setDmStatus("");
+}
+
+async function uploadDmAttachment(file) {
+const extension = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+const randomPart = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const path = `${currentUser.id}/${randomPart}.${extension}`;
+
+const { error } = await supabaseClient.storage.from("dm-media").upload(path, file, {
+contentType: file.type,
+upsert: false
+});
+if (error) throw error;
+
+return {
+path,
+type: file.type.startsWith("video/") ? "video" : "image",
+name: file.name,
+size: file.size
+};
+}
+
+async function renderDmAttachment(message) {
+if (!message?.attachment_path) return "";
+const { data, error } = await supabaseClient.storage
+.from("dm-media")
+.createSignedUrl(message.attachment_path, 60 * 60);
+
+if (error || !data?.signedUrl) {
+console.error("DM attachment URL error:", error);
+return `<div class="dm-attachment-missing">${getFriendHubLanguage() === "es" ? "Archivo no disponible." : "Attachment unavailable."}</div>`;
+}
+
+const url = escapeHtmlAttribute(data.signedUrl);
+const type = message.attachment_type === "video" ? "video" : "image";
+const name = escapeHtml(message.attachment_name || "Attachment");
+
+return `<div class="dm-attachment">${
+type === "video"
+? `<video class="dm-attachment-video" src="${url}" controls preload="metadata"></video>`
+: `<a href="${url}" target="_blank" rel="noopener noreferrer" class="dm-attachment-link"><img class="dm-attachment-image" src="${url}" alt="${name}"></a>`
+}</div>`;
 }
 
 async function sendDirectMessage(event) {
@@ -4495,41 +4623,57 @@ if (!currentUser || !currentDmUserId) return;
 
 const input = document.getElementById("dmInput");
 const button = document.getElementById("dmSendButton");
+const attachButton = document.getElementById("dmAttachButton");
 const content = input ? input.value.trim() : "";
-if (!content) return;
+const attachment = dmSelectedAttachment?.file || null;
+
+if (!content && !attachment) return;
 if (content.length > 2000) {
 setDmStatus(getFriendHubLanguage() === "es" ? "El mensaje es demasiado largo." : "Message is too long.", true);
 return;
 }
 
 if (button) button.disabled = true;
-setDmStatus("");
+if (attachButton) attachButton.disabled = true;
+setDmStatus(getFriendHubLanguage() === "es" ? "Enviando..." : "Sending...");
 
-const { error } = await supabaseClient
-.from("direct_messages")
-.insert({
-sender_id: currentUser.id,
-recipient_id: currentDmUserId,
-content
-});
+let uploaded = null;
+try {
+if (attachment) uploaded = await uploadDmAttachment(attachment);
 
-if (button) button.disabled = false;
+const payload = { sender_id: currentUser.id, recipient_id: currentDmUserId, content: content || "" };
+if (uploaded) {
+payload.attachment_path = uploaded.path;
+payload.attachment_type = uploaded.type;
+payload.attachment_name = uploaded.name;
+payload.attachment_size = uploaded.size;
+}
+
+const { error } = await supabaseClient.from("direct_messages").insert(payload);
 
 if (error) {
-console.error("Send direct message error:", error);
-const blocked = error.code === "42501" || String(error.message || "").toLowerCase().includes("row-level security");
-setDmStatus(
-blocked
-? (getFriendHubLanguage() === "es" ? "No puedes enviar mensajes a este usuario." : "You can't send messages to this user.")
-: (getFriendHubLanguage() === "es" ? "No se pudo enviar el mensaje." : "Could not send the message."),
-true
-);
-return;
+if (uploaded?.path) await supabaseClient.storage.from("dm-media").remove([uploaded.path]).catch(() => {});
+throw error;
 }
 
 if (input) input.value = "";
+clearDmAttachment();
+setDmStatus("");
 await loadDirectMessages();
 if (input) input.focus();
+} catch (error) {
+console.error("Send DM with attachment error:", error);
+const blocked = error?.code === "42501" || String(error?.message || "").toLowerCase().includes("row-level security");
+setDmStatus(
+blocked
+? (getFriendHubLanguage() === "es" ? "No puedes enviar mensajes a este usuario." : "You can't send messages to this user.")
+: (getFriendHubLanguage() === "es" ? "No se pudo enviar el mensaje o archivo." : "Could not send the message or attachment."),
+true
+);
+} finally {
+if (button) button.disabled = false;
+if (attachButton) attachButton.disabled = false;
+}
 }
 
 async function toggleBlockUser(userId, username) {
