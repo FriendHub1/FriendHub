@@ -221,6 +221,41 @@ select:focus {
 border-color: #5865f2;
 box-shadow: 0 0 0 3px rgba(88,101,242,0.10);
 }
+
+.discover-advanced-filters {
+  margin: 14px 0 18px;
+  padding: 16px;
+  border: 1px solid var(--fh-border);
+  border-radius: 18px;
+  background: var(--fh-surface);
+}
+.discover-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.discover-filter-grid select,
+.discover-filter-grid input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--fh-border);
+  border-radius: 12px;
+  background: var(--fh-surface-strong);
+  color: var(--fh-text);
+}
+.discover-filter-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+#discoverPeopleResults {
+  margin: 14px 0 18px;
+}
+@media (max-width: 760px) {
+  .discover-filter-grid { grid-template-columns: 1fr; }
+}
 .filters {
 display: flex;
 gap: 8px;
@@ -2177,6 +2212,89 @@ People
 <button class="filter-btn" data-filter="discord" onclick="setFilter('discord', this)">
 &#128998; Discord
 </button>
+</div>
+<div class="discover-advanced-filters">
+<div class="discover-filter-grid">
+<input id="discoverCountryFilter" type="text" maxlength="80" placeholder="🌎 Country">
+<select id="discoverLanguageFilter">
+<option value="">🗣️ Any language</option>
+<option value="English">🇺🇸 English</option>
+<option value="Spanish">🇪🇸 Spanish</option>
+<option value="Portuguese">🇵🇹 Portuguese</option>
+<option value="French">🇫🇷 French</option>
+<option value="German">🇩🇪 German</option>
+<option value="Italian">🇮🇹 Italian</option>
+<option value="Japanese">🇯🇵 Japanese</option>
+<option value="Korean">🇰🇷 Korean</option>
+<option value="Chinese">🇨🇳 Chinese</option>
+<option value="Other">🌐 Other</option>
+</select>
+<select id="discoverInterestFilter">
+<option value="">✨ Any interest</option>
+<option value="Gaming">🎮 Gaming</option>
+<option value="Music">🎵 Music</option>
+<option value="Movies & TV">🎬 Movies & TV</option>
+<option value="Books">📚 Books</option>
+<option value="Sports">⚽ Sports</option>
+<option value="Technology">💻 Technology</option>
+<option value="Art">🎨 Art</option>
+<option value="Travel">✈️ Travel</option>
+<option value="Food">🍕 Food</option>
+<option value="Photography">📸 Photography</option>
+<option value="Psychology">🧠 Psychology</option>
+<option value="Fitness">💪 Fitness</option>
+<option value="Nature">🌿 Nature</option>
+<option value="Entertainment">🎭 Entertainment</option>
+<option value="Languages">🗣️ Languages</option>
+<option value="Culture">🌎 Culture</option>
+<option value="Other">✨ Other</option>
+</select>
+<select id="discoverGenderFilter">
+<option value="">⚧ Any gender</option>
+<option value="Man">Man</option>
+<option value="Woman">Woman</option>
+<option value="Non-binary">Non-binary</option>
+<option value="Trans man">Trans man</option>
+<option value="Trans woman">Trans woman</option>
+<option value="Other">Other</option>
+</select>
+<select id="discoverOrientationFilter">
+<option value="">🌈 Any orientation</option>
+<option value="Straight">Straight</option>
+<option value="Gay">Gay</option>
+<option value="Lesbian">Lesbian</option>
+<option value="Bisexual">Bisexual</option>
+<option value="Pansexual">Pansexual</option>
+<option value="Asexual">Asexual</option>
+<option value="Other">Other</option>
+</select>
+<select id="discoverLookingForFilter">
+<option value="">🔎 Looking for anything</option>
+<option value="New friends">👋 New friends</option>
+<option value="Someone to talk to">💬 Someone to talk to</option>
+<option value="Gaming partners">🎮 Gaming partners</option>
+<option value="People with similar music taste">🎵 Similar music taste</option>
+<option value="Movie & TV friends">🎬 Movie & TV friends</option>
+<option value="Study partners">📚 Study partners</option>
+<option value="Language exchange">🗣️ Language exchange</option>
+<option value="Friends from other countries">🌎 Friends from other countries</option>
+<option value="Communities & groups">👥 Communities & groups</option>
+<option value="WhatsApp groups">💚 WhatsApp groups</option>
+<option value="Telegram groups">✈️ Telegram groups</option>
+<option value="Snapchat friends">👻 Snapchat friends</option>
+<option value="People with similar interests">✨ Similar interests</option>
+<option value="Sports partners">⚽ Sports partners</option>
+<option value="Travel friends">🧳 Travel friends</option>
+<option value="Networking">🤝 Networking</option>
+<option value="Meet new people">🌟 Meet new people</option>
+<option value="Other">🔎 Other</option>
+</select>
+</div>
+<div class="discover-filter-actions">
+<button class="btn btn-primary" type="button" onclick="applyDiscoverPeopleFilters()">🔎 Find people</button>
+<button class="btn btn-secondary" type="button" onclick="clearDiscoverPeopleFilters()">Clear filters</button>
+</div>
+<div id="discoverPeopleResults"></div>
 </div>
 <div class="composer">
 <h3>Create a post</h3>
@@ -4157,6 +4275,103 @@ return `${days}d ago`;
 }
 return date.toLocaleDateString();
 }
+
+function normalizeDiscoverStoredList(value) {
+if (!value) return [];
+if (Array.isArray(value)) return value;
+try {
+const parsed = JSON.parse(value);
+return Array.isArray(parsed) ? parsed : [];
+} catch {
+return String(value).split(",").map(item => item.trim()).filter(Boolean);
+}
+}
+function discoverValueMatches(listValue, wanted) {
+if (!wanted) return true;
+return normalizeDiscoverStoredList(listValue).some(item =>
+getOptionTextWithoutEmoji(item).toLowerCase() === String(wanted).toLowerCase()
+);
+}
+async function applyDiscoverPeopleFilters() {
+const results = document.getElementById("discoverPeopleResults");
+if (!results) return;
+if (!currentUser) {
+results.innerHTML = '<div class="empty-state">Log in to discover people with filters.</div>';
+return;
+}
+const country = (document.getElementById("discoverCountryFilter")?.value || "").trim().toLowerCase();
+const language = document.getElementById("discoverLanguageFilter")?.value || "";
+const interest = document.getElementById("discoverInterestFilter")?.value || "";
+const gender = document.getElementById("discoverGenderFilter")?.value || "";
+const orientation = document.getElementById("discoverOrientationFilter")?.value || "";
+const lookingFor = document.getElementById("discoverLookingForFilter")?.value || "";
+
+results.innerHTML = '<div class="empty-state">Finding people...</div>';
+
+const [profilesResult, followsResult, blocksResult] = await Promise.all([
+supabaseClient.from("friendhub_public_profiles")
+.select("user_id, username, country, languages, interests, looking_for, profile_photo, bio, gender_identity, sexual_orientation")
+.limit(100),
+supabaseClient.from("user_follows").select("following_id").eq("follower_id", currentUser.id),
+supabaseClient.from("user_blocks").select("blocked_id").eq("blocker_id", currentUser.id)
+]);
+
+if (profilesResult.error) {
+console.error("Discover people filter error:", profilesResult.error);
+results.innerHTML = '<div class="empty-state">Could not load people right now.</div>';
+return;
+}
+const followed = new Set((followsResult.data || []).map(row => String(row.following_id)));
+const blocked = new Set((blocksResult.data || []).map(row => String(row.blocked_id)));
+
+const matches = (profilesResult.data || []).filter(profile => {
+if (!profile?.user_id || String(profile.user_id) === String(currentUser.id)) return false;
+if (blocked.has(String(profile.user_id))) return false;
+if (country && !String(profile.country || "").toLowerCase().includes(country)) return false;
+if (!discoverValueMatches(profile.languages, language)) return false;
+if (!discoverValueMatches(profile.interests, interest)) return false;
+if (!discoverValueMatches(profile.looking_for, lookingFor)) return false;
+if (gender && String(profile.gender_identity || "").toLowerCase() !== gender.toLowerCase()) return false;
+if (orientation && String(profile.sexual_orientation || "").toLowerCase() !== orientation.toLowerCase()) return false;
+return true;
+}).slice(0, 24);
+
+if (!matches.length) {
+results.innerHTML = '<div class="empty-state">No people match these filters yet.</div>';
+return;
+}
+
+results.innerHTML = `<div class="friend-suggestions-list">${matches.map(profile => {
+const username = profile.username || "@User";
+const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
+const avatar = profile.profile_photo
+? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+: initial;
+const meta = [profile.country, profile.gender_identity && profile.gender_identity !== "Prefer not to say" ? profile.gender_identity : ""]
+.filter(Boolean).map(escapeHtml).join(" · ");
+return `<div class="friend-suggestion-card">
+<div class="friend-suggestion-avatar">${avatar}</div>
+<div class="friend-suggestion-info">
+<strong>${escapeHtml(username)}</strong>
+<span>${meta || "FriendHub member"}</span>
+</div>
+<div class="friend-suggestion-actions">
+<button class="btn btn-secondary" type="button" onclick="openPublicProfile('${escapeHtmlAttribute(String(profile.user_id))}')">Profile</button>
+<button class="btn btn-primary" type="button" onclick="followFriendSuggestion('${escapeHtmlAttribute(String(profile.user_id))}', this)">${followed.has(String(profile.user_id)) ? "Following" : "Follow"}</button>
+</div>
+</div>`;
+}).join("")}</div>`;
+}
+function clearDiscoverPeopleFilters() {
+["discoverCountryFilter","discoverLanguageFilter","discoverInterestFilter","discoverGenderFilter","discoverOrientationFilter","discoverLookingForFilter"]
+.forEach(id => {
+const el = document.getElementById(id);
+if (el) el.value = "";
+});
+const results = document.getElementById("discoverPeopleResults");
+if (results) results.innerHTML = "";
+}
+
 function setFilter(filter, button) {
 currentFilter =
 filter;
