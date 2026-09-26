@@ -1019,8 +1019,8 @@
  }
 
  /* =========================================================
-    NOTIFICATIONS
-    ========================================================= */
+ NOTIFICATIONS
+ ========================================================= */
  .notification-wrap {
  position: relative;
  display: none;
@@ -1135,7 +1135,7 @@
 
  <div class="notification-wrap" id="notificationWrap">
  <button class="notification-bell" id="notificationBell" onclick="toggleNotifications(event)" aria-label="Notifications" title="Notifications">
- 🔔
+ 
  <span class="notification-badge" id="notificationBadge">0</span>
  </button>
 
@@ -1174,7 +1174,7 @@
  <div class="container hero-content">
 
  <div class="hero-badge">
-  A place to meet people
+ A place to meet people
  </div>
 
  <h1>
@@ -1271,19 +1271,19 @@
  </button>
 
  <button class="filter-btn" data-filter="people" onclick="setFilter('people', this)">
-  People
+ People
  </button>
 
  <button class="filter-btn" data-filter="whatsapp" onclick="setFilter('whatsapp', this)">
-  WhatsApp
+ WhatsApp
  </button>
 
  <button class="filter-btn" data-filter="telegram" onclick="setFilter('telegram', this)">
-  Telegram
+ Telegram
  </button>
 
  <button class="filter-btn" data-filter="snapchat" onclick="setFilter('snapchat', this)">
-  Snapchat
+ Snapchat
  </button>
 
  </div>
@@ -1309,7 +1309,7 @@
  data-post-type="personal"
  onclick="selectPostType('personal', this)"
  >
-  Personal contact
+ Personal contact
  </button>
 
  <button
@@ -1317,7 +1317,7 @@
  data-post-type="whatsapp"
  onclick="selectPostType('whatsapp', this)"
  >
-  WhatsApp group
+ WhatsApp group
  </button>
 
  <button
@@ -1325,7 +1325,7 @@
  data-post-type="telegram"
  onclick="selectPostType('telegram', this)"
  >
-  Telegram group
+ Telegram group
  </button>
 
  <button
@@ -1333,7 +1333,7 @@
  data-post-type="snapchat"
  onclick="selectPostType('snapchat', this)"
  >
-  Snapchat
+ Snapchat
  </button>
 
  </div>
@@ -1343,7 +1343,7 @@
  <div>
 
  <label class="file-label" for="mediaInput">
-  Add media
+ Add media
  </label>
 
  <input
@@ -1367,7 +1367,7 @@
  class="remove-media"
  onclick="removeMedia()"
  >
- ×
+ �
  </button>
 
  <div id="mediaPreviewContent"></div>
@@ -1415,7 +1415,7 @@
  </div>
 
  <label class="profile-photo-label" for="profilePhotoInput">
-  Change profile photo
+ Change profile photo
  </label>
 
  <input
@@ -1644,7 +1644,7 @@
  </div>
 
  <div class="footer-small">
- © 2026 FriendHub. All rights reserved.
+ � 2026 FriendHub. All rights reserved.
  </div>
 
  </div>
@@ -1660,7 +1660,7 @@
  class="modal-close"
  onclick="closeModal('authModal')"
  >
- ×
+ �
  </button>
 
  <h2 id="authTitle">
@@ -1766,7 +1766,7 @@
  class="modal-close"
  onclick="closeModal('resetModal')"
  >
- ×
+ �
  </button>
 
  <h2>Reset Password</h2>
@@ -1861,7 +1861,7 @@
 
  <div class="modal comments-modal">
 
- <button class="modal-close" onclick="closeCommentsModal()">×</button>
+ <button class="modal-close" onclick="closeCommentsModal()">�</button>
 
  <h2>Comments</h2>
  <p id="commentsSubtitle" class="modal-subtitle">Join the conversation.</p>
@@ -1880,7 +1880,7 @@
  </div>
  <div id="commentMediaPreview" class="comment-media-preview">
  <div id="commentMediaPreviewContent"></div>
- <button type="button" class="comment-media-remove" onclick="removeCommentMedia()" aria-label="Remove attachment">×</button>
+ <button type="button" class="comment-media-remove" onclick="removeCommentMedia()" aria-label="Remove attachment">�</button>
  </div>
  </div>
  </div>
@@ -2321,6 +2321,8 @@ async function submitAuth() {
 
  await loadCurrentProfile();
  await loadPosts();
+ await loadNotifications();
+ startNotificationRefresh();
 
  updateAuthUI();
 
@@ -2518,8 +2520,13 @@ supabaseClient.auth.onAuthStateChange(
 
  await loadCurrentProfile();
  await loadPosts();
+ await loadNotifications();
+ startNotificationRefresh();
 
  } else {
+
+ stopNotificationRefresh();
+ clearNotifications();
 
  currentProfile = null;
 
@@ -2560,8 +2567,13 @@ async function checkSession() {
 
  await loadCurrentProfile();
  await loadPosts();
+ await loadNotifications();
+ startNotificationRefresh();
 
  } else {
+
+ stopNotificationRefresh();
+ clearNotifications();
 
  posts = [...samplePosts];
  renderPosts();
@@ -2584,6 +2596,9 @@ function updateAuthUI() {
  const logoutBtn =
  document.getElementById("logoutBtn");
 
+ const notificationWrap =
+ document.getElementById("notificationWrap");
+
 
  if (currentUser) {
 
@@ -2596,6 +2611,10 @@ function updateAuthUI() {
  logoutBtn.style.display =
  "inline-block";
 
+ if (notificationWrap) {
+ notificationWrap.style.display = "flex";
+ }
+
  } else {
 
  loginBtn.style.display =
@@ -2606,6 +2625,10 @@ function updateAuthUI() {
 
  logoutBtn.style.display =
  "none";
+
+ if (notificationWrap) {
+ notificationWrap.style.display = "none";
+ }
 
  }
 
@@ -2618,6 +2641,12 @@ async function logout() {
 
  currentUser = null;
  currentProfile = null;
+
+ stopNotificationRefresh();
+ clearNotifications();
+
+ const notificationPanel = document.getElementById("notificationPanel");
+ if (notificationPanel) notificationPanel.classList.remove("open");
 
  posts = [...samplePosts];
 
@@ -4073,7 +4102,7 @@ function renderPost(post) {
 
  <div class="post-meta">
  ${typeLabels[post.type] || "Post"}
- · ${escapeHtml(post.time)}
+ � ${escapeHtml(post.time)}
  </div>
 
  </div>
@@ -4109,7 +4138,7 @@ function renderPost(post) {
  class="post-action"
  onclick="commentPost('${escapeHtmlAttribute(String(post.id))}')"
  >
-  Comment${post.comments ? ` ${post.comments}` : ""}
+ Comment${post.comments ? ` ${post.comments}` : ""}
  </button>
 
 
@@ -4117,7 +4146,7 @@ function renderPost(post) {
  class="post-action"
  onclick="reportPost('${escapeHtmlAttribute(String(post.id))}')"
  >
-  Report
+ Report
  </button>
 
  </div>
@@ -4136,121 +4165,121 @@ function renderPost(post) {
 
 
 /* =========================================================
-   NOTIFICATIONS
-   ========================================================= */
+ NOTIFICATIONS
+ ========================================================= */
 
 async function loadNotifications() {
-  if (!currentUser) {
-    clearNotifications();
-    return;
-  }
+ if (!currentUser) {
+ clearNotifications();
+ return;
+ }
 
-  const { data, error } = await supabaseClient
-    .from("notifications")
-    .select("id, created_at, user_id, actor_id, post_id, type, message, is_read")
-    .eq("user_id", currentUser.id)
-    .order("created_at", { ascending: false })
-    .limit(50);
+ const { data, error } = await supabaseClient
+ .from("notifications")
+ .select("id, created_at, user_id, actor_id, post_id, type, message, is_read")
+ .eq("user_id", currentUser.id)
+ .order("created_at", { ascending: false })
+ .limit(50);
 
-  if (error) {
-    console.error("Notifications load error:", error);
-    return;
-  }
+ if (error) {
+ console.error("Notifications load error:", error);
+ return;
+ }
 
-  notifications = data || [];
-  renderNotifications();
+ notifications = data || [];
+ renderNotifications();
 }
 
 function renderNotifications() {
-  const list = document.getElementById("notificationList");
-  const badge = document.getElementById("notificationBadge");
-  if (!list || !badge) return;
+ const list = document.getElementById("notificationList");
+ const badge = document.getElementById("notificationBadge");
+ if (!list || !badge) return;
 
-  const unreadCount = notifications.filter(item => !item.is_read).length;
-  badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
-  badge.style.display = unreadCount > 0 ? "block" : "none";
+ const unreadCount = notifications.filter(item => !item.is_read).length;
+ badge.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
+ badge.style.display = unreadCount > 0 ? "block" : "none";
 
-  if (!notifications.length) {
-    list.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
-    return;
-  }
+ if (!notifications.length) {
+ list.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
+ return;
+ }
 
-  list.innerHTML = notifications.map(item => {
-    const icon = item.type === "like" ? "❤️" : "💬";
-    return `
-      <div class="notification-item ${item.is_read ? "" : "unread"}">
-        <div class="notification-icon">${icon}</div>
-        <div class="notification-text">
-          <div class="notification-message">${escapeHtml(item.message || "New notification")}</div>
-          <div class="notification-time">${escapeHtml(formatPostTime(item.created_at))}</div>
-        </div>
-      </div>
-    `;
-  }).join("");
+ list.innerHTML = notifications.map(item => {
+ const icon = item.type === "like" ? "" : "";
+ return `
+ <div class="notification-item ${item.is_read ? "" : "unread"}">
+ <div class="notification-icon">${icon}</div>
+ <div class="notification-text">
+ <div class="notification-message">${escapeHtml(item.message || "New notification")}</div>
+ <div class="notification-time">${escapeHtml(formatPostTime(item.created_at))}</div>
+ </div>
+ </div>
+ `;
+ }).join("");
 }
 
 async function toggleNotifications(event) {
-  if (event) event.stopPropagation();
-  if (!currentUser) return;
+ if (event) event.stopPropagation();
+ if (!currentUser) return;
 
-  const panel = document.getElementById("notificationPanel");
-  const opening = !panel.classList.contains("open");
-  panel.classList.toggle("open");
+ const panel = document.getElementById("notificationPanel");
+ const opening = !panel.classList.contains("open");
+ panel.classList.toggle("open");
 
-  if (opening) {
-    await loadNotifications();
-    await markNotificationsAsRead();
-  }
+ if (opening) {
+ await loadNotifications();
+ await markNotificationsAsRead();
+ }
 }
 
 async function markNotificationsAsRead() {
-  if (!currentUser || !notifications.some(item => !item.is_read)) return;
+ if (!currentUser || !notifications.some(item => !item.is_read)) return;
 
-  const { error } = await supabaseClient
-    .from("notifications")
-    .update({ is_read: true })
-    .eq("user_id", currentUser.id)
-    .eq("is_read", false);
+ const { error } = await supabaseClient
+ .from("notifications")
+ .update({ is_read: true })
+ .eq("user_id", currentUser.id)
+ .eq("is_read", false);
 
-  if (error) {
-    console.error("Mark notifications read error:", error);
-    return;
-  }
+ if (error) {
+ console.error("Mark notifications read error:", error);
+ return;
+ }
 
-  notifications = notifications.map(item => ({ ...item, is_read: true }));
-  renderNotifications();
+ notifications = notifications.map(item => ({ ...item, is_read: true }));
+ renderNotifications();
 }
 
 function clearNotifications() {
-  notifications = [];
-  renderNotifications();
+ notifications = [];
+ renderNotifications();
 }
 
 function startNotificationRefresh() {
-  stopNotificationRefresh();
-  if (!currentUser) return;
-  notificationRefreshTimer = setInterval(() => {
-    loadNotifications();
-  }, 15000);
+ stopNotificationRefresh();
+ if (!currentUser) return;
+ notificationRefreshTimer = setInterval(() => {
+ loadNotifications();
+ }, 15000);
 }
 
 function stopNotificationRefresh() {
-  if (notificationRefreshTimer) {
-    clearInterval(notificationRefreshTimer);
-    notificationRefreshTimer = null;
-  }
+ if (notificationRefreshTimer) {
+ clearInterval(notificationRefreshTimer);
+ notificationRefreshTimer = null;
+ }
 }
 
 document.addEventListener("click", event => {
-  const wrap = document.getElementById("notificationWrap");
-  const panel = document.getElementById("notificationPanel");
-  if (wrap && panel && !wrap.contains(event.target)) {
-    panel.classList.remove("open");
-  }
+ const wrap = document.getElementById("notificationWrap");
+ const panel = document.getElementById("notificationPanel");
+ if (wrap && panel && !wrap.contains(event.target)) {
+ panel.classList.remove("open");
+ }
 });
 
 window.addEventListener("focus", () => {
-  if (currentUser) loadNotifications();
+ if (currentUser) loadNotifications();
 });
 
 
@@ -4496,7 +4525,7 @@ function renderComments() {
  <div class="comment-body">
  <div>
  <span class="comment-user">${username}</span>
- <span class="comment-time">· ${escapeHtml(formatPostTime(comment.created_at))}</span>
+ <span class="comment-time">� ${escapeHtml(formatPostTime(comment.created_at))}</span>
  </div>
  ${comment.content ? `<div class="comment-content">${escapeHtml(comment.content)}</div>` : ""}
  ${comment.media_url ? `
