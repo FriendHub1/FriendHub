@@ -1823,6 +1823,178 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
   }
 }
 
+
+
+/* =========================================================
+FRIENDHUB RESPONSIVE V1 — iPhone / Android / Tablet
+Visual/layout-only layer. Desktop behavior and app logic stay intact.
+========================================================= */
+html, body { max-width: 100%; overflow-x: hidden; }
+img, video { max-width: 100%; }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+
+/* Tablet / compact laptop */
+@media (max-width: 1024px) {
+  .container { width: min(94%, 900px); }
+  .page { padding: 42px 0; }
+  .hero { min-height: 520px; }
+  .feature-grid { gap: 16px; }
+  .post, .composer, .profile-card, .content-card, .public-profile-card { max-width: 100%; }
+  .notification-panel { max-height: min(520px, 72vh); }
+  .notification-list { max-height: min(450px, 62vh); }
+}
+
+/* iPad / tablets */
+@media (min-width: 701px) and (max-width: 1024px) {
+  .nav { gap: 12px; }
+  .nav-links { gap: 4px; }
+  .nav-links button { padding: 9px 9px; }
+  .auth-buttons { gap: 6px; }
+  .hero-content { max-width: 680px; }
+  .profile-card { max-width: 720px; }
+  .dm-inbox-wrap, .dm-chat { max-width: 760px; }
+  .dm-messages { height: min(60vh, 620px); }
+}
+
+/* Phones — iPhone + Android */
+@media (max-width: 700px) {
+  :root { --fh-mobile-edge: 12px; }
+  body { min-width: 0; }
+  .container { width: 100%; padding-left: var(--fh-mobile-edge); padding-right: var(--fh-mobile-edge); }
+  header { position: sticky; top: 0; }
+  .nav { min-height: 60px; padding: 8px 0 6px; gap: 8px; }
+  .logo { font-size: 22px; flex: 1 1 auto; }
+  .auth-buttons { width: auto; margin-left: auto; gap: 6px; align-items: center; }
+  .auth-buttons .btn { padding: 9px 11px; font-size: 13px; white-space: nowrap; }
+  .language-select { max-width: 92px; padding: 8px 7px; font-size: 13px; }
+  .theme-toggle { flex: 0 0 auto; }
+
+  /* Navigation becomes a finger-friendly horizontal rail instead of overflowing. */
+  .nav-links {
+    order: 3;
+    width: calc(100% + (var(--fh-mobile-edge) * 2));
+    margin-left: calc(var(--fh-mobile-edge) * -1);
+    margin-right: calc(var(--fh-mobile-edge) * -1);
+    padding: 3px var(--fh-mobile-edge) 6px;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 4px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links button { flex: 0 0 auto; min-height: 42px; padding: 9px 10px; font-size: 13px; white-space: nowrap; }
+
+  .page { padding: 26px 0; }
+  .page-header { margin-bottom: 18px; }
+  .page-header h1 { font-size: clamp(28px, 9vw, 36px); line-height: 1.12; }
+  .page-header p { font-size: 14px; }
+  .hero { min-height: auto; padding: 56px 0 62px; }
+  .hero-content { width: 100%; }
+  .hero h1 { font-size: clamp(38px, 12vw, 54px); letter-spacing: -1.4px; }
+  .hero p { font-size: 16px; }
+  .hero-buttons { width: 100%; }
+  .hero-buttons .btn { flex: 1 1 145px; min-height: 48px; }
+  .features { padding: 42px 0; }
+  .section-title h2 { font-size: 28px; }
+  .feature-card { padding: 20px; }
+
+  .search-box { min-height: 48px; font-size: 16px; }
+  .filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .filters::-webkit-scrollbar { display: none; }
+  .filter-btn { flex: 0 0 auto; min-height: 42px; white-space: nowrap; }
+
+  .composer, .post, .profile-card, .content-card, .public-profile-card { border-radius: 15px; padding: 16px; }
+  .composer textarea, .form-group input, .form-group select, .form-group textarea, .edit-post-modal textarea { font-size: 16px; }
+  .composer-actions { align-items: stretch; }
+  .composer-actions > * { min-height: 44px; }
+  .post-types { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .post-types::-webkit-scrollbar { display: none; }
+  .post-type { flex: 0 0 auto; min-height: 40px; }
+  .post-header { align-items: flex-start; }
+  .avatar { width: 42px; height: 42px; }
+  .post-media img, .post-media video { max-height: 70vh; border-radius: 10px; }
+  .post-actions { gap: 2px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .post-actions::-webkit-scrollbar { display: none; }
+  .post-action { flex: 0 0 auto; min-height: 42px; padding: 8px 10px; }
+
+  .profile-avatar { width: 96px; height: 96px; }
+  .option-grid { gap: 7px; }
+  .option-btn { min-height: 40px; }
+  .profile-actions { align-items: stretch; }
+  .profile-actions .btn { flex: 1 1 140px; min-height: 46px; }
+  .public-profile-avatar { width: 96px; height: 96px; }
+  .public-profile-social { gap: 8px; }
+  .public-profile-stat { min-height: 48px; }
+  .public-profile-card > .btn { min-height: 44px; margin-left: 4px; margin-right: 4px; }
+
+  /* Modals fit phone screens and respect iPhone safe areas. */
+  .modal-overlay {
+    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    align-items: flex-end;
+  }
+  .modal { width: 100%; max-height: min(88dvh, 760px); border-radius: 20px 20px 12px 12px; padding: 22px 16px max(18px, env(safe-area-inset-bottom)); }
+  .comments-modal, .edit-post-modal { width: 100%; }
+  .edit-post-actions .btn { min-height: 44px; }
+
+  /* Notifications stay inside the viewport. */
+  .notification-panel {
+    position: fixed;
+    top: max(72px, calc(60px + env(safe-area-inset-top)));
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-height: calc(100dvh - 90px - env(safe-area-inset-bottom));
+    border-radius: 16px;
+  }
+  .notification-list { max-height: calc(100dvh - 150px - env(safe-area-inset-bottom)); }
+  .notification-item { padding: 13px 14px; }
+
+  /* Messages use the available phone viewport without horizontal clipping. */
+  .dm-inbox-wrap, .dm-chat { width: 100%; max-width: 100%; }
+  .dm-inbox-item { padding: 12px; border-radius: 14px; }
+  .dm-inbox-avatar { width: 44px; height: 44px; flex-basis: 44px; }
+  .dm-inbox-top, .dm-inbox-bottom { min-width: 0; }
+  .dm-chat { border-radius: 15px; }
+  .dm-chat-header { padding: 11px 10px; gap: 9px; }
+  .dm-back-btn { padding: 8px 10px; min-height: 40px; }
+  .dm-chat-header .avatar { width: 40px; height: 40px; }
+  .dm-chat-username { font-size: .98rem; }
+  .dm-chat-private { font-size: .75rem; }
+  .dm-messages { height: clamp(300px, 55dvh, 620px); min-height: 300px; padding: 10px; }
+  .dm-bubble { max-width: 88%; overflow-wrap: anywhere; }
+  .dm-composer { gap: 7px; padding: 9px; padding-bottom: max(9px, env(safe-area-inset-bottom)); }
+  .dm-composer textarea { min-height: 44px; max-height: 110px; font-size: 16px; padding: 10px 11px; }
+  .dm-attach-button { width: 42px; height: 42px; flex-basis: 42px; }
+  .dm-attachment-preview-media { width: 58px; height: 58px; flex-basis: 58px; }
+  .dm-attachment-image, .dm-attachment-video { max-height: 55vh; }
+
+  .emoji-picker-panel { max-width: calc(100vw - 28px); }
+  footer { padding-bottom: max(30px, env(safe-area-inset-bottom)); }
+}
+
+/* Small phones (iPhone SE / compact Android) */
+@media (max-width: 390px) {
+  :root { --fh-mobile-edge: 9px; }
+  .logo { font-size: 20px; }
+  .auth-buttons .btn { padding: 8px 9px; font-size: 12px; }
+  .language-select { max-width: 78px; font-size: 12px; }
+  .hero h1 { font-size: 38px; }
+  .composer, .post, .profile-card, .content-card, .public-profile-card { padding: 14px; }
+  .post-action { padding-left: 8px; padding-right: 8px; }
+  .dm-bubble { max-width: 91%; }
+  .dm-message-avatar { width: 28px; height: 28px; flex-basis: 28px; }
+}
+
+/* Touch devices: avoid hover-only interactions and provide comfortable targets. */
+@media (hover: none) and (pointer: coarse) {
+  .btn:hover, .dm-inbox-item:hover, .feature-card:hover { transform: none; }
+  button, .btn, .file-label, .option-btn, .post-action { touch-action: manipulation; }
+}
+
 </style>
 </head>
 <body>
