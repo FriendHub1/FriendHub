@@ -952,6 +952,23 @@ PUBLIC PROFILE
 .public-profile-detail strong { display:block; margin-bottom:5px; color:#263043; }
 .public-profile-detail span { color:#667085; overflow-wrap:anywhere; }
 .public-profile-posts-title { margin:28px 0 15px; }
+.friend-suggestions-section { margin: 0 0 22px; padding: 18px; border: 1px solid var(--fh-border, #e7e9ee); border-radius: 18px; background: var(--fh-surface, #fff); }
+.friend-suggestions-heading { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:14px; }
+.friend-suggestions-heading h2 { margin:0 0 4px; font-size:1.2rem; }
+.friend-suggestions-heading p { margin:0; opacity:.72; font-size:.92rem; }
+.friend-suggestions-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+.friend-suggestion-card { border:1px solid var(--fh-border, #e7e9ee); border-radius:16px; padding:14px; background:var(--fh-surface-strong, #fff); }
+.friend-suggestion-profile { display:flex; align-items:center; gap:10px; width:100%; padding:0; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; }
+.friend-suggestion-avatar { width:48px; height:48px; border-radius:50%; overflow:hidden; display:grid; place-items:center; flex:0 0 48px; background:#eef1f5; font-weight:700; }
+.friend-suggestion-avatar img { width:100%; height:100%; object-fit:cover; }
+.friend-suggestion-name { display:block; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.friend-suggestion-reason { display:block; margin-top:3px; font-size:.82rem; opacity:.72; }
+.friend-suggestion-actions { display:flex; gap:8px; margin-top:12px; }
+.friend-suggestion-actions .btn { flex:1; }
+@media (max-width: 600px) {
+  .friend-suggestions-heading { align-items:flex-start; }
+  .friend-suggestions-list { grid-template-columns:1fr; }
+}
 .public-profile-social { display:flex; justify-content:center; align-items:center; gap:22px; flex-wrap:wrap; margin:16px 0 4px; }
 .public-profile-stat { border:none; background:transparent; cursor:pointer; padding:6px 8px; color:#344054; font-weight:700; }
 .public-profile-stat strong { display:block; font-size:18px; color:#101828; }
@@ -2124,6 +2141,16 @@ and backgrounds.
 <h1>Discover</h1>
 <p>Find people and communities that match what you're looking for.</p>
 </div>
+<div id="friendSuggestionsSection" class="friend-suggestions-section" style="display:none;">
+<div class="friend-suggestions-heading">
+<div>
+<h2>People You May Know</h2>
+<p>Suggestions based on mutual connections.</p>
+</div>
+<button class="btn btn-secondary" type="button" onclick="loadFriendSuggestions()">Refresh</button>
+</div>
+<div id="friendSuggestionsList" class="friend-suggestions-list"></div>
+</div>
 <input
 id="searchInput"
 class="search-box"
@@ -2842,6 +2869,7 @@ behavior: "smooth"
 });
 if (pageId === "discover") {
 loadPosts();
+loadFriendSuggestions();
 }
 if (pageId === "saved") {
 if (!currentUser) {
@@ -4159,7 +4187,7 @@ return `${prefix}<span class="mention-link" role="button" tabindex="0" onclick="
 });
 safe = safe.replace(/(^|[^\p{L}\p{N}_])(#[\p{L}\p{N}_]{1,50})/gu, (match, prefix, hashtag) => {
 const encoded = encodeURIComponent(hashtag);
-return `${prefix}<span class="hashtag-link" role="button" tabindex="0" onclick="event.stopPropagation(); openHashtag(decodeURIComponent('${encoded}'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openHashtag(decodeURIComponent('${encoded}'));}">${hashtag}</span>`;
+return `${prefix}<a class="hashtag-link" href="#hashtag=${encoded}" data-hashtag="${encoded}" onclick="event.preventDefault();event.stopPropagation();openHashtag(decodeURIComponent(this.dataset.hashtag));">${hashtag}</a>`;
 });
 return safe;
 }
@@ -4175,6 +4203,15 @@ btn.classList.toggle("active", btn.dataset.filter === "all");
 });
 loadPosts().then(() => renderPosts());
 }
+
+document.addEventListener("click", function(event) {
+const hashtagLink = event.target.closest(".hashtag-link");
+if (!hashtagLink) return;
+event.preventDefault();
+event.stopPropagation();
+const encoded = hashtagLink.dataset.hashtag || "";
+if (encoded) openHashtag(decodeURIComponent(encoded));
+});
 
 async function openMentionProfile(username) {
 if (!currentUser || !username) {
@@ -4681,6 +4718,150 @@ return;
 }
 
 alert(isSpanish ? "Reporte enviado. Gracias." : "Report submitted. Thank you.");
+}
+
+async function loadFriendSuggestions() {
+const section = document.getElementById("friendSuggestionsSection");
+const list = document.getElementById("friendSuggestionsList");
+if (!section || !list) return;
+
+if (!currentUser) {
+section.style.display = "none";
+list.innerHTML = "";
+return;
+}
+
+section.style.display = "";
+list.innerHTML = '<div class="empty-state">Loading suggestions...</div>';
+
+try {
+const myId = String(currentUser.id);
+
+/* Accounts I already follow. */
+const { data: myFollowingRows, error: myFollowingError } = await supabaseClient
+.from("user_follows")
+.select("following_id")
+.eq("follower_id", myId);
+if (myFollowingError) throw myFollowingError;
+
+const alreadyFollowing = new Set((myFollowingRows || []).map(row => String(row.following_id)));
+const firstDegree = [...alreadyFollowing];
+
+/* People followed by people I follow = mutual-connection candidates. */
+let secondDegreeRows = [];
+if (firstDegree.length) {
+const { data, error } = await supabaseClient
+.from("user_follows")
+.select("follower_id, following_id")
+.in("follower_id", firstDegree);
+if (error) throw error;
+secondDegreeRows = data || [];
+}
+
+/* Never suggest myself or somebody I already follow. */
+const mutualCounts = new Map();
+for (const row of secondDegreeRows) {
+const candidateId = String(row.following_id || "");
+if (!candidateId || candidateId === myId || alreadyFollowing.has(candidateId)) continue;
+mutualCounts.set(candidateId, (mutualCounts.get(candidateId) || 0) + 1);
+}
+
+/* Exclude accounts I blocked. If RLS prevents this optional read, suggestions still work. */
+let blockedIds = new Set();
+const { data: blockedRows, error: blockedError } = await supabaseClient
+.from("user_blocks")
+.select("blocked_id")
+.eq("blocker_id", myId);
+if (!blockedError) blockedIds = new Set((blockedRows || []).map(row => String(row.blocked_id)));
+
+let candidateIds = [...mutualCounts.keys()].filter(id => !blockedIds.has(id));
+
+/* If there are not enough mutuals yet, add public profiles as discovery suggestions. */
+let profiles = [];
+if (candidateIds.length) {
+const { data, error } = await supabaseClient
+.from("friendhub_public_profiles")
+.select("user_id, username, country, profile_photo")
+.in("user_id", candidateIds);
+if (error) throw error;
+profiles = data || [];
+}
+
+if (profiles.length < 6) {
+const { data: fallbackProfiles, error: fallbackError } = await supabaseClient
+.from("friendhub_public_profiles")
+.select("user_id, username, country, profile_photo")
+.limit(24);
+if (fallbackError) throw fallbackError;
+
+const seen = new Set(profiles.map(p => String(p.user_id)));
+for (const profile of fallbackProfiles || []) {
+const id = String(profile.user_id || "");
+if (!id || id === myId || alreadyFollowing.has(id) || blockedIds.has(id) || seen.has(id)) continue;
+profiles.push(profile);
+seen.add(id);
+if (profiles.length >= 6) break;
+}
+}
+
+profiles.sort((a, b) => (mutualCounts.get(String(b.user_id)) || 0) - (mutualCounts.get(String(a.user_id)) || 0));
+profiles = profiles.slice(0, 6);
+
+if (!profiles.length) {
+section.style.display = "none";
+list.innerHTML = "";
+return;
+}
+
+const isSpanish = getFriendHubLanguage() === "es";
+list.innerHTML = profiles.map(profile => {
+const id = String(profile.user_id);
+const username = profile.username || "@User";
+const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
+const avatar = profile.profile_photo
+? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+: initial;
+const mutual = mutualCounts.get(id) || 0;
+const reason = mutual > 0
+? (isSpanish ? `${mutual} ${mutual === 1 ? "conexión en común" : "conexiones en común"}` : `${mutual} mutual ${mutual === 1 ? "connection" : "connections"}`)
+: (isSpanish ? "Sugerencia de FriendHub" : "FriendHub suggestion");
+
+return `<div class="friend-suggestion-card" data-suggestion-user="${escapeHtmlAttribute(id)}">
+<button class="friend-suggestion-profile" type="button" onclick="openPublicProfile('${escapeHtmlAttribute(id)}')">
+<span class="friend-suggestion-avatar">${avatar}</span>
+<span><span class="friend-suggestion-name">${escapeHtml(username)}</span><span class="friend-suggestion-reason">${escapeHtml(reason)}</span></span>
+</button>
+<div class="friend-suggestion-actions">
+<button class="btn btn-primary" type="button" onclick="followFriendSuggestion('${escapeHtmlAttribute(id)}', this)">${isSpanish ? "Seguir" : "Follow"}</button>
+<button class="btn btn-secondary" type="button" onclick="openPublicProfile('${escapeHtmlAttribute(id)}')">${isSpanish ? "Perfil" : "Profile"}</button>
+</div>
+</div>`;
+}).join("");
+} catch (error) {
+console.error("Friend suggestions error:", error);
+section.style.display = "none";
+list.innerHTML = "";
+}
+}
+
+async function followFriendSuggestion(userId, button) {
+if (!currentUser || !userId || String(currentUser.id) === String(userId)) return;
+if (button) button.disabled = true;
+try {
+const { error } = await supabaseClient.from("user_follows").insert({
+follower_id: currentUser.id,
+following_id: String(userId)
+});
+if (error && error.code !== "23505") throw error;
+const card = document.querySelector(`[data-suggestion-user="${CSS.escape(String(userId))}"]`);
+if (card) card.remove();
+const list = document.getElementById("friendSuggestionsList");
+if (list && !list.querySelector(".friend-suggestion-card")) loadFriendSuggestions();
+} catch (error) {
+console.error("Suggestion Follow error:", error);
+alert(getFriendHubLanguage() === "es" ? "No se pudo seguir a esta persona. Inténtalo de nuevo." : "Could not follow this person. Please try again.");
+if (button) button.disabled = false;
+}
 }
 
 async function toggleFollow(userId) {
