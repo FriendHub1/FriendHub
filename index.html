@@ -1780,6 +1780,42 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
   margin-bottom: 0 !important;
 }
 
+
+/* FriendHub DM avatars — participant photo beside each message */
+.dm-row {
+  align-items: flex-end;
+  gap: 8px;
+}
+.dm-message-avatar {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--fh-soft, rgba(24,200,255,.12));
+  border: 1px solid var(--fh-border, rgba(24,200,255,.25));
+  color: var(--fh-primary, #18c8ff);
+  font-size: .78rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.dm-message-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@media (max-width: 640px) {
+  .dm-message-avatar {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    font-size: .72rem;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1793,7 +1829,7 @@ FriendHub
 <button onclick="showPage('discover')">Discover</button>
 <button onclick="showPage('profile')">Profile</button>
 <button onclick="showPage('saved')">Saved</button>
-<button id="messagesNavBtn" onclick="openMessagesInbox()">Messages<span id="messagesUnreadBadge" class="messages-unread-badge" style="display:none;">0</span></button>
+<button id="messagesNavBtn" onclick="openMessagesPage()">Messages<span id="messagesUnreadBadge" class="messages-unread-badge" style="display:none;">0</span></button>
 <button onclick="showPage('about')">About</button>
 <button onclick="showPage('support')">Support</button>
 </nav>
@@ -4621,15 +4657,6 @@ await loadDmInbox();
 }
 }
 
-async function openMessagesInbox() {
-if (!currentUser) {
-openAuth("login");
-return;
-}
-await openMessagesPage();
-await closeDirectChat();
-}
-
 async function loadDmInbox() {
 if (!currentUser) return;
 await refreshDmUnreadCount();
@@ -4877,14 +4904,25 @@ const isFirstRender = !dmLastRenderedSignature;
 const renderedRows = (await Promise.all(messages.map(async message => {
 const mine = String(message.sender_id) === String(currentUser.id);
 const attachmentHtml = await renderDmAttachment(message);
+const avatarPhoto = mine ? (currentProfile?.profile_photo || "") : (currentDmProfilePhoto || "");
+const avatarUsername = mine ? (currentProfile?.username || "@You") : (currentDmUsername || "@User");
+const avatarInitial = String(avatarUsername).replace(/^@/, "").trim().charAt(0).toUpperCase() || "?";
+const avatarHtml = `<span class="dm-message-avatar" aria-hidden="true">${
+avatarPhoto
+? `<img src="${escapeHtmlAttribute(avatarPhoto)}" alt="">`
+: escapeHtml(avatarInitial)
+}</span>`;
+
 return `
 <div class="dm-row ${mine ? "mine" : "theirs"}">
+${mine ? "" : avatarHtml}
 <div class="dm-bubble">
 ${attachmentHtml}
 ${message.content ? `<div class="dm-text">${escapeHtml(message.content)}</div>` : ""}
 <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
 ${renderDmSeenStatus(message, mine)}
 </div>
+${mine ? avatarHtml : ""}
 </div>`;
 }))).join("");
 
@@ -5088,30 +5126,6 @@ if (uploaded?.path) await supabaseClient.storage.from("dm-media").remove([upload
 throw error;
 }
 
-/* DM BELL NOTIFICATION — isolated from message delivery.
-   If the notification fails, the successfully sent DM still remains successful. */
-try {
-const actorUsername = currentProfile?.username || "@User";
-const language = getFriendHubLanguage();
-const notificationMessage = language === "es"
-? `${actorUsername} te envió un mensaje.`
-: `${actorUsername} sent you a message.`;
-
-const { error: dmNotificationError } = await supabaseClient
-.from("notifications")
-.insert({
-user_id: currentDmUserId,
-actor_id: currentUser.id,
-post_id: null,
-type: "dm",
-message: notificationMessage
-});
-
-if (dmNotificationError) console.error("DM notification error:", dmNotificationError);
-} catch (notificationError) {
-console.error("DM notification error:", notificationError);
-}
-
 if (input) input.value = "";
 clearDmAttachment();
 setDmStatus("");
@@ -5214,11 +5228,9 @@ list.innerHTML = '<div class="notification-empty">No notifications yet.</div>';
 return;
 }
 list.innerHTML = notifications.map(item => {
-const icon = item.type === "mention" ? "@" : (item.type === "dm" ? "💬" : "");
+const icon = item.type === "mention" ? "@" : "";
 const clickAction = item.type === "follow"
 ? `openFollowNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}')`
-: item.type === "dm"
-? `openDmNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}')`
 : `openNotification('${escapeHtmlAttribute(String(item.post_id || ""))}', '${escapeHtmlAttribute(String(item.type || ""))}', '${escapeHtmlAttribute(String(item.actor_id || ""))}')`;
 return `
 <div class="notification-item ${item.is_read ? "" : "unread"}" onclick="${clickAction}" role="button" tabindex="0">
@@ -5231,29 +5243,6 @@ return `
 `;
 }).join("");
 }
-async function openDmNotification(actorId) {
-const panel = document.getElementById("notificationPanel");
-if (panel) panel.classList.remove("open");
-if (!currentUser || !actorId || String(actorId) === String(currentUser.id)) return;
-
-const { data: profile, error } = await supabaseClient
-.from("friendhub_public_profiles")
-.select("user_id, username, profile_photo")
-.eq("user_id", String(actorId))
-.maybeSingle();
-
-if (error) {
-console.error("DM notification profile load error:", error);
-return;
-}
-
-await openDirectChat(
-String(actorId),
-profile?.username || "@User",
-profile?.profile_photo || ""
-);
-}
-
 async function openFollowNotification(actorId) {
 const panel = document.getElementById("notificationPanel");
 if (panel) panel.classList.remove("open");
