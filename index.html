@@ -1757,6 +1757,25 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
   }
 }
 
+
+/* FriendHub DM FIX5 — structural message stack */
+.dm-message-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+  height: max-content;
+  min-height: 0;
+}
+.dm-message-stack .dm-row {
+  flex: none;
+  margin: 0;
+  min-height: 0;
+  height: auto;
+}
+
 </style>
 </head>
 <body>
@@ -4842,7 +4861,7 @@ if (renderSignature === dmLastRenderedSignature) return;
 const wasNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 const isFirstRender = !dmLastRenderedSignature;
 
-container.innerHTML = (await Promise.all(messages.map(async message => {
+const renderedRows = (await Promise.all(messages.map(async message => {
 const mine = String(message.sender_id) === String(currentUser.id);
 const attachmentHtml = await renderDmAttachment(message);
 return `
@@ -4855,6 +4874,8 @@ ${renderDmSeenStatus(message, mine)}
 </div>
 </div>`;
 }))).join("");
+
+container.innerHTML = `<div class="dm-message-stack">${renderedRows}</div>`;
 
 dmLastRenderedSignature = renderSignature;
 
