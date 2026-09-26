@@ -1648,6 +1648,63 @@ html[data-theme="night"] .dm-composer textarea { background: rgba(10,16,38,.72);
   .dm-composer { padding: 10px; }
 }
 
+
+.friendhub-presence {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 7px;
+font-size: 0.88rem;
+font-weight: 700;
+line-height: 1.3;
+}
+.friendhub-presence-dot {
+width: 9px;
+height: 9px;
+border-radius: 50%;
+display: inline-block;
+flex: 0 0 9px;
+background: #8a8f98;
+box-shadow: 0 0 0 2px rgba(138,143,152,.12);
+}
+.friendhub-presence.online .friendhub-presence-dot {
+background: #35e77a;
+box-shadow: 0 0 8px rgba(53,231,122,.9), 0 0 16px rgba(53,231,122,.35);
+animation: friendhubOnlinePulse 2s ease-in-out infinite;
+}
+.friendhub-presence.online { color: #28c96b; }
+.friendhub-presence.offline { color: var(--muted, #8a8f98); }
+.friendhub-presence-profile { margin: 5px auto 7px; }
+.friendhub-presence-dm { justify-content: flex-start; margin-top: 3px; font-size: 0.78rem; }
+@keyframes friendhubOnlinePulse {
+0%,100% { transform: scale(1); opacity: 1; }
+50% { transform: scale(1.12); opacity: .78; }
+}
+.dm-delivery-status {
+display: flex;
+align-items: center;
+justify-content: flex-end;
+gap: 4px;
+margin-top: 3px;
+font-size: 0.70rem;
+font-weight: 700;
+opacity: .82;
+}
+.dm-delivery-status.sent { color: var(--muted, #8a8f98); }
+.dm-delivery-status.seen {
+color: #ff2fa8;
+text-shadow: 0 0 8px rgba(255,47,168,.30);
+}
+.dm-checks { letter-spacing: -3px; padding-right: 3px; font-weight: 900; }
+.dm-delivery-status.seen-pop .dm-checks {
+animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
+}
+@keyframes friendhubSeenPop {
+0% { transform: scale(.65); opacity: .25; filter: drop-shadow(0 0 0 rgba(255,47,168,0)); }
+60% { transform: scale(1.22); opacity: 1; filter: drop-shadow(0 0 7px rgba(255,47,168,.9)); }
+100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px rgba(255,47,168,.35)); }
+}
+
 </style>
 </head>
 <body>
@@ -2007,6 +2064,7 @@ style="margin-top:15px;"
 <button class="btn btn-secondary dm-back-btn" type="button" onclick="closeDirectChat()">&#8592; Back</button>
 <div>
 <div id="dmChatUsername" class="dm-chat-username">@User</div>
+<div id="dmChatPresence" class="friendhub-presence friendhub-presence-dm">—</div>
 <div class="dm-chat-private">Private conversation</div>
 </div>
 </div>
@@ -2341,6 +2399,10 @@ let currentDmUserId = null;
 let currentDmUsername = "";
 let currentDmProfilePhoto = null;
 let dmUnreadRefreshTimer = null;
+let friendhubPresenceTimer = null;
+let dmPresenceRefreshTimer = null;
+let dmChatRefreshTimer = null;
+let dmSeenMessageIds = new Set();
 let dmSelectedAttachment = null;
 let currentEditingPostId = null;
 let selectedCommentMediaFile = null;
@@ -2822,6 +2884,7 @@ if (notificationWrap) {
 notificationWrap.style.display = "flex";
 }
 startDmUnreadRefresh();
+startFriendHubPresence();
 } else {
 loginBtn.style.display =
 "inline-block";
@@ -2833,6 +2896,9 @@ if (notificationWrap) {
 notificationWrap.style.display = "none";
 }
 stopDmUnreadRefresh();
+stopFriendHubPresence();
+stopDmPresenceRefresh();
+stopDmChatRefresh();
 const dmBadge = document.getElementById("messagesUnreadBadge");
 if (dmBadge) {
 dmBadge.style.display = "none";
@@ -4151,7 +4217,7 @@ console.error("Public profile load error:", error);
 if (content) content.innerHTML = '<div class="empty-state">This profile could not be loaded.</div>';
 return;
 }
-const [followersResult, followingResult, myFollowResult, myBlockResult] = await Promise.all([
+const [followersResult, followingResult, myFollowResult, myBlockResult, presenceResult] = await Promise.all([
 supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("following_id", String(userId)),
 supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("follower_id", String(userId)),
 String(currentUser.id) === String(userId)
@@ -4159,12 +4225,14 @@ String(currentUser.id) === String(userId)
 : supabaseClient.from("user_follows").select("id").eq("follower_id", currentUser.id).eq("following_id", String(userId)).maybeSingle(),
 String(currentUser.id) === String(userId)
 ? Promise.resolve({ data: null, error: null })
-: supabaseClient.from("user_blocks").select("id").eq("blocker_id", currentUser.id).eq("blocked_id", String(userId)).maybeSingle()
+: supabaseClient.from("user_blocks").select("id").eq("blocker_id", currentUser.id).eq("blocked_id", String(userId)).maybeSingle(),
+supabaseClient.from("user_presence").select("last_active_at").eq("user_id", String(userId)).maybeSingle()
 ]);
 if (followersResult.error) console.error("Followers count error:", followersResult.error);
 if (followingResult.error) console.error("Following count error:", followingResult.error);
 if (myFollowResult.error) console.error("Follow status error:", myFollowResult.error);
 if (myBlockResult.error) console.error("Block status error:", myBlockResult.error);
+if (presenceResult.error) console.error("Presence status error:", presenceResult.error);
 const followersCount = followersResult.count || 0;
 const followingCount = followingResult.count || 0;
 const isOwnProfile = String(currentUser.id) === String(userId);
@@ -4177,6 +4245,7 @@ content.innerHTML = `
 <div class="public-profile-card">
 <div class="public-profile-avatar">${avatar}</div>
 <div class="public-profile-username">${escapeHtml(username)}</div>
+${renderFriendHubPresence(presenceResult.data?.last_active_at || null, "friendhub-presence-profile")}
 <div class="public-profile-country">${escapeHtml(profile.country || "Country not added")}</div>
 <div class="public-profile-social">
 <button class="public-profile-stat" onclick="openFollowList('followers', '${escapeHtmlAttribute(String(userId))}')"><strong>${followersCount}</strong>Followers</button>
@@ -4259,6 +4328,159 @@ const page = document.getElementById(pageId);
 if (page) page.classList.add("active");
 window.scrollTo({ top:0, behavior:"smooth" });
 }
+
+function formatFriendHubPresence(lastActiveAt) {
+const lang = getFriendHubLanguage();
+if (!lastActiveAt) {
+return { online: false, text: lang === "es" ? "Última conexión no disponible" : "Last seen unavailable" };
+}
+
+const last = new Date(lastActiveAt);
+if (Number.isNaN(last.getTime())) {
+return { online: false, text: lang === "es" ? "Última conexión no disponible" : "Last seen unavailable" };
+}
+
+const now = new Date();
+const diffMs = now.getTime() - last.getTime();
+const online = diffMs >= 0 && diffMs <= 90000;
+
+if (online) {
+return { online: true, text: lang === "es" ? "En línea" : "Online" };
+}
+
+const time = last.toLocaleTimeString(lang === "es" ? "es-US" : "en-US", {
+hour: "numeric",
+minute: "2-digit",
+hour12: true
+});
+
+const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+const lastDay = new Date(last.getFullYear(), last.getMonth(), last.getDate());
+const dayDiff = Math.round((today - lastDay) / 86400000);
+
+if (dayDiff === 0) {
+return {
+online: false,
+text: lang === "es" ? `Última conexión a las ${time}` : `Last seen at ${time}`
+};
+}
+
+if (dayDiff === 1) {
+return {
+online: false,
+text: lang === "es" ? `Última conexión ayer a las ${time}` : `Last seen yesterday at ${time}`
+};
+}
+
+const date = last.toLocaleDateString(lang === "es" ? "es-US" : "en-US", {
+month: "short",
+day: "numeric"
+});
+
+return {
+online: false,
+text: lang === "es"
+? `Última conexión ${date} a las ${time}`
+: `Last seen ${date} at ${time}`
+};
+}
+
+function renderFriendHubPresence(lastActiveAt, extraClass = "") {
+const presence = formatFriendHubPresence(lastActiveAt);
+return `<div class="friendhub-presence ${presence.online ? "online" : "offline"} ${extraClass}">
+<span class="friendhub-presence-dot"></span>
+<span>${escapeHtml(presence.text)}</span>
+</div>`;
+}
+
+async function updateFriendHubPresence() {
+if (!currentUser || document.visibilityState === "hidden") return;
+const { error } = await supabaseClient
+.from("user_presence")
+.upsert(
+{ user_id: currentUser.id, last_active_at: new Date().toISOString() },
+{ onConflict: "user_id" }
+);
+if (error) console.error("Presence update error:", error);
+}
+
+function stopFriendHubPresence() {
+if (friendhubPresenceTimer) {
+clearInterval(friendhubPresenceTimer);
+friendhubPresenceTimer = null;
+}
+}
+
+function startFriendHubPresence() {
+stopFriendHubPresence();
+if (!currentUser || document.visibilityState === "hidden") return;
+updateFriendHubPresence();
+friendhubPresenceTimer = setInterval(updateFriendHubPresence, 45000);
+}
+
+async function loadDmPresence() {
+const el = document.getElementById("dmChatPresence");
+if (!el || !currentDmUserId) return;
+
+const { data, error } = await supabaseClient
+.from("user_presence")
+.select("last_active_at")
+.eq("user_id", currentDmUserId)
+.maybeSingle();
+
+if (error) {
+console.error("DM presence load error:", error);
+return;
+}
+
+const presence = formatFriendHubPresence(data?.last_active_at || null);
+el.className = `friendhub-presence friendhub-presence-dm ${presence.online ? "online" : "offline"}`;
+el.innerHTML = `<span class="friendhub-presence-dot"></span><span>${escapeHtml(presence.text)}</span>`;
+}
+
+function stopDmPresenceRefresh() {
+if (dmPresenceRefreshTimer) {
+clearInterval(dmPresenceRefreshTimer);
+dmPresenceRefreshTimer = null;
+}
+}
+
+function startDmPresenceRefresh() {
+stopDmPresenceRefresh();
+if (!currentDmUserId) return;
+loadDmPresence();
+dmPresenceRefreshTimer = setInterval(loadDmPresence, 30000);
+}
+
+function stopDmChatRefresh() {
+if (dmChatRefreshTimer) {
+clearInterval(dmChatRefreshTimer);
+dmChatRefreshTimer = null;
+}
+}
+
+function startDmChatRefresh() {
+stopDmChatRefresh();
+if (!currentDmUserId) return;
+dmChatRefreshTimer = setInterval(() => {
+if (currentDmUserId && document.visibilityState !== "hidden") loadDirectMessages();
+}, 5000);
+}
+
+document.addEventListener("visibilitychange", () => {
+if (!currentUser) return;
+if (document.visibilityState === "hidden") {
+updateFriendHubPresence();
+stopFriendHubPresence();
+} else {
+startFriendHubPresence();
+if (currentDmUserId) {
+loadDmPresence();
+loadDirectMessages();
+}
+}
+});
+
 async function refreshDmUnreadCount() {
 const badge = document.getElementById("messagesUnreadBadge");
 if (!badge) return;
@@ -4334,7 +4556,7 @@ inbox.innerHTML = `<div class="content-card dm-empty-state"><p>${language === "e
 
 const { data: messages, error } = await supabaseClient
 .from("direct_messages")
-.select("id, created_at, sender_id, recipient_id, content, is_read, attachment_path, attachment_type, attachment_name, attachment_size")
+.select("id, created_at, sender_id, recipient_id, content, is_read, read_at, attachment_path, attachment_type, attachment_name, attachment_size")
 .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
 .order("created_at", { ascending: false });
 
@@ -4443,10 +4665,17 @@ input.value = "";
 input.placeholder = getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : "Write a message...";
 }
 setDmStatus("");
+dmSeenMessageIds = new Set();
+await loadDmPresence();
 await loadDirectMessages();
+startDmPresenceRefresh();
+startDmChatRefresh();
 }
 
 async function closeDirectChat() {
+stopDmPresenceRefresh();
+stopDmChatRefresh();
+dmSeenMessageIds = new Set();
 clearDmAttachment();
 currentDmUserId = null;
 currentDmUsername = "";
@@ -4470,7 +4699,7 @@ if (!currentUser || !currentDmUserId) return;
 
 const { data, error } = await supabaseClient
 .from("direct_messages")
-.select("id, created_at, sender_id, recipient_id, content, is_read, attachment_path, attachment_type, attachment_name, attachment_size")
+.select("id, created_at, sender_id, recipient_id, content, is_read, read_at, attachment_path, attachment_type, attachment_name, attachment_size")
 .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentDmUserId}),and(sender_id.eq.${currentDmUserId},recipient_id.eq.${currentUser.id})`)
 .order("created_at", { ascending: true });
 
@@ -4480,24 +4709,58 @@ setDmStatus(getFriendHubLanguage() === "es" ? "No se pudieron cargar los mensaje
 return;
 }
 
-renderDirectMessages(data || []);
-
 const unreadIds = (data || [])
 .filter(item => String(item.recipient_id) === String(currentUser.id) && !item.is_read)
 .map(item => item.id);
 
 if (unreadIds.length) {
+const readAt = new Date().toISOString();
 const { error: readError } = await supabaseClient
 .from("direct_messages")
-.update({ is_read: true })
+.update({ is_read: true, read_at: readAt })
 .in("id", unreadIds)
 .eq("recipient_id", currentUser.id);
 if (readError) {
 console.error("Mark direct messages read error:", readError);
 } else {
+(data || []).forEach(item => {
+if (unreadIds.includes(item.id)) {
+item.is_read = true;
+item.read_at = readAt;
+}
+});
 await refreshDmUnreadCount();
 }
 }
+
+await renderDirectMessages(data || []);
+}
+
+
+function formatDmSeenTime(readAt) {
+if (!readAt) return "";
+return new Date(readAt).toLocaleTimeString(getFriendHubLanguage() === "es" ? "es-US" : "en-US", {
+hour: "numeric",
+minute: "2-digit",
+hour12: true
+});
+}
+
+function renderDmSeenStatus(message, mine) {
+if (!mine) return "";
+
+if (!message.is_read || !message.read_at) {
+return `<div class="dm-delivery-status sent"><span class="dm-checks">✓</span> ${getFriendHubLanguage() === "es" ? "Enviado" : "Sent"}</div>`;
+}
+
+const isNewSeen = !dmSeenMessageIds.has(String(message.id));
+dmSeenMessageIds.add(String(message.id));
+const seenTime = formatDmSeenTime(message.read_at);
+
+return `<div class="dm-delivery-status seen ${isNewSeen ? "seen-pop" : ""}">
+<span class="dm-checks">✓✓</span>
+${getFriendHubLanguage() === "es" ? "Visto" : "Seen"} · ${escapeHtml(seenTime)}
+</div>`;
 }
 
 async function renderDirectMessages(messages) {
@@ -4518,6 +4781,7 @@ return `
 ${attachmentHtml}
 ${message.content ? `<div class="dm-text">${escapeHtml(message.content)}</div>` : ""}
 <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
+${renderDmSeenStatus(message, mine)}
 </div>
 </div>`;
 }))).join("");
