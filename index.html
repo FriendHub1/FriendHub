@@ -1793,7 +1793,7 @@ FriendHub
 <button onclick="showPage('discover')">Discover</button>
 <button onclick="showPage('profile')">Profile</button>
 <button onclick="showPage('saved')">Saved</button>
-<button id="messagesNavBtn" onclick="openMessagesPage()">Messages<span id="messagesUnreadBadge" class="messages-unread-badge" style="display:none;">0</span></button>
+<button id="messagesNavBtn" onclick="openMessagesInbox()">Messages<span id="messagesUnreadBadge" class="messages-unread-badge" style="display:none;">0</span></button>
 <button onclick="showPage('about')">About</button>
 <button onclick="showPage('support')">Support</button>
 </nav>
@@ -4619,6 +4619,15 @@ if (chat) chat.style.display = "none";
 if (empty) empty.style.display = "block";
 await loadDmInbox();
 }
+}
+
+async function openMessagesInbox() {
+if (!currentUser) {
+openAuth("login");
+return;
+}
+await openMessagesPage();
+await closeDirectChat();
 }
 
 async function loadDmInbox() {
