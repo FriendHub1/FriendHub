@@ -2217,6 +2217,9 @@ await loadPosts();
 await loadNotifications();
 startNotificationRefresh();
 updateAuthUI();
+/* If this login came from a shared-post URL, focus the post only
+   after the login modal has closed and the feed has fully loaded. */
+await openSharedPostFromUrl();
 }, 700);
 }
 }
