@@ -6645,32 +6645,34 @@ async function setPostReaction(postId, reaction) {
   if (!allowedReactions.includes(reaction)) return;
 
   try {
-    const { data: existingRows, error: existingError } = await supabaseClient
+    const { data: existing, error: existingError } = await supabaseClient
       .from("post_likes")
       .select("id, reaction")
       .eq("post_id", postId)
-      .eq("user_id", currentUser.id);
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
 
     if (existingError) throw existingError;
 
-    const existing = Array.isArray(existingRows) && existingRows.length
-      ? existingRows[0]
-      : null;
+    if (existing) {
+      if (existing.reaction === reaction) {
+        const { error: deleteError } = await supabaseClient
+          .from("post_likes")
+          .delete()
+          .eq("id", existing.id)
+          .eq("user_id", currentUser.id);
 
-    // Always remove every existing reaction from this user on this post.
-    // This also cleans up duplicate rows that may have been created before this fix.
-    if (Array.isArray(existingRows) && existingRows.length) {
-      const { error: deleteError } = await supabaseClient
-        .from("post_likes")
-        .delete()
-        .eq("post_id", postId)
-        .eq("user_id", currentUser.id);
+        if (deleteError) throw deleteError;
+      } else {
+        const { error: updateError } = await supabaseClient
+          .from("post_likes")
+          .update({ reaction })
+          .eq("id", existing.id)
+          .eq("user_id", currentUser.id);
 
-      if (deleteError) throw deleteError;
-    }
-
-    // Tapping the same reaction again toggles it off.
-    if (!existing || existing.reaction !== reaction) {
+        if (updateError) throw updateError;
+      }
+    } else {
       const { error: insertError } = await supabaseClient
         .from("post_likes")
         .insert({
