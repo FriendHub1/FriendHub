@@ -1705,6 +1705,34 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
 100% { transform: scale(1); opacity: 1; filter: drop-shadow(0 0 2px rgba(255,47,168,.35)); }
 }
 
+
+/* FriendHub DM compact chat + clearer read receipts */
+.dm-messages {
+  justify-content: flex-start;
+  align-content: flex-start;
+}
+.dm-row {
+  flex: 0 0 auto;
+}
+.dm-bubble {
+  flex: 0 0 auto;
+}
+.dm-delivery-status {
+  min-height: 16px;
+}
+.dm-checks {
+  display: inline-block;
+  font-size: 0.92rem;
+  line-height: 1;
+  letter-spacing: -2px;
+  padding-right: 2px;
+}
+.dm-delivery-status.seen .dm-checks {
+  color: #ff2fa8;
+  opacity: 1;
+  text-shadow: 0 0 7px rgba(255,47,168,.55);
+}
+
 </style>
 </head>
 <body>
@@ -2402,6 +2430,8 @@ let dmUnreadRefreshTimer = null;
 let friendhubPresenceTimer = null;
 let dmPresenceRefreshTimer = null;
 let dmChatRefreshTimer = null;
+let dmChatLoadInProgress = false;
+let dmLastRenderedSignature = "";
 let dmSeenMessageIds = new Set();
 let dmSelectedAttachment = null;
 let currentEditingPostId = null;
@@ -4666,6 +4696,8 @@ input.placeholder = getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : 
 }
 setDmStatus("");
 dmSeenMessageIds = new Set();
+dmLastRenderedSignature = "";
+dmChatLoadInProgress = false;
 await loadDmPresence();
 await loadDirectMessages();
 startDmPresenceRefresh();
@@ -4695,8 +4727,10 @@ status.classList.toggle("error", !!isError);
 }
 
 async function loadDirectMessages() {
-if (!currentUser || !currentDmUserId) return;
+if (!currentUser || !currentDmUserId || dmChatLoadInProgress) return;
+dmChatLoadInProgress = true;
 
+const activeChatUserId = String(currentDmUserId);
 const { data, error } = await supabaseClient
 .from("direct_messages")
 .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, attachment_path, attachment_type, attachment_name, attachment_size")
@@ -4706,6 +4740,7 @@ const { data, error } = await supabaseClient
 if (error) {
 console.error("Direct messages load error:", error);
 setDmStatus(getFriendHubLanguage() === "es" ? "No se pudieron cargar los mensajes." : "Could not load messages.", true);
+dmChatLoadInProgress = false;
 return;
 }
 
@@ -4733,7 +4768,10 @@ await refreshDmUnreadCount();
 }
 }
 
+if (String(currentDmUserId || "") === activeChatUserId) {
 await renderDirectMessages(data || []);
+}
+dmChatLoadInProgress = false;
 }
 
 
@@ -4749,7 +4787,7 @@ hour12: true
 function renderDmSeenStatus(message, mine) {
 if (!mine) return "";
 
-if (!message.is_read || !message.read_at) {
+if (!message.is_read) {
 return `<div class="dm-delivery-status sent" aria-label="${getFriendHubLanguage() === "es" ? "Enviado" : "Sent"}"><span class="dm-checks">✓</span></div>`;
 }
 
@@ -4766,9 +4804,19 @@ const container = document.getElementById("dmMessages");
 if (!container) return;
 
 if (!messages.length) {
+dmLastRenderedSignature = "";
 container.innerHTML = `<div class="dm-no-messages">${getFriendHubLanguage() === "es" ? "Todavía no hay mensajes. Di hola 👋" : "No messages yet. Say hello 👋"}</div>`;
 return;
 }
+
+const renderSignature = messages.map(message =>
+`${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.attachment_path || ""}:${message.content || ""}`
+).join("|");
+
+if (renderSignature === dmLastRenderedSignature) return;
+
+const wasNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+const isFirstRender = !dmLastRenderedSignature;
 
 container.innerHTML = (await Promise.all(messages.map(async message => {
 const mine = String(message.sender_id) === String(currentUser.id);
@@ -4784,7 +4832,13 @@ ${renderDmSeenStatus(message, mine)}
 </div>`;
 }))).join("");
 
+dmLastRenderedSignature = renderSignature;
+
+requestAnimationFrame(() => {
+if (isFirstRender || wasNearBottom) {
 container.scrollTop = container.scrollHeight;
+}
+});
 }
 
 function clearDmAttachment() {
