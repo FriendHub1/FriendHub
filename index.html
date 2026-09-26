@@ -1422,7 +1422,17 @@ html[data-theme="night"] .public-profile-block.blocked {
 .mention-link:hover { text-decoration: underline; }
 .mention-link { position: relative; z-index: 2; }
 
-html[data-theme="night"] .mention-link {
+.hashtag-link {
+  color: #0b84c6;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+}
+.hashtag-link:hover { text-decoration: underline; }
+
+html[data-theme="night"] .mention-link,
+html[data-theme="night"] .hashtag-link {
   color: #6fdcff;
   text-shadow: 0 0 10px rgba(24,200,255,.18);
 }
@@ -4142,11 +4152,28 @@ filtered
 .join("");
 }
 function renderTextWithMentions(value) {
-const safe = escapeHtml(value || "");
-return safe.replace(/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{1,20})(?![A-Za-z0-9_])/g, (match, prefix, username) => {
+let safe = escapeHtml(value || "");
+safe = safe.replace(/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{1,20})(?![A-Za-z0-9_])/g, (match, prefix, username) => {
 const encoded = encodeURIComponent(username);
 return `${prefix}<span class="mention-link" role="button" tabindex="0" onclick="event.stopPropagation(); openMentionProfile(decodeURIComponent('${encoded}'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openMentionProfile(decodeURIComponent('${encoded}'));}">${username}</span>`;
 });
+safe = safe.replace(/(^|[^\p{L}\p{N}_])(#[\p{L}\p{N}_]{1,50})/gu, (match, prefix, hashtag) => {
+const encoded = encodeURIComponent(hashtag);
+return `${prefix}<span class="hashtag-link" role="button" tabindex="0" onclick="event.stopPropagation(); openHashtag(decodeURIComponent('${encoded}'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openHashtag(decodeURIComponent('${encoded}'));}">${hashtag}</span>`;
+});
+return safe;
+}
+
+function openHashtag(hashtag) {
+if (!hashtag) return;
+showPage("discover");
+const searchInput = document.getElementById("searchInput");
+if (searchInput) searchInput.value = hashtag;
+currentFilter = "all";
+document.querySelectorAll(".filter-btn").forEach(btn => {
+btn.classList.toggle("active", btn.dataset.filter === "all");
+});
+loadPosts().then(() => renderPosts());
 }
 
 async function openMentionProfile(username) {
