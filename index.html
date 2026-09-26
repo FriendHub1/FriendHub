@@ -951,6 +951,19 @@ PUBLIC PROFILE
 .public-profile-detail strong { display:block; margin-bottom:5px; color:#263043; }
 .public-profile-detail span { color:#667085; overflow-wrap:anywhere; }
 .public-profile-posts-title { margin:28px 0 15px; }
+.public-profile-social { display:flex; justify-content:center; align-items:center; gap:22px; flex-wrap:wrap; margin:16px 0 4px; }
+.public-profile-stat { border:none; background:transparent; cursor:pointer; padding:6px 8px; color:#344054; font-weight:700; }
+.public-profile-stat strong { display:block; font-size:18px; color:#101828; }
+.public-profile-follow { margin-top:14px; min-width:130px; }
+.public-profile-follow.following { background:white; color:#5865f2; border:1px solid #5865f2; }
+.follow-list { display:grid; gap:10px; max-height:55vh; overflow-y:auto; margin-top:15px; }
+.follow-list-item { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid #edf0f4; border-radius:12px; cursor:pointer; text-align:left; background:white; }
+.follow-list-item:hover { background:#f8f9fc; }
+.follow-list-avatar { width:42px; height:42px; border-radius:50%; background:#eef0ff; color:#5865f2; display:flex; align-items:center; justify-content:center; font-weight:800; overflow:hidden; flex:0 0 42px; }
+.follow-list-avatar img { width:100%; height:100%; object-fit:cover; }
+.follow-list-name { font-weight:800; color:#101828; }
+.follow-list-country { font-size:12px; color:#667085; margin-top:2px; }
+
 .clickable-user { cursor:pointer; }
 .clickable-user:hover { color:#5865f2; }
 @media (max-width:700px) { .public-profile-details { grid-template-columns:1fr; } }
@@ -1632,6 +1645,14 @@ Update Password
 <button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
 <button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
 </div>
+</div>
+</div>
+<div id="followListModal" class="modal-overlay">
+<div class="modal">
+<button class="modal-close" onclick="closeFollowList()">×</button>
+<h2 id="followListTitle">Followers</h2>
+<p class="modal-subtitle">FriendHub connections</p>
+<div id="followListContent" class="follow-list"></div>
 </div>
 </div>
 <script>
@@ -3297,6 +3318,20 @@ console.error("Public profile load error:", error);
 if (content) content.innerHTML = '<div class="empty-state">This profile could not be loaded.</div>';
 return;
 }
+const [followersResult, followingResult, myFollowResult] = await Promise.all([
+supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("following_id", String(userId)),
+supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("follower_id", String(userId)),
+String(currentUser.id) === String(userId)
+? Promise.resolve({ data: null, error: null })
+: supabaseClient.from("user_follows").select("id").eq("follower_id", currentUser.id).eq("following_id", String(userId)).maybeSingle()
+]);
+if (followersResult.error) console.error("Followers count error:", followersResult.error);
+if (followingResult.error) console.error("Following count error:", followingResult.error);
+if (myFollowResult.error) console.error("Follow status error:", myFollowResult.error);
+const followersCount = followersResult.count || 0;
+const followingCount = followingResult.count || 0;
+const isOwnProfile = String(currentUser.id) === String(userId);
+const isFollowing = !!myFollowResult.data;
 const username = profile.username || "@User";
 const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
 const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : initial;
@@ -3305,6 +3340,11 @@ content.innerHTML = `
 <div class="public-profile-avatar">${avatar}</div>
 <div class="public-profile-username">${escapeHtml(username)}</div>
 <div class="public-profile-country">${escapeHtml(profile.country || "Country not added")}</div>
+<div class="public-profile-social">
+<button class="public-profile-stat" onclick="openFollowList('followers', '${escapeHtmlAttribute(String(userId))}')"><strong>${followersCount}</strong>Followers</button>
+<button class="public-profile-stat" onclick="openFollowList('following', '${escapeHtmlAttribute(String(userId))}')"><strong>${followingCount}</strong>Following</button>
+</div>
+${isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary public-profile-follow${isFollowing ? " following" : ""}" onclick="toggleFollow('${escapeHtmlAttribute(String(userId))}')">${isFollowing ? "Following" : "Follow"}</button>`}
 <div class="public-profile-details">
 <div class="public-profile-detail"><strong>Languages</strong><span>${escapeHtml(formatPublicProfileList(profile.languages))}</span></div>
 <div class="public-profile-detail"><strong>Interests</strong><span>${escapeHtml(formatPublicProfileList(profile.interests))}</span></div>
@@ -3314,6 +3354,60 @@ content.innerHTML = `
 await loadPosts();
 showPageWithoutReload("publicProfile");
 renderPublicProfilePosts(String(userId), profile.profile_photo || null);
+}
+async function toggleFollow(userId) {
+if (!currentUser || !userId || String(currentUser.id) === String(userId)) return;
+const button = document.getElementById("publicFollowButton");
+if (button) button.disabled = true;
+try {
+const { data: existing, error: checkError } = await supabaseClient
+.from("user_follows")
+.select("id")
+.eq("follower_id", currentUser.id)
+.eq("following_id", String(userId))
+.maybeSingle();
+if (checkError) throw checkError;
+if (existing) {
+const { error } = await supabaseClient.from("user_follows").delete().eq("id", existing.id).eq("follower_id", currentUser.id);
+if (error) throw error;
+} else {
+const { error } = await supabaseClient.from("user_follows").insert({ follower_id: currentUser.id, following_id: String(userId) });
+if (error && error.code !== "23505") throw error;
+}
+await openPublicProfile(String(userId));
+} catch (error) {
+console.error("Follow error:", error);
+alert("Could not update Follow. Please try again.");
+if (button) button.disabled = false;
+}
+}
+async function openFollowList(kind, userId) {
+if (!currentUser || !userId || !["followers", "following"].includes(kind)) return;
+const title = document.getElementById("followListTitle");
+const list = document.getElementById("followListContent");
+if (title) title.textContent = kind === "followers" ? "Followers" : "Following";
+if (list) list.innerHTML = '<div class="empty-state">Loading...</div>';
+openModal("followListModal");
+const column = kind === "followers" ? "following_id" : "follower_id";
+const idField = kind === "followers" ? "follower_id" : "following_id";
+const { data: rows, error } = await supabaseClient.from("user_follows").select(idField).eq(column, String(userId)).order("created_at", { ascending: false });
+if (error) { console.error("Follow list error:", error); if (list) list.innerHTML = '<div class="empty-state">Could not load this list.</div>'; return; }
+const ids = [...new Set((rows || []).map(row => String(row[idField])).filter(Boolean))];
+if (!ids.length) { if (list) list.innerHTML = `<div class="empty-state">No ${kind} yet.</div>`; return; }
+const { data: profiles, error: profileError } = await supabaseClient.from("friendhub_public_profiles").select("user_id, username, country, profile_photo").in("user_id", ids);
+if (profileError) { console.error("Follow profiles error:", profileError); if (list) list.innerHTML = '<div class="empty-state">Could not load this list.</div>'; return; }
+const byId = new Map((profiles || []).map(profile => [String(profile.user_id), profile]));
+if (list) list.innerHTML = ids.map(id => {
+const profile = byId.get(id);
+if (!profile) return "";
+const username = profile.username || "@User";
+const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
+const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : initial;
+return `<button class="follow-list-item" onclick="closeFollowList(); openPublicProfile('${escapeHtmlAttribute(id)}')"><span class="follow-list-avatar">${avatar}</span><span><span class="follow-list-name">${escapeHtml(username)}</span><span class="follow-list-country">${escapeHtml(profile.country || "Country not added")}</span></span></button>`;
+}).join("") || `<div class="empty-state">No ${kind} yet.</div>`;
+}
+function closeFollowList() {
+closeModal("followListModal");
 }
 function showPageWithoutReload(pageId) {
 document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
