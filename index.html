@@ -4881,6 +4881,34 @@ ${renderDmSeenStatus(message, mine)}
 
 container.innerHTML = `<div class="dm-message-stack">${renderedRows}</div>`;
 
+/* DM FIX7: normalize the rendered message layout directly in the DOM.
+   This bypasses any conflicting stylesheet rule elsewhere on the page. */
+const dmStack = container.querySelector(".dm-message-stack");
+if (dmStack) {
+dmStack.style.setProperty("display", "grid", "important");
+dmStack.style.setProperty("grid-template-columns", "minmax(0, 1fr)", "important");
+dmStack.style.setProperty("grid-auto-rows", "max-content", "important");
+dmStack.style.setProperty("align-content", "start", "important");
+dmStack.style.setProperty("justify-content", "stretch", "important");
+dmStack.style.setProperty("gap", "10px", "important");
+dmStack.style.setProperty("width", "100%", "important");
+dmStack.style.setProperty("height", "auto", "important");
+dmStack.style.setProperty("min-height", "0", "important");
+
+dmStack.querySelectorAll(":scope > .dm-row").forEach(row => {
+row.style.setProperty("display", "flex", "important");
+row.style.setProperty("position", "static", "important");
+row.style.setProperty("width", "100%", "important");
+row.style.setProperty("height", "max-content", "important");
+row.style.setProperty("min-height", "0", "important");
+row.style.setProperty("max-height", "none", "important");
+row.style.setProperty("margin", "0", "important");
+row.style.setProperty("padding", "0", "important");
+row.style.setProperty("transform", "none", "important");
+row.style.setProperty("align-self", "auto", "important");
+});
+}
+
 dmLastRenderedSignature = renderSignature;
 
 const shouldStickToBottom = isFirstRender || wasNearBottom;
