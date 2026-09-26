@@ -1088,6 +1088,74 @@ outline: none;
 border-color: #5865f2;
 box-shadow: 0 0 0 3px rgba(88,101,242,0.10);
 }
+
+/* =========================================================
+FRIENDHUB EMOJI PICKER
+========================================================= */
+.emoji-picker-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.emoji-picker-btn {
+  border: 1px solid #d8deea;
+  background: #fff;
+  border-radius: 10px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 10px;
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.emoji-picker-btn:hover {
+  background: #f7f8fc;
+}
+.emoji-picker-panel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 1200;
+  width: 280px;
+  max-width: min(280px, 82vw);
+  padding: 10px;
+  border: 1px solid #dfe3eb;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 38px rgba(20, 24, 40, .18);
+  display: none;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+.emoji-picker-panel.show {
+  display: grid;
+}
+.emoji-option {
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 30px;
+  cursor: pointer;
+}
+.emoji-option:hover {
+  background: #f0f2f7;
+}
+.comment-compose-row .emoji-picker-btn {
+  flex: 0 0 auto;
+}
+@media (max-width: 520px) {
+  .emoji-picker-panel {
+    width: 248px;
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
 </style>
 </head>
 <body>
@@ -1265,6 +1333,11 @@ onclick="selectPostType('snapchat', this)"
 </button>
 </div>
 <div class="composer-actions">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+<div class="emoji-picker-wrap">
+<button type="button" class="emoji-picker-btn" onclick="toggleEmojiPicker('postEmojiPicker', event)" title="Add emoji" aria-label="Add emoji">&#128522;</button>
+<div id="postEmojiPicker" class="emoji-picker-panel" data-target="postText"></div>
+</div>
 <div>
 <label class="file-label" for="mediaInput">
 &#128206; Add media
@@ -1275,6 +1348,7 @@ type="file"
 accept="image/*,video/*"
 onchange="handleMedia(event)"
 >
+</div>
 </div>
 <button class="btn btn-primary" onclick="createPost()">
 Post
@@ -1651,6 +1725,10 @@ Update Password
 <button type="button" class="replying-cancel" onclick="cancelReply()" aria-label="Cancel reply">&times;</button>
 </div>
 <div class="comment-compose-row">
+<div class="emoji-picker-wrap">
+<button type="button" class="emoji-picker-btn" onclick="toggleEmojiPicker('commentEmojiPicker', event)" title="Add emoji" aria-label="Add emoji">&#128522;</button>
+<div id="commentEmojiPicker" class="emoji-picker-panel" data-target="commentInput"></div>
+</div>
 <label class="comment-attach-btn" for="commentMediaInput" title="Add photo or video" aria-label="Add photo or video">&#128206;</label>
 <input id="commentMediaInput" type="file" accept="image/*,video/*" onchange="handleCommentMedia(event)">
 <textarea id="commentInput" maxlength="1000" placeholder="Write a comment..."></textarea>
@@ -4303,6 +4381,78 @@ checkSession();
 </script>
 <script>
 /* =========================================================
+FRIENDHUB EMOJI PICKER — POSTS + COMMENTS
+Interface-only feature. Existing post/comment storage is unchanged.
+========================================================= */
+(function () {
+  const FRIENDHUB_EMOJIS = [
+    "\u{1F600}","\u{1F603}","\u{1F604}","\u{1F601}","\u{1F606}","\u{1F605}","\u{1F602}","\u{1F923}",
+    "\u{1F60A}","\u{1F607}","\u{1F642}","\u{1F643}","\u{1F609}","\u{1F60D}","\u{1F970}","\u{1F618}",
+    "\u{1F61C}","\u{1F92A}","\u{1F914}","\u{1F60E}","\u{1F973}","\u{1F97A}","\u{1F62D}","\u{1F621}",
+    "\u{1F44B}","\u{1F44D}","\u{1F44F}","\u{1F64C}","\u{1F91D}","\u{1F64F}","\u{1F4AA}","\u{1FAF6}",
+    "\u2764\uFE0F","\u{1F9E1}","\u{1F49B}","\u{1F49A}","\u{1F499}","\u{1F49C}","\u{1F495}","\u{1F496}",
+    "\u2728","\u{1F525}","\u{1F389}","\u{1F31F}","\u{1F308}","\u{1F3AE}","\u{1F3B5}","\u{1F4F8}"
+  ];
+
+  function closeEmojiPickers(exceptId) {
+    document.querySelectorAll('.emoji-picker-panel.show').forEach(function (panel) {
+      if (!exceptId || panel.id !== exceptId) panel.classList.remove('show');
+    });
+  }
+
+  function insertEmoji(targetId, emoji) {
+    const input = document.getElementById(targetId);
+    if (!input) return;
+    const start = typeof input.selectionStart === 'number' ? input.selectionStart : input.value.length;
+    const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : input.value.length;
+    input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+    const nextPosition = start + emoji.length;
+    input.focus();
+    if (input.setSelectionRange) input.setSelectionRange(nextPosition, nextPosition);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  function buildEmojiPickers() {
+    document.querySelectorAll('.emoji-picker-panel').forEach(function (panel) {
+      if (panel.dataset.ready === 'true') return;
+      const targetId = panel.dataset.target;
+      FRIENDHUB_EMOJIS.forEach(function (emoji) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'emoji-option';
+        button.textContent = emoji;
+        button.setAttribute('aria-label', 'Insert emoji ' + emoji);
+        button.addEventListener('click', function (event) {
+          event.stopPropagation();
+          insertEmoji(targetId, emoji);
+        });
+        panel.appendChild(button);
+      });
+      panel.dataset.ready = 'true';
+    });
+  }
+
+  window.toggleEmojiPicker = function (pickerId, event) {
+    if (event) event.stopPropagation();
+    buildEmojiPickers();
+    const panel = document.getElementById(pickerId);
+    if (!panel) return;
+    const shouldOpen = !panel.classList.contains('show');
+    closeEmojiPickers();
+    if (shouldOpen) panel.classList.add('show');
+  };
+
+  document.addEventListener('click', function (event) {
+    if (!event.target.closest('.emoji-picker-wrap')) closeEmojiPickers();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') closeEmojiPickers();
+  });
+  buildEmojiPickers();
+})();
+</script>
+<script>
+/* =========================================================
 FRIENDHUB BILINGUAL INTERFACE — ENGLISH / ESPAÑOL
 This layer translates interface text only. User posts/comments
 and stored values are intentionally left unchanged.
@@ -4374,7 +4524,7 @@ const attributeTranslations = {
 "Password":"Contraseña", "Confirm password":"Confirmar contraseña", "New password":"Nueva contraseña",
 "Confirm new password":"Confirmar nueva contraseña", "Write a comment...":"Escribe un comentario...", "Edit your post...":"Edita tu publicación...",
 "Notifications":"Notificaciones", "Add photo or video":"Agregar foto o video", "Cancel reply":"Cancelar respuesta",
-"Remove attachment":"Eliminar archivo adjunto", "Language":"Idioma"
+"Remove attachment":"Eliminar archivo adjunto", "Add emoji":"Agregar emoji", "Language":"Idioma"
 };
 function isUserContent(node) {
 const parent = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
