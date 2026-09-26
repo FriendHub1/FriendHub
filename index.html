@@ -4750,16 +4750,14 @@ function renderDmSeenStatus(message, mine) {
 if (!mine) return "";
 
 if (!message.is_read || !message.read_at) {
-return `<div class="dm-delivery-status sent"><span class="dm-checks">✓</span> ${getFriendHubLanguage() === "es" ? "Enviado" : "Sent"}</div>`;
+return `<div class="dm-delivery-status sent" aria-label="${getFriendHubLanguage() === "es" ? "Enviado" : "Sent"}"><span class="dm-checks">✓</span></div>`;
 }
 
 const isNewSeen = !dmSeenMessageIds.has(String(message.id));
 dmSeenMessageIds.add(String(message.id));
-const seenTime = formatDmSeenTime(message.read_at);
 
-return `<div class="dm-delivery-status seen ${isNewSeen ? "seen-pop" : ""}">
+return `<div class="dm-delivery-status seen ${isNewSeen ? "seen-pop" : ""}" aria-label="${getFriendHubLanguage() === "es" ? "Visto" : "Seen"}">
 <span class="dm-checks">✓✓</span>
-${getFriendHubLanguage() === "es" ? "Visto" : "Seen"} · ${escapeHtml(seenTime)}
 </div>`;
 }
 
