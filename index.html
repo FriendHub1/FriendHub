@@ -4334,7 +4334,7 @@ inbox.innerHTML = `<div class="content-card dm-empty-state"><p>${language === "e
 
 const { data: messages, error } = await supabaseClient
 .from("direct_messages")
-.select("id, created_at, sender_id, recipient_id, content, is_read")
+.select("id, created_at, sender_id, recipient_id, content, is_read, attachment_path, attachment_type, attachment_name, attachment_size")
 .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
 .order("created_at", { ascending: false });
 
@@ -4390,7 +4390,12 @@ const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || 
 const avatar = photo
 ? `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`
 : initial;
-const preview = conversation.lastMessage.content || "";
+const preview = conversation.lastMessage.content
+|| (conversation.lastMessage.attachment_type === "video"
+? "🎥 Video"
+: conversation.lastMessage.attachment_type === "image"
+? "📷 Photo"
+: "");
 const unreadBadge = conversation.unread
 ? `<span class="dm-unread-badge">${conversation.unread > 99 ? "99+" : conversation.unread}</span>`
 : "";
@@ -4465,7 +4470,7 @@ if (!currentUser || !currentDmUserId) return;
 
 const { data, error } = await supabaseClient
 .from("direct_messages")
-.select("id, created_at, sender_id, recipient_id, content, is_read")
+.select("id, created_at, sender_id, recipient_id, content, is_read, attachment_path, attachment_type, attachment_name, attachment_size")
 .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentDmUserId}),and(sender_id.eq.${currentDmUserId},recipient_id.eq.${currentUser.id})`)
 .order("created_at", { ascending: true });
 
