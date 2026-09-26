@@ -472,13 +472,19 @@ font-weight: 700;
 margin-bottom: 7px;
 }
 .form-group input,
-.form-group select {
+.form-group select,
+.form-group textarea {
 width: 100%;
 border: 1px solid #dfe3eb;
 border-radius: 10px;
 padding: 12px;
 outline: none;
 background: white;
+}
+.form-group textarea {
+min-height: 96px;
+resize: vertical;
+font: inherit;
 }
 .help-text {
 color: #8a94a6;
@@ -939,7 +945,8 @@ PUBLIC PROFILE
 .public-profile-avatar { width:110px; height:110px; border-radius:50%; margin:0 auto 12px; background:#eef0ff; color:#5865f2; display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:800; overflow:hidden; }
 .public-profile-avatar img { width:100%; height:100%; object-fit:cover; }
 .public-profile-username { font-size:28px; font-weight:800; margin-bottom:6px; }
-.public-profile-country { color:#667085; margin-bottom:18px; }
+.public-profile-country { color:#667085; margin-bottom:10px; }
+.public-profile-bio { color:#475467; max-width:620px; margin:0 auto 18px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
 .public-profile-details { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; text-align:left; margin-top:20px; }
 .public-profile-detail { background:#f8f9fc; border-radius:12px; padding:14px; }
 .public-profile-detail strong { display:block; margin-bottom:5px; color:#263043; }
@@ -2114,6 +2121,21 @@ placeholder="Your country"
 >
 </div>
 <div class="form-group">
+<label for="bio">
+Bio
+</label>
+<textarea
+id="bio"
+maxlength="160"
+rows="3"
+placeholder="Tell people a little about yourself..."
+oninput="updateBioCount()"
+></textarea>
+<div class="help-text">
+<span id="bioCount">0</span> / 160
+</div>
+</div>
+<div class="form-group">
 <label>
 Languages
 </label>
@@ -3122,6 +3144,9 @@ document.getElementById("age").value =
 data.age || "";
 document.getElementById("country").value =
 data.country || "";
+const bioInput = document.getElementById("bio");
+if (bioInput) bioInput.value = data.bio || "";
+updateBioCount();
 let languages = [];
 let interests = [];
 let lookingFor = [];
@@ -3168,6 +3193,11 @@ data.username,
 data.profile_photo
 );
 }
+function updateBioCount() {
+const bioInput = document.getElementById("bio");
+const bioCount = document.getElementById("bioCount");
+if (bioCount) bioCount.textContent = String((bioInput?.value || "").length);
+}
 function clearProfileForm() {
 document.getElementById("username").value =
 "";
@@ -3175,6 +3205,9 @@ document.getElementById("age").value =
 "";
 document.getElementById("country").value =
 "";
+const bioInput = document.getElementById("bio");
+if (bioInput) bioInput.value = "";
+updateBioCount();
 setSelectedOptions(
 "languages",
 []
@@ -3234,6 +3267,14 @@ const country =
 document.getElementById("country")
 .value
 .trim();
+const bio = (document.getElementById("bio")?.value || "").trim();
+if (bio.length > 160) {
+showProfileMessage(
+"Bio must be 160 characters or fewer.",
+"error"
+);
+return;
+}
 const languages =
 getSelectedOptions("languages");
 const interests =
@@ -3275,6 +3316,7 @@ currentUser.id,
 username,
 age,
 country,
+bio,
 languages:
 JSON.stringify(languages),
 interests:
@@ -4322,7 +4364,7 @@ if (content) content.innerHTML = '<div class="empty-state">Loading profile...</d
 if (postsContainer) postsContainer.innerHTML = '';
 const { data: profile, error } = await supabaseClient
 .from("friendhub_public_profiles")
-.select("user_id, username, country, languages, interests, looking_for, profile_photo")
+.select("user_id, username, country, languages, interests, looking_for, profile_photo, bio")
 .eq("user_id", String(userId))
 .maybeSingle();
 if (error || !profile) {
@@ -4360,6 +4402,7 @@ content.innerHTML = `
 <div class="public-profile-username">${escapeHtml(username)}</div>
 ${renderFriendHubPresence(presenceResult.data?.last_active_at || null, "friendhub-presence-profile")}
 <div class="public-profile-country">${escapeHtml(profile.country || "Country not added")}</div>
+${profile.bio ? `<div class="public-profile-bio">${escapeHtml(profile.bio)}</div>` : ""}
 <div class="public-profile-social">
 <button class="public-profile-stat" onclick="openFollowList('followers', '${escapeHtmlAttribute(String(userId))}')"><strong>${followersCount}</strong>Followers</button>
 <button class="public-profile-stat" onclick="openFollowList('following', '${escapeHtmlAttribute(String(userId))}')"><strong>${followingCount}</strong>Following</button>
@@ -6331,7 +6374,7 @@ const translations = {
 "Change profile photo":"Cambiar foto de perfil", "Username":"Nombre de usuario",
 "Your username is public. You can change it once every 30 days.":"Tu nombre de usuario es público. Puedes cambiarlo una vez cada 30 días.",
 "Age":"Edad", "Your exact age is private and is not displayed publicly.":"Tu edad exacta es privada y no se muestra públicamente.",
-"Country":"País", "Languages":"Idiomas", "Interests":"Intereses", "What are you looking for?":"¿Qué estás buscando?",
+"Country":"País", "Bio":"Biografía", "Tell people a little about yourself...":"Cuéntales a los demás un poco sobre ti...", "Languages":"Idiomas", "Interests":"Intereses", "What are you looking for?":"¿Qué estás buscando?",
 "Save Profile":"Guardar perfil", "Reset":"Restablecer", "Loading profile...":"Cargando perfil...", "Posts":"Publicaciones",
 "Saved Posts":"Publicaciones guardadas", "Posts you save are private and only visible to you.":"Las publicaciones que guardas son privadas y solo tú puedes verlas.",
 "About FriendHub":"Acerca de FriendHub", "A simple place to discover people and communities.":"Un lugar sencillo para descubrir personas y comunidades.",
