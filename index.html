@@ -1004,19 +1004,19 @@ EDIT POST
 ========================================================= */
 .edit-post-modal { width: min(560px, 100%); }
 .edit-post-modal textarea {
-    width: 100%;
-    min-height: 150px;
-    resize: vertical;
-    border: 1px solid #dfe3eb;
-    border-radius: 12px;
-    padding: 13px;
-    outline: none;
+ width: 100%;
+ min-height: 150px;
+ resize: vertical;
+ border: 1px solid #dfe3eb;
+ border-radius: 12px;
+ padding: 13px;
+ outline: none;
 }
 .edit-post-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 15px;
+ display: flex;
+ justify-content: flex-end;
+ gap: 10px;
+ margin-top: 15px;
 }
 .post-action.edit-post-action { color: #5865f2; }
 .post-action.edit-post-action:hover { background: #eef0ff; }
@@ -1039,7 +1039,7 @@ FriendHub
 <div class="auth-buttons">
 <div class="notification-wrap" id="notificationWrap">
 <button class="notification-bell" id="notificationBell" onclick="toggleNotifications(event)" aria-label="Notifications" title="Notifications">
-?
+&#128276;
 <span class="notification-badge" id="notificationBadge">0</span>
 </button>
 <div class="notification-panel" id="notificationPanel">
@@ -1583,17 +1583,17 @@ Update Password
 </div>
 
 <div id="editPostModal" class="modal-overlay">
-    <div class="modal edit-post-modal">
-        <button class="modal-close" onclick="closeEditPost()">×</button>
-        <h2>Edit Post</h2>
-        <p class="modal-subtitle">Update the text of your post.</p>
-        <div id="editPostMessage" class="message"></div>
-        <textarea id="editPostText" maxlength="5000" placeholder="Edit your post..."></textarea>
-        <div class="edit-post-actions">
-            <button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
-            <button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
-        </div>
-    </div>
+ <div class="modal edit-post-modal">
+ <button class="modal-close" onclick="closeEditPost()">×</button>
+ <h2>Edit Post</h2>
+ <p class="modal-subtitle">Update the text of your post.</p>
+ <div id="editPostMessage" class="message"></div>
+ <textarea id="editPostText" maxlength="5000" placeholder="Edit your post..."></textarea>
+ <div class="edit-post-actions">
+ <button class="btn btn-secondary" onclick="closeEditPost()">Cancel</button>
+ <button class="btn btn-primary" onclick="saveEditedPost()">Save</button>
+ </div>
+ </div>
 </div>
 
 <script>
@@ -3638,7 +3638,7 @@ class="comment-like${comment.liked ? " liked" : ""}"
 onclick="toggleCommentLike('${escapeHtmlAttribute(String(comment.id))}')"
 aria-label="${comment.liked ? "Remove Like from comment" : "Like comment"}"
 >
-${comment.liked ? "❤️" : "♡"} ${Number(comment.likesCount || 0)}
+${comment.liked ? "" : ""} ${Number(comment.likesCount || 0)}
 </button>
 </div>
 </div>
