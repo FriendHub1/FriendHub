@@ -1324,17 +1324,17 @@ html[data-theme="night"] .friendhub-invite-btn:hover {
 
 
 /* HOME INTERACTIVE: MEET PEOPLE */
-#home [onclick="openDiscoverPeople()"] {
+#home .feature-card[onclick="openDiscoverPeople()"] {
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
-#home [onclick="openDiscoverPeople()"]:hover,
-#home [onclick="openDiscoverPeople()"]:focus-visible {
+#home .feature-card[onclick="openDiscoverPeople()"]:hover,
+#home .feature-card[onclick="openDiscoverPeople()"]:focus-visible {
   transform: translateY(-3px);
   outline: none;
   box-shadow: 0 12px 30px rgba(24,200,255,.14);
 }
-html[data-theme="night"] #home [onclick="openDiscoverPeople()"]:hover,
-html[data-theme="night"] #home [onclick="openDiscoverPeople()"]:focus-visible {
+html[data-theme="night"] #home .feature-card[onclick="openDiscoverPeople()"]:hover,
+html[data-theme="night"] #home .feature-card[onclick="openDiscoverPeople()"]:focus-visible {
   box-shadow: 0 0 18px rgba(24,200,255,.16), 0 0 26px rgba(139,92,255,.18);
 }
 
@@ -1422,8 +1422,8 @@ Learn More
 <p>Connect around the things you enjoy.</p>
 </div>
 <div class="feature-grid">
-<div class="feature-card">
-<div class="feature-icon" onclick="openDiscoverPeople()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverPeople();}" style="cursor:pointer;"></div>
+<div class="feature-card" onclick="openDiscoverPeople()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverPeople();}" style="cursor:pointer;">
+<div class="feature-icon"></div>
 <h3>Meet People</h3>
 <p>
 Discover people with similar interests,
