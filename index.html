@@ -1733,6 +1733,39 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
   text-shadow: 0 0 7px rgba(255,47,168,.55);
 }
 
+
+/* FriendHub DM FIX2: compact rows + stable media sizing */
+.dm-messages {
+  justify-content: flex-start !important;
+  align-content: flex-start !important;
+  align-items: stretch;
+}
+.dm-row {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+.dm-bubble {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+.dm-attachment {
+  height: auto !important;
+}
+.dm-attachment-image,
+.dm-attachment-video {
+  display: block;
+  width: min(100%, 360px);
+  height: auto !important;
+  max-height: 360px;
+}
+.dm-checks {
+  font-size: 1rem !important;
+  line-height: 1 !important;
+}
+
 </style>
 </head>
 <body>
@@ -4834,9 +4867,34 @@ ${renderDmSeenStatus(message, mine)}
 
 dmLastRenderedSignature = renderSignature;
 
+const shouldStickToBottom = isFirstRender || wasNearBottom;
 requestAnimationFrame(() => {
-if (isFirstRender || wasNearBottom) {
+if (shouldStickToBottom) {
 container.scrollTop = container.scrollHeight;
+}
+});
+stabilizeDmMediaScroll(container, shouldStickToBottom);
+}
+
+
+function stabilizeDmMediaScroll(container, shouldStickToBottom) {
+if (!container) return;
+const mediaItems = container.querySelectorAll(".dm-attachment-image, .dm-attachment-video");
+
+const settle = () => {
+if (!shouldStickToBottom) return;
+requestAnimationFrame(() => {
+container.scrollTop = container.scrollHeight;
+});
+};
+
+mediaItems.forEach(media => {
+if (media.tagName === "VIDEO") {
+if (media.readyState >= 1) settle();
+else media.addEventListener("loadedmetadata", settle, { once: true });
+} else {
+if (media.complete) settle();
+else media.addEventListener("load", settle, { once: true });
 }
 });
 }
