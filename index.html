@@ -1766,6 +1766,36 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
   line-height: 1 !important;
 }
 
+
+/* FriendHub DM FIX3 — layout only.
+   The message list itself is block flow so rows cannot stretch/distribute vertically.
+   Individual rows stay flex for left/right bubble alignment. */
+.dm-messages {
+  display: block !important;
+}
+.dm-row {
+  display: flex !important;
+  width: 100% !important;
+  margin: 0 0 10px 0 !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+.dm-row:last-child {
+  margin-bottom: 0 !important;
+}
+.dm-row.mine {
+  justify-content: flex-end !important;
+}
+.dm-row.theirs {
+  justify-content: flex-start !important;
+}
+.dm-bubble {
+  display: block;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
 </style>
 </head>
 <body>
