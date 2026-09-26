@@ -2330,6 +2330,43 @@ placeholder="Your country"
 >
 </div>
 <div class="form-group">
+<label for="genderIdentity">
+Gender
+</label>
+<select id="genderIdentity">
+<option value="">Select gender</option>
+<option value="Man">Man</option>
+<option value="Woman">Woman</option>
+<option value="Non-binary">Non-binary</option>
+<option value="Trans man">Trans man</option>
+<option value="Trans woman">Trans woman</option>
+<option value="Other">Other</option>
+<option value="Prefer not to say">Prefer not to say</option>
+</select>
+<div class="help-text">
+Optional. Choose how you describe your gender.
+</div>
+</div>
+<div class="form-group">
+<label for="sexualOrientation">
+Sexual orientation
+</label>
+<select id="sexualOrientation">
+<option value="">Select sexual orientation</option>
+<option value="Straight">Straight</option>
+<option value="Gay">Gay</option>
+<option value="Lesbian">Lesbian</option>
+<option value="Bisexual">Bisexual</option>
+<option value="Pansexual">Pansexual</option>
+<option value="Asexual">Asexual</option>
+<option value="Other">Other</option>
+<option value="Prefer not to say">Prefer not to say</option>
+</select>
+<div class="help-text">
+Optional. “Prefer not to say” will not be shown on your public profile.
+</div>
+</div>
+<div class="form-group">
 <label for="bio">
 Bio
 </label>
@@ -3354,6 +3391,10 @@ document.getElementById("age").value =
 data.age || "";
 document.getElementById("country").value =
 data.country || "";
+const genderIdentityInput = document.getElementById("genderIdentity");
+if (genderIdentityInput) genderIdentityInput.value = data.gender_identity || "";
+const sexualOrientationInput = document.getElementById("sexualOrientation");
+if (sexualOrientationInput) sexualOrientationInput.value = data.sexual_orientation || "";
 const bioInput = document.getElementById("bio");
 if (bioInput) bioInput.value = data.bio || "";
 updateBioCount();
@@ -3415,6 +3456,10 @@ document.getElementById("age").value =
 "";
 document.getElementById("country").value =
 "";
+const genderIdentityInput = document.getElementById("genderIdentity");
+if (genderIdentityInput) genderIdentityInput.value = "";
+const sexualOrientationInput = document.getElementById("sexualOrientation");
+if (sexualOrientationInput) sexualOrientationInput.value = "";
 const bioInput = document.getElementById("bio");
 if (bioInput) bioInput.value = "";
 updateBioCount();
@@ -3477,6 +3522,8 @@ const country =
 document.getElementById("country")
 .value
 .trim();
+const genderIdentity = (document.getElementById("genderIdentity")?.value || "").trim();
+const sexualOrientation = (document.getElementById("sexualOrientation")?.value || "").trim();
 const bio = (document.getElementById("bio")?.value || "").trim();
 if (bio.length > 160) {
 showProfileMessage(
@@ -3526,6 +3573,8 @@ currentUser.id,
 username,
 age,
 country,
+gender_identity: genderIdentity || null,
+sexual_orientation: sexualOrientation || null,
 bio,
 languages:
 JSON.stringify(languages),
@@ -4600,7 +4649,7 @@ if (content) content.innerHTML = '<div class="empty-state">Loading profile...</d
 if (postsContainer) postsContainer.innerHTML = '';
 const { data: profile, error } = await supabaseClient
 .from("friendhub_public_profiles")
-.select("user_id, username, country, languages, interests, looking_for, profile_photo, bio")
+.select("user_id, username, country, languages, interests, looking_for, profile_photo, bio, gender_identity, sexual_orientation")
 .eq("user_id", String(userId))
 .maybeSingle();
 if (error || !profile) {
@@ -4648,6 +4697,8 @@ ${isOwnProfile ? "" : `<button id="publicBlockButton" class="btn public-profile-
 ${isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${getFriendHubLanguage() === "es" ? "Reportar usuario" : "Report user"}</button>`}
 ${isOwnProfile || isBlocked ? "" : `<button id="publicMessageButton" class="btn public-profile-message" onclick="openDirectChat('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(profile.profile_photo || "")}')">&#128172; ${getFriendHubLanguage() === "es" ? "Mensaje" : "Message"}</button>`}
 <div class="public-profile-details">
+${profile.gender_identity && profile.gender_identity !== "Prefer not to say" ? `<div class="public-profile-detail"><strong>Gender</strong><span>${escapeHtml(profile.gender_identity)}</span></div>` : ""}
+${profile.sexual_orientation && profile.sexual_orientation !== "Prefer not to say" ? `<div class="public-profile-detail"><strong>Sexual orientation</strong><span>${escapeHtml(profile.sexual_orientation)}</span></div>` : ""}
 <div class="public-profile-detail"><strong>Languages</strong><span>${escapeHtml(formatPublicProfileList(profile.languages))}</span></div>
 <div class="public-profile-detail"><strong>Interests</strong><span>${escapeHtml(formatPublicProfileList(profile.interests))}</span></div>
 <div class="public-profile-detail"><strong>Looking for</strong><span>${escapeHtml(formatPublicProfileList(profile.looking_for))}</span></div>
