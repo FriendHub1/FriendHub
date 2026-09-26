@@ -1322,6 +1322,22 @@ html[data-theme="night"] .friendhub-invite-btn:hover {
   }
 }
 
+
+/* HOME INTERACTIVE: MEET PEOPLE */
+#home [onclick="openDiscoverPeople()"] {
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+#home [onclick="openDiscoverPeople()"]:hover,
+#home [onclick="openDiscoverPeople()"]:focus-visible {
+  transform: translateY(-3px);
+  outline: none;
+  box-shadow: 0 12px 30px rgba(24,200,255,.14);
+}
+html[data-theme="night"] #home [onclick="openDiscoverPeople()"]:hover,
+html[data-theme="night"] #home [onclick="openDiscoverPeople()"]:focus-visible {
+  box-shadow: 0 0 18px rgba(24,200,255,.16), 0 0 26px rgba(139,92,255,.18);
+}
+
 </style>
 </head>
 <body>
@@ -1407,7 +1423,7 @@ Learn More
 </div>
 <div class="feature-grid">
 <div class="feature-card">
-<div class="feature-icon"></div>
+<div class="feature-icon" onclick="openDiscoverPeople()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverPeople();}" style="cursor:pointer;"></div>
 <h3>Meet People</h3>
 <p>
 Discover people with similar interests,
@@ -4542,6 +4558,25 @@ alert(
 "Thank you. Reporting tools will be expanded as FriendHub grows."
 );
 }
+/* =========================================================
+HOME: MEET PEOPLE -> DISCOVER / PEOPLE
+========================================================= */
+function openDiscoverPeople() {
+  showPageWithoutReload("discover");
+
+  const peopleButton = document.querySelector('.filter-btn[data-filter="people"]');
+  if (peopleButton) {
+    peopleButton.click();
+    return;
+  }
+
+  /* Safe fallback if the filter button is not available yet. */
+  document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+  const fallback = Array.from(document.querySelectorAll(".filter-btn"))
+    .find(btn => btn.textContent.trim().toLowerCase() === "people");
+  if (fallback) fallback.click();
+}
+
 /* =========================================================
 SHARE FRIENDHUB / INVITE FRIENDS
 Shares the main FriendHub URL. No database changes required.
