@@ -7683,14 +7683,69 @@
                     doubleTapLikeBusy.delete(id);
                     }
                     }
-                    function reportPost(id) {
+                    async function reportPost(id) {
                     if (!currentUser) {
                     openAuth("login");
                     return;
                     }
-                    alert(
-                    "Thank you. Reporting tools will be expanded as XOXO Avenue grows."
+                    if (!id) return;
+
+                    const isSpanish = getFriendHubLanguage() === "es";
+                    const post = (posts || []).find(item => String(item.id) === String(id));
+                    if (post && String(post.userId || "") === String(currentUser.id)) {
+                    alert(isSpanish ? "No puedes reportar tu propia publicación." : "You cannot report your own post.");
+                    return;
+                    }
+
+                    const reasonInput = prompt(
+                    isSpanish
+                    ? "Reportar publicación\n\nEscribe uno de estos motivos:\nspam\nharassment\ninappropriate_content\nother"
+                    : "Report post\n\nEnter one of these reasons:\nspam\nharassment\ninappropriate_content\nother"
                     );
+                    if (!reasonInput) return;
+
+                    const reason = reasonInput.trim().toLowerCase();
+                    const allowedReasons = ["spam", "harassment", "inappropriate_content", "other"];
+                    if (!allowedReasons.includes(reason)) {
+                    alert(isSpanish ? "Motivo no válido. El reporte no fue enviado." : "Invalid reason. The report was not sent.");
+                    return;
+                    }
+
+                    const detailsInput = prompt(
+                    isSpanish
+                    ? "Agrega detalles sobre el reporte (opcional):"
+                    : "Add details about the report (optional):"
+                    );
+                    if (detailsInput === null) return;
+
+                    const { data: reporterProfile, error: reporterProfileError } = await supabaseClient
+                    .from("profiles")
+                    .select("id")
+                    .eq("user_id", currentUser.id)
+                    .maybeSingle();
+
+                    if (reporterProfileError || !reporterProfile?.id) {
+                    console.error("Report post profile lookup error:", reporterProfileError);
+                    alert(isSpanish ? "No se pudo preparar el reporte. Inténtalo de nuevo." : "Could not prepare the report. Please try again.");
+                    return;
+                    }
+
+                    const { error } = await supabaseClient
+                    .from("reports")
+                    .insert({
+                    reporter_id: reporterProfile.id,
+                    reported_post_id: id,
+                    reason,
+                    details: detailsInput.trim() || null
+                    });
+
+                    if (error) {
+                    console.error("Report post error:", error);
+                    alert(isSpanish ? "No se pudo enviar el reporte. Inténtalo de nuevo." : "Could not send the report. Please try again.");
+                    return;
+                    }
+
+                    alert(isSpanish ? "Reporte enviado. Gracias." : "Report submitted. Thank you.");
                     }
                     /* =========================================================
                     HOME: MEET PEOPLE -> DISCOVER / PEOPLE
