@@ -6445,7 +6445,9 @@
 
                     async function loadDmInbox() {
                     if (!currentUser) return;
-                    await refreshDmUnreadCount();
+                    /* Refresh the unread badge independently so a slow count query
+                       can never block the conversation inbox after a reload. */
+                    refreshDmUnreadCount();
 
                     const inbox = document.getElementById("dmInbox");
                     if (!inbox) return;
