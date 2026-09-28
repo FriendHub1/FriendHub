@@ -3853,6 +3853,18 @@
                     currentUser =
                     session?.user || null;
                     updateAuthUI();
+                    if (event === "PASSWORD_RECOVERY") {
+                    const newPassword = document.getElementById("newPassword");
+                    const newPasswordConfirm = document.getElementById("newPasswordConfirm");
+                    const newPasswordMessage = document.getElementById("newPasswordMessage");
+                    if (newPassword) newPassword.value = "";
+                    if (newPasswordConfirm) newPasswordConfirm.value = "";
+                    if (newPasswordMessage) {
+                    newPasswordMessage.textContent = "";
+                    newPasswordMessage.className = "message";
+                    }
+                    openModal("newPasswordModal");
+                    }
                     if (currentUser) {
                     await loadCurrentProfile();
                     await loadPosts();
