@@ -7245,6 +7245,35 @@
                     }
                     currentComments = data || [];
                     if (currentComments.length) {
+                    const commentAuthorIds = [...new Set(
+                    currentComments
+                    .map(comment => String(comment.user_id || ""))
+                    .filter(Boolean)
+                    )];
+                    let commentAuthorProfiles = [];
+                    if (commentAuthorIds.length) {
+                    const { data: commentProfileData, error: commentProfileError } =
+                    await supabaseClient
+                    .from("friendhub_public_profiles")
+                    .select("user_id, profile_photo")
+                    .in("user_id", commentAuthorIds);
+                    if (commentProfileError) {
+                    console.error("Comment author profiles load error:", commentProfileError);
+                    } else {
+                    commentAuthorProfiles = commentProfileData || [];
+                    }
+                    }
+                    const commentAuthorProfileMap = new Map(
+                    commentAuthorProfiles.map(profile => [String(profile.user_id), profile])
+                    );
+                    currentComments = currentComments.map(comment => ({
+                    ...comment,
+                    profilePhoto:
+                    commentAuthorProfileMap.get(String(comment.user_id || ""))?.profile_photo
+                    || (String(comment.user_id || "") === String(currentUser.id)
+                    ? currentProfile?.profile_photo || null
+                    : null)
+                    }));
                     const commentIds = currentComments.map(comment => comment.id);
                     const { data: commentLikes, error: likesError } =
                     await supabaseClient
@@ -7294,11 +7323,14 @@
                     const initial = escapeHtml(
                     (comment.username || "U").replace("@", "").charAt(0).toUpperCase()
                     );
+                    const avatar = comment.profilePhoto
+                    ? `<img src="${escapeHtmlAttribute(comment.profilePhoto)}" alt="Profile photo">`
+                    : initial;
                     const canDelete = currentUser && String(comment.user_id) === String(currentUser.id);
                     const replies = !isReply ? (repliesByParent.get(String(comment.id)) || []) : [];
                     return `
                     <div class="comment-item${isReply ? " comment-reply-item" : ""}">
-                    <div class="comment-avatar clickable-user" onclick="closeCommentsModal(); openPublicProfile('${escapeHtmlAttribute(String(comment.user_id))}')">${initial}</div>
+                    <div class="comment-avatar clickable-user" onclick="closeCommentsModal(); openPublicProfile('${escapeHtmlAttribute(String(comment.user_id))}')">${avatar}</div>
                     <div class="comment-body">
                     <div>
                     <span class="comment-user clickable-user" onclick="closeCommentsModal(); openPublicProfile('${escapeHtmlAttribute(String(comment.user_id))}')">${username}</span>
