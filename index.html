@@ -3738,10 +3738,26 @@
                     }, 700);
                     }
                     }
+                    function friendlyAuthError(message) {
+                    const raw = String(message || "");
+                    const lower = raw.toLowerCase();
+                    const isSpanish = getFriendHubLanguage() === "es";
+                    if (lower.includes("email rate limit exceeded") || lower.includes("rate limit")) {
+                    return isSpanish
+                    ? "Has solicitado demasiados correos. Espera unos minutos e inténtalo de nuevo."
+                    : "Too many email requests. Please wait a few minutes and try again.";
+                    }
+                    if (lower.includes("otp_expired") || lower.includes("invalid or has expired") || lower.includes("expired")) {
+                    return isSpanish
+                    ? "Este enlace de recuperación no es válido o ha expirado. Solicita uno nuevo."
+                    : "This password reset link is invalid or has expired. Please request a new one.";
+                    }
+                    return raw;
+                    }
                     function showAuthMessage(message, type) {
                     const box =
                     document.getElementById("authMessage");
-                    box.textContent = message;
+                    box.textContent = type === "error" ? friendlyAuthError(message) : message;
                     box.className =
                     "message show " + type;
                     }
@@ -3797,7 +3813,7 @@
                     function showResetMessage(message, type) {
                     const box =
                     document.getElementById("resetMessage");
-                    box.textContent = message;
+                    box.textContent = type === "error" ? friendlyAuthError(message) : message;
                     box.className =
                     "message show " + type;
                     }
@@ -3844,7 +3860,7 @@
                     function showNewPasswordMessage(message, type) {
                     const box =
                     document.getElementById("newPasswordMessage");
-                    box.textContent = message;
+                    box.textContent = type === "error" ? friendlyAuthError(message) : message;
                     box.className =
                     "message show " + type;
                     }
@@ -8047,6 +8063,16 @@
                     });
                     renderOptionButtons();
                     renderPosts();
+                    const authHashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+                    if (authHashParams.get("error")) {
+                    const authUrlError =
+                    authHashParams.get("error_description")
+                    || authHashParams.get("error_code")
+                    || authHashParams.get("error");
+                    openResetPassword();
+                    showResetMessage(authUrlError, "error");
+                    history.replaceState(null, "", window.location.pathname + window.location.search);
+                    }
                     checkSession();
                     </script>
                     <script>
