@@ -3747,6 +3747,11 @@
                     ? "Has solicitado demasiados correos. Espera unos minutos e inténtalo de nuevo."
                     : "Too many email requests. Please wait a few minutes and try again.";
                     }
+                    if (lower.includes("invalid login credentials")) {
+                    return isSpanish
+                    ? "Correo electrónico o contraseña incorrectos. Inténtalo de nuevo."
+                    : "Incorrect email or password. Please try again.";
+                    }
                     if (lower.includes("otp_expired") || lower.includes("invalid or has expired") || lower.includes("expired")) {
                     return isSpanish
                     ? "Este enlace de recuperación no es válido o ha expirado. Solicita uno nuevo."
