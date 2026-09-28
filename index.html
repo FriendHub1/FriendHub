@@ -4513,7 +4513,27 @@
                     if (!currentUser) {
                     savedPostIds = new Set();
                     blockedUserIds = new Set();
-                    posts = [...samplePosts];
+                    const { data: previewData, error: previewError } =
+                    await supabaseClient.rpc("get_public_preview_posts");
+                    if (previewError) {
+                    console.error("Public preview posts load error:", previewError);
+                    posts = [];
+                    renderPosts();
+                    return;
+                    }
+                    const databasePosts = (previewData || []).slice(0, 3).map(row => {
+                    let tags = [];
+                    try { tags = row.content_tags ? JSON.parse(row.content_tags) : []; } catch { tags = []; }
+                    return {
+                    id: row.id, username: row.username, text: row.content || "",
+                    type: row.post_type, tags, time: formatPostTime(row.created_at),
+                    media: row.media_url ? { type: row.media_type || "image", src: row.media_url } : null,
+                    likes: 0, comments: 0, liked: false, saved: false,
+                    userId: row.user_id, profilePhoto: null, editedAt: row.edited_at || null
+                    };
+                    });
+                    posts = databasePosts;
+                    postsHasMore = false;
                     renderPosts();
                     return;
                     }
@@ -5243,6 +5263,14 @@
                     filtered
                     .map(post => renderPost(post))
                     .join("");
+                    if (!currentUser && !search && currentFilter === "all" && filtered.length) {
+                    feed.insertAdjacentHTML("beforeend", `
+                    <div style="margin:22px 0 8px;padding:28px 20px;text-align:center;border-radius:22px;border:1px solid var(--border);background:var(--card);">
+                    <div style="font-size:1.35rem;font-weight:800;margin-bottom:8px;">Want to see more? ✨</div>
+                    <div style="opacity:.78;margin-bottom:18px;">Join XOXO Avenue to discover more posts and meet new people.</div>
+                    <button class="primary-btn" type="button" onclick="openAuth('signup')">Sign up to see more</button>
+                    </div>`);
+                    }
                     }
                     function renderTextWithMentions(value) {
                     let safe = escapeHtml(value || "");
