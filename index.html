@@ -4575,6 +4575,26 @@
                     renderPosts();
                     return;
                     }
+                    const postAuthorIds = [...new Set(
+                    (postData || [])
+                    .map(row => String(row.user_id || ""))
+                    .filter(Boolean)
+                    )];
+                    let postAuthorProfiles = [];
+                    if (postAuthorIds.length) {
+                    const { data: authorProfileData, error: authorProfileError } = await supabaseClient
+                    .from("friendhub_public_profiles")
+                    .select("user_id, profile_photo")
+                    .in("user_id", postAuthorIds);
+                    if (authorProfileError) {
+                    console.error("Post author profiles load error:", authorProfileError);
+                    } else {
+                    postAuthorProfiles = authorProfileData || [];
+                    }
+                    }
+                    const postAuthorProfileMap = new Map(
+                    postAuthorProfiles.map(profile => [String(profile.user_id), profile])
+                    );
                     const {
                     data: likeData,
                     error: likeError
@@ -4675,9 +4695,10 @@
                     userId:
                     row.user_id,
                     profilePhoto:
-                    row.user_id === currentUser.id
+                    postAuthorProfileMap.get(String(row.user_id || ""))?.profile_photo
+                    || (String(row.user_id || "") === String(currentUser.id)
                     ? currentProfile?.profile_photo || null
-                    : null,
+                    : null),
                     editedAt:
                     row.edited_at || null
                     };
