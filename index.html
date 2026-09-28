@@ -4543,6 +4543,17 @@
                     renderPosts();
                     return;
                     }
+                    const { data: previewProfileData, error: previewProfileError } =
+                    await supabaseClient.rpc("get_public_preview_profile_photos");
+                    if (previewProfileError) {
+                    console.error("Public preview profile photos load error:", previewProfileError);
+                    }
+                    const previewProfilePhotoMap = new Map(
+                    (previewProfileData || []).map(profile => [
+                    String(profile.user_id || ""),
+                    profile.profile_photo || null
+                    ])
+                    );
                     const databasePosts = (previewData || []).slice(0, 3).map(row => {
                     let tags = [];
                     try { tags = row.content_tags ? JSON.parse(row.content_tags) : []; } catch { tags = []; }
@@ -4551,7 +4562,9 @@
                     type: row.post_type, tags, time: formatPostTime(row.created_at),
                     media: row.media_url ? { type: row.media_type || "image", src: row.media_url } : null,
                     likes: 0, comments: 0, liked: false, saved: false,
-                    userId: row.user_id, profilePhoto: null, editedAt: row.edited_at || null
+                    userId: row.user_id,
+                    profilePhoto: previewProfilePhotoMap.get(String(row.user_id || "")) || null,
+                    editedAt: row.edited_at || null
                     };
                     });
                     posts = databasePosts;
