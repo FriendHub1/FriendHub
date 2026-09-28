@@ -7556,6 +7556,10 @@
                     }
                     }
                     function reportPost(id) {
+                    if (!currentUser) {
+                    openAuth("login");
+                    return;
+                    }
                     alert(
                     "Thank you. Reporting tools will be expanded as XOXO Avenue grows."
                     );
