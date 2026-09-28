@@ -3848,10 +3848,16 @@
                     password
                     });
                     if (error) {
+                    openModal("newPasswordModal");
                     showNewPasswordMessage(
                     error.message,
                     "error"
                     );
+                    const newPasswordInput = document.getElementById("newPassword");
+                    if (newPasswordInput) {
+                    newPasswordInput.focus();
+                    newPasswordInput.select();
+                    }
                     return;
                     }
                     showNewPasswordMessage(
