@@ -3484,6 +3484,11 @@
                     let postsVisibleLimit = POSTS_PAGE_SIZE;
                     let postsHasMore = true;
                     let postsLoadingMore = false;
+                    const HASHTAG_PAGE_SIZE = 20;
+                    let activeGlobalHashtag = "";
+                    let hashtagOffset = 0;
+                    let hashtagHasMore = false;
+                    let hashtagLoadingMore = false;
                     const languageOptions = [
                     "🇺🇸 English",
                     "🇪🇸 Spanish",
@@ -3549,6 +3554,11 @@
                     behavior: "smooth"
                     });
                     if (pageId === "discover") {
+                    activeGlobalHashtag = "";
+                    hashtagOffset = 0;
+                    hashtagHasMore = false;
+                    const searchInput = document.getElementById("searchInput");
+                    if (searchInput && searchInput.value.trim().startsWith("#")) searchInput.value = "";
                     loadPosts();
                     loadFriendSuggestions();
                     }
@@ -4695,11 +4705,27 @@
                     }
 
                     window.addEventListener("scroll", () => {
-                    if (!currentUser || postsLoadingMore || !postsHasMore) return;
                     const activePage = document.querySelector(".page.active");
-                    if (!activePage || activePage.id !== "home") return;
+                    if (!activePage) return;
                     const distanceFromBottom = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
-                    if (distanceFromBottom < 700) {
+                    if (distanceFromBottom >= 700) return;
+
+                    if (
+                    activePage.id === "discover" &&
+                    activeGlobalHashtag &&
+                    hashtagHasMore &&
+                    !hashtagLoadingMore
+                    ) {
+                    loadGlobalHashtagPosts(false);
+                    return;
+                    }
+
+                    if (
+                    activePage.id === "home" &&
+                    currentUser &&
+                    !postsLoadingMore &&
+                    postsHasMore
+                    ) {
                     loadMoreHomePosts();
                     }
                     }, { passive: true });
@@ -5007,10 +5033,8 @@
                     }
 
                     function searchGlobalHashtag(tag) {
-                      const search = document.getElementById("searchInput");
-                      if (search) search.value = tag;
                       closeFriendHubGlobalSearch();
-                      renderPosts();
+                      openHashtag(tag);
                     }
 
                     function searchGlobalInterest(value) {
@@ -5285,16 +5309,111 @@
                     return safe;
                     }
 
-                    function openHashtag(hashtag) {
+                    async function loadGlobalHashtagPosts(reset = false) {
+                    if (!activeGlobalHashtag || hashtagLoadingMore) return;
+
+                    if (reset) {
+                    hashtagOffset = 0;
+                    hashtagHasMore = true;
+                    posts = [];
+                    }
+
+                    hashtagLoadingMore = true;
+                    try {
+                    const cleanTag = String(activeGlobalHashtag).replace(/^#/, "");
+                    const { data: hashtagRows, error: hashtagError } =
+                    await supabaseClient.rpc("search_posts_by_hashtag", {
+                    hashtag_text: cleanTag,
+                    page_limit: HASHTAG_PAGE_SIZE,
+                    page_offset: hashtagOffset
+                    });
+
+                    if (hashtagError) {
+                    console.error("Global hashtag search error:", hashtagError);
+                    if (reset) posts = [];
+                    hashtagHasMore = false;
+                    renderPosts();
+                    return;
+                    }
+
+                    const rows = hashtagRows || [];
+                    const rowIds = rows.map(row => String(row.id));
+                    const likeCounts = {};
+                    const commentCounts = {};
+                    const userLikedPosts = new Set();
+                    let hashtagSavedIds = new Set();
+
+                    if (currentUser && rowIds.length) {
+                    const [likesResult, commentsResult, savedResult] = await Promise.all([
+                    supabaseClient.from("post_likes").select("post_id, user_id").in("post_id", rowIds),
+                    supabaseClient.from("post_comments").select("post_id").in("post_id", rowIds),
+                    supabaseClient.from("saved_posts").select("post_id").eq("user_id", currentUser.id).in("post_id", rowIds)
+                    ]);
+
+                    (likesResult.data || []).forEach(like => {
+                    const postId = String(like.post_id);
+                    likeCounts[postId] = (likeCounts[postId] || 0) + 1;
+                    if (String(like.user_id) === String(currentUser.id)) userLikedPosts.add(postId);
+                    });
+
+                    (commentsResult.data || []).forEach(comment => {
+                    const postId = String(comment.post_id);
+                    commentCounts[postId] = (commentCounts[postId] || 0) + 1;
+                    });
+
+                    hashtagSavedIds = new Set((savedResult.data || []).map(item => String(item.post_id)));
+                    }
+
+                    const mapped = rows.map(row => {
+                    let tags = [];
+                    try { tags = row.content_tags ? JSON.parse(row.content_tags) : []; } catch { tags = []; }
+                    const rowId = String(row.id);
+                    return {
+                    id: row.id,
+                    username: row.username,
+                    text: row.content || "",
+                    type: row.post_type,
+                    tags,
+                    time: formatPostTime(row.created_at),
+                    media: row.media_url ? { type: row.media_type || "image", src: row.media_url } : null,
+                    likes: likeCounts[rowId] || 0,
+                    comments: commentCounts[rowId] || 0,
+                    liked: userLikedPosts.has(rowId),
+                    saved: hashtagSavedIds.has(rowId),
+                    userId: row.user_id,
+                    profilePhoto: currentUser && row.user_id === currentUser.id
+                    ? currentProfile?.profile_photo || null
+                    : null,
+                    editedAt: row.edited_at || null
+                    };
+                    }).filter(post => !currentUser || !blockedUserIds.has(String(post.userId || "")));
+
+                    if (reset) {
+                    posts = mapped;
+                    } else {
+                    const existingIds = new Set(posts.map(post => String(post.id)));
+                    posts = [...posts, ...mapped.filter(post => !existingIds.has(String(post.id)))];
+                    }
+
+                    hashtagOffset += rows.length;
+                    hashtagHasMore = rows.length === HASHTAG_PAGE_SIZE;
+                    renderPosts();
+                    } finally {
+                    hashtagLoadingMore = false;
+                    }
+                    }
+
+                    async function openHashtag(hashtag) {
                     if (!hashtag) return;
-                    showPage("discover");
+                    activeGlobalHashtag = String(hashtag).startsWith("#") ? String(hashtag) : `#${hashtag}`;
+                    showPageWithoutReload("discover");
                     const searchInput = document.getElementById("searchInput");
-                    if (searchInput) searchInput.value = hashtag;
+                    if (searchInput) searchInput.value = activeGlobalHashtag;
                     currentFilter = "all";
                     document.querySelectorAll(".filter-btn").forEach(btn => {
                     btn.classList.toggle("active", btn.dataset.filter === "all");
                     });
-                    loadPosts().then(() => renderPosts());
+                    await loadGlobalHashtagPosts(true);
                     }
 
                     document.addEventListener("click", function(event) {
