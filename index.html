@@ -5408,15 +5408,21 @@
                     activeGlobalHashtag = String(hashtag).startsWith("#") ? String(hashtag) : `#${hashtag}`;
                     showPageWithoutReload("discover");
                     const searchInput = document.getElementById("searchInput");
-                    if (searchInput) {
-                    searchInput.value = activeGlobalHashtag;
-                    searchInput.dispatchEvent(new Event("input", { bubbles: true }));
-                    }
+                    if (searchInput) searchInput.value = activeGlobalHashtag;
                     currentFilter = "all";
                     document.querySelectorAll(".filter-btn").forEach(btn => {
                     btn.classList.toggle("active", btn.dataset.filter === "all");
                     });
+
+                    /* Load the global Supabase hashtag results first. */
                     await loadGlobalHashtagPosts(true);
+
+                    /* Only after the posts exist locally, refresh Discover's search panel.
+                       This prevents the temporary "No results found yet" race condition. */
+                    if (searchInput) {
+                    clearTimeout(friendHubGlobalSearchTimer);
+                    await runFriendHubGlobalSearch();
+                    }
                     }
 
                     document.addEventListener("click", function(event) {
