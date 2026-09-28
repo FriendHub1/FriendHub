@@ -5408,7 +5408,10 @@
                     activeGlobalHashtag = String(hashtag).startsWith("#") ? String(hashtag) : `#${hashtag}`;
                     showPageWithoutReload("discover");
                     const searchInput = document.getElementById("searchInput");
-                    if (searchInput) searchInput.value = activeGlobalHashtag;
+                    if (searchInput) {
+                    searchInput.value = activeGlobalHashtag;
+                    searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    }
                     currentFilter = "all";
                     document.querySelectorAll(".filter-btn").forEach(btn => {
                     btn.classList.toggle("active", btn.dataset.filter === "all");
