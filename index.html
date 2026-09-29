@@ -1836,6 +1836,40 @@
                     .dm-gif-powered { padding:8px 14px 12px;text-align:right;font-size:.72rem;font-weight:800;opacity:.7; }
                     .dm-gif-message { display:block;max-width:min(320px,72vw);border-radius:14px;overflow:hidden;background:#111; }
                     .dm-gif-message img { display:block;width:100%;height:auto;max-height:360px;object-fit:contain; }
+
+                    /* XOXO DM PLUS MENU — compact WhatsApp-style composer */
+                    .dm-composer { position:relative; }
+                    .dm-tools-wrap { position:relative; flex:0 0 auto; align-self:flex-end; }
+                    .dm-tools-button {
+                      width:46px;height:46px;display:grid;place-items:center;border-radius:50%;
+                      border:1px solid rgba(255,47,168,.48);background:rgba(255,47,168,.10);
+                      color:#ff2fa8;font-size:1.75rem;line-height:1;cursor:pointer;
+                      transition:transform .16s ease,background .16s ease,border-color .16s ease;
+                    }
+                    .dm-tools-button:hover,.dm-tools-button[aria-expanded="true"] { background:rgba(255,47,168,.18);border-color:rgba(255,47,168,.75); }
+                    .dm-tools-button[aria-expanded="true"] { transform:rotate(45deg); }
+                    .dm-tools-menu {
+                      position:absolute;left:0;bottom:calc(100% + 10px);z-index:1200;
+                      width:190px;padding:8px;display:none;gap:4px;border:1px solid var(--border);
+                      border-radius:17px;background:var(--card);box-shadow:0 18px 48px rgba(0,0,0,.28);
+                    }
+                    .dm-tools-menu.open { display:grid; }
+                    .dm-tool-option {
+                      width:100%;min-height:44px;display:flex;align-items:center;gap:11px;padding:8px 10px;
+                      border:0;border-radius:12px;background:transparent;color:inherit;font:inherit;font-weight:750;
+                      text-align:left;cursor:pointer;
+                    }
+                    .dm-tool-option:hover { background:rgba(255,47,168,.10); }
+                    .dm-tool-option:disabled { opacity:.48;cursor:not-allowed; }
+                    .dm-tool-icon { width:28px;min-width:28px;height:28px;display:grid;place-items:center;font-size:1.12rem; }
+                    .dm-tool-gif-icon { border:1px solid rgba(255,47,168,.5);border-radius:7px;color:#ff2fa8;font-size:.58rem;font-weight:900; }
+                    @media (max-width:640px) {
+                      .dm-tools-button { width:42px;height:42px;font-size:1.6rem; }
+                      .dm-tools-menu { position:fixed;left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));width:auto;grid-template-columns:repeat(5,minmax(0,1fr));padding:10px; }
+                      .dm-tool-option { min-width:0;min-height:62px;flex-direction:column;justify-content:center;gap:4px;padding:7px 3px;font-size:.72rem;text-align:center; }
+                      .dm-tool-icon { width:30px;min-width:30px;height:30px;font-size:1.18rem; }
+                    }
+
                     @media (max-width:640px) { .dm-composer { align-items:flex-end; } .dm-attach-button,.dm-voice-button,.dm-gif-button { width:42px;height:42px;flex-basis:42px; } .dm-audio-message { min-width:190px;max-width:280px; } }
 
 
@@ -4660,11 +4694,16 @@
                     <textarea id="dmInput" maxlength="2000" rows="2" placeholder="Write a message..."></textarea>
                     <div id="dmAttachmentPreview" class="dm-attachment-preview" style="display:none;"></div>
                     </div>
-                    <button id="dmAttachButton" class="dm-attach-button" type="button" onclick="document.getElementById('dmMediaInput').click()" aria-label="Attach photo or video" title="Attach photo or video">&#128206;</button>
-                    <button id="dmCameraButton" class="dm-attach-button dm-camera-button" type="button" onclick="openDmCamera()" aria-label="Camera" title="Camera">📷</button>
-                    <button id="dmVoiceButton" class="dm-voice-button" type="button" onclick="toggleDmVoiceRecording()" aria-label="Record voice message" title="Record voice message">🎙️</button>
-                    <button id="dmGifButton" class="dm-gif-button" type="button" onclick="openDmGifPicker()" aria-label="GIF" title="GIF">GIF</button>
-                    <button type="button" id="dmBuzzButton" class="dm-buzz-button" onclick="sendDmBuzz()" title="Buzz / Zumbido" aria-label="Buzz / Zumbido">⚡ Buzz</button>
+                    <div class="dm-tools-wrap">
+                    <button id="dmToolsButton" class="dm-tools-button" type="button" onclick="toggleDmToolsMenu(event)" aria-label="More message options" title="More options" aria-expanded="false">＋</button>
+                    <div id="dmToolsMenu" class="dm-tools-menu" role="menu" aria-label="Message options">
+                    <button id="dmAttachButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); document.getElementById('dmMediaInput').click()" role="menuitem"><span class="dm-tool-icon">📎</span><span data-dm-tool-en="File" data-dm-tool-es="Archivo">File</span></button>
+                    <button id="dmCameraButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); openDmCamera()" role="menuitem"><span class="dm-tool-icon">📷</span><span data-dm-tool-en="Camera" data-dm-tool-es="Cámara">Camera</span></button>
+                    <button id="dmVoiceButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); toggleDmVoiceRecording()" role="menuitem"><span class="dm-tool-icon">🎙️</span><span data-dm-tool-en="Voice" data-dm-tool-es="Voz">Voice</span></button>
+                    <button id="dmGifButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); openDmGifPicker()" role="menuitem"><span class="dm-tool-icon dm-tool-gif-icon">GIF</span><span>GIF</span></button>
+                    <button type="button" id="dmBuzzButton" class="dm-tool-option" onclick="closeDmToolsMenu(); sendDmBuzz()" role="menuitem"><span class="dm-tool-icon">⚡</span><span>Buzz</span></button>
+                    </div>
+                    </div>
                     <button id="dmSendButton" class="btn btn-primary" type="submit">Send</button>
                     </form>
                     <div id="dmStatus" class="dm-status"></div>
@@ -8944,6 +8983,42 @@ function showPage(pageId) {
                     const safe = escapeHtmlAttribute(url);
                     return `<div class="dm-gif-message"><img src="${safe}" alt="GIF" loading="lazy"></div>`;
                     }
+
+
+                    function syncDmToolsLanguage() {
+                      const es = getFriendHubLanguage() === "es";
+                      document.querySelectorAll("[data-dm-tool-en]").forEach((el) => {
+                        el.textContent = es ? el.dataset.dmToolEs : el.dataset.dmToolEn;
+                      });
+                      const plus = document.getElementById("dmToolsButton");
+                      if (plus) {
+                        plus.setAttribute("aria-label", es ? "Más opciones de mensaje" : "More message options");
+                        plus.title = es ? "Más opciones" : "More options";
+                      }
+                    }
+
+                    function closeDmToolsMenu() {
+                      const menu = document.getElementById("dmToolsMenu");
+                      const button = document.getElementById("dmToolsButton");
+                      if (menu) menu.classList.remove("open");
+                      if (button) button.setAttribute("aria-expanded", "false");
+                    }
+
+                    function toggleDmToolsMenu(event) {
+                      if (event) { event.preventDefault(); event.stopPropagation(); }
+                      const menu = document.getElementById("dmToolsMenu");
+                      const button = document.getElementById("dmToolsButton");
+                      if (!menu || !button) return;
+                      syncDmToolsLanguage();
+                      const opening = !menu.classList.contains("open");
+                      closeDmToolsMenu();
+                      if (opening) { menu.classList.add("open"); button.setAttribute("aria-expanded", "true"); }
+                    }
+
+                    document.addEventListener("click", (event) => {
+                      const wrap = document.querySelector(".dm-tools-wrap");
+                      if (wrap && !wrap.contains(event.target)) closeDmToolsMenu();
+                    });
 
                     async function openDmGifPicker() {
                     if (!currentUser || !currentDmUserId) return;
