@@ -1982,15 +1982,13 @@
                     .dm-typing-indicator { min-height:18px; margin-top:2px; font-size:12px; font-weight:700; color:var(--fh-primary); opacity:0; transform:translateY(-2px); transition:opacity .16s ease,transform .16s ease; display:flex; align-items:center; gap:5px; }
                     .dm-typing-indicator.show { opacity:1; transform:translateY(0); }
                     .dm-typing-dots { display:inline-flex; align-items:center; gap:3px; height:12px; }
-                    .dm-typing-dot { width:4px; height:4px; border-radius:50%; background:currentColor; opacity:.35; animation:dmTypingBounce 1s infinite ease-in-out; }
-                    .dm-typing-dot:nth-child(2) { animation-delay:.15s; }
-                    .dm-typing-dot:nth-child(3) { animation-delay:.30s; }
+                    .dm-typing-dot { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.3; display:inline-block; animation:dmTypingBounce .72s infinite alternate ease-in-out !important; will-change:transform,opacity; }
+                    .dm-typing-dot:nth-child(1) { animation-delay:0s !important; }
+                    .dm-typing-dot:nth-child(2) { animation-delay:.18s !important; }
+                    .dm-typing-dot:nth-child(3) { animation-delay:.36s !important; }
                     @keyframes dmTypingBounce {
-                      0%, 60%, 100% { transform:translateY(0); opacity:.35; }
-                      30% { transform:translateY(-4px); opacity:1; }
-                    }
-                    @media (prefers-reduced-motion: reduce) {
-                      .dm-typing-dot { animation:none; opacity:.75; }
+                      from { transform:translateY(2px) scale(.8); opacity:.3; }
+                      to { transform:translateY(-4px) scale(1.15); opacity:1; }
                     }
                     .dm-status.error { color: #d92d20; }
                     .dm-empty-state { max-width: 820px; margin: 0 auto; text-align: center; }
