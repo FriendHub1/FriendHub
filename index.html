@@ -2959,7 +2959,37 @@
                       border-color: #f5ff00;
                       box-shadow: 0 0 10px rgba(245,255,0,.20);
                     }
-                    </style>
+                    
+/* SAFE BACK HOME BUTTONS — restored without changing navigation logic */
+.safe-back-home {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  margin: 0 0 18px;
+  padding: 9px 16px;
+  border: 1px solid rgba(57, 208, 255, .55);
+  border-radius: 14px;
+  background: rgba(12, 20, 54, .78);
+  color: #f7f7ff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(57, 208, 255, .08);
+}
+.safe-back-home:hover,
+.safe-back-home:focus-visible {
+  border-color: rgba(57, 208, 255, .9);
+}
+@media (max-width: 700px) {
+  .safe-back-home {
+    margin-bottom: 14px;
+    padding: 9px 14px;
+  }
+}
+
+</style>
                     </head>
                     <body>
                     <header>
@@ -3074,6 +3104,7 @@
                     </section>
                     <section id="discover" class="page">
                     <div class="container">
+                    <button type="button" class="safe-back-home" onclick="showPage('home')" aria-label="Back to Home">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Discover</h1>
                     <p>Find people and communities that match what you're looking for.</p>
@@ -3286,6 +3317,7 @@
                     </section>
                     <section id="profile" class="page">
                     <div class="container">
+                    <button type="button" class="safe-back-home" onclick="showPage('home')" aria-label="Back to Home">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Your Profile</h1>
                     <p>Customize how people discover you on XOXO Avenue.</p>
@@ -3452,6 +3484,7 @@
                     </section>
                     <section id="messages" class="page">
                     <div class="container">
+                    <button type="button" class="safe-back-home" onclick="showPage('home')" aria-label="Back to Home">&#8592; Back</button>
                     <div class="page-header messages-page-header">
                     <h1 id="messagesPageTitle">Messages</h1>
                     <p id="messagesPageSubtitle">Private conversations on XOXO Avenue.</p>
@@ -3488,6 +3521,7 @@
                     </section>
                     <section id="saved" class="page">
                     <div class="container">
+                    <button type="button" class="safe-back-home" onclick="showPage('home')" aria-label="Back to Home">&#8592; Back</button>
                     <div class="page-header saved-posts-header">
                     <h1>Saved Posts</h1>
                     <p>Posts you save are private and only visible to you.</p>
@@ -3497,6 +3531,7 @@
                     </section>
                     <section id="about" class="page">
                     <div class="container">
+                    <button type="button" class="safe-back-home" onclick="showPage('home')" aria-label="Back to Home">&#8592; Back</button>
                     <div class="page-header">
                     <h1>About XOXO Avenue</h1>
                     <p>A simple place to discover people and communities.</p>
@@ -3536,6 +3571,7 @@
                     </section>
                     <section id="support" class="page">
                     <div class="container">
+                    <button type="button" class="safe-back-home" onclick="showPage('home')" aria-label="Back to Home">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Support</h1>
                     <p>Need help with XOXO Avenue?</p>
