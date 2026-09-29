@@ -5232,6 +5232,7 @@
                     let dmSeenMessageIds = new Set();
                     let dmSelectedAttachment = null;
                     let dmReplyTarget = null;
+                    let dmEditTarget = null;
                     let dmBuzzChannel = null;
                     let dmBuzzLastSentAt = 0;
                     let dmTypingChannel = null;
@@ -8620,6 +8621,28 @@ function showPage(pageId) {
                     if (input) input.focus();
                     }
 
+                    function startDmEdit(messageId) {
+                    const message = (window.__xoxoCurrentDmMessages || []).find(item => String(item.id) === String(messageId));
+                    if (!message || !currentUser || String(message.sender_id) !== String(currentUser.id) || !message.content) return;
+                    dmEditTarget = { id:String(message.id) };
+                    clearDmReply();
+                    const input = document.getElementById("dmInput");
+                    const button = document.getElementById("dmSendButton");
+                    if (input) {
+                      input.value = message.content || "";
+                      input.focus();
+                      input.setSelectionRange(input.value.length, input.value.length);
+                    }
+                    if (button) button.textContent = getFriendHubLanguage() === "es" ? "Guardar" : "Save";
+                    setDmStatus(getFriendHubLanguage() === "es" ? "✏️ Editando mensaje" : "✏️ Editing message");
+                    }
+
+                    function clearDmEdit() {
+                    dmEditTarget = null;
+                    const button = document.getElementById("dmSendButton");
+                    if (button) button.textContent = getFriendHubLanguage() === "es" ? "Enviar" : "Send";
+                    }
+
                     function clearDmReply() {
                     dmReplyTarget = null;
                     const preview = document.getElementById("dmReplyPreview");
@@ -8660,7 +8683,7 @@ function showPage(pageId) {
                     const activeChatUserId = String(currentDmUserId);
                     const { data, error } = await supabaseClient
                     .from("direct_messages")
-                    .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, attachment_path, attachment_type, attachment_name, attachment_size, reply_to_message_id")
+                    .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, edited_at, attachment_path, attachment_type, attachment_name, attachment_size, reply_to_message_id")
                     .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentDmUserId}),and(sender_id.eq.${currentDmUserId},recipient_id.eq.${currentUser.id})`)
                     .order("created_at", { ascending: true });
 
@@ -8761,7 +8784,7 @@ function showPage(pageId) {
                     });
 
                     const renderSignature = messages.map(message =>
-                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${message.reply_to_message_id || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
+                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.edited_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${message.reply_to_message_id || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
                     ).join("|") + "||buzz:" + buzzHistory.map(b => `${b.id}:${b.sender_id}:${b.created_at}`).join(",");
 
                     if (renderSignature === dmLastRenderedSignature) return;
@@ -8797,10 +8820,12 @@ function showPage(pageId) {
                     ${replyHtml}
                     ${attachmentHtml}
                     ${message.content ? `<div class="dm-text">${escapeHtml(message.content)}</div>` : ""}
+                    ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
                     <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
                     ${renderDmSeenStatus(message, mine)}
                     ${reactionsHtml}
                     <button type="button" class="dm-reply-button" onclick="startDmReply('${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Responder al mensaje" : "Reply to message"}" title="${getFriendHubLanguage() === "es" ? "Responder" : "Reply"}">↩ Reply</button>
+                    ${mine && message.content ? `<button type="button" class="dm-edit-button" onclick="startDmEdit('${escapeHtmlAttribute(String(message.id))}')" title="${getFriendHubLanguage() === "es" ? "Editar" : "Edit"}">✏️ Edit</button>` : ""}
                     <button type="button" class="dm-react-button" onclick="openDmReactionPicker(event, '${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Reaccionar al mensaje" : "React to message"}" title="${getFriendHubLanguage() === "es" ? "Reaccionar" : "React"}">☺＋</button>
                     </div>
                     ${mine ? avatarHtml : ""}
@@ -9239,6 +9264,38 @@ function showPage(pageId) {
                     const attachButton = document.getElementById("dmAttachButton");
                     const content = input ? input.value.trim() : "";
                     const attachment = dmSelectedAttachment?.file || null;
+
+                    if (dmEditTarget?.id) {
+                    if (!content) {
+                    setDmStatus(getFriendHubLanguage() === "es" ? "El mensaje no puede quedar vacío." : "Message cannot be empty.", true);
+                    return;
+                    }
+                    if (content.length > 2000) {
+                    setDmStatus(getFriendHubLanguage() === "es" ? "El mensaje es demasiado largo." : "Message is too long.", true);
+                    return;
+                    }
+                    if (button) button.disabled = true;
+                    try {
+                    const { error: editError } = await supabaseClient
+                      .from("direct_messages")
+                      .update({ content, edited_at:new Date().toISOString() })
+                      .eq("id", dmEditTarget.id)
+                      .eq("sender_id", currentUser.id);
+                    if (editError) throw editError;
+                    if (input) input.value = "";
+                    clearDmEdit();
+                    setDmStatus("");
+                    dmLastRenderedSignature = "";
+                    await loadDirectMessages();
+                    if (input) input.focus();
+                    } catch (error) {
+                    console.error("DM edit error:", error);
+                    setDmStatus(getFriendHubLanguage() === "es" ? "No se pudo editar el mensaje." : "Could not edit message.", true);
+                    } finally {
+                    if (button) button.disabled = false;
+                    }
+                    return;
+                    }
 
                     if (!content && !attachment) return;
                     /* Prime Web Audio while this send action is still a user gesture (important on iPhone/Safari). */
@@ -10797,6 +10854,9 @@ function showPage(pageId) {
                     }
                     .dm-buzz-history-item span { font-size:14px; }
                     .dm-buzz-history-item strong { font-weight:800; }
+                    .dm-edit-button { border:0; background:transparent; color:var(--fh-muted); font-size:11px; font-weight:800; cursor:pointer; padding:3px 5px; }
+                    .dm-edit-button:hover { color:var(--fh-primary); }
+                    .dm-edited-label { margin-top:2px; font-size:10px; opacity:.62; font-style:italic; }
                     .dm-buzz-button {
                       border:1px solid color-mix(in srgb,var(--fh-primary) 48%,transparent);
                       background:color-mix(in srgb,var(--fh-primary) 12%,transparent);
