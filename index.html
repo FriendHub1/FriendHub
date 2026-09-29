@@ -3265,6 +3265,151 @@
   }
 }
 
+
+/* XOXO AVENUE — NOTIFICATIONS VISUAL REFRESH
+   CSS only: notification logic, filters, mark-read and bell behavior are unchanged. */
+.notification-panel {
+  border: 1px solid rgba(139,92,255,.58);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(39,200,255,.13), transparent 34%),
+    linear-gradient(145deg, rgba(13,24,61,.98), rgba(25,20,65,.98));
+  box-shadow: 0 22px 60px rgba(0,0,0,.34), 0 0 28px rgba(139,92,255,.08);
+}
+.notification-panel-header {
+  align-items: center;
+  padding: 18px 18px 16px;
+  border-bottom: 1px solid rgba(139,92,255,.28);
+  background: transparent;
+}
+.notification-panel-title {
+  color: var(--fh-text);
+  font-size: 1.18rem;
+  font-weight: 900;
+}
+.notification-panel-title::before {
+  content: "🔔 ";
+}
+.notification-panel-subtitle {
+  margin-top: 4px;
+  color: var(--fh-muted);
+  font-size: .82rem;
+}
+.notification-mark-read {
+  flex: 0 0 auto;
+  border: 1px solid rgba(39,200,255,.30);
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: rgba(39,200,255,.08);
+  color: #68dfff;
+  font-weight: 800;
+  cursor: pointer;
+}
+.notification-mark-read:hover {
+  border-color: rgba(39,200,255,.65);
+  background: rgba(39,200,255,.14);
+}
+.notification-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid rgba(139,92,255,.24);
+  background: rgba(5,10,32,.42);
+}
+.notification-tabs::-webkit-scrollbar { display: none; }
+.notification-tab {
+  flex: 0 0 auto;
+  min-height: 38px;
+  border: 1px solid rgba(139,92,255,.38);
+  border-radius: 999px;
+  padding: 8px 13px;
+  background: rgba(17,20,47,.92);
+  color: var(--fh-muted);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.notification-tab:hover {
+  border-color: rgba(39,200,255,.60);
+  color: var(--fh-text);
+}
+.notification-tab.active {
+  border-color: transparent;
+  background: linear-gradient(135deg,#27c8ff,#7d5cff);
+  color: #fff;
+  box-shadow: 0 0 18px rgba(39,200,255,.18);
+}
+.notification-list {
+  padding: 10px;
+  background: transparent;
+}
+.notification-item {
+  margin: 0 0 9px;
+  padding: 13px 14px;
+  border: 1px solid rgba(139,92,255,.30);
+  border-radius: 16px;
+  background: rgba(12,20,54,.72);
+}
+.notification-item:last-child { margin-bottom: 0; }
+.notification-item.unread {
+  border-color: rgba(39,200,255,.50);
+  background: linear-gradient(135deg,rgba(39,200,255,.10),rgba(139,92,255,.10));
+}
+.notification-empty {
+  position: relative;
+  margin: 8px 0 2px;
+  padding: 64px 18px 28px;
+  border: 1px dashed rgba(139,92,255,.34);
+  border-radius: 18px;
+  background: rgba(12,20,54,.48);
+  color: var(--fh-muted);
+  font-weight: 700;
+}
+.notification-empty::before {
+  content: "🔔";
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 10px rgba(39,200,255,.20));
+}
+
+@media (max-width: 600px) {
+  .notification-panel {
+    top: max(72px, calc(60px + env(safe-area-inset-top)));
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-height: calc(100dvh - 92px - env(safe-area-inset-bottom));
+    border-radius: 22px;
+  }
+  .notification-panel-header {
+    gap: 10px;
+    padding: 16px 15px 14px;
+  }
+  .notification-panel-title {
+    font-size: 1.12rem;
+  }
+  .notification-panel-subtitle {
+    font-size: .78rem;
+  }
+  .notification-mark-read {
+    padding: 7px 9px;
+    font-size: .78rem;
+  }
+  .notification-tabs {
+    padding: 10px 12px;
+  }
+  .notification-list {
+    max-height: calc(100dvh - 205px - env(safe-area-inset-bottom));
+    padding: 9px;
+  }
+}
+
 </style>
                     </head>
                     <body>
