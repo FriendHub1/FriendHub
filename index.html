@@ -8889,6 +8889,59 @@ function showPage(pageId) {
                     if (event.target && event.target.id === "dmInput") sendDmTypingState(false);
                     }, true);
 
+                    /* XOXO Avenue DM send sound — generated with Web Audio, no external file required. */
+                    let dmSendAudioContext = null;
+
+                    function prepareDmSendSound() {
+                    try {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContextClass) return null;
+                    if (!dmSendAudioContext) dmSendAudioContext = new AudioContextClass();
+                    if (dmSendAudioContext.state === "suspended") {
+                    dmSendAudioContext.resume().catch(() => {});
+                    }
+                    return dmSendAudioContext;
+                    } catch (error) {
+                    console.warn("DM send sound unavailable:", error);
+                    return null;
+                    }
+                    }
+
+                    function playDmSendSound() {
+                    try {
+                    const audioContext = prepareDmSendSound();
+                    if (!audioContext || audioContext.state !== "running") return;
+
+                    const now = audioContext.currentTime;
+                    const gain = audioContext.createGain();
+                    const tone = audioContext.createOscillator();
+                    const sparkle = audioContext.createOscillator();
+
+                    tone.type = "sine";
+                    tone.frequency.setValueAtTime(620, now);
+                    tone.frequency.exponentialRampToValueAtTime(900, now + 0.075);
+
+                    sparkle.type = "sine";
+                    sparkle.frequency.setValueAtTime(1240, now + 0.035);
+                    sparkle.frequency.exponentialRampToValueAtTime(1540, now + 0.13);
+
+                    gain.gain.setValueAtTime(0.0001, now);
+                    gain.gain.exponentialRampToValueAtTime(0.11, now + 0.012);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.17);
+
+                    tone.connect(gain);
+                    sparkle.connect(gain);
+                    gain.connect(audioContext.destination);
+
+                    tone.start(now);
+                    tone.stop(now + 0.12);
+                    sparkle.start(now + 0.035);
+                    sparkle.stop(now + 0.17);
+                    } catch (error) {
+                    console.warn("DM send sound error:", error);
+                    }
+                    }
+
                     async function sendDirectMessage(event) {
                     if (event) event.preventDefault();
                     if (!currentUser || !currentDmUserId) return;
@@ -8900,6 +8953,8 @@ function showPage(pageId) {
                     const attachment = dmSelectedAttachment?.file || null;
 
                     if (!content && !attachment) return;
+                    /* Prime Web Audio while this send action is still a user gesture (important on iPhone/Safari). */
+                    prepareDmSendSound();
                     if (content.length > 2000) {
                     setDmStatus(getFriendHubLanguage() === "es" ? "El mensaje es demasiado largo." : "Message is too long.", true);
                     return;
@@ -8931,6 +8986,9 @@ function showPage(pageId) {
                     if (uploaded?.path) await supabaseClient.storage.from("dm-media").remove([uploaded.path]).catch(() => {});
                     throw error;
                     }
+
+                    /* Play only after Supabase confirms that the DM was sent successfully. */
+                    playDmSendSound();
 
                     /* DM BELL NOTIFICATION — isolated from message delivery.
                        If the notification fails, the successfully sent DM still remains successful. */
