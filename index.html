@@ -2461,6 +2461,144 @@
                       .xoxo-highlight-card h3 { font-size:19px; }
                       .xoxo-highlight-card p { font-size:14px; }
                     }
+
+
+                    /* XOXO Avenue Discover visual refresh */
+                    #discover .page-header {
+                      position: relative;
+                      padding: 24px 24px 22px;
+                      margin-bottom: 18px;
+                      overflow: hidden;
+                      border: 1px solid var(--fh-border);
+                      border-radius: 22px;
+                      background:
+                        radial-gradient(circle at 12% 0%, color-mix(in srgb,var(--fh-primary) 20%,transparent), transparent 42%),
+                        radial-gradient(circle at 92% 100%, color-mix(in srgb,var(--fh-secondary) 16%,transparent), transparent 38%),
+                        var(--fh-surface);
+                    }
+                    #discover .page-header::before {
+                      content: "Explore XOXO Avenue";
+                      display: inline-flex;
+                      margin-bottom: 10px;
+                      padding: 6px 11px;
+                      border: 1px solid var(--fh-border);
+                      border-radius: 999px;
+                      color: var(--fh-primary);
+                      background: var(--fh-soft);
+                      font-size: 12px;
+                      font-weight: 800;
+                      letter-spacing: .02em;
+                    }
+                    #discover .page-header h1 {
+                      margin-bottom: 7px;
+                      letter-spacing: -1.2px;
+                    }
+                    #discover .page-header p { max-width: 650px; margin: 0; }
+
+                    #discover .friend-suggestions-section {
+                      padding: 18px;
+                      border-radius: 20px;
+                      background:
+                        linear-gradient(145deg,color-mix(in srgb,var(--fh-surface) 96%,var(--fh-primary) 4%),var(--fh-surface));
+                    }
+                    #discover .friend-suggestions-heading h2 { font-size: 1.15rem; }
+                    #discover .friend-suggestions-heading .btn {
+                      min-height: 40px;
+                      border-radius: 12px;
+                    }
+                    #discover .friend-suggestion-card {
+                      padding: 12px;
+                      border-radius: 15px;
+                    }
+                    #discover .friend-suggestion-avatar {
+                      width: 44px;
+                      height: 44px;
+                      flex-basis: 44px;
+                    }
+                    #discover .friend-suggestion-actions { margin-top: 10px; }
+                    #discover .friend-suggestion-actions .btn {
+                      min-height: 40px;
+                      padding: 8px 12px;
+                    }
+
+                    #discover .global-search-wrap {
+                      margin: 18px 0 12px;
+                    }
+                    #discover .global-search-wrap .search-box {
+                      min-height: 58px;
+                      padding-left: 18px;
+                      border-radius: 17px;
+                      font-size: 16px;
+                      box-shadow: 0 10px 28px rgba(0,0,0,.08);
+                    }
+                    #discover .filters {
+                      gap: 8px;
+                      margin-bottom: 20px;
+                    }
+                    #discover .filter-btn {
+                      border-radius: 999px;
+                      min-height: 40px;
+                      padding: 8px 14px;
+                    }
+
+                    @media (max-width:700px) {
+                      #discover .page-header {
+                        padding: 20px 18px;
+                        border-radius: 19px;
+                      }
+                      #discover .page-header h1 {
+                        font-size: 38px;
+                        letter-spacing: -1px;
+                      }
+                      #discover .page-header p {
+                        font-size: 15px;
+                        line-height: 1.5;
+                      }
+                      #discover .friend-suggestions-section { padding: 14px; }
+                      #discover .friend-suggestions-heading {
+                        align-items: center;
+                        gap: 10px;
+                      }
+                      #discover .friend-suggestions-heading h2 { font-size: 18px; }
+                      #discover .friend-suggestions-heading p { font-size: 13px; }
+                      #discover .friend-suggestions-heading .btn {
+                        flex: 0 0 auto;
+                        min-height: 38px;
+                        padding: 7px 11px;
+                        font-size: 13px;
+                      }
+                      #discover .friend-suggestion-card { padding: 11px; }
+                      #discover .friend-suggestion-avatar {
+                        width: 42px;
+                        height: 42px;
+                        flex-basis: 42px;
+                      }
+                      #discover .friend-suggestion-name { font-size: 15px; }
+                      #discover .friend-suggestion-reason { font-size: 12px; }
+                      #discover .friend-suggestion-actions .btn {
+                        min-height: 38px;
+                        padding: 7px 10px;
+                        font-size: 13px;
+                      }
+                      #discover .global-search-wrap .search-box {
+                        min-height: 54px;
+                        border-radius: 15px;
+                      }
+                      #discover .filters {
+                        flex-wrap: nowrap;
+                        overflow-x: auto;
+                        padding: 2px 1px 7px;
+                        scrollbar-width: none;
+                        -webkit-overflow-scrolling: touch;
+                      }
+                      #discover .filters::-webkit-scrollbar { display:none; }
+                      #discover .filter-btn {
+                        flex: 0 0 auto;
+                        min-height: 38px;
+                        padding: 7px 12px;
+                        font-size: 13px;
+                      }
+                    }
                     </style>
                     </head>
                     <body>
