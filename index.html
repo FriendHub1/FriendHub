@@ -1236,7 +1236,7 @@
                     SAVED POSTS — XOXO AVENUE REFRESH
                     Visual-only refresh. Keeps Saved Posts behavior unchanged.
                     ========================================================= */
-                    #savedPage .saved-posts-header {
+                    #saved .saved-posts-header {
                       margin-bottom: 28px;
                       padding: 24px 26px;
                       border: 1px solid var(--fh-border);
@@ -1248,7 +1248,7 @@
                       box-shadow: var(--fh-shadow);
                     }
 
-                    #savedPage .saved-posts-header::before {
+                    #saved .saved-posts-header::before {
                       content: "🔖 Your collection";
                       display: inline-flex;
                       align-items: center;
@@ -1263,24 +1263,24 @@
                       letter-spacing: .2px;
                     }
 
-                    #savedPage .saved-posts-header h1 {
+                    #saved .saved-posts-header h1 {
                       margin: 0 0 7px;
                       font-size: clamp(38px, 6vw, 58px);
                       line-height: 1.02;
                       letter-spacing: -1.4px;
                     }
 
-                    #savedPage .saved-posts-header p {
+                    #saved .saved-posts-header p {
                       margin: 0;
                       color: var(--fh-muted);
                       font-size: 16px;
                     }
 
-                    #savedPage #savedPostsFeed {
+                    #saved #savedPostsFeed {
                       gap: 18px;
                     }
 
-                    #savedPage #savedPostsFeed .post {
+                    #saved #savedPostsFeed .post {
                       position: relative;
                       overflow: hidden;
                       border: 1px solid color-mix(in srgb,var(--fh-primary) 38%,var(--fh-border));
@@ -1293,7 +1293,7 @@
                       box-shadow: var(--fh-shadow);
                     }
 
-                    #savedPage #savedPostsFeed .post::before {
+                    #saved #savedPostsFeed .post::before {
                       content: "";
                       position: absolute;
                       left: 0;
@@ -1304,12 +1304,12 @@
                       box-shadow: 0 0 15px color-mix(in srgb,var(--fh-primary) 65%,transparent);
                     }
 
-                    #savedPage #savedPostsFeed .post-header {
+                    #saved #savedPostsFeed .post-header {
                       padding-bottom: 13px;
                       border-bottom: 1px solid var(--fh-border);
                     }
 
-                    #savedPage #savedPostsFeed .avatar {
+                    #saved #savedPostsFeed .avatar {
                       width: 50px;
                       height: 50px;
                       flex-basis: 50px;
@@ -1317,31 +1317,31 @@
                       box-shadow: 0 0 17px color-mix(in srgb,var(--fh-primary) 25%,transparent);
                     }
 
-                    #savedPage #savedPostsFeed .post-user {
+                    #saved #savedPostsFeed .post-user {
                       font-size: 17px;
                     }
 
-                    #savedPage #savedPostsFeed .post-content {
+                    #saved #savedPostsFeed .post-content {
                       padding: 9px 4px 2px;
                       font-size: 16px;
                       line-height: 1.65;
                     }
 
-                    #savedPage #savedPostsFeed .post-media img,
-                    #savedPage #savedPostsFeed .post-media video {
+                    #saved #savedPostsFeed .post-media img,
+                    #saved #savedPostsFeed .post-media video {
                       border: 1px solid var(--fh-border);
                       border-radius: 18px;
                       background: color-mix(in srgb,var(--fh-surface-strong) 94%,transparent);
                     }
 
-                    #savedPage #savedPostsFeed .post-actions {
+                    #saved #savedPostsFeed .post-actions {
                       display: grid;
                       grid-template-columns: repeat(3,minmax(0,1fr));
                       gap: 9px;
                       padding-top: 15px;
                     }
 
-                    #savedPage #savedPostsFeed .post-action {
+                    #saved #savedPostsFeed .post-action {
                       min-height: 45px;
                       display: flex;
                       align-items: center;
@@ -1352,20 +1352,20 @@
                       color: var(--fh-muted);
                     }
 
-                    #savedPage #savedPostsFeed .post-action:hover {
+                    #saved #savedPostsFeed .post-action:hover {
                       border-color: color-mix(in srgb,var(--fh-primary) 65%,transparent);
                       background: var(--fh-soft);
                       color: var(--fh-primary);
                     }
 
-                    #savedPage #savedPostsFeed .post-action.saved-post-action.saved {
+                    #saved #savedPostsFeed .post-action.saved-post-action.saved {
                       color: var(--fh-primary);
                       border-color: color-mix(in srgb,var(--fh-primary) 55%,transparent);
                       background: color-mix(in srgb,var(--fh-primary) 10%,var(--fh-surface-strong));
                       box-shadow: 0 0 14px color-mix(in srgb,var(--fh-primary) 15%,transparent);
                     }
 
-                    #savedPage #savedPostsFeed .empty-state {
+                    #saved #savedPostsFeed .empty-state {
                       border: 1px dashed color-mix(in srgb,var(--fh-primary) 45%,var(--fh-border));
                       border-radius: 22px;
                       background: var(--fh-surface);
@@ -1373,23 +1373,23 @@
                     }
 
                     @media (max-width: 700px) {
-                      #savedPage .saved-posts-header {
+                      #saved .saved-posts-header {
                         padding: 22px 20px;
                         border-radius: 22px;
                       }
 
-                      #savedPage #savedPostsFeed .post {
+                      #saved #savedPostsFeed .post {
                         padding: 17px;
                         border-radius: 22px;
                       }
 
-                      #savedPage #savedPostsFeed .post-actions {
+                      #saved #savedPostsFeed .post-actions {
                         grid-template-columns: repeat(3,minmax(0,1fr));
                         gap: 7px;
                         overflow: visible;
                       }
 
-                      #savedPage #savedPostsFeed .post-action {
+                      #saved #savedPostsFeed .post-action {
                         min-width: 0;
                         padding: 9px 5px;
                         font-size: 14px;
@@ -1397,7 +1397,7 @@
                     }
 
                     @media (max-width: 390px) {
-                      #savedPage #savedPostsFeed .post-actions {
+                      #saved #savedPostsFeed .post-actions {
                         grid-template-columns: repeat(2,minmax(0,1fr));
                       }
                     }
