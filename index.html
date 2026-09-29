@@ -5774,6 +5774,7 @@ function showPage(pageId) {
                     }
                     startDmUnreadRefresh();
                     startFriendHubPresence();
+                    startDmBuzzRealtime();
                     } else {
                     if (postComposer) {
                     postComposer.style.display = "none";
@@ -5789,6 +5790,7 @@ function showPage(pageId) {
                     }
                     stopDmUnreadRefresh();
                     stopFriendHubPresence();
+                    stopDmBuzzRealtime();
                     stopDmPresenceRefresh();
                     stopDmChatRefresh();
                     const dmBadge = document.getElementById("messagesUnreadBadge");
@@ -8559,7 +8561,6 @@ function showPage(pageId) {
                     startDmPresenceRefresh();
                     startDmChatRefresh();
                     startDmTypingRealtime();
-                    startDmBuzzRealtime();
                     }
 
                     async function closeDirectChat() {
@@ -8567,7 +8568,6 @@ function showPage(pageId) {
                     stopDmChatRefresh();
                     await sendDmTypingState(false);
                     stopDmTypingRealtime();
-                    stopDmBuzzRealtime();
                     dmSeenMessageIds = new Set();
                     clearDmAttachment();
                     clearDmReply();
@@ -8637,6 +8637,20 @@ function showPage(pageId) {
                     void row.offsetWidth;
                     row.classList.add("dm-reply-highlight");
                     setTimeout(() => row.classList.remove("dm-reply-highlight"), 1300);
+                    }
+
+                    async function loadDmBuzzHistory() {
+                    if (!currentUser || !currentDmUserId) return [];
+                    const { data, error } = await supabaseClient
+                      .from("dm_buzzes")
+                      .select("id, sender_id, recipient_id, created_at")
+                      .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentDmUserId}),and(sender_id.eq.${currentDmUserId},recipient_id.eq.${currentUser.id})`)
+                      .order("created_at", { ascending:true });
+                    if (error) {
+                      console.error("DM buzz history error:", error);
+                      return [];
+                    }
+                    return data || [];
                     }
 
                     async function loadDirectMessages() {
@@ -8714,10 +8728,11 @@ function showPage(pageId) {
 
                     async function renderDirectMessages(messages) {
                     const container = document.getElementById("dmMessages");
+                    const buzzHistory = await loadDmBuzzHistory();
                     if (!container) return;
                     window.__xoxoCurrentDmMessages = messages || [];
 
-                    if (!messages.length) {
+                    if (!messages.length && !buzzHistory.length) {
                     dmLastRenderedSignature = "";
                     container.innerHTML = `<div class="dm-no-messages">${getFriendHubLanguage() === "es" ? "Todavía no hay mensajes. Di hola 👋" : "No messages yet. Say hello 👋"}</div>`;
                     return;
@@ -8747,7 +8762,7 @@ function showPage(pageId) {
 
                     const renderSignature = messages.map(message =>
                     `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${message.reply_to_message_id || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
-                    ).join("|");
+                    ).join("|") + "||buzz:" + buzzHistory.map(b => `${b.id}:${b.sender_id}:${b.created_at}`).join(",");
 
                     if (renderSignature === dmLastRenderedSignature) return;
 
@@ -8792,7 +8807,50 @@ function showPage(pageId) {
                     </div>`;
                     }))).join("");
 
-                    container.innerHTML = `<div class="dm-message-stack">${renderedRows}</div>`;
+                    const timelineItems = [];
+
+                    messages.forEach((message, index) => {
+                      timelineItems.push({
+                        type:"message",
+                        createdAt:message.created_at,
+                        html:(renderedRows.match(/<div class="dm-row[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g) || [])[index] || ""
+                      });
+                    });
+
+                    buzzHistory.forEach(buzz => {
+                      timelineItems.push({ type:"buzz", createdAt:buzz.created_at, senderId:String(buzz.sender_id), count:1 });
+                    });
+                    timelineItems.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+                    const groupedTimeline = [];
+                    timelineItems.forEach(item => {
+                      const prev = groupedTimeline[groupedTimeline.length - 1];
+                      if (item.type === "buzz" && prev?.type === "buzz" && prev.senderId === item.senderId) {
+                        prev.count += 1;
+                        prev.createdAt = item.createdAt;
+                      } else {
+                        groupedTimeline.push({...item});
+                      }
+                    });
+
+                    const buzzRows = groupedTimeline.map(item => {
+                      if (item.type === "message") return item.html;
+                      const mine = item.senderId === String(currentUser.id);
+                      const otherName = currentDmUsername || "@User";
+                      let label;
+                      if (getFriendHubLanguage() === "es") {
+                        label = mine
+                          ? (item.count === 1 ? "Enviaste un zumbido" : `Enviaste ${item.count} zumbidos`)
+                          : (item.count === 1 ? `${otherName} te envió un zumbido` : `${otherName} te envió ${item.count} zumbidos`);
+                      } else {
+                        label = mine
+                          ? (item.count === 1 ? "You sent a buzz" : `You sent ${item.count} buzzes`)
+                          : (item.count === 1 ? `${otherName} sent you a buzz` : `${otherName} sent you ${item.count} buzzes`);
+                      }
+                      return `<div class="dm-buzz-history-item"><span>⚡</span><strong>${escapeHtml(label)}</strong></div>`;
+                    }).join("");
+
+                    container.innerHTML = `<div class="dm-message-stack">${buzzRows || renderedRows}</div>`;
 
                     /* DM FIX7: normalize the rendered message layout directly in the DOM.
                        This bypasses any conflicting stylesheet rule elsewhere on the page. */
@@ -9053,11 +9111,13 @@ function showPage(pageId) {
 
                     function triggerDmBuzzEffect() {
                     const chat = document.getElementById("dmChat");
-                    if (chat) {
-                      chat.classList.remove("dm-buzz-shake");
-                      void chat.offsetWidth;
-                      chat.classList.add("dm-buzz-shake");
-                      setTimeout(() => chat.classList.remove("dm-buzz-shake"), 850);
+                    const chatVisible = chat && getComputedStyle(chat).display !== "none";
+                    const target = chatVisible ? chat : (document.querySelector("main") || document.body);
+                    if (target) {
+                      target.classList.remove("dm-buzz-shake");
+                      void target.offsetWidth;
+                      target.classList.add("dm-buzz-shake");
+                      setTimeout(() => target.classList.remove("dm-buzz-shake"), 850);
                     }
                     if (navigator.vibrate) navigator.vibrate([90,45,90,45,130]);
                     playDmBuzzSound();
@@ -9071,13 +9131,11 @@ function showPage(pageId) {
 
                     function startDmBuzzRealtime() {
                     stopDmBuzzRealtime();
-                    if (!currentUser || !currentDmUserId) return;
-                    const ids = [String(currentUser.id), String(currentDmUserId)].sort();
+                    if (!currentUser) return;
                     dmBuzzChannel = supabaseClient
-                      .channel(`dm-buzz-${ids.join("-")}`)
+                      .channel(`dm-buzz-user-${currentUser.id}`)
                       .on("broadcast", { event:"buzz" }, ({ payload }) => {
                         if (!payload || String(payload.recipient_id) !== String(currentUser.id)) return;
-                        if (String(payload.sender_id) !== String(currentDmUserId)) return;
                         triggerDmBuzzEffect();
                       })
                       .subscribe();
@@ -9094,10 +9152,22 @@ function showPage(pageId) {
                     dmBuzzLastSentAt = now;
                     const button = document.getElementById("dmBuzzButton");
                     if (button) button.disabled = true;
+                    let sendChannel = null;
                     try {
-                      if (!dmBuzzChannel) startDmBuzzRealtime();
-                      if (!dmBuzzChannel) throw new Error("Buzz channel unavailable");
-                      await dmBuzzChannel.send({
+                      sendChannel = supabaseClient.channel(`dm-buzz-user-${currentDmUserId}`);
+                      await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => reject(new Error("Buzz channel timeout")), 5000);
+                        sendChannel.subscribe(status => {
+                          if (status === "SUBSCRIBED") { clearTimeout(timeout); resolve(); }
+                          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") { clearTimeout(timeout); reject(new Error(status)); }
+                        });
+                      });
+                      const { error: buzzSaveError } = await supabaseClient
+                        .from("dm_buzzes")
+                        .insert({ sender_id:currentUser.id, recipient_id:currentDmUserId });
+                      if (buzzSaveError) throw buzzSaveError;
+
+                      await sendChannel.send({
                         type:"broadcast", event:"buzz",
                         payload:{sender_id:currentUser.id,recipient_id:currentDmUserId,sent_at:new Date().toISOString()}
                       });
@@ -9107,6 +9177,9 @@ function showPage(pageId) {
                       console.error("DM buzz error:", error);
                       setDmStatus(getFriendHubLanguage() === "es" ? "No se pudo enviar el zumbido." : "Could not send buzz.", true);
                     } finally {
+                      if (sendChannel) {
+                        try { await supabaseClient.removeChannel(sendChannel); } catch (_) {}
+                      }
                       setTimeout(() => { if (button) button.disabled = false; }, 1000);
                     }
                     }
@@ -10671,6 +10744,13 @@ function showPage(pageId) {
                       font-size:15px; line-height:1.2; cursor:pointer; opacity:.72;
                     }
                     .dm-react-button:hover { opacity:1; background:var(--fh-soft); }
+                    .dm-buzz-history-item {
+                      display:flex; align-items:center; justify-content:center; gap:6px;
+                      width:100%; padding:5px 10px; margin:2px 0;
+                      color:var(--fh-muted); font-size:12px; text-align:center;
+                    }
+                    .dm-buzz-history-item span { font-size:14px; }
+                    .dm-buzz-history-item strong { font-weight:800; }
                     .dm-buzz-button {
                       border:1px solid color-mix(in srgb,var(--fh-primary) 48%,transparent);
                       background:color-mix(in srgb,var(--fh-primary) 12%,transparent);
