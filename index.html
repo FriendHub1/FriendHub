@@ -4540,6 +4540,7 @@
                     </div>
                     </div>
                     <div id="dmMessages" class="dm-messages"></div>
+                    <div id="dmReplyPreview" class="dm-reply-preview" style="display:none;"></div>
                     <form id="dmForm" class="dm-composer" onsubmit="sendDirectMessage(event)">
                     <input id="dmMediaInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleDmMediaSelected(event)">
                     <div class="dm-composer-main">
@@ -5229,6 +5230,7 @@
                     let dmLastRenderedSignature = "";
                     let dmSeenMessageIds = new Set();
                     let dmSelectedAttachment = null;
+                    let dmReplyTarget = null;
                     let dmTypingChannel = null;
                     let dmTypingStopTimer = null;
                     let dmRemoteTypingHideTimer = null;
@@ -8544,6 +8546,7 @@ function showPage(pageId) {
                     input.value = "";
                     input.placeholder = getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : "Write a message...";
                     }
+                    clearDmReply();
                     setDmStatus("");
                     dmSeenMessageIds = new Set();
                     dmLastRenderedSignature = "";
@@ -8562,6 +8565,7 @@ function showPage(pageId) {
                     stopDmTypingRealtime();
                     dmSeenMessageIds = new Set();
                     clearDmAttachment();
+                    clearDmReply();
                     currentDmUserId = null;
                     currentDmUsername = "";
                     currentDmProfilePhoto = null;
@@ -8579,6 +8583,57 @@ function showPage(pageId) {
                     status.classList.toggle("error", !!isError);
                     }
 
+                    function getDmReplyPreviewText(message) {
+                    if (!message) return "";
+                    const text = String(message.content || "").trim();
+                    if (text) return text.length > 110 ? `${text.slice(0, 107)}...` : text;
+                    if (message.attachment_type === "video") return getFriendHubLanguage() === "es" ? "🎥 Video" : "🎥 Video";
+                    if (message.attachment_path) return getFriendHubLanguage() === "es" ? "📷 Foto" : "📷 Photo";
+                    return getFriendHubLanguage() === "es" ? "Mensaje" : "Message";
+                    }
+
+                    function startDmReply(messageId) {
+                    const message = (window.__xoxoCurrentDmMessages || []).find(item => String(item.id) === String(messageId));
+                    if (!message) return;
+                    dmReplyTarget = {
+                    id: String(message.id),
+                    sender_id: String(message.sender_id || ""),
+                    content: message.content || "",
+                    attachment_path: message.attachment_path || "",
+                    attachment_type: message.attachment_type || ""
+                    };
+                    const preview = document.getElementById("dmReplyPreview");
+                    const input = document.getElementById("dmInput");
+                    if (preview) {
+                    const mine = currentUser && String(message.sender_id) === String(currentUser.id);
+                    const author = mine
+                    ? (getFriendHubLanguage() === "es" ? "Tú" : "You")
+                    : (currentDmUsername || "@User");
+                    preview.innerHTML = `<div class="dm-reply-preview-main"><strong>${escapeHtml(author)}</strong><span>${escapeHtml(getDmReplyPreviewText(message))}</span></div><button type="button" class="dm-reply-cancel" onclick="clearDmReply()" aria-label="${getFriendHubLanguage() === "es" ? "Cancelar respuesta" : "Cancel reply"}">×</button>`;
+                    preview.style.display = "flex";
+                    }
+                    if (input) input.focus();
+                    }
+
+                    function clearDmReply() {
+                    dmReplyTarget = null;
+                    const preview = document.getElementById("dmReplyPreview");
+                    if (preview) {
+                    preview.innerHTML = "";
+                    preview.style.display = "none";
+                    }
+                    }
+
+                    function scrollToDmMessage(messageId) {
+                    const row = document.querySelector(`.dm-row[data-dm-message-id="${CSS.escape(String(messageId))}"]`);
+                    if (!row) return;
+                    row.scrollIntoView({ behavior:"smooth", block:"center" });
+                    row.classList.remove("dm-reply-highlight");
+                    void row.offsetWidth;
+                    row.classList.add("dm-reply-highlight");
+                    setTimeout(() => row.classList.remove("dm-reply-highlight"), 1300);
+                    }
+
                     async function loadDirectMessages() {
                     if (!currentUser || !currentDmUserId || dmChatLoadInProgress) return;
                     dmChatLoadInProgress = true;
@@ -8586,7 +8641,7 @@ function showPage(pageId) {
                     const activeChatUserId = String(currentDmUserId);
                     const { data, error } = await supabaseClient
                     .from("direct_messages")
-                    .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, attachment_path, attachment_type, attachment_name, attachment_size")
+                    .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, attachment_path, attachment_type, attachment_name, attachment_size, reply_to_message_id")
                     .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentDmUserId}),and(sender_id.eq.${currentDmUserId},recipient_id.eq.${currentUser.id})`)
                     .order("created_at", { ascending: true });
 
@@ -8655,6 +8710,7 @@ function showPage(pageId) {
                     async function renderDirectMessages(messages) {
                     const container = document.getElementById("dmMessages");
                     if (!container) return;
+                    window.__xoxoCurrentDmMessages = messages || [];
 
                     if (!messages.length) {
                     dmLastRenderedSignature = "";
@@ -8685,7 +8741,7 @@ function showPage(pageId) {
                     });
 
                     const renderSignature = messages.map(message =>
-                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
+                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${message.reply_to_message_id || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
                     ).join("|");
 
                     if (renderSignature === dmLastRenderedSignature) return;
@@ -8705,16 +8761,26 @@ function showPage(pageId) {
                     : escapeHtml(avatarInitial)
                     }</span>`;
                     const reactionsHtml = renderDmReactions(message);
+                    const repliedMessage = message.reply_to_message_id
+                    ? messages.find(item => String(item.id) === String(message.reply_to_message_id))
+                    : null;
+                    const replyHtml = repliedMessage
+                    ? `<button type="button" class="dm-replied-message" onclick="scrollToDmMessage('${escapeHtmlAttribute(String(repliedMessage.id))}')"><strong>${escapeHtml(String(repliedMessage.sender_id) === String(currentUser.id) ? (getFriendHubLanguage() === "es" ? "Tú" : "You") : (currentDmUsername || "@User"))}</strong><span>${escapeHtml(getDmReplyPreviewText(repliedMessage))}</span></button>`
+                    : (message.reply_to_message_id
+                      ? `<div class="dm-replied-message dm-replied-missing"><span>${getFriendHubLanguage() === "es" ? "Mensaje original no disponible" : "Original message unavailable"}</span></div>`
+                      : "");
 
                     return `
                     <div class="dm-row ${mine ? "mine" : "theirs"}" data-dm-message-id="${escapeHtmlAttribute(String(message.id))}">
                     ${mine ? "" : avatarHtml}
                     <div class="dm-bubble">
+                    ${replyHtml}
                     ${attachmentHtml}
                     ${message.content ? `<div class="dm-text">${escapeHtml(message.content)}</div>` : ""}
                     <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
                     ${renderDmSeenStatus(message, mine)}
                     ${reactionsHtml}
+                    <button type="button" class="dm-reply-button" onclick="startDmReply('${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Responder al mensaje" : "Reply to message"}" title="${getFriendHubLanguage() === "es" ? "Responder" : "Reply"}">↩ Reply</button>
                     <button type="button" class="dm-react-button" onclick="openDmReactionPicker(event, '${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Reaccionar al mensaje" : "React to message"}" title="${getFriendHubLanguage() === "es" ? "Reaccionar" : "React"}">☺＋</button>
                     </div>
                     ${mine ? avatarHtml : ""}
@@ -8988,6 +9054,7 @@ function showPage(pageId) {
                     if (attachment) uploaded = await uploadDmAttachment(attachment);
 
                     const payload = { sender_id: currentUser.id, recipient_id: currentDmUserId, content: content || "" };
+                    if (dmReplyTarget?.id) payload.reply_to_message_id = dmReplyTarget.id;
                     if (uploaded) {
                     payload.attachment_path = uploaded.path;
                     payload.attachment_type = uploaded.type;
@@ -9031,6 +9098,7 @@ function showPage(pageId) {
 
                     if (input) input.value = "";
                     clearDmAttachment();
+                    clearDmReply();
                     setDmStatus("");
                     await loadDirectMessages();
                     if (input) input.focus();
@@ -10515,6 +10583,37 @@ function showPage(pageId) {
                       font-size:15px; line-height:1.2; cursor:pointer; opacity:.72;
                     }
                     .dm-react-button:hover { opacity:1; background:var(--fh-soft); }
+                    .dm-reply-button {
+                      border:0; background:transparent; color:var(--fh-muted); padding:3px 6px; border-radius:999px;
+                      font-size:12px; line-height:1.2; font-weight:800; cursor:pointer; opacity:.76; margin-right:2px;
+                    }
+                    .dm-reply-button:hover { opacity:1; background:var(--fh-soft); color:var(--fh-primary); }
+                    .dm-reply-preview {
+                      align-items:center; justify-content:space-between; gap:10px; margin:0 0 8px;
+                      padding:8px 10px; border-left:3px solid var(--fh-primary); border-radius:10px;
+                      background:var(--fh-soft); color:var(--fh-text);
+                    }
+                    .dm-reply-preview-main { min-width:0; display:flex; flex-direction:column; gap:2px; }
+                    .dm-reply-preview-main strong { font-size:12px; color:var(--fh-primary); }
+                    .dm-reply-preview-main span { font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                    .dm-reply-cancel {
+                      flex:0 0 auto; width:28px; height:28px; border:0; border-radius:50%; cursor:pointer;
+                      background:transparent; color:var(--fh-muted); font-size:22px; line-height:1;
+                    }
+                    .dm-reply-cancel:hover { background:var(--fh-surface-strong); color:var(--fh-text); }
+                    .dm-replied-message {
+                      width:100%; display:flex; flex-direction:column; gap:2px; text-align:left; margin:0 0 7px;
+                      padding:7px 9px; border:0; border-left:3px solid var(--fh-primary); border-radius:8px;
+                      background:color-mix(in srgb,var(--fh-soft) 78%,transparent); color:var(--fh-text); cursor:pointer;
+                    }
+                    .dm-replied-message strong { font-size:11px; color:var(--fh-primary); }
+                    .dm-replied-message span { font-size:11px; opacity:.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+                    .dm-replied-missing { cursor:default; }
+                    .dm-row.dm-reply-highlight .dm-bubble { animation:dmReplyHighlight 1.25s ease; }
+                    @keyframes dmReplyHighlight {
+                      0%,100% { box-shadow:inherit; }
+                      35% { box-shadow:0 0 0 3px color-mix(in srgb,var(--fh-primary) 45%,transparent), var(--fh-glow); }
+                    }
                     .dm-reaction-picker {
                       position:fixed; z-index:5000; display:none; padding:8px; border:1px solid var(--fh-border);
                       border-radius:18px; background:var(--fh-surface-strong); box-shadow:0 18px 50px rgba(0,0,0,.28);
