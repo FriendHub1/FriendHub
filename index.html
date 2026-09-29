@@ -8807,34 +8807,25 @@ function showPage(pageId) {
                     </div>`;
                     }))).join("");
 
-                    const timelineItems = [];
-
-                    messages.forEach((message, index) => {
-                      timelineItems.push({
-                        type:"message",
-                        createdAt:message.created_at,
-                        html:(renderedRows.match(/<div class="dm-row[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g) || [])[index] || ""
-                      });
-                    });
-
+                    /* Buzz history is rendered without reconstructing or replacing normal DM rows.
+                       Keep the existing message renderer intact, then add grouped Buzz system events. */
+                    const groupedBuzzHistory = [];
                     buzzHistory.forEach(buzz => {
-                      timelineItems.push({ type:"buzz", createdAt:buzz.created_at, senderId:String(buzz.sender_id), count:1 });
-                    });
-                    timelineItems.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
-
-                    const groupedTimeline = [];
-                    timelineItems.forEach(item => {
-                      const prev = groupedTimeline[groupedTimeline.length - 1];
-                      if (item.type === "buzz" && prev?.type === "buzz" && prev.senderId === item.senderId) {
-                        prev.count += 1;
-                        prev.createdAt = item.createdAt;
+                      const senderId = String(buzz.sender_id || "");
+                      const previous = groupedBuzzHistory[groupedBuzzHistory.length - 1];
+                      if (previous && previous.senderId === senderId) {
+                        previous.count += 1;
+                        previous.createdAt = buzz.created_at;
                       } else {
-                        groupedTimeline.push({...item});
+                        groupedBuzzHistory.push({
+                          senderId,
+                          count:1,
+                          createdAt:buzz.created_at
+                        });
                       }
                     });
 
-                    const buzzRows = groupedTimeline.map(item => {
-                      if (item.type === "message") return item.html;
+                    const buzzRows = groupedBuzzHistory.map(item => {
                       const mine = item.senderId === String(currentUser.id);
                       const otherName = currentDmUsername || "@User";
                       let label;
@@ -8850,7 +8841,9 @@ function showPage(pageId) {
                       return `<div class="dm-buzz-history-item"><span>⚡</span><strong>${escapeHtml(label)}</strong></div>`;
                     }).join("");
 
-                    container.innerHTML = `<div class="dm-message-stack">${buzzRows || renderedRows}</div>`;
+                    /* Important: renderedRows is the original, already-tested DM HTML.
+                       Never parse it with a regex; doing that hid normal messages. */
+                    container.innerHTML = `<div class="dm-message-stack">${renderedRows}${buzzRows}</div>`;
 
                     /* DM FIX7: normalize the rendered message layout directly in the DOM.
                        This bypasses any conflicting stylesheet rule elsewhere on the page. */
