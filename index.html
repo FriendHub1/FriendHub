@@ -8174,19 +8174,46 @@ function showPage(pageId) {
                     const indicator = document.getElementById("dmTypingIndicator");
                     if (!indicator) return;
                     if (dmRemoteTypingHideTimer) { clearTimeout(dmRemoteTypingHideTimer); dmRemoteTypingHideTimer = null; }
+                    if (window.dmTypingDotsTimer) {
+                    clearInterval(window.dmTypingDotsTimer);
+                    window.dmTypingDotsTimer = null;
+                    }
                     if (!isTyping) { indicator.replaceChildren(); indicator.classList.remove("show"); return; }
+
                     const typingLabel = document.createElement("span");
                     typingLabel.textContent = getFriendHubLanguage() === "es" ? "escribiendo" : "typing";
+
                     const typingDots = document.createElement("span");
                     typingDots.className = "dm-typing-dots";
                     typingDots.setAttribute("aria-hidden", "true");
+
+                    const dots = [];
                     for (let i = 0; i < 3; i++) {
                     const dot = document.createElement("span");
                     dot.className = "dm-typing-dot";
+                    dot.style.setProperty("animation", "none", "important");
+                    dot.style.transition = "transform .16s ease, opacity .16s ease";
+                    dot.style.transform = "translateY(2px) scale(.82)";
+                    dot.style.opacity = ".28";
                     typingDots.appendChild(dot);
+                    dots.push(dot);
                     }
+
                     indicator.replaceChildren(typingLabel, typingDots);
                     indicator.classList.add("show");
+
+                    let activeDot = 0;
+                    const paintTypingDots = () => {
+                    dots.forEach((dot, index) => {
+                    const active = index === activeDot;
+                    dot.style.transform = active ? "translateY(-5px) scale(1.22)" : "translateY(2px) scale(.82)";
+                    dot.style.opacity = active ? "1" : ".28";
+                    });
+                    activeDot = (activeDot + 1) % dots.length;
+                    };
+                    paintTypingDots();
+                    window.dmTypingDotsTimer = setInterval(paintTypingDots, 190);
+
                     dmRemoteTypingHideTimer = setTimeout(() => setRemoteDmTyping(false), 3500);
                     }
 
