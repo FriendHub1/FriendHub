@@ -2135,9 +2135,27 @@
                       .post-header { align-items: flex-start; }
                       .avatar { width: 42px; height: 42px; }
                       .post-media img, .post-media video { max-height: 70vh; border-radius: 10px; }
-                      .post-actions { gap: 2px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+                      .post-actions {
+                        display:grid;
+                        grid-template-columns:repeat(3,minmax(0,1fr));
+                        gap:7px;
+                        overflow:visible;
+                        padding-top:12px;
+                      }
                       .post-actions::-webkit-scrollbar { display: none; }
-                      .post-action { flex: 0 0 auto; min-height: 42px; padding: 8px 10px; }
+                      .post-action {
+                        width:100%;
+                        min-width:0;
+                        min-height:42px;
+                        padding:8px 6px;
+                        border:1px solid var(--fh-border);
+                        border-radius:10px;
+                        background:var(--fh-surface-strong);
+                        text-align:center;
+                        font-size:13px;
+                        white-space:nowrap;
+                      }
+                      .post-action.delete-post-action { margin-left:0; }
 
                       .profile-avatar { width: 96px; height: 96px; }
                       .option-grid { gap: 7px; }
