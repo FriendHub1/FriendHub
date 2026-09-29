@@ -1893,6 +1893,22 @@
                       font-weight: 800;
                     }
                     .dm-inbox-delete-button { width: 46px; flex: 0 0 46px; font-size: 1.05rem; }
+                    .dm-inbox-pin-button {
+                      width: 46px; flex: 0 0 46px; font-size: 1.05rem;
+                      border: 1px solid rgba(139,92,255,.30);
+                      background: rgba(139,92,255,.08);
+                      color: var(--fh-primary);
+                      border-radius: 13px;
+                      cursor: pointer;
+                      font-weight: 800;
+                    }
+                    .dm-inbox-pin-button:hover { background: rgba(139,92,255,.16); }
+                    .dm-inbox-pin-button.pinned {
+                      border-color: rgba(139,92,255,.65);
+                      background: rgba(139,92,255,.20);
+                      box-shadow: 0 0 14px rgba(139,92,255,.14);
+                    }
+                    .dm-inbox-pin-marker { margin-left: 6px; font-size: .82rem; opacity: .88; }
                     .dm-chat-delete-button { margin-left: auto; padding: 8px 11px; font-size: 1rem; }
                     .dm-chat-delete-button:hover, .dm-inbox-delete-button:hover { background: rgba(255,80,120,.15); }
                     .dm-inbox-item.unread {
@@ -8469,6 +8485,58 @@ function showPage(pageId) {
                     return new Date(message.created_at || 0).getTime() > new Date(clearedAt).getTime();
                     }
 
+                    async function getDmConversationPinMap() {
+                    if (!currentUser) return new Map();
+                    const { data, error } = await supabaseClient
+                    .from("dm_conversation_pins")
+                    .select("other_user_id, pinned_at")
+                    .eq("user_id", currentUser.id);
+                    if (error) {
+                    console.error("DM conversation pins load error:", error);
+                    return new Map();
+                    }
+                    return new Map((data || []).map(row => [String(row.other_user_id), row.pinned_at]));
+                    }
+
+                    async function toggleDmConversationPin(otherUserId) {
+                    if (!currentUser || !otherUserId) return;
+                    const language = getFriendHubLanguage();
+                    const pinMap = await getDmConversationPinMap();
+                    const key = String(otherUserId);
+
+                    if (pinMap.has(key)) {
+                    const { error } = await supabaseClient
+                    .from("dm_conversation_pins")
+                    .delete()
+                    .eq("user_id", currentUser.id)
+                    .eq("other_user_id", otherUserId);
+                    if (error) {
+                    console.error("DM unpin error:", error);
+                    alert(language === "es" ? "No se pudo desfijar la conversación." : "Could not unpin the conversation.");
+                    return;
+                    }
+                    await loadDmInbox();
+                    return;
+                    }
+
+                    if (pinMap.size >= 5) {
+                    alert(language === "es"
+                    ? "📌 Límite de chats fijados\n\nPuedes fijar hasta 5 conversaciones. Desfija una para fijar otra."
+                    : "📌 Pin limit reached\n\nYou can pin up to 5 conversations. Unpin one to pin another.");
+                    return;
+                    }
+
+                    const { error } = await supabaseClient
+                    .from("dm_conversation_pins")
+                    .insert({ user_id: currentUser.id, other_user_id: otherUserId });
+                    if (error) {
+                    console.error("DM pin error:", error);
+                    alert(language === "es" ? "No se pudo fijar la conversación." : "Could not pin the conversation.");
+                    return;
+                    }
+                    await loadDmInbox();
+                    }
+
                     let dmDeleteTargetUserId = null;
                     let dmDeleteTargetUsername = "";
 
@@ -8582,6 +8650,7 @@ function showPage(pageId) {
                     }
 
                     const dmClearMap = await getDmConversationClearMap();
+                    const dmPinMap = await getDmConversationPinMap();
                     messages = (messages || []).filter(message => {
                     const mine = String(message.sender_id) === String(currentUser.id);
                     const otherUserId = String(mine ? message.recipient_id : message.sender_id);
@@ -8680,7 +8749,12 @@ function showPage(pageId) {
                     );
 
                     inbox.innerHTML = [...conversations.values()]
-                    .sort((a, b) => new Date(b.lastActivityAt || b.lastMessage.created_at || 0) - new Date(a.lastActivityAt || a.lastMessage.created_at || 0))
+                    .sort((a, b) => {
+                    const aPinned = dmPinMap.has(String(a.userId));
+                    const bPinned = dmPinMap.has(String(b.userId));
+                    if (aPinned !== bPinned) return aPinned ? -1 : 1;
+                    return new Date(b.lastActivityAt || b.lastMessage.created_at || 0) - new Date(a.lastActivityAt || a.lastMessage.created_at || 0);
+                    })
                     .map(conversation => {
                     const profile = profileMap.get(conversation.userId) || {};
                     const username = profile.username || "@User";
@@ -8701,6 +8775,11 @@ function showPage(pageId) {
                     const unreadBadge = conversation.unread
                     ? `<span class="dm-unread-badge">${conversation.unread > 99 ? "99+" : conversation.unread}</span>`
                     : "";
+                    const isPinned = dmPinMap.has(String(conversation.userId));
+                    const pinTitle = isPinned
+                    ? (language === "es" ? "Desfijar conversación" : "Unpin conversation")
+                    : (language === "es" ? "Fijar conversación" : "Pin conversation");
+                    const pinMarker = isPinned ? `<span class="dm-inbox-pin-marker" title="${pinTitle}">📌</span>` : "";
 
                     return `
                     <div class="dm-inbox-row">
@@ -8709,7 +8788,7 @@ function showPage(pageId) {
                     <span class="dm-inbox-avatar">${avatar}</span>
                     <span class="dm-inbox-main">
                     <span class="dm-inbox-top">
-                    <strong>${escapeHtml(username)}</strong>
+                    <strong>${escapeHtml(username)}${pinMarker}</strong>
                     <span class="dm-inbox-time">${escapeHtml(formatPostTime(conversation.lastActivityAt || conversation.lastMessage.created_at))}</span>
                     </span>
                     <span class="dm-inbox-bottom">
@@ -8718,6 +8797,7 @@ function showPage(pageId) {
                     </span>
                     </span>
                     </button>
+                    <button type="button" class="dm-inbox-pin-button${isPinned ? " pinned" : ""}" onclick="toggleDmConversationPin('${escapeHtmlAttribute(conversation.userId)}')" title="${pinTitle}" aria-label="${pinTitle}">📌</button>
                     <button type="button" class="dm-inbox-delete-button" onclick="openDmDeleteOptions('${escapeHtmlAttribute(conversation.userId)}', '${escapeHtmlAttribute(username)}')" title="${language === "es" ? "Eliminar conversación" : "Delete conversation"}" aria-label="${language === "es" ? "Eliminar conversación" : "Delete conversation"}">🗑️</button>
                     </div>`;
                     }).join("");
