@@ -8262,7 +8262,6 @@ function showPage(pageId) {
                     .on("broadcast", { event:"reaction" }, ({ payload }) => {
                     if (!payload || String(payload.reactor_id) !== String(currentDmUserId)) return;
                     if (String(payload.target_user_id) !== String(currentUser.id)) return;
-                    showDmReactionAlert(String(payload.emoji || "❤️"), payload.reactor_username || currentDmUsername);
                     dmLastRenderedSignature = "";
                     loadDirectMessages();
                     }).subscribe();
@@ -8410,6 +8409,8 @@ function showPage(pageId) {
                     conversations.set(otherUserId, {
                     userId: otherUserId,
                     lastMessage: message,
+                    lastActivityAt: message.created_at,
+                    reactionPreview: "",
                     unread: 0
                     });
                     }
@@ -8418,6 +8419,55 @@ function showPage(pageId) {
                     conversations.get(otherUserId).unread += 1;
                     }
                     });
+
+                    /* XOXO Avenue — reaction activity in Messages inbox.
+                       A reaction is shown as the conversation preview when it is newer
+                       than the latest message. Inside the chat, only the reaction chip remains. */
+                    const inboxMessageIds = (messages || []).map(message => message.id).filter(Boolean);
+                    if (inboxMessageIds.length) {
+                    const { data: inboxReactions, error: inboxReactionError } = await supabaseClient
+                    .from("dm_reactions")
+                    .select("id, message_id, user_id, emoji, created_at")
+                    .in("message_id", inboxMessageIds)
+                    .order("created_at", { ascending: false });
+
+                    if (inboxReactionError) {
+                    console.error("DM inbox reaction load error:", inboxReactionError);
+                    } else {
+                    const messageMap = new Map((messages || []).map(message => [String(message.id), message]));
+                    (inboxReactions || []).forEach(reaction => {
+                    const reactedMessage = messageMap.get(String(reaction.message_id));
+                    if (!reactedMessage) return;
+                    /* Only show activity created by the other person on one of MY messages. */
+                    if (String(reaction.user_id) === String(currentUser.id)) return;
+                    if (String(reactedMessage.sender_id) !== String(currentUser.id)) return;
+
+                    const otherUserId = String(reaction.user_id);
+                    const conversation = conversations.get(otherUserId);
+                    if (!conversation) return;
+
+                    const reactionTime = new Date(reaction.created_at || 0).getTime();
+                    const currentActivityTime = new Date(conversation.lastActivityAt || conversation.lastMessage.created_at || 0).getTime();
+                    if (reactionTime <= currentActivityTime) return;
+
+                    let quoted = String(reactedMessage.content || "").trim();
+                    if (!quoted) {
+                    quoted = reactedMessage.attachment_type === "video"
+                    ? (language === "es" ? "Video" : "Video")
+                    : reactedMessage.attachment_type === "image"
+                    ? (language === "es" ? "Foto" : "Photo")
+                    : (language === "es" ? "mensaje" : "message");
+                    }
+                    quoted = quoted.replace(/\s+/g, " ");
+                    if (quoted.length > 42) quoted = quoted.slice(0, 39) + "…";
+
+                    conversation.reactionPreview = language === "es"
+                    ? `${reaction.emoji} Reaccionó a “${quoted}”`
+                    : `${reaction.emoji} Reacted to “${quoted}”`;
+                    conversation.lastActivityAt = reaction.created_at;
+                    });
+                    }
+                    }
 
                     const userIds = [...conversations.keys()];
                     const { data: profiles, error: profileError } = await supabaseClient
@@ -8431,7 +8481,9 @@ function showPage(pageId) {
                     (profiles || []).map(profile => [String(profile.user_id), profile])
                     );
 
-                    inbox.innerHTML = [...conversations.values()].map(conversation => {
+                    inbox.innerHTML = [...conversations.values()]
+                    .sort((a, b) => new Date(b.lastActivityAt || b.lastMessage.created_at || 0) - new Date(a.lastActivityAt || a.lastMessage.created_at || 0))
+                    .map(conversation => {
                     const profile = profileMap.get(conversation.userId) || {};
                     const username = profile.username || "@User";
                     const photo = profile.profile_photo || "";
@@ -8439,7 +8491,8 @@ function showPage(pageId) {
                     const avatar = photo
                     ? `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`
                     : initial;
-                    const preview = conversation.lastMessage.content
+                    const preview = conversation.reactionPreview
+                    || conversation.lastMessage.content
                     || (conversation.lastMessage.attachment_type === "video"
                     ? "🎥 Video"
                     : conversation.lastMessage.attachment_type === "image"
@@ -8456,7 +8509,7 @@ function showPage(pageId) {
                     <span class="dm-inbox-main">
                     <span class="dm-inbox-top">
                     <strong>${escapeHtml(username)}</strong>
-                    <span class="dm-inbox-time">${escapeHtml(formatPostTime(conversation.lastMessage.created_at))}</span>
+                    <span class="dm-inbox-time">${escapeHtml(formatPostTime(conversation.lastActivityAt || conversation.lastMessage.created_at))}</span>
                     </span>
                     <span class="dm-inbox-bottom">
                     <span class="dm-inbox-preview">${escapeHtml(preview)}</span>
@@ -10536,29 +10589,6 @@ function showPage(pageId) {
                     if (!messageId) return;
                     closeDmReactionPicker();
                     await setDmReaction(messageId, emoji);
-                    }
-
-                    let dmReactionAlertTimer = null;
-                    function showDmReactionAlert(emoji, reactorUsername) {
-                    const chat = document.getElementById("dmChat");
-                    if (!chat || chat.style.display === "none") return;
-                    let alertBox = document.getElementById("dmReactionAlert");
-                    if (!alertBox) {
-                    alertBox = document.createElement("div");
-                    alertBox.id = "dmReactionAlert";
-                    alertBox.className = "dm-reaction-alert";
-                    alertBox.setAttribute("role", "status");
-                    alertBox.setAttribute("aria-live", "polite");
-                    chat.style.position = "relative";
-                    chat.appendChild(alertBox);
-                    }
-                    const safeName = reactorUsername || currentDmUsername || "@User";
-                    alertBox.textContent = getFriendHubLanguage() === "es"
-                    ? `${emoji} ${safeName} reaccionó a tu mensaje`
-                    : `${emoji} ${safeName} reacted to your message`;
-                    alertBox.classList.add("show");
-                    if (dmReactionAlertTimer) clearTimeout(dmReactionAlertTimer);
-                    dmReactionAlertTimer = setTimeout(() => alertBox.classList.remove("show"), 4200);
                     }
 
                     async function broadcastDmReactionAlert(messageId, emoji, targetUserId) {
