@@ -8258,6 +8258,13 @@ function showPage(pageId) {
                     .on("broadcast", { event:"typing" }, ({ payload }) => {
                     if (!payload || String(payload.sender_id) !== String(currentDmUserId)) return;
                     setRemoteDmTyping(!!payload.is_typing);
+                    })
+                    .on("broadcast", { event:"reaction" }, ({ payload }) => {
+                    if (!payload || String(payload.reactor_id) !== String(currentDmUserId)) return;
+                    if (String(payload.target_user_id) !== String(currentUser.id)) return;
+                    showDmReactionAlert(String(payload.emoji || "❤️"), payload.reactor_username || currentDmUsername);
+                    dmLastRenderedSignature = "";
+                    loadDirectMessages();
                     }).subscribe();
                     }
 
@@ -10402,6 +10409,14 @@ function showPage(pageId) {
                     }
                     .dm-reaction-all.show { display:grid; }
                     .dm-reaction-all .dm-reaction-option { width:100%; height:36px; font-size:21px; }
+                    .dm-reaction-alert {
+                      position:absolute; left:50%; bottom:76px; transform:translate(-50%, 10px); z-index:4600;
+                      max-width:min(430px, calc(100% - 28px)); padding:9px 14px; border:1px solid var(--fh-border);
+                      border-radius:999px; background:var(--fh-surface-strong); color:var(--fh-text);
+                      box-shadow:0 12px 32px rgba(0,0,0,.22); font-size:13px; font-weight:700; text-align:center;
+                      opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+                    }
+                    .dm-reaction-alert.show { opacity:1; transform:translate(-50%, 0); }
                     @media (max-width:520px) {
                       .dm-reaction-picker { padding:7px; }
                       .dm-reaction-option, .dm-reaction-more { width:35px; height:35px; font-size:20px; }
@@ -10523,9 +10538,55 @@ function showPage(pageId) {
                     await setDmReaction(messageId, emoji);
                     }
 
+                    let dmReactionAlertTimer = null;
+                    function showDmReactionAlert(emoji, reactorUsername) {
+                    const chat = document.getElementById("dmChat");
+                    if (!chat || chat.style.display === "none") return;
+                    let alertBox = document.getElementById("dmReactionAlert");
+                    if (!alertBox) {
+                    alertBox = document.createElement("div");
+                    alertBox.id = "dmReactionAlert";
+                    alertBox.className = "dm-reaction-alert";
+                    alertBox.setAttribute("role", "status");
+                    alertBox.setAttribute("aria-live", "polite");
+                    chat.style.position = "relative";
+                    chat.appendChild(alertBox);
+                    }
+                    const safeName = reactorUsername || currentDmUsername || "@User";
+                    alertBox.textContent = getFriendHubLanguage() === "es"
+                    ? `${emoji} ${safeName} reaccionó a tu mensaje`
+                    : `${emoji} ${safeName} reacted to your message`;
+                    alertBox.classList.add("show");
+                    if (dmReactionAlertTimer) clearTimeout(dmReactionAlertTimer);
+                    dmReactionAlertTimer = setTimeout(() => alertBox.classList.remove("show"), 4200);
+                    }
+
+                    async function broadcastDmReactionAlert(messageId, emoji, targetUserId) {
+                    if (!dmTypingChannel || !currentUser || !currentDmUserId || !targetUserId) return;
+                    try {
+                    await dmTypingChannel.send({
+                    type:"broadcast",
+                    event:"reaction",
+                    payload:{
+                    reactor_id:currentUser.id,
+                    target_user_id:targetUserId,
+                    message_id:messageId,
+                    emoji,
+                    reactor_username:currentProfile?.username || "@User"
+                    }
+                    });
+                    } catch (error) { console.error("DM reaction alert broadcast error:", error); }
+                    }
+
                     window.setDmReaction = async function(messageId, emoji) {
                     if (!currentUser || !messageId || !emoji) return;
                     try {
+                    const { data: reactedMessage, error: reactedMessageError } = await supabaseClient
+                    .from("direct_messages")
+                    .select("sender_id")
+                    .eq("id", messageId)
+                    .maybeSingle();
+                    if (reactedMessageError) throw reactedMessageError;
                     const { data: existing, error: existingError } = await supabaseClient
                     .from("dm_reactions")
                     .select("id, emoji")
@@ -10540,9 +10601,15 @@ function showPage(pageId) {
                     } else if (existing) {
                     const { error } = await supabaseClient.from("dm_reactions").update({ emoji }).eq("id", existing.id).eq("user_id", currentUser.id);
                     if (error) throw error;
+                    if (reactedMessage?.sender_id && String(reactedMessage.sender_id) !== String(currentUser.id)) {
+                    await broadcastDmReactionAlert(messageId, emoji, reactedMessage.sender_id);
+                    }
                     } else {
                     const { error } = await supabaseClient.from("dm_reactions").insert({ message_id:messageId, user_id:currentUser.id, emoji });
                     if (error) throw error;
+                    if (reactedMessage?.sender_id && String(reactedMessage.sender_id) !== String(currentUser.id)) {
+                    await broadcastDmReactionAlert(messageId, emoji, reactedMessage.sender_id);
+                    }
                     }
                     dmLastRenderedSignature = "";
                     await loadDirectMessages();
