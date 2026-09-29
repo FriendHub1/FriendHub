@@ -2476,6 +2476,7 @@
                     </section>
                     <section id="discover" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Discover</h1>
                     <p>Find people and communities that match what you're looking for.</p>
@@ -2688,6 +2689,7 @@
                     </section>
                     <section id="profile" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Your Profile</h1>
                     <p>Customize how people discover you on XOXO Avenue.</p>
@@ -2854,6 +2856,7 @@
                     </section>
                     <section id="messages" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header messages-page-header">
                     <h1 id="messagesPageTitle">Messages</h1>
                     <p id="messagesPageSubtitle">Private conversations on XOXO Avenue.</p>
@@ -2890,6 +2893,7 @@
                     </section>
                     <section id="saved" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header saved-posts-header">
                     <h1>Saved Posts</h1>
                     <p>Posts you save are private and only visible to you.</p>
@@ -2899,6 +2903,7 @@
                     </section>
                     <section id="about" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header">
                     <h1>About XOXO Avenue</h1>
                     <p>A simple place to discover people and communities.</p>
@@ -2938,6 +2943,7 @@
                     </section>
                     <section id="support" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Support</h1>
                     <p>Need help with XOXO Avenue?</p>
@@ -2960,6 +2966,7 @@
 
                     <section id="privacy" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Privacy Policy</h1>
                     <p>How XOXO Avenue handles information when you use the service.</p>
@@ -3100,6 +3107,7 @@
 
                     <section id="terms" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Terms of Service</h1>
                     <p>Basic terms for using XOXO Avenue.</p>
@@ -3215,6 +3223,7 @@
 
                     <section id="guidelines" class="page">
                     <div class="container">
+                    <button type="button" class="xoxo-page-back" onclick="xoxoGoBack()" aria-label="Go back">&#8592; Back</button>
                     <div class="page-header">
                     <h1>Community Guidelines</h1>
                     <p>Help keep XOXO Avenue welcoming, respectful and safe.</p>
@@ -3629,7 +3638,64 @@
                     "🌟 Meet new people",
                     "🔎 Other"
                     ];
+                    /* XOXO Avenue page back navigation */
+                    .xoxo-page-back {
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 7px;
+                      margin: 0 0 14px;
+                      padding: 9px 14px;
+                      border: 1px solid var(--border);
+                      border-radius: 12px;
+                      background: var(--card);
+                      color: inherit;
+                      font: inherit;
+                      font-weight: 800;
+                      cursor: pointer;
+                      box-shadow: 0 0 14px rgba(139,92,255,.08);
+                    }
+                    .xoxo-page-back:hover {
+                      border-color: rgba(24,200,255,.55);
+                      transform: translateY(-1px);
+                    }
+                    @media (max-width:700px) {
+                      .xoxo-page-back {
+                        min-height: 42px;
+                        padding: 9px 13px;
+                        margin-bottom: 12px;
+                      }
+                    }
+
+                    let xoxoCurrentPage = "home";
+                    let xoxoPreviousPage = "home";
+                    let xoxoBackNavigationActive = false;
+
+                    function getXoxoActivePageId() {
+                      const active = document.querySelector(".page.active");
+                      return active && active.id ? active.id : (xoxoCurrentPage || "home");
+                    }
+
+                    function xoxoGoBack() {
+                      const target = xoxoPreviousPage && xoxoPreviousPage !== xoxoCurrentPage
+                        ? xoxoPreviousPage
+                        : "home";
+                      xoxoBackNavigationActive = true;
+                      showPage(target);
+                      xoxoBackNavigationActive = false;
+                    }
+
+                    function updateXoxoBackButtons(pageId) {
+                      document.querySelectorAll(".xoxo-page-back").forEach(button => {
+                        button.style.display = pageId === "home" ? "none" : "inline-flex";
+                      });
+                    }
+
                     function showPage(pageId) {
+                    const pageBeforeChange = getXoxoActivePageId();
+                    if (!xoxoBackNavigationActive && pageBeforeChange && pageBeforeChange !== pageId) {
+                      xoxoPreviousPage = pageBeforeChange;
+                    }
+                    xoxoCurrentPage = pageId;
                     document.querySelectorAll(".page").forEach(page => {
                     page.classList.remove("active");
                     });
@@ -3638,6 +3704,7 @@
                     if (page) {
                     page.classList.add("active");
                     }
+                    updateXoxoBackButtons(pageId);
                     window.scrollTo({
                     top: 0,
                     behavior: "smooth"
