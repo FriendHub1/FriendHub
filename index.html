@@ -8897,9 +8897,24 @@ function showPage(pageId) {
                     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
                     if (!AudioContextClass) return null;
                     if (!dmSendAudioContext) dmSendAudioContext = new AudioContextClass();
+
+                    /* iPhone/Safari audio unlock:
+                       resume Web Audio and start an inaudible source while Send is still
+                       being handled as a direct user gesture. The real sound is played
+                       only later, after Supabase confirms the message was sent. */
                     if (dmSendAudioContext.state === "suspended") {
                     dmSendAudioContext.resume().catch(() => {});
                     }
+
+                    const silentBuffer = dmSendAudioContext.createBuffer(1, 1, 22050);
+                    const silentSource = dmSendAudioContext.createBufferSource();
+                    const silentGain = dmSendAudioContext.createGain();
+                    silentGain.gain.value = 0;
+                    silentSource.buffer = silentBuffer;
+                    silentSource.connect(silentGain);
+                    silentGain.connect(dmSendAudioContext.destination);
+                    silentSource.start(0);
+
                     return dmSendAudioContext;
                     } catch (error) {
                     console.warn("DM send sound unavailable:", error);
