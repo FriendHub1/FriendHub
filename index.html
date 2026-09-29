@@ -1770,6 +1770,21 @@
                     border:1px solid rgba(255,47,168,.38);background:rgba(255,47,168,.08);
                     color:#ff2fa8;font-size:1.25rem;cursor:pointer;box-shadow:0 0 12px rgba(255,47,168,.10);
                     }
+                    .dm-voice-button {
+                    width:46px;height:46px;flex:0 0 46px;align-self:flex-end;border-radius:13px;
+                    border:1px solid rgba(140,90,255,.42);background:rgba(140,90,255,.09);
+                    color:var(--fh-primary);font-size:1.15rem;cursor:pointer;
+                    }
+                    .dm-voice-button:hover { background:rgba(140,90,255,.16); }
+                    .dm-voice-button.recording { animation:dmVoicePulse 1s ease-in-out infinite; }
+                    .dm-voice-button:disabled { opacity:.55;cursor:not-allowed; }
+                    @keyframes dmVoicePulse { 50% { transform:scale(1.08); box-shadow:0 0 18px rgba(255,47,168,.38); } }
+                    .dm-voice-preview { display:flex;align-items:center;gap:9px;min-width:0; }
+                    .dm-voice-preview audio { flex:1;min-width:120px;max-width:360px;height:38px; }
+                    .dm-voice-preview-icon { font-size:1.15rem; }
+                    .dm-voice-duration { font-size:.78rem;opacity:.7;white-space:nowrap; }
+                    .dm-audio-message { display:flex;align-items:center;gap:8px;min-width:220px;max-width:360px; }
+                    .dm-attachment-audio { width:100%;max-width:330px;height:38px; }
                     .dm-attach-button:hover { background:rgba(255,47,168,.15);border-color:rgba(255,47,168,.65); }
                     .dm-attach-button:disabled { opacity:.55;cursor:not-allowed; }
                     .dm-attachment-preview { margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:13px;background:rgba(120,120,140,.07); }
@@ -1783,7 +1798,7 @@
                     .dm-attachment-image,.dm-attachment-video { display:block;width:min(100%,360px);max-height:360px;object-fit:contain;border-radius:13px;background:#0b0b12; }
                     .dm-attachment-link { display:block; }
                     .dm-attachment-missing { padding:10px;border-radius:10px;background:rgba(255,47,168,.08);color:#ff2fa8;font-size:.84rem; }
-                    @media (max-width:640px) { .dm-composer { align-items:flex-end; } .dm-attach-button { width:42px;height:42px;flex-basis:42px; } }
+                    @media (max-width:640px) { .dm-composer { align-items:flex-end; } .dm-attach-button,.dm-voice-button { width:42px;height:42px;flex-basis:42px; } .dm-audio-message { min-width:190px;max-width:280px; } }
 
 
                     .messages-unread-badge,
@@ -4548,6 +4563,7 @@
                     <div id="dmAttachmentPreview" class="dm-attachment-preview" style="display:none;"></div>
                     </div>
                     <button id="dmAttachButton" class="dm-attach-button" type="button" onclick="document.getElementById('dmMediaInput').click()" aria-label="Attach photo or video" title="Attach photo or video">&#128206;</button>
+                    <button id="dmVoiceButton" class="dm-voice-button" type="button" onclick="toggleDmVoiceRecording()" aria-label="Record voice message" title="Record voice message">🎙️</button>
                     <button type="button" id="dmBuzzButton" class="dm-buzz-button" onclick="sendDmBuzz()" title="Buzz / Zumbido" aria-label="Buzz / Zumbido">⚡ Buzz</button>
                     <button id="dmSendButton" class="btn btn-primary" type="submit">Send</button>
                     </form>
@@ -5231,6 +5247,11 @@
                     let dmLastRenderedSignature = "";
                     let dmSeenMessageIds = new Set();
                     let dmSelectedAttachment = null;
+                    let dmVoiceRecorder = null;
+                    let dmVoiceStream = null;
+                    let dmVoiceChunks = [];
+                    let dmVoiceStartedAt = 0;
+                    let dmVoiceTimer = null;
                     let dmReplyTarget = null;
                     let dmEditTarget = null;
                     let dmBuzzChannel = null;
@@ -8462,6 +8483,8 @@ function showPage(pageId) {
                     if (!quoted) {
                     quoted = reactedMessage.attachment_type === "video"
                     ? (language === "es" ? "Video" : "Video")
+                    : reactedMessage.attachment_type === "audio"
+                    ? (language === "es" ? "Audio" : "Audio")
                     : reactedMessage.attachment_type === "image"
                     ? (language === "es" ? "Foto" : "Photo")
                     : (language === "es" ? "mensaje" : "message");
@@ -8503,6 +8526,8 @@ function showPage(pageId) {
                     || conversation.lastMessage.content
                     || (conversation.lastMessage.attachment_type === "video"
                     ? "🎥 Video"
+                    : conversation.lastMessage.attachment_type === "audio"
+                    ? "🎙️ Audio"
                     : conversation.lastMessage.attachment_type === "image"
                     ? "📷 Photo"
                     : "");
@@ -8594,6 +8619,7 @@ function showPage(pageId) {
                     const text = String(message.content || "").trim();
                     if (text) return text.length > 110 ? `${text.slice(0, 107)}...` : text;
                     if (message.attachment_type === "video") return getFriendHubLanguage() === "es" ? "🎥 Video" : "🎥 Video";
+                    if (message.attachment_type === "audio") return getFriendHubLanguage() === "es" ? "🎙️ Audio" : "🎙️ Audio";
                     if (message.attachment_path) return getFriendHubLanguage() === "es" ? "📷 Foto" : "📷 Photo";
                     return getFriendHubLanguage() === "es" ? "Mensaje" : "Message";
                     }
@@ -8985,6 +9011,134 @@ function showPage(pageId) {
                     });
                     }
 
+                    function getDmVoiceMimeType() {
+                    const candidates = [
+                      "audio/mp4",
+                      "audio/webm;codecs=opus",
+                      "audio/webm",
+                      "audio/ogg;codecs=opus"
+                    ];
+                    if (!window.MediaRecorder) return "";
+                    return candidates.find(type => {
+                      try { return MediaRecorder.isTypeSupported(type); } catch (_) { return false; }
+                    }) || "";
+                    }
+
+                    function formatDmVoiceDuration(ms) {
+                    const total = Math.max(0, Math.floor(ms / 1000));
+                    const minutes = Math.floor(total / 60);
+                    const seconds = String(total % 60).padStart(2, "0");
+                    return `${minutes}:${seconds}`;
+                    }
+
+                    function resetDmVoiceButton() {
+                    const button = document.getElementById("dmVoiceButton");
+                    if (!button) return;
+                    button.classList.remove("recording");
+                    button.textContent = "🎙️";
+                    button.title = getFriendHubLanguage() === "es" ? "Grabar audio" : "Record voice message";
+                    button.setAttribute("aria-label", button.title);
+                    }
+
+                    function cleanupDmVoiceStream() {
+                    if (dmVoiceTimer) clearInterval(dmVoiceTimer);
+                    dmVoiceTimer = null;
+                    if (dmVoiceStream) {
+                      dmVoiceStream.getTracks().forEach(track => track.stop());
+                      dmVoiceStream = null;
+                    }
+                    dmVoiceRecorder = null;
+                    dmVoiceChunks = [];
+                    dmVoiceStartedAt = 0;
+                    resetDmVoiceButton();
+                    }
+
+                    async function toggleDmVoiceRecording() {
+                    if (!currentUser || !currentDmUserId) return;
+
+                    if (dmVoiceRecorder && dmVoiceRecorder.state === "recording") {
+                      dmVoiceRecorder.stop();
+                      return;
+                    }
+
+                    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+                      setDmStatus(getFriendHubLanguage() === "es"
+                        ? "Este navegador no permite grabar audio aquí."
+                        : "This browser cannot record audio here.", true);
+                      return;
+                    }
+
+                    clearDmAttachment();
+                    clearDmEdit();
+
+                    try {
+                      dmVoiceStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+                      dmVoiceChunks = [];
+                      const mimeType = getDmVoiceMimeType();
+                      dmVoiceRecorder = mimeType
+                        ? new MediaRecorder(dmVoiceStream, { mimeType })
+                        : new MediaRecorder(dmVoiceStream);
+
+                      dmVoiceRecorder.addEventListener("dataavailable", event => {
+                        if (event.data && event.data.size > 0) dmVoiceChunks.push(event.data);
+                      });
+
+                      dmVoiceRecorder.addEventListener("stop", () => {
+                        const recorderMime = dmVoiceRecorder?.mimeType || mimeType || "audio/webm";
+                        const blob = new Blob(dmVoiceChunks, { type: recorderMime });
+                        const duration = Date.now() - dmVoiceStartedAt;
+                        cleanupDmVoiceStream();
+
+                        if (!blob.size) {
+                          setDmStatus(getFriendHubLanguage() === "es" ? "No se pudo grabar el audio." : "Could not record audio.", true);
+                          return;
+                        }
+
+                        const ext = recorderMime.includes("mp4") ? "m4a"
+                          : recorderMime.includes("ogg") ? "ogg" : "webm";
+                        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: recorderMime });
+                        const previewUrl = URL.createObjectURL(file);
+                        dmSelectedAttachment = { file, previewUrl, type:"audio" };
+
+                        const preview = document.getElementById("dmAttachmentPreview");
+                        if (preview) {
+                          preview.innerHTML = `
+                          <div class="dm-voice-preview">
+                            <span class="dm-voice-preview-icon">🎙️</span>
+                            <audio src="${escapeHtmlAttribute(previewUrl)}" controls preload="metadata"></audio>
+                            <span class="dm-voice-duration">${escapeHtml(formatDmVoiceDuration(duration))}</span>
+                            <button type="button" class="dm-remove-attachment" onclick="clearDmAttachment()" aria-label="${getFriendHubLanguage() === "es" ? "Cancelar audio" : "Cancel audio"}">✕</button>
+                          </div>`;
+                          preview.style.display = "block";
+                        }
+                        setDmStatus(getFriendHubLanguage() === "es" ? "Audio listo para enviar." : "Voice message ready to send.");
+                      }, { once:true });
+
+                      dmVoiceRecorder.start(250);
+                      dmVoiceStartedAt = Date.now();
+
+                      const button = document.getElementById("dmVoiceButton");
+                      if (button) {
+                        button.classList.add("recording");
+                        button.textContent = "⏹️";
+                        button.title = getFriendHubLanguage() === "es" ? "Detener grabación" : "Stop recording";
+                        button.setAttribute("aria-label", button.title);
+                      }
+
+                      const updateRecordingStatus = () => {
+                        setDmStatus(`${getFriendHubLanguage() === "es" ? "🔴 Grabando" : "🔴 Recording"} ${formatDmVoiceDuration(Date.now() - dmVoiceStartedAt)}`);
+                      };
+                      updateRecordingStatus();
+                      dmVoiceTimer = setInterval(updateRecordingStatus, 500);
+                    } catch (error) {
+                      console.error("DM voice recording error:", error);
+                      cleanupDmVoiceStream();
+                      setDmStatus(getFriendHubLanguage() === "es"
+                        ? "No se pudo usar el micrófono. Revisa el permiso del navegador."
+                        : "Could not use the microphone. Check browser permission.", true);
+                    }
+                    }
+
                     function clearDmAttachment() {
                     if (dmSelectedAttachment?.previewUrl) URL.revokeObjectURL(dmSelectedAttachment.previewUrl);
                     dmSelectedAttachment = null;
@@ -9054,7 +9208,7 @@ function showPage(pageId) {
 
                     return {
                     path,
-                    type: file.type.startsWith("video/") ? "video" : "image",
+                    type: file.type.startsWith("audio/") ? "audio" : (file.type.startsWith("video/") ? "video" : "image"),
                     name: file.name,
                     size: file.size
                     };
@@ -9072,11 +9226,13 @@ function showPage(pageId) {
                     }
 
                     const url = escapeHtmlAttribute(data.signedUrl);
-                    const type = message.attachment_type === "video" ? "video" : "image";
+                    const type = message.attachment_type === "audio" ? "audio" : (message.attachment_type === "video" ? "video" : "image");
                     const name = escapeHtml(message.attachment_name || "Attachment");
 
                     return `<div class="dm-attachment">${
-                    type === "video"
+                    type === "audio"
+                    ? `<div class="dm-audio-message"><span>🎙️</span><audio class="dm-attachment-audio" src="${url}" controls preload="metadata"></audio></div>`
+                    : type === "video"
                     ? `<video class="dm-attachment-video" src="${url}" controls preload="metadata"></video>`
                     : `<a href="${url}" target="_blank" rel="noopener noreferrer" class="dm-attachment-link"><img class="dm-attachment-image" src="${url}" alt="${name}"></a>`
                     }</div>`;
@@ -9262,6 +9418,7 @@ function showPage(pageId) {
                     const input = document.getElementById("dmInput");
                     const button = document.getElementById("dmSendButton");
                     const attachButton = document.getElementById("dmAttachButton");
+                    const voiceButton = document.getElementById("dmVoiceButton");
                     const content = input ? input.value.trim() : "";
                     const attachment = dmSelectedAttachment?.file || null;
 
@@ -9311,6 +9468,7 @@ function showPage(pageId) {
 
                     if (button) button.disabled = true;
                     if (attachButton) attachButton.disabled = true;
+                    if (voiceButton) voiceButton.disabled = true;
                     setDmStatus(getFriendHubLanguage() === "es" ? "Enviando..." : "Sending...");
 
                     let uploaded = null;
@@ -9378,6 +9536,7 @@ function showPage(pageId) {
                     } finally {
                     if (button) button.disabled = false;
                     if (attachButton) attachButton.disabled = false;
+                    if (voiceButton) voiceButton.disabled = false;
                     }
                     }
 
