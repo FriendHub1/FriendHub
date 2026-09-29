@@ -2080,9 +2080,21 @@
                       .post-header { align-items: flex-start; }
                       .avatar { width: 42px; height: 42px; }
                       .post-media img, .post-media video { max-height: 70vh; border-radius: 10px; }
-                      .post-actions { gap: 2px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+                      .post-actions {
+                        gap: 4px 6px;
+                        overflow-x: visible;
+                        flex-wrap: wrap;
+                        align-items: center;
+                      }
                       .post-actions::-webkit-scrollbar { display: none; }
-                      .post-action { flex: 0 0 auto; min-height: 42px; padding: 8px 10px; }
+                      .post-action {
+                        flex: 0 0 auto;
+                        min-height: 42px;
+                        padding: 8px 10px;
+                      }
+                      .post-action.delete-post-action {
+                        margin-left: 0;
+                      }
 
                       .profile-avatar { width: 96px; height: 96px; }
                       .option-grid { gap: 7px; }
