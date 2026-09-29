@@ -3134,6 +3134,137 @@
   }
 }
 
+
+/* XOXO AVENUE — OPEN DM CHAT MOBILE POLISH
+   CSS only. DM send/upload/presence/rendering logic remains untouched. */
+@media (max-width: 700px) {
+  /* Once a conversation is open, make the large inbox hero compact. */
+  #messages:has(#dmChat[style*="display: block"]) .messages-page-header,
+  #messages:has(#dmChat[style*="display:block"]) .messages-page-header {
+    display: none;
+  }
+  #messages:has(#dmChat[style*="display: block"]) > .container > .safe-back-home,
+  #messages:has(#dmChat[style*="display:block"]) > .container > .safe-back-home {
+    display: none;
+  }
+
+  #messages .dm-chat {
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  #messages .dm-chat-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 2px 0 14px;
+    padding: 12px 13px;
+    border: 1px solid rgba(139,92,255,.52);
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(15,31,72,.92), rgba(29,24,76,.88));
+  }
+  #messages .dm-back-btn {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 9px 12px;
+    border-radius: 13px;
+  }
+  #messages .dm-chat-header > div {
+    min-width: 0;
+  }
+  #messages .dm-chat-username {
+    font-size: 1.02rem;
+    line-height: 1.2;
+  }
+  #messages .friendhub-presence-dm {
+    margin-top: 3px;
+    font-size: .78rem;
+  }
+  #messages .dm-chat-private {
+    margin-top: 2px;
+    font-size: .72rem;
+  }
+
+  /* Preserve the proven normal-flow message rendering while using phone space better. */
+  #messages .dm-messages {
+    height: auto !important;
+    min-height: 220px !important;
+    max-height: 48dvh !important;
+    overflow-y: auto;
+    padding: 12px 6px 16px;
+  }
+
+  /* One compact composer bar: text + attachment + send. */
+  #messages .dm-composer {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 9px;
+    padding-bottom: max(9px, env(safe-area-inset-bottom));
+    border: 1px solid rgba(139,92,255,.48);
+    border-radius: 20px;
+    background: rgba(12,20,54,.90);
+  }
+  #messages .dm-composer-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  #messages .dm-composer textarea {
+    width: 100%;
+    min-height: 44px;
+    max-height: 96px;
+    margin: 0;
+    padding: 11px 13px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+  #messages .dm-attach-button {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    align-self: flex-end;
+    border-radius: 13px;
+  }
+  #messages .dm-composer > button[type="submit"] {
+    min-width: 68px;
+    min-height: 44px;
+    align-self: flex-end;
+    padding: 10px 13px;
+    border-radius: 13px;
+  }
+  #messages .dm-status {
+    min-height: 0;
+    padding: 5px 10px 0;
+  }
+}
+
+@media (max-width: 390px) {
+  #messages .dm-chat-header {
+    gap: 9px;
+    padding: 10px;
+  }
+  #messages .dm-back-btn {
+    padding: 8px 10px;
+  }
+  #messages .dm-composer {
+    gap: 6px;
+    padding: 7px;
+  }
+  #messages .dm-attach-button {
+    width: 42px;
+    height: 42px;
+    flex-basis: 42px;
+  }
+  #messages .dm-composer > button[type="submit"] {
+    min-width: 62px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
 </style>
                     </head>
                     <body>
