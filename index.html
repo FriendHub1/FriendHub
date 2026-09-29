@@ -9204,7 +9204,15 @@ function showPage(pageId) {
                     contentType: file.type,
                     upsert: false
                     });
-                    if (error) throw error;
+                    if (error) {
+                    console.error("DM attachment upload error:", error, {
+                      fileName: file.name,
+                      fileType: file.type,
+                      fileSize: file.size,
+                      uploadPath: path
+                    });
+                    throw new Error(`UPLOAD_ERROR: ${error.message || error.error || "Unknown storage error"} | type=${file.type || "unknown"} | name=${file.name}`);
+                    }
 
                     return {
                     path,
@@ -9527,10 +9535,15 @@ function showPage(pageId) {
                     } catch (error) {
                     console.error("Send DM with attachment error:", error);
                     const blocked = error?.code === "42501" || String(error?.message || "").toLowerCase().includes("row-level security");
+                    const dmErrorText = String(error?.message || error || "");
                     setDmStatus(
                     blocked
                     ? (getFriendHubLanguage() === "es" ? "No puedes enviar mensajes a este usuario." : "You can't send messages to this user.")
-                    : (getFriendHubLanguage() === "es" ? "No se pudo enviar el mensaje o archivo." : "Could not send the message or attachment."),
+                    : (dmErrorText.startsWith("UPLOAD_ERROR:")
+                      ? dmErrorText
+                      : (getFriendHubLanguage() === "es"
+                        ? `No se pudo enviar el mensaje o archivo.${dmErrorText ? " " + dmErrorText : ""}`
+                        : `Could not send the message or attachment.${dmErrorText ? " " + dmErrorText : ""}`)),
                     true
                     );
                     } finally {
