@@ -2592,6 +2592,7 @@
                         -webkit-overflow-scrolling: touch;
                       }
                       #discover .filters::-webkit-scrollbar { display:none; }
+                      #discover .filters { scroll-padding-left:1px; }
                       #discover .filter-btn {
                         flex: 0 0 auto;
                         min-height: 38px;
@@ -3890,7 +3891,23 @@
                       }
                     });
 
-                    function showPage(pageId) {
+                    function resetDiscoverCategoryScroll() {
+  requestAnimationFrame(function() {
+    const discoverFilters = document.querySelector("#discover .filters");
+    if (discoverFilters) discoverFilters.scrollLeft = 0;
+  });
+}
+
+document.addEventListener("click", function(event) {
+  const trigger = event.target.closest("button");
+  if (!trigger) return;
+  const action = trigger.getAttribute("onclick") || "";
+  if (action.includes("showPage('discover')") || action.includes('showPage("discover")')) {
+    resetDiscoverCategoryScroll();
+  }
+});
+
+function showPage(pageId) {
                     document.querySelectorAll(".page").forEach(page => {
                     page.classList.remove("active");
                     });
