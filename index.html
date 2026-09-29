@@ -8602,8 +8602,30 @@ function showPage(pageId) {
                     return;
                     }
 
+                    /* DM reactions: load only reactions belonging to the messages in this open conversation. */
+                    const dmMessageIds = messages.map(message => message.id).filter(Boolean);
+                    let dmReactions = [];
+                    if (dmMessageIds.length) {
+                    const { data: reactionRows, error: reactionError } = await supabaseClient
+                    .from("dm_reactions")
+                    .select("id, message_id, user_id, emoji, created_at")
+                    .in("message_id", dmMessageIds);
+                    if (reactionError) console.error("DM reactions load error:", reactionError);
+                    else dmReactions = reactionRows || [];
+                    }
+
+                    const dmReactionsByMessage = new Map();
+                    dmReactions.forEach(reaction => {
+                    const key = String(reaction.message_id);
+                    if (!dmReactionsByMessage.has(key)) dmReactionsByMessage.set(key, []);
+                    dmReactionsByMessage.get(key).push(reaction);
+                    });
+                    messages.forEach(message => {
+                    message._dmReactions = dmReactionsByMessage.get(String(message.id)) || [];
+                    });
+
                     const renderSignature = messages.map(message =>
-                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.attachment_path || ""}:${message.content || ""}`
+                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
                     ).join("|");
 
                     if (renderSignature === dmLastRenderedSignature) return;
@@ -8622,15 +8644,18 @@ function showPage(pageId) {
                     ? `<img src="${escapeHtmlAttribute(avatarPhoto)}" alt="">`
                     : escapeHtml(avatarInitial)
                     }</span>`;
+                    const reactionsHtml = renderDmReactions(message);
 
                     return `
-                    <div class="dm-row ${mine ? "mine" : "theirs"}">
+                    <div class="dm-row ${mine ? "mine" : "theirs"}" data-dm-message-id="${escapeHtmlAttribute(String(message.id))}">
                     ${mine ? "" : avatarHtml}
                     <div class="dm-bubble">
                     ${attachmentHtml}
                     ${message.content ? `<div class="dm-text">${escapeHtml(message.content)}</div>` : ""}
                     <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
                     ${renderDmSeenStatus(message, mine)}
+                    ${reactionsHtml}
+                    <button type="button" class="dm-react-button" onclick="openDmReactionPicker(event, '${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Reaccionar al mensaje" : "React to message"}" title="${getFriendHubLanguage() === "es" ? "Reaccionar" : "React"}">☺＋</button>
                     </div>
                     ${mine ? avatarHtml : ""}
                     </div>`;
@@ -10337,6 +10362,202 @@ function showPage(pageId) {
   border: 1px solid color-mix(in srgb,var(--fh-secondary) 32%,var(--fh-border));
   box-shadow: 0 10px 28px rgba(0,0,0,.18);
 }
+
+
+                    /* =========================================================
+                    XOXO AVENUE — DM REACTIONS
+                    Quick reactions + extended emoji picker.
+                    ========================================================= */
+                    .dm-bubble { position: relative; }
+                    .dm-reactions-line { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; align-items:center; }
+                    .dm-reaction-chip {
+                      border:1px solid var(--fh-border); background:var(--fh-surface-strong); color:var(--fh-text);
+                      border-radius:999px; min-height:28px; padding:3px 8px; display:inline-flex; align-items:center;
+                      gap:4px; font-size:15px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.05);
+                    }
+                    .dm-reaction-chip.mine { border-color:var(--fh-primary); background:var(--fh-soft); box-shadow:var(--fh-glow); }
+                    .dm-reaction-count { font-size:11px; font-weight:800; opacity:.72; }
+                    .dm-react-button {
+                      border:0; background:transparent; color:var(--fh-muted); padding:2px 5px; border-radius:999px;
+                      font-size:15px; line-height:1.2; cursor:pointer; opacity:.72;
+                    }
+                    .dm-react-button:hover { opacity:1; background:var(--fh-soft); }
+                    .dm-reaction-picker {
+                      position:fixed; z-index:5000; display:none; padding:8px; border:1px solid var(--fh-border);
+                      border-radius:18px; background:var(--fh-surface-strong); box-shadow:0 18px 50px rgba(0,0,0,.28);
+                      max-width:calc(100vw - 20px);
+                    }
+                    .dm-reaction-picker.show { display:block; }
+                    .dm-reaction-quick { display:flex; align-items:center; gap:3px; }
+                    .dm-reaction-option, .dm-reaction-more {
+                      width:38px; height:38px; border:0; border-radius:11px; background:transparent; color:var(--fh-text);
+                      display:grid; place-items:center; font-size:22px; cursor:pointer;
+                    }
+                    .dm-reaction-option:hover, .dm-reaction-more:hover { background:var(--fh-soft); transform:scale(1.08); }
+                    .dm-reaction-more { font-size:23px; font-weight:800; }
+                    .dm-reaction-all {
+                      display:none; width:min(350px, calc(100vw - 38px)); max-height:245px; overflow-y:auto;
+                      grid-template-columns:repeat(8,1fr); gap:3px; padding-top:8px; margin-top:7px;
+                      border-top:1px solid var(--fh-border);
+                    }
+                    .dm-reaction-all.show { display:grid; }
+                    .dm-reaction-all .dm-reaction-option { width:100%; height:36px; font-size:21px; }
+                    @media (max-width:520px) {
+                      .dm-reaction-picker { padding:7px; }
+                      .dm-reaction-option, .dm-reaction-more { width:35px; height:35px; font-size:20px; }
+                      .dm-reaction-all { grid-template-columns:repeat(7,1fr); max-height:220px; }
+                    }
 </style>
+
+
+                    <script>
+                    /* =========================================================
+                    XOXO AVENUE — DIRECT MESSAGE REACTIONS
+                    Persists one reaction per user/message in public.dm_reactions.
+                    Does not alter DM typing/presence logic.
+                    ========================================================= */
+                    const XOXO_DM_QUICK_REACTIONS = ["❤️","😂","😮","😢","🔥"];
+                    const XOXO_DM_REACTION_EMOJIS = [
+                    "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥸","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🫣","🤭","🫢","🫡","🤫","🫠","🤥","😶","🫥","😐","🫤","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","😈","👿","👻","💀","☠️","👽","🤖","💩",
+                    "👋","🤚","🖐️","✋","🖖","🫱","🫲","🫳","🫴","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","👈","👉","👆","👇","☝️","🫵","👍","👎","✊","👊","🤛","🤜","👏","🙌","🫶","👐","🤲","🤝","🙏","✍️","💅","💪","🦾","🧠","👀","👁️","👄",
+                    "❤️","🩷","🧡","💛","💚","💙","🩵","💜","🤎","🖤","🩶","🤍","💔","❤️‍🔥","❤️‍🩹","💕","💞","💓","💗","💖","💘","💝","💟","❣️","💋","💯","💢","💥","💫","💦","💨","🕳️","💬","👁️‍🗨️","🗨️","🗯️","💭","💤",
+                    "✨","⭐","🌟","🔥","🌈","☀️","🌙","⚡","❄️","☁️","🌊","🌸","🌹","🌺","🌻","🍀","🌴","🌵","🍓","🍒","🍉","🍕","🍔","🍟","🌮","🍿","🍩","🍪","🎂","🍫","☕","🧋","🍹",
+                    "🎉","🎊","🎈","🎁","🏆","🥇","⚽","🏀","🏈","⚾","🎾","🏐","🎮","🎲","🎯","🎵","🎶","🎤","🎧","🎸","📸","📱","💻","🚀","✈️","🚗","🏠","💎","🔮","🪩","🧿","✅","❌","❓","❗","💜"
+                    ];
+
+                    function renderDmReactions(message) {
+                    const rows = Array.isArray(message?._dmReactions) ? message._dmReactions : [];
+                    if (!rows.length) return '<div class="dm-reactions-line"></div>';
+                    const grouped = new Map();
+                    rows.forEach(row => {
+                    const emoji = String(row.emoji || "");
+                    if (!emoji) return;
+                    if (!grouped.has(emoji)) grouped.set(emoji, { count:0, mine:false });
+                    const item = grouped.get(emoji);
+                    item.count += 1;
+                    if (currentUser && String(row.user_id) === String(currentUser.id)) item.mine = true;
+                    });
+                    const chips = Array.from(grouped.entries()).map(([emoji, info]) =>
+                    `<button type="button" class="dm-reaction-chip ${info.mine ? "mine" : ""}" onclick="setDmReaction('${escapeHtmlAttribute(String(message.id))}', ${JSON.stringify(emoji).replace(/'/g,"&#39;")})" title="${info.mine ? (getFriendHubLanguage() === "es" ? "Quitar reacción" : "Remove reaction") : (getFriendHubLanguage() === "es" ? "Reaccionar" : "React")}"><span>${escapeHtml(emoji)}</span>${info.count > 1 ? `<span class="dm-reaction-count">${info.count}</span>` : ""}</button>`
+                    ).join("");
+                    return `<div class="dm-reactions-line">${chips}</div>`;
+                    }
+
+                    function ensureDmReactionPicker() {
+                    let picker = document.getElementById("dmReactionPicker");
+                    if (picker) return picker;
+                    picker = document.createElement("div");
+                    picker.id = "dmReactionPicker";
+                    picker.className = "dm-reaction-picker";
+                    picker.setAttribute("role", "dialog");
+                    picker.innerHTML = `<div class="dm-reaction-quick"></div><div class="dm-reaction-all"></div>`;
+                    document.body.appendChild(picker);
+
+                    const quick = picker.querySelector(".dm-reaction-quick");
+                    XOXO_DM_QUICK_REACTIONS.forEach(emoji => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "dm-reaction-option";
+                    button.textContent = emoji;
+                    button.onclick = () => chooseDmReaction(emoji);
+                    quick.appendChild(button);
+                    });
+                    const more = document.createElement("button");
+                    more.type = "button";
+                    more.className = "dm-reaction-more";
+                    more.textContent = "+";
+                    more.title = getFriendHubLanguage() === "es" ? "Más emojis" : "More emojis";
+                    more.onclick = (event) => {
+                    event.stopPropagation();
+                    picker.querySelector(".dm-reaction-all").classList.toggle("show");
+                    positionDmReactionPicker(picker, picker._anchorElement);
+                    };
+                    quick.appendChild(more);
+
+                    const all = picker.querySelector(".dm-reaction-all");
+                    XOXO_DM_REACTION_EMOJIS.forEach(emoji => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "dm-reaction-option";
+                    button.textContent = emoji;
+                    button.onclick = () => chooseDmReaction(emoji);
+                    all.appendChild(button);
+                    });
+                    return picker;
+                    }
+
+                    function positionDmReactionPicker(picker, anchor) {
+                    if (!picker || !anchor) return;
+                    const rect = anchor.getBoundingClientRect();
+                    picker.style.left = "10px";
+                    picker.style.top = "10px";
+                    const box = picker.getBoundingClientRect();
+                    let left = rect.left + rect.width / 2 - box.width / 2;
+                    left = Math.max(10, Math.min(left, window.innerWidth - box.width - 10));
+                    let top = rect.top - box.height - 8;
+                    if (top < 10) top = Math.min(window.innerHeight - box.height - 10, rect.bottom + 8);
+                    picker.style.left = `${left}px`;
+                    picker.style.top = `${Math.max(10, top)}px`;
+                    }
+
+                    window.openDmReactionPicker = function(event, messageId) {
+                    if (event) { event.preventDefault(); event.stopPropagation(); }
+                    const picker = ensureDmReactionPicker();
+                    picker.dataset.messageId = String(messageId || "");
+                    picker._anchorElement = event?.currentTarget || null;
+                    picker.querySelector(".dm-reaction-all")?.classList.remove("show");
+                    picker.classList.add("show");
+                    positionDmReactionPicker(picker, picker._anchorElement);
+                    };
+
+                    function closeDmReactionPicker() {
+                    const picker = document.getElementById("dmReactionPicker");
+                    if (picker) picker.classList.remove("show");
+                    }
+
+                    async function chooseDmReaction(emoji) {
+                    const picker = document.getElementById("dmReactionPicker");
+                    const messageId = picker?.dataset?.messageId;
+                    if (!messageId) return;
+                    closeDmReactionPicker();
+                    await setDmReaction(messageId, emoji);
+                    }
+
+                    window.setDmReaction = async function(messageId, emoji) {
+                    if (!currentUser || !messageId || !emoji) return;
+                    try {
+                    const { data: existing, error: existingError } = await supabaseClient
+                    .from("dm_reactions")
+                    .select("id, emoji")
+                    .eq("message_id", messageId)
+                    .eq("user_id", currentUser.id)
+                    .maybeSingle();
+                    if (existingError) throw existingError;
+
+                    if (existing && existing.emoji === emoji) {
+                    const { error } = await supabaseClient.from("dm_reactions").delete().eq("id", existing.id).eq("user_id", currentUser.id);
+                    if (error) throw error;
+                    } else if (existing) {
+                    const { error } = await supabaseClient.from("dm_reactions").update({ emoji }).eq("id", existing.id).eq("user_id", currentUser.id);
+                    if (error) throw error;
+                    } else {
+                    const { error } = await supabaseClient.from("dm_reactions").insert({ message_id:messageId, user_id:currentUser.id, emoji });
+                    if (error) throw error;
+                    }
+                    dmLastRenderedSignature = "";
+                    await loadDirectMessages();
+                    } catch (error) {
+                    console.error("DM reaction error:", error);
+                    setDmStatus(getFriendHubLanguage() === "es" ? "No se pudo guardar la reacción." : "Could not save reaction.", true);
+                    }
+                    };
+
+                    document.addEventListener("click", event => {
+                    const picker = document.getElementById("dmReactionPicker");
+                    if (picker?.classList.contains("show") && !event.target.closest("#dmReactionPicker") && !event.target.closest(".dm-react-button")) closeDmReactionPicker();
+                    });
+                    document.addEventListener("keydown", event => { if (event.key === "Escape") closeDmReactionPicker(); });
+                    window.addEventListener("resize", closeDmReactionPicker);
+                    </script>
 </body>
                     </html>
