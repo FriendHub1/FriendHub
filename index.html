@@ -1798,6 +1798,18 @@
                     .dm-attachment-image,.dm-attachment-video { display:block;width:min(100%,360px);max-height:360px;object-fit:contain;border-radius:13px;background:#0b0b12; }
                     .dm-attachment-link { display:block; }
                     .dm-attachment-missing { padding:10px;border-radius:10px;background:rgba(255,47,168,.08);color:#ff2fa8;font-size:.84rem; }
+                    .dm-camera-button { font-size:1.05rem; }
+                    .dm-media-mode-picker { display:flex;gap:6px;flex-wrap:wrap;margin-top:8px; }
+                    .dm-media-mode-picker button { border:1px solid var(--border);border-radius:999px;padding:6px 9px;background:transparent;color:inherit;cursor:pointer;font-size:.76rem; }
+                    .dm-media-mode-picker button.active { border-color:#ff2fa8;box-shadow:0 0 0 2px rgba(255,47,168,.12); }
+                    .dm-ephemeral-card { width:min(100%,300px);min-height:118px;border:1px solid rgba(255,47,168,.45);border-radius:16px;background:rgba(255,47,168,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:16px;color:inherit;cursor:pointer; }
+                    .dm-ephemeral-card:disabled { cursor:default;opacity:.68; }
+                    .dm-ephemeral-icon { font-size:1.7rem; }
+                    .dm-ephemeral-overlay { position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.94);display:flex;align-items:center;justify-content:center;padding:18px; }
+                    .dm-ephemeral-modal { position:relative;width:min(96vw,760px);max-height:94vh;display:flex;align-items:center;justify-content:center; }
+                    .dm-ephemeral-modal img { max-width:100%;max-height:90vh;object-fit:contain;border-radius:16px; }
+                    .dm-ephemeral-countdown { position:absolute;top:12px;left:12px;z-index:2;background:rgba(0,0,0,.72);color:white;border-radius:999px;padding:7px 11px;font-weight:800; }
+                    .dm-ephemeral-close { position:absolute;top:10px;right:10px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:white;font-size:1.1rem;cursor:pointer; }
                     @media (max-width:640px) { .dm-composer { align-items:flex-end; } .dm-attach-button,.dm-voice-button { width:42px;height:42px;flex-basis:42px; } .dm-audio-message { min-width:190px;max-width:280px; } }
 
 
@@ -4616,16 +4628,25 @@
                     <div id="dmReplyPreview" class="dm-reply-preview" style="display:none;"></div>
                     <form id="dmForm" class="dm-composer" onsubmit="sendDirectMessage(event)">
                     <input id="dmMediaInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleDmMediaSelected(event)">
+                    <input id="dmCameraInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleDmCameraSelected(event)">
                     <div class="dm-composer-main">
                     <textarea id="dmInput" maxlength="2000" rows="2" placeholder="Write a message..."></textarea>
                     <div id="dmAttachmentPreview" class="dm-attachment-preview" style="display:none;"></div>
                     </div>
                     <button id="dmAttachButton" class="dm-attach-button" type="button" onclick="document.getElementById('dmMediaInput').click()" aria-label="Attach photo or video" title="Attach photo or video">&#128206;</button>
+                    <button id="dmCameraButton" class="dm-attach-button dm-camera-button" type="button" onclick="openDmCamera()" aria-label="Camera" title="Camera">📷</button>
                     <button id="dmVoiceButton" class="dm-voice-button" type="button" onclick="toggleDmVoiceRecording()" aria-label="Record voice message" title="Record voice message">🎙️</button>
                     <button type="button" id="dmBuzzButton" class="dm-buzz-button" onclick="sendDmBuzz()" title="Buzz / Zumbido" aria-label="Buzz / Zumbido">⚡ Buzz</button>
                     <button id="dmSendButton" class="btn btn-primary" type="submit">Send</button>
                     </form>
                     <div id="dmStatus" class="dm-status"></div>
+                    </div>
+                    </div>
+                    <div id="dmEphemeralOverlay" class="dm-ephemeral-overlay" onclick="if(event.target===this) closeDmEphemeralViewer()" style="display:none;">
+                    <div class="dm-ephemeral-modal" role="dialog" aria-modal="true">
+                    <div id="dmEphemeralCountdown" class="dm-ephemeral-countdown"></div>
+                    <img id="dmEphemeralImage" alt="Temporary photo">
+                    <button type="button" class="dm-ephemeral-close" onclick="closeDmEphemeralViewer()">✕</button>
                     </div>
                     </div>
                     <div id="dmDeleteOverlay" class="dm-delete-overlay" onclick="if(event.target===this) closeDmDeleteOptions()">
@@ -5316,6 +5337,9 @@
                     let dmLastRenderedSignature = "";
                     let dmSeenMessageIds = new Set();
                     let dmSelectedAttachment = null;
+                    let dmMediaViewMode = "normal";
+                    let dmMediaViewSeconds = null;
+                    let dmEphemeralTimer = null;
                     let dmVoiceRecorder = null;
                     let dmVoiceStream = null;
                     let dmVoiceChunks = [];
@@ -8968,7 +8992,7 @@ function showPage(pageId) {
                     const activeChatUserId = String(currentDmUserId);
                     let { data, error } = await supabaseClient
                     .from("direct_messages")
-                    .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, edited_at, attachment_path, attachment_type, attachment_name, attachment_size, reply_to_message_id")
+                    .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, edited_at, attachment_path, attachment_type, attachment_name, attachment_size, reply_to_message_id, media_view_mode, media_view_seconds, media_opened_at, media_opened_by")
                     .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentDmUserId}),and(sender_id.eq.${currentDmUserId},recipient_id.eq.${currentUser.id})`)
                     .order("created_at", { ascending: true });
 
@@ -9059,6 +9083,8 @@ function showPage(pageId) {
                     return;
                     }
 
+                    window.currentDmMessages = messages;
+
                     /* DM reactions: load only reactions belonging to the messages in this open conversation. */
                     const dmMessageIds = messages.map(message => message.id).filter(Boolean);
                     let dmReactions = [];
@@ -9082,7 +9108,7 @@ function showPage(pageId) {
                     });
 
                     const renderSignature = messages.map(message =>
-                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.edited_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${message.reply_to_message_id || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
+                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.edited_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${message.reply_to_message_id || ""}:${message.media_view_mode || "normal"}:${message.media_view_seconds || ""}:${message.media_opened_at || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
                     ).join("|") + "||buzz:" + buzzHistory.map(b => `${b.id}:${b.sender_id}:${b.created_at}`).join(",");
 
                     if (renderSignature === dmLastRenderedSignature) return;
@@ -9415,12 +9441,47 @@ function showPage(pageId) {
                     if (dmSelectedAttachment?.previewUrl) URL.revokeObjectURL(dmSelectedAttachment.previewUrl);
                     dmSelectedAttachment = null;
                     const input = document.getElementById("dmMediaInput");
+                    const cameraInput = document.getElementById("dmCameraInput");
                     const preview = document.getElementById("dmAttachmentPreview");
                     if (input) input.value = "";
+                    if (cameraInput) cameraInput.value = "";
+                    dmMediaViewMode = "normal";
+                    dmMediaViewSeconds = null;
                     if (preview) {
                     preview.innerHTML = "";
                     preview.style.display = "none";
                     }
+                    }
+
+                    function openDmCamera() {
+                    if (!currentUser || !currentDmUserId) return;
+                    clearDmEdit();
+                    const input = document.getElementById("dmCameraInput");
+                    if (input) { input.value = ""; input.click(); }
+                    }
+
+                    function setDmMediaViewMode(mode, seconds=null) {
+                    dmMediaViewMode = mode;
+                    dmMediaViewSeconds = mode === "timed" ? Number(seconds) : null;
+                    document.querySelectorAll(".dm-media-mode-picker button").forEach(button => {
+                      button.classList.toggle("active", button.dataset.mode === mode && String(button.dataset.seconds || "") === String(seconds || ""));
+                    });
+                    }
+
+                    function renderDmImagePreviewOptions() {
+                    if (!dmSelectedAttachment || dmSelectedAttachment.type !== "image") return "";
+                    const es = getFriendHubLanguage() === "es";
+                    return `<div class="dm-media-mode-picker">
+                      <button type="button" class="active" data-mode="normal" data-seconds="" onclick="setDmMediaViewMode('normal')">📷 ${es ? "Normal" : "Normal"}</button>
+                      <button type="button" data-mode="timed" data-seconds="5" onclick="setDmMediaViewMode('timed',5)">⏱️ 5s</button>
+                      <button type="button" data-mode="timed" data-seconds="10" onclick="setDmMediaViewMode('timed',10)">⏱️ 10s</button>
+                      <button type="button" data-mode="timed" data-seconds="30" onclick="setDmMediaViewMode('timed',30)">⏱️ 30s</button>
+                      <button type="button" data-mode="once" data-seconds="" onclick="setDmMediaViewMode('once')">👁️ ${es ? "Ver una vez" : "View once"}</button>
+                    </div>`;
+                    }
+
+                    async function handleDmCameraSelected(event) {
+                    await handleDmMediaSelected(event);
                     }
 
                     async function handleDmMediaSelected(event) {
@@ -9462,7 +9523,8 @@ function showPage(pageId) {
                     <span title="${label}">${label}</span>
                     <button type="button" class="dm-remove-attachment" onclick="clearDmAttachment()" aria-label="Remove attachment">&#10005;</button>
                     </div>
-                    </div>`;
+                    </div>
+                    ${renderDmImagePreviewOptions()}`;
                     preview.style.display = "block";
                     setDmStatus("");
                     }
@@ -9496,26 +9558,86 @@ function showPage(pageId) {
 
                     async function renderDmAttachment(message) {
                     if (!message?.attachment_path) return "";
-                    const { data, error } = await supabaseClient.storage
-                    .from("dm-media")
-                    .createSignedUrl(message.attachment_path, 60 * 60);
+                    const type = message.attachment_type === "audio" ? "audio" : (message.attachment_type === "video" ? "video" : "image");
+                    const mode = message.media_view_mode || "normal";
+                    const mine = String(message.sender_id) === String(currentUser?.id);
 
-                    if (error || !data?.signedUrl) {
-                    console.error("DM attachment URL error:", error);
-                    return `<div class="dm-attachment-missing">${getFriendHubLanguage() === "es" ? "Archivo no disponible." : "Attachment unavailable."}</div>`;
+                    if (type === "image" && mode !== "normal") {
+                      const es = getFriendHubLanguage() === "es";
+                      const openedAt = message.media_opened_at ? new Date(message.media_opened_at).getTime() : 0;
+                      const seconds = Number(message.media_view_seconds || 0);
+                      const expired = mode === "once"
+                        ? !!openedAt
+                        : (!!openedAt && Date.now() >= openedAt + seconds * 1000);
+                      const label = mode === "once" ? (es ? "Foto · Ver una vez" : "Photo · View once") : `${es ? "Foto temporal" : "Temporary photo"} · ${seconds}s`;
+                      if (mine) return `<div class="dm-attachment"><button type="button" class="dm-ephemeral-card" disabled><span class="dm-ephemeral-icon">${expired ? "✓" : "⏱️"}</span><strong>${escapeHtml(label)}</strong><span>${expired ? (es ? "Abierta" : "Opened") : (es ? "Esperando a que se abra" : "Waiting to be opened")}</span></button></div>`;
+                      if (expired) return `<div class="dm-attachment"><button type="button" class="dm-ephemeral-card" disabled><span class="dm-ephemeral-icon">⌛</span><strong>${es ? "Foto expirada" : "Photo expired"}</strong><span>${es ? "Ya no está disponible" : "No longer available"}</span></button></div>`;
+                      return `<div class="dm-attachment"><button type="button" class="dm-ephemeral-card" onclick="openDmEphemeralMedia('${escapeHtmlAttribute(String(message.id))}')"><span class="dm-ephemeral-icon">👁️</span><strong>${escapeHtml(label)}</strong><span>${es ? "Toca para abrir" : "Tap to open"}</span></button></div>`;
                     }
 
+                    const { data, error } = await supabaseClient.storage.from("dm-media").createSignedUrl(message.attachment_path, 60 * 60);
+                    if (error || !data?.signedUrl) {
+                      console.error("DM attachment URL error:", error);
+                      return `<div class="dm-attachment-missing">${getFriendHubLanguage() === "es" ? "Archivo no disponible." : "Attachment unavailable."}</div>`;
+                    }
                     const url = escapeHtmlAttribute(data.signedUrl);
-                    const type = message.attachment_type === "audio" ? "audio" : (message.attachment_type === "video" ? "video" : "image");
                     const name = escapeHtml(message.attachment_name || "Attachment");
-
-                    return `<div class="dm-attachment">${
-                    type === "audio"
-                    ? `<div class="dm-audio-message"><span>🎙️</span><audio class="dm-attachment-audio" src="${url}" controls preload="metadata"></audio></div>`
-                    : type === "video"
-                    ? `<video class="dm-attachment-video" src="${url}" controls preload="metadata"></video>`
-                    : `<a href="${url}" target="_blank" rel="noopener noreferrer" class="dm-attachment-link"><img class="dm-attachment-image" src="${url}" alt="${name}"></a>`
+                    return `<div class="dm-attachment">${type === "audio"
+                      ? `<div class="dm-audio-message"><span>🎙️</span><audio class="dm-attachment-audio" src="${url}" controls preload="metadata"></audio></div>`
+                      : type === "video"
+                      ? `<video class="dm-attachment-video" src="${url}" controls preload="metadata"></video>`
+                      : `<a href="${url}" target="_blank" rel="noopener noreferrer" class="dm-attachment-link"><img class="dm-attachment-image" src="${url}" alt="${name}"></a>`
                     }</div>`;
+                    }
+
+                    async function openDmEphemeralMedia(messageId) {
+                    if (!currentUser || !messageId) return;
+                    const message = (window.currentDmMessages || []).find(item => String(item.id) === String(messageId));
+                    if (!message || String(message.recipient_id) !== String(currentUser.id)) return;
+                    try {
+                      const { data: openedAt, error: openError } = await supabaseClient.rpc("open_dm_ephemeral_media", { message_id: messageId });
+                      if (openError) throw openError;
+                      const mode = message.media_view_mode || "once";
+                      const seconds = Number(message.media_view_seconds || 0);
+                      const openedMs = new Date(openedAt).getTime();
+                      if (mode === "timed" && Date.now() >= openedMs + seconds * 1000) {
+                        dmLastRenderedSignature = ""; await loadDirectMessages(); return;
+                      }
+                      const { data:urlData, error:urlError } = await supabaseClient.storage.from("dm-media").createSignedUrl(message.attachment_path, Math.max(15, seconds || 60));
+                      if (urlError || !urlData?.signedUrl) throw urlError || new Error("No signed URL");
+                      const overlay = document.getElementById("dmEphemeralOverlay");
+                      const image = document.getElementById("dmEphemeralImage");
+                      const countdown = document.getElementById("dmEphemeralCountdown");
+                      if (!overlay || !image || !countdown) return;
+                      image.src = urlData.signedUrl; overlay.style.display = "flex";
+                      if (dmEphemeralTimer) clearInterval(dmEphemeralTimer);
+                      if (mode === "once") {
+                        countdown.textContent = getFriendHubLanguage() === "es" ? "👁️ Ver una vez" : "👁️ View once";
+                      } else {
+                        const tick = () => {
+                          const left = Math.max(0, Math.ceil((openedMs + seconds*1000 - Date.now())/1000));
+                          countdown.textContent = `⏱️ ${left}s`;
+                          if (left <= 0) closeDmEphemeralViewer();
+                        };
+                        tick(); dmEphemeralTimer = setInterval(tick, 250);
+                      }
+                      message.media_opened_at = openedAt; message.media_opened_by = currentUser.id;
+                    } catch (error) {
+                      console.error("Open temporary DM photo error:", error);
+                      setDmStatus(getFriendHubLanguage() === "es" ? "Esta foto ya no está disponible." : "This photo is no longer available.", true);
+                      dmLastRenderedSignature = ""; await loadDirectMessages();
+                    }
+                    }
+
+                    function closeDmEphemeralViewer() {
+                    if (dmEphemeralTimer) clearInterval(dmEphemeralTimer);
+                    dmEphemeralTimer = null;
+                    const overlay = document.getElementById("dmEphemeralOverlay");
+                    const image = document.getElementById("dmEphemeralImage");
+                    if (overlay) overlay.style.display = "none";
+                    if (image) image.removeAttribute("src");
+                    dmLastRenderedSignature = "";
+                    loadDirectMessages();
                     }
 
                     document.addEventListener("input", (event) => {
@@ -9699,6 +9821,7 @@ function showPage(pageId) {
                     const button = document.getElementById("dmSendButton");
                     const attachButton = document.getElementById("dmAttachButton");
                     const voiceButton = document.getElementById("dmVoiceButton");
+                    const cameraButton = document.getElementById("dmCameraButton");
                     const content = input ? input.value.trim() : "";
                     const attachment = dmSelectedAttachment?.file || null;
 
@@ -9749,6 +9872,7 @@ function showPage(pageId) {
                     if (button) button.disabled = true;
                     if (attachButton) attachButton.disabled = true;
                     if (voiceButton) voiceButton.disabled = true;
+                    if (cameraButton) cameraButton.disabled = true;
                     setDmStatus(getFriendHubLanguage() === "es" ? "Enviando..." : "Sending...");
 
                     let uploaded = null;
@@ -9762,6 +9886,10 @@ function showPage(pageId) {
                     payload.attachment_type = uploaded.type;
                     payload.attachment_name = uploaded.name;
                     payload.attachment_size = uploaded.size;
+                    if (uploaded.type === "image") {
+                      payload.media_view_mode = dmMediaViewMode || "normal";
+                      payload.media_view_seconds = dmMediaViewMode === "timed" ? dmMediaViewSeconds : null;
+                    }
                     }
 
                     const { error } = await supabaseClient.from("direct_messages").insert(payload);
@@ -9822,6 +9950,7 @@ function showPage(pageId) {
                     if (button) button.disabled = false;
                     if (attachButton) attachButton.disabled = false;
                     if (voiceButton) voiceButton.disabled = false;
+                    if (cameraButton) cameraButton.disabled = false;
                     }
                     }
 
@@ -11561,6 +11690,10 @@ function showPage(pageId) {
                     });
                     document.addEventListener("keydown", event => { if (event.key === "Escape") closeDmReactionPicker(); });
                     window.addEventListener("resize", closeDmReactionPicker);
+                    document.addEventListener("keydown", event => {
+                      if (event.key === "Escape" && document.getElementById("dmEphemeralOverlay")?.style.display === "flex") closeDmEphemeralViewer();
+                    });
+
                     </script>
 </body>
                     </html>
