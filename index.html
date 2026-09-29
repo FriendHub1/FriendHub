@@ -2139,7 +2139,13 @@
                       .dm-chat-header .avatar { width: 40px; height: 40px; }
                       .dm-chat-username { font-size: .98rem; }
                       .dm-chat-private { font-size: .75rem; }
-                      .dm-messages { height: clamp(260px, 42dvh, 460px); min-height: 260px; padding: 10px; }
+                      .dm-messages {
+  height: auto;
+  min-height: 0;
+  max-height: 46dvh;
+  overflow-y: auto;
+  padding: 10px;
+}
                       .dm-bubble { max-width: 88%; overflow-wrap: anywhere; }
                       .dm-composer { gap: 7px; padding: 9px; padding-bottom: max(9px, env(safe-area-inset-bottom)); }
                       .dm-composer textarea { min-height: 44px; max-height: 110px; font-size: 16px; padding: 10px 11px; }
