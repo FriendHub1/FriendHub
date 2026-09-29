@@ -8791,7 +8791,7 @@ function showPage(pageId) {
                       : "");
 
                     return `
-                    <div class="dm-row ${mine ? "mine" : "theirs"}" data-dm-message-id="${escapeHtmlAttribute(String(message.id))}">
+                    <div class="dm-row ${mine ? "mine" : "theirs"}" data-dm-message-id="${escapeHtmlAttribute(String(message.id))}" data-created-at="${escapeHtmlAttribute(String(message.created_at || ""))}">
                     ${mine ? "" : avatarHtml}
                     <div class="dm-bubble">
                     ${replyHtml}
@@ -8807,43 +8807,96 @@ function showPage(pageId) {
                     </div>`;
                     }))).join("");
 
-                    /* Buzz history is rendered without reconstructing or replacing normal DM rows.
-                       Keep the existing message renderer intact, then add grouped Buzz system events. */
-                    const groupedBuzzHistory = [];
-                    buzzHistory.forEach(buzz => {
-                      const senderId = String(buzz.sender_id || "");
-                      const previous = groupedBuzzHistory[groupedBuzzHistory.length - 1];
-                      if (previous && previous.senderId === senderId) {
-                        previous.count += 1;
-                        previous.createdAt = buzz.created_at;
-                      } else {
-                        groupedBuzzHistory.push({
-                          senderId,
-                          count:1,
-                          createdAt:buzz.created_at
+                    /* Render the original, already-tested DM rows first. */
+                    container.innerHTML = `<div class="dm-message-stack">${renderedRows}</div>`;
+
+                    /* Insert Buzz events into the real conversation timeline.
+                       Consecutive Buzzes from the same sender are grouped only when
+                       no normal message happened between them. */
+                    const dmTimelineStack = container.querySelector(".dm-message-stack");
+                    if (dmTimelineStack && buzzHistory.length) {
+                      const timeline = [];
+
+                      messages.forEach(message => {
+                        timeline.push({
+                          type:"message",
+                          createdAt:message.created_at,
+                          id:String(message.id)
                         });
-                      }
-                    });
+                      });
 
-                    const buzzRows = groupedBuzzHistory.map(item => {
-                      const mine = item.senderId === String(currentUser.id);
-                      const otherName = currentDmUsername || "@User";
-                      let label;
-                      if (getFriendHubLanguage() === "es") {
-                        label = mine
-                          ? (item.count === 1 ? "Enviaste un zumbido" : `Enviaste ${item.count} zumbidos`)
-                          : (item.count === 1 ? `${otherName} te envió un zumbido` : `${otherName} te envió ${item.count} zumbidos`);
-                      } else {
-                        label = mine
-                          ? (item.count === 1 ? "You sent a buzz" : `You sent ${item.count} buzzes`)
-                          : (item.count === 1 ? `${otherName} sent you a buzz` : `${otherName} sent you ${item.count} buzzes`);
-                      }
-                      return `<div class="dm-buzz-history-item"><span>⚡</span><strong>${escapeHtml(label)}</strong></div>`;
-                    }).join("");
+                      buzzHistory.forEach(buzz => {
+                        timeline.push({
+                          type:"buzz",
+                          createdAt:buzz.created_at,
+                          senderId:String(buzz.sender_id || ""),
+                          id:String(buzz.id || "")
+                        });
+                      });
 
-                    /* Important: renderedRows is the original, already-tested DM HTML.
-                       Never parse it with a regex; doing that hid normal messages. */
-                    container.innerHTML = `<div class="dm-message-stack">${renderedRows}${buzzRows}</div>`;
+                      timeline.sort((a,b) => {
+                        const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                        if (diff !== 0) return diff;
+                        return a.type === "message" ? -1 : 1;
+                      });
+
+                      const groupedTimeline = [];
+                      timeline.forEach(item => {
+                        const previous = groupedTimeline[groupedTimeline.length - 1];
+                        if (
+                          item.type === "buzz" &&
+                          previous?.type === "buzz" &&
+                          previous.senderId === item.senderId
+                        ) {
+                          previous.count += 1;
+                          previous.createdAt = item.createdAt;
+                        } else {
+                          groupedTimeline.push({
+                            ...item,
+                            count:item.type === "buzz" ? 1 : undefined
+                          });
+                        }
+                      });
+
+                      groupedTimeline.forEach((item, index) => {
+                        if (item.type !== "buzz") return;
+
+                        const mine = item.senderId === String(currentUser.id);
+                        const otherName = currentDmUsername || "@User";
+                        let label;
+
+                        if (getFriendHubLanguage() === "es") {
+                          label = mine
+                            ? (item.count === 1 ? "Enviaste un zumbido" : `Enviaste ${item.count} zumbidos`)
+                            : (item.count === 1 ? `${otherName} te envió un zumbido` : `${otherName} te envió ${item.count} zumbidos`);
+                        } else {
+                          label = mine
+                            ? (item.count === 1 ? "You sent a buzz" : `You sent ${item.count} buzzes`)
+                            : (item.count === 1 ? `${otherName} sent you a buzz` : `${otherName} sent you ${item.count} buzzes`);
+                        }
+
+                        const buzzRow = document.createElement("div");
+                        buzzRow.className = "dm-buzz-history-item";
+                        buzzRow.dataset.createdAt = String(item.createdAt || "");
+                        buzzRow.innerHTML = `<span>⚡</span><strong>${escapeHtml(label)}</strong>`;
+
+                        let inserted = false;
+                        for (let nextIndex = index + 1; nextIndex < groupedTimeline.length; nextIndex++) {
+                          const nextItem = groupedTimeline[nextIndex];
+                          if (nextItem.type !== "message") continue;
+                          const nextRow = dmTimelineStack.querySelector(
+                            `.dm-row[data-dm-message-id="${CSS.escape(String(nextItem.id))}"]`
+                          );
+                          if (nextRow) {
+                            dmTimelineStack.insertBefore(buzzRow, nextRow);
+                            inserted = true;
+                            break;
+                          }
+                        }
+
+                        if (!inserted) dmTimelineStack.appendChild(buzzRow);
+                      });
+                    }
 
                     /* DM FIX7: normalize the rendered message layout directly in the DOM.
                        This bypasses any conflicting stylesheet rule elsewhere on the page. */
