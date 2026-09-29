@@ -3563,6 +3563,204 @@
   }
 }
 
+
+/* =========================================================
+   XOXO AVENUE — FEED POST CARDS VISUAL REFRESH
+   Visual-only. Keeps post behavior and composer unchanged.
+   ========================================================= */
+#feed {
+  gap: 20px;
+}
+
+#feed .post {
+  position: relative;
+  overflow: hidden;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb,var(--fh-primary) 34%,var(--fh-border));
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--fh-secondary) 8%,transparent), transparent 32%),
+    linear-gradient(145deg,
+      color-mix(in srgb,var(--fh-surface) 97%,var(--fh-primary) 3%),
+      color-mix(in srgb,var(--fh-surface) 98%,var(--fh-secondary) 2%));
+  box-shadow: var(--fh-shadow);
+}
+
+#feed .post::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg,var(--fh-primary),var(--fh-secondary),var(--fh-accent));
+  box-shadow: 0 0 16px color-mix(in srgb,var(--fh-primary) 58%,transparent);
+}
+
+#feed .post-header {
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 15px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--fh-border);
+}
+
+#feed .avatar {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  border: 2px solid color-mix(in srgb,var(--fh-primary) 76%,white 24%);
+  background: var(--fh-soft);
+  box-shadow: 0 0 18px color-mix(in srgb,var(--fh-primary) 24%,transparent);
+}
+
+#feed .post-user {
+  font-size: 17px;
+  line-height: 1.2;
+  color: var(--fh-text);
+}
+
+#feed .post-meta {
+  margin-top: 4px;
+  color: var(--fh-muted);
+  font-size: 13px;
+}
+
+#feed .post-tag {
+  margin: 0 6px 8px 0;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb,var(--fh-primary) 28%,var(--fh-border));
+  border-radius: 999px;
+  background: var(--fh-soft);
+  color: var(--fh-primary);
+}
+
+#feed .post-content {
+  margin: 4px 0 15px;
+  padding: 5px 3px 0;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--fh-text);
+}
+
+#feed .post-media {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid var(--fh-border);
+  border-radius: 18px;
+  background: color-mix(in srgb,var(--fh-surface-strong) 94%,transparent);
+}
+
+#feed .post-media img,
+#feed .post-media video {
+  display: block;
+  border-radius: 0;
+  background: transparent;
+}
+
+#feed .post-actions {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 9px;
+  margin-top: 17px;
+  padding-top: 16px;
+  border-top: 1px solid var(--fh-border);
+}
+
+#feed .post-action {
+  width: 100%;
+  min-width: 0;
+  min-height: 45px;
+  margin-left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 7px;
+  border: 1px solid var(--fh-border);
+  border-radius: 14px;
+  background: color-mix(in srgb,var(--fh-surface-strong) 84%,transparent);
+  color: var(--fh-muted);
+  font-weight: 700;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+
+#feed .post-action:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb,var(--fh-primary) 62%,transparent);
+  background: var(--fh-soft);
+  color: var(--fh-primary);
+  box-shadow: 0 0 14px color-mix(in srgb,var(--fh-primary) 12%,transparent);
+}
+
+#feed .post-action.liked {
+  color: #ff4f8b;
+  border-color: color-mix(in srgb,#ff4f8b 48%,var(--fh-border));
+  background: color-mix(in srgb,#ff4f8b 9%,var(--fh-surface-strong));
+}
+
+#feed .post-action.saved-post-action.saved {
+  color: var(--fh-primary);
+  border-color: color-mix(in srgb,var(--fh-primary) 52%,var(--fh-border));
+  background: color-mix(in srgb,var(--fh-primary) 10%,var(--fh-surface-strong));
+}
+
+#feed .post-action.edit-post-action {
+  color: var(--fh-primary);
+}
+
+#feed .post-action.delete-post-action {
+  color: #ff4d57;
+}
+
+#feed .post-action.delete-post-action:hover {
+  border-color: color-mix(in srgb,#ff4d57 55%,var(--fh-border));
+  background: color-mix(in srgb,#ff4d57 9%,var(--fh-surface-strong));
+  color: #ff4d57;
+}
+
+@media (max-width: 700px) {
+  #feed {
+    gap: 18px;
+  }
+
+  #feed .post {
+    padding: 17px;
+    border-radius: 22px;
+  }
+
+  #feed .post::before {
+    top: 15px;
+    bottom: 15px;
+  }
+
+  #feed .avatar {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+  }
+
+  #feed .post-actions {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    gap: 7px;
+    overflow: visible;
+  }
+
+  #feed .post-action {
+    min-height: 43px;
+    padding: 8px 5px;
+    border-radius: 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 390px) {
+  #feed .post-actions {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
 </style>
                     </head>
                     <body>
