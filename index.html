@@ -4548,6 +4548,7 @@
                     <div id="dmAttachmentPreview" class="dm-attachment-preview" style="display:none;"></div>
                     </div>
                     <button id="dmAttachButton" class="dm-attach-button" type="button" onclick="document.getElementById('dmMediaInput').click()" aria-label="Attach photo or video" title="Attach photo or video">&#128206;</button>
+                    <button type="button" id="dmBuzzButton" class="dm-buzz-button" onclick="sendDmBuzz()" title="Buzz / Zumbido" aria-label="Buzz / Zumbido">⚡ Buzz</button>
                     <button id="dmSendButton" class="btn btn-primary" type="submit">Send</button>
                     </form>
                     <div id="dmStatus" class="dm-status"></div>
@@ -5231,6 +5232,8 @@
                     let dmSeenMessageIds = new Set();
                     let dmSelectedAttachment = null;
                     let dmReplyTarget = null;
+                    let dmBuzzChannel = null;
+                    let dmBuzzLastSentAt = 0;
                     let dmTypingChannel = null;
                     let dmTypingStopTimer = null;
                     let dmRemoteTypingHideTimer = null;
@@ -8556,6 +8559,7 @@ function showPage(pageId) {
                     startDmPresenceRefresh();
                     startDmChatRefresh();
                     startDmTypingRealtime();
+                    startDmBuzzRealtime();
                     }
 
                     async function closeDirectChat() {
@@ -8563,6 +8567,7 @@ function showPage(pageId) {
                     stopDmChatRefresh();
                     await sendDmTypingState(false);
                     stopDmTypingRealtime();
+                    stopDmBuzzRealtime();
                     dmSeenMessageIds = new Set();
                     clearDmAttachment();
                     clearDmReply();
@@ -9020,6 +9025,89 @@ function showPage(pageId) {
                     sparkle.stop(now + 0.17);
                     } catch (error) {
                     console.warn("DM send sound error:", error);
+                    }
+                    }
+
+                    function playDmBuzzSound() {
+                    try {
+                      const ctx = prepareDmSendSound();
+                      if (!ctx) return;
+                      const now = ctx.currentTime;
+                      [0, .12, .24].forEach((delay, index) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = "sine";
+                        osc.frequency.setValueAtTime(index === 1 ? 760 : 980, now + delay);
+                        gain.gain.setValueAtTime(0.0001, now + delay);
+                        gain.gain.exponentialRampToValueAtTime(0.16, now + delay + .012);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + .095);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + delay);
+                        osc.stop(now + delay + .11);
+                      });
+                    } catch (error) {
+                      console.warn("DM buzz sound unavailable:", error);
+                    }
+                    }
+
+                    function triggerDmBuzzEffect() {
+                    const chat = document.getElementById("dmChat");
+                    if (chat) {
+                      chat.classList.remove("dm-buzz-shake");
+                      void chat.offsetWidth;
+                      chat.classList.add("dm-buzz-shake");
+                      setTimeout(() => chat.classList.remove("dm-buzz-shake"), 850);
+                    }
+                    if (navigator.vibrate) navigator.vibrate([90,45,90,45,130]);
+                    playDmBuzzSound();
+                    }
+
+                    function stopDmBuzzRealtime() {
+                    if (!dmBuzzChannel) return;
+                    try { supabaseClient.removeChannel(dmBuzzChannel); } catch (_) {}
+                    dmBuzzChannel = null;
+                    }
+
+                    function startDmBuzzRealtime() {
+                    stopDmBuzzRealtime();
+                    if (!currentUser || !currentDmUserId) return;
+                    const ids = [String(currentUser.id), String(currentDmUserId)].sort();
+                    dmBuzzChannel = supabaseClient
+                      .channel(`dm-buzz-${ids.join("-")}`)
+                      .on("broadcast", { event:"buzz" }, ({ payload }) => {
+                        if (!payload || String(payload.recipient_id) !== String(currentUser.id)) return;
+                        if (String(payload.sender_id) !== String(currentDmUserId)) return;
+                        triggerDmBuzzEffect();
+                      })
+                      .subscribe();
+                    }
+
+                    async function sendDmBuzz() {
+                    if (!currentUser || !currentDmUserId) return;
+                    prepareDmSendSound();
+                    const now = Date.now();
+                    if (now - dmBuzzLastSentAt < 10000) {
+                      setDmStatus(getFriendHubLanguage() === "es" ? "Espera unos segundos para enviar otro zumbido 😅" : "Wait a few seconds before sending another buzz 😅");
+                      return;
+                    }
+                    dmBuzzLastSentAt = now;
+                    const button = document.getElementById("dmBuzzButton");
+                    if (button) button.disabled = true;
+                    try {
+                      if (!dmBuzzChannel) startDmBuzzRealtime();
+                      if (!dmBuzzChannel) throw new Error("Buzz channel unavailable");
+                      await dmBuzzChannel.send({
+                        type:"broadcast", event:"buzz",
+                        payload:{sender_id:currentUser.id,recipient_id:currentDmUserId,sent_at:new Date().toISOString()}
+                      });
+                      triggerDmBuzzEffect();
+                      setDmStatus(getFriendHubLanguage() === "es" ? "⚡ ¡Zumbido enviado!" : "⚡ Buzz sent!");
+                    } catch (error) {
+                      console.error("DM buzz error:", error);
+                      setDmStatus(getFriendHubLanguage() === "es" ? "No se pudo enviar el zumbido." : "Could not send buzz.", true);
+                    } finally {
+                      setTimeout(() => { if (button) button.disabled = false; }, 1000);
                     }
                     }
 
@@ -10583,6 +10671,22 @@ function showPage(pageId) {
                       font-size:15px; line-height:1.2; cursor:pointer; opacity:.72;
                     }
                     .dm-react-button:hover { opacity:1; background:var(--fh-soft); }
+                    .dm-buzz-button {
+                      border:1px solid color-mix(in srgb,var(--fh-primary) 48%,transparent);
+                      background:color-mix(in srgb,var(--fh-primary) 12%,transparent);
+                      color:var(--fh-primary); border-radius:12px; padding:9px 10px; font-weight:900;
+                      cursor:pointer; white-space:nowrap;
+                    }
+                    .dm-buzz-button:hover { background:color-mix(in srgb,var(--fh-primary) 20%,transparent); }
+                    .dm-buzz-button:disabled { opacity:.48; cursor:not-allowed; }
+                    .dm-buzz-shake { animation:dmBuzzShake .78s cubic-bezier(.36,.07,.19,.97) both !important; }
+                    @keyframes dmBuzzShake {
+                      10%,90% { transform:translate3d(-2px,0,0) rotate(-.2deg); }
+                      20%,80% { transform:translate3d(4px,0,0) rotate(.3deg); }
+                      30%,50%,70% { transform:translate3d(-7px,0,0) rotate(-.5deg); }
+                      40%,60% { transform:translate3d(7px,0,0) rotate(.5deg); }
+                    }
+                    @media (prefers-reduced-motion:reduce) { .dm-buzz-shake { animation:none !important; } }
                     .dm-reply-button {
                       border:0; background:transparent; color:var(--fh-muted); padding:3px 6px; border-radius:999px;
                       font-size:12px; line-height:1.2; font-weight:800; cursor:pointer; opacity:.76; margin-right:2px;
