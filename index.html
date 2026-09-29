@@ -4268,6 +4268,52 @@
 @media(max-width:560px){.post-gif-picker{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:auto;max-height:62vh}.post-gif-grid{max-height:40vh}}
 </style>
 
+
+<style>
+/* XOXO — compact/fixed Feed GIF picker */
+.post-gif-picker{
+  height:auto !important;
+  min-height:0 !important;
+  max-height:460px !important;
+  overflow:hidden !important;
+}
+.post-gif-grid{
+  min-height:0 !important;
+  height:auto !important;
+  max-height:300px !important;
+  overflow-y:auto !important;
+  align-content:start !important;
+  grid-auto-rows:110px !important;
+}
+.post-gif-item{
+  width:100% !important;
+  height:110px !important;
+  aspect-ratio:auto !important;
+  background:var(--fh-soft,#151735) !important;
+}
+.post-gif-item img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+}
+@media(max-width:560px){
+  .post-gif-picker{
+    position:fixed !important;
+    left:16px !important;
+    right:16px !important;
+    bottom:calc(env(safe-area-inset-bottom,0px) + 18px) !important;
+    width:auto !important;
+    max-height:440px !important;
+    padding:10px !important;
+  }
+  .post-gif-grid{
+    max-height:300px !important;
+    grid-auto-rows:96px !important;
+  }
+  .post-gif-item{height:96px !important}
+}
+</style>
+
 </head>
                     <body>
                     <header>
@@ -6974,28 +7020,39 @@ function showPage(pageId) {
                     const grid = document.getElementById("postGifGrid");
                     if (!grid) return;
                     const requestId = ++postGifRequestId;
-                    grid.innerHTML = `<div class="post-gif-empty">${getFriendHubLanguage() === "es" ? "Cargando GIFs..." : "Loading GIFs..."}</div>`;
+                    const es = getFriendHubLanguage() === "es";
+                    grid.innerHTML = `<div class="post-gif-empty">${es ? "Cargando GIFs..." : "Loading GIFs..."}</div>`;
                     try {
-                      const url = new URL(XOXO_GIPHY_ENDPOINT);
+                      /* Use the same endpoint that is already working in Direct Messages. */
+                      const endpoint = "https://xoxo-giphy-app.paredesarixon.workers.dev/gifs";
+                      const url = new URL(endpoint);
                       if (query) url.searchParams.set("q", query);
-                      const response = await fetch(url.toString(), { headers:{Accept:"application/json"} });
+                      const response = await fetch(url.toString(), {
+                        method: "GET",
+                        headers: { Accept: "application/json" },
+                        cache: "no-store"
+                      });
                       if (!response.ok) throw new Error(`GIF API ${response.status}`);
                       const result = await response.json();
                       if (requestId !== postGifRequestId) return;
-                      const gifs = Array.isArray(result.gifs) ? result.gifs.filter(g => g && g.original && isXoxoGiphyUrl(g.original)) : [];
+                      const gifs = Array.isArray(result.gifs)
+                        ? result.gifs.filter(g => g && g.original)
+                        : [];
                       if (!gifs.length) {
-                        grid.innerHTML = `<div class="post-gif-empty">${getFriendHubLanguage() === "es" ? "No se encontraron GIFs." : "No GIFs found."}</div>`;
+                        grid.innerHTML = `<div class="post-gif-empty">${es ? "No se encontraron GIFs." : "No GIFs found."}</div>`;
                         return;
                       }
                       grid.innerHTML = gifs.map(g => {
-                        const original = escapeHtmlAttribute(String(g.original));
-                        const preview = escapeHtmlAttribute(String(g.preview || g.url || g.original));
+                        const original = escapeHtmlAttribute(String(g.original || ""));
+                        const preview = escapeHtmlAttribute(String(g.preview || g.url || g.original || ""));
                         const title = escapeHtmlAttribute(String(g.title || "GIF"));
-                        return `<button type="button" class="post-gif-item" data-gif-url="${original}" onclick="selectPostGif(this.dataset.gifUrl)" title="${title}"><img src="${preview}" alt="${title}" loading="lazy"></button>`;
+                        return `<button type="button" class="post-gif-item" data-gif-url="${original}" onclick="selectPostGif(this.dataset.gifUrl)" title="${title}"><img src="${preview}" alt="${title}" loading="eager"></button>`;
                       }).join("");
                     } catch (error) {
                       console.error("Post GIPHY picker error:", error);
-                      if (requestId === postGifRequestId) grid.innerHTML = `<div class="post-gif-empty">${getFriendHubLanguage() === "es" ? "No se pudieron cargar los GIFs." : "Could not load GIFs."}</div>`;
+                      if (requestId === postGifRequestId) {
+                        grid.innerHTML = `<div class="post-gif-empty">${es ? "No se pudieron cargar los GIFs. Toca GIF para intentar de nuevo." : "Could not load GIFs. Tap GIF to try again."}</div>`;
+                      }
                     }
                     }
 
