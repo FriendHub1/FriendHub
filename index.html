@@ -1979,6 +1979,8 @@
                     }
                     html[data-theme="night"] .dm-composer textarea { background: rgba(10,16,38,.72); }
                     .dm-status { min-height: 24px; padding: 0 14px 10px; font-size: .86rem; }
+                    .dm-typing-indicator { min-height:18px; margin-top:2px; font-size:12px; font-weight:700; color:var(--fh-primary); opacity:0; transform:translateY(-2px); transition:opacity .16s ease,transform .16s ease; }
+                    .dm-typing-indicator.show { opacity:1; transform:translateY(0); }
                     .dm-status.error { color: #d92d20; }
                     .dm-empty-state { max-width: 820px; margin: 0 auto; text-align: center; }
                     .dm-no-messages { margin: auto; opacity: .65; text-align: center; }
@@ -4524,6 +4526,7 @@
                     <div>
                     <div id="dmChatUsername" class="dm-chat-username">@User</div>
                     <div id="dmChatPresence" class="friendhub-presence friendhub-presence-dm">—</div>
+                    <div id="dmTypingIndicator" class="dm-typing-indicator" aria-live="polite"></div>
                     <div class="dm-chat-private">Private conversation</div>
                     </div>
                     </div>
@@ -5217,6 +5220,10 @@
                     let dmLastRenderedSignature = "";
                     let dmSeenMessageIds = new Set();
                     let dmSelectedAttachment = null;
+                    let dmTypingChannel = null;
+                    let dmTypingStopTimer = null;
+                    let dmRemoteTypingHideTimer = null;
+                    let dmTypingLastSent = false;
                     let currentEditingPostId = null;
                     let selectedCommentMediaFile = null;
                     let selectedCommentMediaType = null;
@@ -8149,6 +8156,65 @@ function showPage(pageId) {
                     dmPresenceRefreshTimer = setInterval(loadDmPresence, 30000);
                     }
 
+                    function getDmTypingConversationKey(otherUserId) {
+                    if (!currentUser || !otherUserId) return "";
+                    return [String(currentUser.id), String(otherUserId)].sort().join("--");
+                    }
+
+                    function setRemoteDmTyping(isTyping) {
+                    const indicator = document.getElementById("dmTypingIndicator");
+                    if (!indicator) return;
+                    if (dmRemoteTypingHideTimer) { clearTimeout(dmRemoteTypingHideTimer); dmRemoteTypingHideTimer = null; }
+                    if (!isTyping) { indicator.textContent = ""; indicator.classList.remove("show"); return; }
+                    indicator.textContent = getFriendHubLanguage() === "es" ? "escribiendo…" : "typing…";
+                    indicator.classList.add("show");
+                    dmRemoteTypingHideTimer = setTimeout(() => setRemoteDmTyping(false), 3500);
+                    }
+
+                    async function sendDmTypingState(isTyping) {
+                    if (!dmTypingChannel || !currentUser || !currentDmUserId) return;
+                    if (dmTypingLastSent === isTyping) return;
+                    dmTypingLastSent = isTyping;
+                    try {
+                    await dmTypingChannel.send({ type:"broadcast", event:"typing", payload:{ sender_id:currentUser.id, is_typing:!!isTyping } });
+                    } catch (error) { console.error("DM typing broadcast error:", error); }
+                    }
+
+                    function handleDmTypingInput() {
+                    if (!currentUser || !currentDmUserId) return;
+                    const input = document.getElementById("dmInput");
+                    const hasText = !!input?.value?.length;
+                    if (dmTypingStopTimer) clearTimeout(dmTypingStopTimer);
+                    if (!hasText) { sendDmTypingState(false); return; }
+                    sendDmTypingState(true);
+                    dmTypingStopTimer = setTimeout(() => sendDmTypingState(false), 1600);
+                    }
+
+                    function stopDmTypingRealtime() {
+                    if (dmTypingStopTimer) clearTimeout(dmTypingStopTimer);
+                    if (dmRemoteTypingHideTimer) clearTimeout(dmRemoteTypingHideTimer);
+                    dmTypingStopTimer = null;
+                    dmRemoteTypingHideTimer = null;
+                    dmTypingLastSent = false;
+                    setRemoteDmTyping(false);
+                    if (dmTypingChannel) {
+                    try { supabaseClient.removeChannel(dmTypingChannel); } catch (error) { console.error("DM typing cleanup error:", error); }
+                    dmTypingChannel = null;
+                    }
+                    }
+
+                    function startDmTypingRealtime() {
+                    stopDmTypingRealtime();
+                    if (!currentUser || !currentDmUserId) return;
+                    const conversationKey = getDmTypingConversationKey(currentDmUserId);
+                    if (!conversationKey) return;
+                    dmTypingChannel = supabaseClient.channel(`dm-typing-${conversationKey}`)
+                    .on("broadcast", { event:"typing" }, ({ payload }) => {
+                    if (!payload || String(payload.sender_id) !== String(currentDmUserId)) return;
+                    setRemoteDmTyping(!!payload.is_typing);
+                    }).subscribe();
+                    }
+
                     function stopDmChatRefresh() {
                     if (dmChatRefreshTimer) {
                     clearInterval(dmChatRefreshTimer);
@@ -8380,11 +8446,14 @@ function showPage(pageId) {
                     await loadDirectMessages();
                     startDmPresenceRefresh();
                     startDmChatRefresh();
+                    startDmTypingRealtime();
                     }
 
                     async function closeDirectChat() {
                     stopDmPresenceRefresh();
                     stopDmChatRefresh();
+                    await sendDmTypingState(false);
+                    stopDmTypingRealtime();
                     dmSeenMessageIds = new Set();
                     clearDmAttachment();
                     currentDmUserId = null;
@@ -8682,6 +8751,13 @@ function showPage(pageId) {
                     }</div>`;
                     }
 
+                    document.addEventListener("input", (event) => {
+                    if (event.target && event.target.id === "dmInput") handleDmTypingInput();
+                    });
+                    document.addEventListener("blur", (event) => {
+                    if (event.target && event.target.id === "dmInput") sendDmTypingState(false);
+                    }, true);
+
                     async function sendDirectMessage(event) {
                     if (event) event.preventDefault();
                     if (!currentUser || !currentDmUserId) return;
@@ -8697,6 +8773,10 @@ function showPage(pageId) {
                     setDmStatus(getFriendHubLanguage() === "es" ? "El mensaje es demasiado largo." : "Message is too long.", true);
                     return;
                     }
+
+                    if (dmTypingStopTimer) clearTimeout(dmTypingStopTimer);
+                    dmTypingStopTimer = null;
+                    await sendDmTypingState(false);
 
                     if (button) button.disabled = true;
                     if (attachButton) attachButton.disabled = true;
