@@ -3761,6 +3761,257 @@
   }
 }
 
+
+/* =========================================================
+   XOXO AVENUE — PUBLIC PROFILE VISUAL REFRESH
+   Visual-only. Public-profile behavior remains unchanged.
+   ========================================================= */
+#publicProfile #publicProfileContent {
+  position: relative;
+}
+
+#publicProfile .public-profile-card {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 28px;
+  padding: 34px 30px 30px;
+  border: 1px solid color-mix(in srgb,var(--fh-secondary) 48%,var(--fh-border));
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 50% -10%, color-mix(in srgb,var(--fh-primary) 15%,transparent), transparent 35%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--fh-secondary) 11%,transparent), transparent 34%),
+    var(--fh-surface);
+  box-shadow: var(--fh-shadow), 0 0 28px color-mix(in srgb,var(--fh-primary) 8%,transparent);
+}
+
+#publicProfile .public-profile-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 22px;
+  bottom: 22px;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg,var(--fh-primary),var(--fh-secondary),var(--fh-accent));
+  box-shadow: 0 0 16px color-mix(in srgb,var(--fh-primary) 55%,transparent);
+}
+
+#publicProfile .public-profile-avatar {
+  width: 118px;
+  height: 118px;
+  margin: 0 auto 16px;
+  border: 3px solid color-mix(in srgb,var(--fh-primary) 76%,white 24%);
+  background: var(--fh-soft);
+  box-shadow:
+    0 0 0 7px color-mix(in srgb,var(--fh-primary) 8%,transparent),
+    0 0 26px color-mix(in srgb,var(--fh-primary) 30%,transparent);
+}
+
+#publicProfile .public-profile-username {
+  margin-bottom: 8px;
+  font-size: clamp(2rem,6vw,3rem);
+  line-height: 1.05;
+  letter-spacing: -.025em;
+  color: var(--fh-text);
+}
+
+#publicProfile .friendhub-presence-profile {
+  margin: 4px auto 10px;
+  justify-content: center;
+}
+
+#publicProfile .public-profile-country {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px auto 12px;
+  padding: 7px 12px;
+  border: 1px solid var(--fh-border);
+  border-radius: 999px;
+  background: var(--fh-soft);
+}
+
+#publicProfile .public-profile-bio {
+  max-width: 650px;
+  margin: 4px auto 20px;
+  padding: 13px 16px;
+  border: 1px solid color-mix(in srgb,var(--fh-primary) 20%,var(--fh-border));
+  border-radius: 15px;
+  background: color-mix(in srgb,var(--fh-surface-strong) 78%,transparent);
+  color: var(--fh-muted);
+}
+
+#publicProfile .public-profile-social {
+  gap: 12px;
+  margin: 18px auto 14px;
+}
+
+#publicProfile .public-profile-stat {
+  min-width: 118px;
+  padding: 12px 16px;
+  border: 1px solid var(--fh-border);
+  border-radius: 16px;
+  background: color-mix(in srgb,var(--fh-surface-strong) 84%,transparent);
+  transition: .18s ease;
+}
+
+#publicProfile .public-profile-stat:hover {
+  border-color: color-mix(in srgb,var(--fh-primary) 60%,transparent);
+  background: var(--fh-soft);
+  box-shadow: 0 0 14px color-mix(in srgb,var(--fh-primary) 12%,transparent);
+}
+
+#publicProfile .public-profile-stat strong {
+  font-size: 1.25rem;
+  color: var(--fh-primary);
+}
+
+#publicProfile .public-profile-card > .btn {
+  min-height: 45px;
+  margin: 5px 3px;
+  border-radius: 14px;
+}
+
+#publicProfile .public-profile-details {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--fh-border);
+}
+
+#publicProfile .public-profile-detail {
+  position: relative;
+  overflow: hidden;
+  min-height: 96px;
+  padding: 17px 17px 17px 20px;
+  border: 1px solid color-mix(in srgb,var(--fh-secondary) 32%,var(--fh-border));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--fh-primary) 6%,transparent), transparent 42%),
+    color-mix(in srgb,var(--fh-surface-strong) 88%,transparent);
+}
+
+#publicProfile .public-profile-detail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 13px;
+  bottom: 13px;
+  width: 3px;
+  border-radius: 999px;
+  background: linear-gradient(180deg,var(--fh-primary),var(--fh-secondary));
+}
+
+#publicProfile .public-profile-detail strong {
+  margin-bottom: 9px;
+  color: var(--fh-text);
+  font-size: .98rem;
+}
+
+#publicProfile .public-profile-detail span {
+  display: block;
+  color: var(--fh-muted);
+  line-height: 1.5;
+}
+
+#publicProfile .public-profile-posts-title {
+  position: relative;
+  margin: 34px 0 18px;
+  padding-left: 16px;
+  font-size: clamp(1.7rem,5vw,2.25rem);
+  color: var(--fh-text);
+}
+
+#publicProfile .public-profile-posts-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12%;
+  bottom: 12%;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg,var(--fh-primary),var(--fh-secondary));
+  box-shadow: 0 0 12px color-mix(in srgb,var(--fh-primary) 35%,transparent);
+}
+
+/* Give public-profile posts the same polished feed language. */
+#publicProfilePosts .post {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb,var(--fh-primary) 34%,var(--fh-border));
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb,var(--fh-secondary) 8%,transparent), transparent 32%),
+    var(--fh-surface);
+}
+#publicProfilePosts .post::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 3px;
+  border-radius: 0 999px 999px 0;
+  background: linear-gradient(180deg,var(--fh-primary),var(--fh-secondary),var(--fh-accent));
+}
+
+@media (max-width:700px) {
+  #publicProfile .public-profile-card {
+    padding: 26px 18px 22px;
+    border-radius: 24px;
+  }
+
+  #publicProfile .public-profile-avatar {
+    width: 104px;
+    height: 104px;
+  }
+
+  #publicProfile .public-profile-username {
+    font-size: 2.2rem;
+  }
+
+  #publicProfile .public-profile-social {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    max-width: 310px;
+  }
+
+  #publicProfile .public-profile-stat {
+    width: 100%;
+    min-width: 0;
+  }
+
+  #publicProfile .public-profile-card > .btn {
+    width: calc(50% - 8px);
+    margin: 4px 2px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  #publicProfile .public-profile-details {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  #publicProfile .public-profile-detail {
+    min-height: 0;
+    padding: 16px 16px 16px 19px;
+    border-radius: 17px;
+  }
+
+  #publicProfile .public-profile-posts-title {
+    margin-top: 30px;
+  }
+}
+
+@media (max-width:390px) {
+  #publicProfile .public-profile-card > .btn {
+    width: 100%;
+    margin: 4px 0;
+  }
+}
+
 </style>
                     </head>
                     <body>
