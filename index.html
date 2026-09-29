@@ -4314,6 +4314,31 @@
 }
 </style>
 
+
+<style>
+/* XOXO Avenue — GIPHY for Comments */
+.comment-gif-wrap{position:relative;display:flex;flex:0 0 48px}
+.comment-gif-btn{width:48px;height:48px;border:1px solid var(--fh-border,#dfe3eb);border-radius:10px;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#263043);font-weight:900;cursor:pointer}
+.comment-gif-btn:hover{background:var(--fh-soft,#f4f5ff);color:var(--fh-primary,#5865f2)}
+.comment-gif-picker{display:none;position:absolute;left:0;bottom:calc(100% + 10px);z-index:10050;width:min(370px,calc(100vw - 42px));padding:10px;border:1px solid var(--fh-border,#dfe3eb);border-radius:16px;background:var(--fh-surface-strong,#fff);box-shadow:0 18px 48px rgba(0,0,0,.35);overflow:hidden}
+.comment-gif-picker.open{display:block}
+.comment-gif-search{width:100%;min-height:44px;border:1px solid var(--fh-border,#dfe3eb);border-radius:11px;padding:9px 11px;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#263043);font-size:16px;outline:none}
+.comment-gif-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:270px;overflow-y:auto;margin-top:8px;grid-auto-rows:90px;align-content:start}
+.comment-gif-item{width:100%;height:90px;border:0;padding:0;background:var(--fh-soft,#151735);cursor:pointer;border-radius:9px;overflow:hidden}
+.comment-gif-item img{display:block;width:100%;height:100%;object-fit:cover}
+.comment-gif-empty{grid-column:1/-1;padding:18px 8px;text-align:center;color:var(--fh-muted,#667085)}
+.comment-gif-powered{text-align:right;margin-top:7px;font-size:11px;font-weight:800;color:var(--fh-muted,#667085)}
+.comment-gif-preview{display:none;position:relative;width:min(360px,100%)}
+.comment-gif-preview.show{display:block}
+.comment-gif-preview img{display:block;width:100%;max-height:260px;object-fit:contain;border-radius:12px;background:#090b20}
+.comment-gif-remove{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(5,7,20,.8);color:#fff;font-size:20px;cursor:pointer}
+@media(max-width:560px){
+ .comment-gif-picker{position:fixed;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:auto;max-height:430px}
+ .comment-gif-grid{max-height:280px;grid-auto-rows:88px}
+ .comment-gif-item{height:88px}
+}
+</style>
+
 </head>
                     <body>
                     <header>
@@ -5505,12 +5530,24 @@
                     </div>
                     <label class="comment-attach-btn" for="commentMediaInput" title="Add photo or video" aria-label="Add photo or video">&#128206;</label>
                     <input id="commentMediaInput" type="file" accept="image/*,video/*" onchange="handleCommentMedia(event)">
+                    <div class="comment-gif-wrap">
+                    <button id="commentGifButton" type="button" class="comment-gif-btn" onclick="toggleCommentGifPicker(event)" title="Add GIF" aria-label="Add GIF">GIF</button>
+                    <div id="commentGifPicker" class="comment-gif-picker" onclick="event.stopPropagation()">
+                    <input id="commentGifSearch" class="comment-gif-search" type="search" placeholder="Search GIFs..." oninput="scheduleCommentGifSearch()">
+                    <div id="commentGifGrid" class="comment-gif-grid"></div>
+                    <div class="comment-gif-powered">Powered by GIPHY</div>
+                    </div>
+                    </div>
                     <textarea id="commentInput" maxlength="1000" placeholder="Write a comment..."></textarea>
                     <button class="btn btn-primary" onclick="submitComment()">Post</button>
                     </div>
                     <div id="commentMediaPreview" class="comment-media-preview">
                     <div id="commentMediaPreviewContent"></div>
                     <button type="button" class="comment-media-remove" onclick="removeCommentMedia()" aria-label="Remove attachment">×</button>
+                    </div>
+                    <div id="commentGifPreview" class="comment-gif-preview">
+                    <img id="commentGifPreviewImage" alt="Selected GIF">
+                    <button type="button" class="comment-gif-remove" onclick="removeCommentGif()" aria-label="Remove GIF">×</button>
                     </div>
                     </div>
                     </div>
@@ -5599,6 +5636,9 @@
                     let selectedCommentMediaFile = null;
                     let selectedCommentMediaType = null;
                     let selectedCommentMediaPreviewUrl = null;
+                    let selectedCommentGifUrl = "";
+                    let commentGifSearchTimer = null;
+                    let commentGifRequestId = 0;
                     let currentReplyTarget = null;
                     const lastTapTimes = new Map();
                     const doubleTapLikeBusy = new Set();
@@ -10944,6 +10984,8 @@ function showPage(pageId) {
                     <div class="comment-media">
                     ${comment.media_type === "video"
                     ? `<video src="${escapeHtmlAttribute(comment.media_url)}" controls playsinline preload="metadata"></video>`
+                    : comment.media_type === "gif"
+                    ? `<img src="${escapeHtmlAttribute(comment.media_url)}" alt="GIF" loading="lazy">`
                     : `<img src="${escapeHtmlAttribute(comment.media_url)}" alt="Comment attachment" loading="lazy">`}
                     </div>
                     ` : ""}
@@ -11070,14 +11112,94 @@ function showPage(pageId) {
                     clearCommentsMessage();
                     await loadComments(currentCommentsPostId);
                     }
+                    function toggleCommentGifPicker(event) {
+                    if (event) event.stopPropagation();
+                    const picker = document.getElementById("commentGifPicker");
+                    if (!picker) return;
+                    const willOpen = !picker.classList.contains("open");
+                    picker.classList.toggle("open", willOpen);
+                    if (willOpen) {
+                      const search = document.getElementById("commentGifSearch");
+                      if (search) search.value = "";
+                      loadCommentGifs("");
+                    }
+                    }
+
+                    function closeCommentGifPicker() {
+                    document.getElementById("commentGifPicker")?.classList.remove("open");
+                    }
+
+                    function scheduleCommentGifSearch() {
+                    if (commentGifSearchTimer) clearTimeout(commentGifSearchTimer);
+                    commentGifSearchTimer = setTimeout(() => {
+                      const q = document.getElementById("commentGifSearch")?.value?.trim() || "";
+                      loadCommentGifs(q);
+                    }, 450);
+                    }
+
+                    async function loadCommentGifs(query = "") {
+                    const grid = document.getElementById("commentGifGrid");
+                    if (!grid) return;
+                    const requestId = ++commentGifRequestId;
+                    const es = getFriendHubLanguage() === "es";
+                    grid.innerHTML = `<div class="comment-gif-empty">${es ? "Cargando GIFs..." : "Loading GIFs..."}</div>`;
+                    try {
+                      const url = new URL("https://xoxo-giphy-app.paredesarixon.workers.dev/gifs");
+                      if (query) url.searchParams.set("q", query);
+                      const response = await fetch(url.toString(), {method:"GET",headers:{Accept:"application/json"},cache:"no-store"});
+                      if (!response.ok) throw new Error(`GIF API ${response.status}`);
+                      const result = await response.json();
+                      if (requestId !== commentGifRequestId) return;
+                      const gifs = Array.isArray(result.gifs) ? result.gifs.filter(g => g && g.original) : [];
+                      if (!gifs.length) {
+                        grid.innerHTML = `<div class="comment-gif-empty">${es ? "No se encontraron GIFs." : "No GIFs found."}</div>`;
+                        return;
+                      }
+                      grid.innerHTML = gifs.map(g => {
+                        const original=escapeHtmlAttribute(String(g.original||""));
+                        const preview=escapeHtmlAttribute(String(g.preview||g.url||g.original||""));
+                        const title=escapeHtmlAttribute(String(g.title||"GIF"));
+                        return `<button type="button" class="comment-gif-item" data-gif-url="${original}" onclick="selectCommentGif(this.dataset.gifUrl)" title="${title}"><img src="${preview}" alt="${title}" loading="eager"></button>`;
+                      }).join("");
+                    } catch(error) {
+                      console.error("Comment GIPHY picker error:",error);
+                      if(requestId===commentGifRequestId) grid.innerHTML=`<div class="comment-gif-empty">${es?"No se pudieron cargar los GIFs.":"Could not load GIFs."}</div>`;
+                    }
+                    }
+
+                    function selectCommentGif(url) {
+                    if (!isXoxoGiphyUrl(url)) return;
+                    selectedCommentGifUrl=String(url);
+                    removeCommentMedia();
+                    const preview=document.getElementById("commentGifPreview");
+                    const img=document.getElementById("commentGifPreviewImage");
+                    if(img) img.src=selectedCommentGifUrl;
+                    if(preview) preview.classList.add("show");
+                    closeCommentGifPicker();
+                    clearCommentsMessage();
+                    }
+
+                    function removeCommentGif() {
+                    selectedCommentGifUrl="";
+                    const preview=document.getElementById("commentGifPreview");
+                    const img=document.getElementById("commentGifPreviewImage");
+                    if(preview) preview.classList.remove("show");
+                    if(img) img.removeAttribute("src");
+                    }
+
+                    document.addEventListener("click", (event) => {
+                    const wrap = event.target?.closest?.(".comment-gif-wrap");
+                    if (!wrap) closeCommentGifPicker();
+                    });
+
                     async function submitComment() {
                     if (!currentUser || !currentCommentsPostId) {
                     return;
                     }
                     const input = document.getElementById("commentInput");
                     const content = input.value.trim();
-                    if (!content && !selectedCommentMediaFile) {
-                    showCommentsMessage("Write a comment or attach a photo/video first.", "error");
+                    if (!content && !selectedCommentMediaFile && !selectedCommentGifUrl) {
+                    showCommentsMessage(getFriendHubLanguage() === "es" ? "Escribe un comentario o agrega contenido primero." : "Write a comment or add media first.", "error");
                     return;
                     }
                     if (content.length > 1000) {
@@ -11099,7 +11221,10 @@ function showPage(pageId) {
                     try {
                     let mediaUrl = null;
                     let mediaType = null;
-                    if (selectedCommentMediaFile) {
+                    if (selectedCommentGifUrl && isXoxoGiphyUrl(selectedCommentGifUrl)) {
+                    mediaType = "gif";
+                    mediaUrl = selectedCommentGifUrl;
+                    } else if (selectedCommentMediaFile) {
                     mediaType = selectedCommentMediaType;
                     mediaUrl = await uploadCommentMedia(selectedCommentMediaFile);
                     }
@@ -11131,6 +11256,8 @@ function showPage(pageId) {
                     input.value = "";
                     cancelReply(false);
                     removeCommentMedia();
+                    removeCommentGif();
+                    closeCommentGifPicker();
                     clearCommentsMessage();
                     renderComments();
                     updateCommentCounter(currentCommentsPostId, currentComments.length);
@@ -11145,6 +11272,8 @@ function showPage(pageId) {
                     }
                     }
                     function handleCommentMedia(event) {
+                    removeCommentGif();
+                    closeCommentGifPicker();
                     const input = event.target;
                     const file = input.files && input.files[0];
                     if (!file) return;
