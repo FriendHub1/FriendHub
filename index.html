@@ -1821,7 +1821,22 @@
                     .dm-normal-media-play { position:absolute;inset:50% auto auto 50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.68);color:#fff;font-size:1.1rem;pointer-events:none; }
                     .dm-ephemeral-countdown { position:absolute;top:12px;left:12px;z-index:2;background:rgba(0,0,0,.72);color:white;border-radius:999px;padding:7px 11px;font-weight:800; }
                     .dm-ephemeral-close { position:absolute;top:10px;right:10px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(0,0,0,.72);color:white;font-size:1.1rem;cursor:pointer; }
-                    @media (max-width:640px) { .dm-composer { align-items:flex-end; } .dm-attach-button,.dm-voice-button { width:42px;height:42px;flex-basis:42px; } .dm-audio-message { min-width:190px;max-width:280px; } }
+                    .dm-gif-button { width:46px;height:46px;flex:0 0 46px;align-self:flex-end;border-radius:13px;border:1px solid rgba(255,47,168,.45);background:rgba(255,47,168,.09);color:#ff2fa8;font-weight:900;font-size:.72rem;cursor:pointer;letter-spacing:.02em; }
+                    .dm-gif-button:hover { background:rgba(255,47,168,.16); }
+                    .dm-gif-overlay { position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;padding:18px 18px calc(18px + env(safe-area-inset-bottom)); }
+                    .dm-gif-panel { width:min(100%,560px);max-height:min(76dvh,680px);display:flex;flex-direction:column;border:1px solid var(--border);border-radius:22px;background:var(--card);box-shadow:0 20px 70px rgba(0,0,0,.42);overflow:hidden; }
+                    .dm-gif-head { display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid var(--border); }
+                    .dm-gif-title { font-weight:900;white-space:nowrap; }
+                    .dm-gif-search { flex:1;min-width:0;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:transparent;color:inherit;font:inherit; }
+                    .dm-gif-close { width:36px;height:36px;border:0;border-radius:50%;background:rgba(120,120,140,.12);color:inherit;font-size:1.1rem;cursor:pointer; }
+                    .dm-gif-grid { padding:10px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow:auto;min-height:220px; }
+                    .dm-gif-item { border:0;padding:0;background:#111;border-radius:12px;overflow:hidden;cursor:pointer;min-height:110px; }
+                    .dm-gif-item img { width:100%;height:100%;min-height:110px;max-height:210px;display:block;object-fit:cover; }
+                    .dm-gif-empty { grid-column:1/-1;text-align:center;padding:34px 12px;opacity:.72; }
+                    .dm-gif-powered { padding:8px 14px 12px;text-align:right;font-size:.72rem;font-weight:800;opacity:.7; }
+                    .dm-gif-message { display:block;max-width:min(320px,72vw);border-radius:14px;overflow:hidden;background:#111; }
+                    .dm-gif-message img { display:block;width:100%;height:auto;max-height:360px;object-fit:contain; }
+                    @media (max-width:640px) { .dm-composer { align-items:flex-end; } .dm-attach-button,.dm-voice-button,.dm-gif-button { width:42px;height:42px;flex-basis:42px; } .dm-audio-message { min-width:190px;max-width:280px; } }
 
 
                     .messages-unread-badge,
@@ -4648,12 +4663,19 @@
                     <button id="dmAttachButton" class="dm-attach-button" type="button" onclick="document.getElementById('dmMediaInput').click()" aria-label="Attach photo or video" title="Attach photo or video">&#128206;</button>
                     <button id="dmCameraButton" class="dm-attach-button dm-camera-button" type="button" onclick="openDmCamera()" aria-label="Camera" title="Camera">📷</button>
                     <button id="dmVoiceButton" class="dm-voice-button" type="button" onclick="toggleDmVoiceRecording()" aria-label="Record voice message" title="Record voice message">🎙️</button>
+                    <button id="dmGifButton" class="dm-gif-button" type="button" onclick="openDmGifPicker()" aria-label="GIF" title="GIF">GIF</button>
                     <button type="button" id="dmBuzzButton" class="dm-buzz-button" onclick="sendDmBuzz()" title="Buzz / Zumbido" aria-label="Buzz / Zumbido">⚡ Buzz</button>
                     <button id="dmSendButton" class="btn btn-primary" type="submit">Send</button>
                     </form>
                     <div id="dmStatus" class="dm-status"></div>
                     </div>
                     </div>
+                    <div id="dmGifOverlay" class="dm-gif-overlay" onclick="if(event.target===this) closeDmGifPicker()" style="display:none;">
+                    <div class="dm-gif-panel" role="dialog" aria-modal="true" aria-label="GIF picker">
+                    <div class="dm-gif-head"><strong class="dm-gif-title">GIF</strong><input id="dmGifSearch" class="dm-gif-search" type="search" maxlength="100" placeholder="Search GIFs" oninput="scheduleDmGifSearch()"><button type="button" class="dm-gif-close" onclick="closeDmGifPicker()" aria-label="Close">×</button></div>
+                    <div id="dmGifGrid" class="dm-gif-grid"></div>
+                    <div class="dm-gif-powered">Powered by GIPHY</div>
+                    </div></div>
                     <div id="dmCameraChoiceOverlay" class="dm-camera-choice-overlay" onclick="if(event.target===this) closeDmCameraChoice()" style="display:none;">
                     <div class="dm-camera-choice" role="dialog" aria-modal="true">
                     <div id="dmCameraChoiceTitle" class="dm-camera-choice-title">Camera</div>
@@ -8763,6 +8785,7 @@ function showPage(pageId) {
                     if (reactionTime <= currentActivityTime) return;
 
                     let quoted = String(reactedMessage.content || "").trim();
+                    if (parseDmGifContent(quoted)) quoted = "GIF";
                     if (!quoted) {
                     quoted = reactedMessage.attachment_type === "video"
                     ? (language === "es" ? "Video" : "Video")
@@ -8810,8 +8833,9 @@ function showPage(pageId) {
                     const avatar = photo
                     ? `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`
                     : initial;
+                    const lastContent = String(conversation.lastMessage.content || "");
                     const preview = conversation.reactionPreview
-                    || conversation.lastMessage.content
+                    || (parseDmGifContent(lastContent) ? "GIF" : lastContent)
                     || (conversation.lastMessage.attachment_type === "video"
                     ? "🎥 Video"
                     : conversation.lastMessage.attachment_type === "audio"
@@ -8904,6 +8928,105 @@ function showPage(pageId) {
                     await loadDmInbox();
                     }
 
+                    const XOXO_GIPHY_ENDPOINT = "https://xoxo-giphy-app.paredesarixon.workers.dev/gifs";
+                    let dmGifSearchTimer = null;
+                    let dmGifRequestId = 0;
+
+                    function parseDmGifContent(content) {
+                    const text = String(content || "").trim();
+                    const match = text.match(/^\[\[XOXO_GIF:(https:\/\/media[0-9]*\.giphy\.com\/[^\]]+)\]\]$/i);
+                    return match ? match[1] : "";
+                    }
+
+                    function renderDmGifMessage(content) {
+                    const url = parseDmGifContent(content);
+                    if (!url) return "";
+                    const safe = escapeHtmlAttribute(url);
+                    return `<div class="dm-gif-message"><img src="${safe}" alt="GIF" loading="lazy"></div>`;
+                    }
+
+                    async function openDmGifPicker() {
+                    if (!currentUser || !currentDmUserId) return;
+                    const overlay = document.getElementById("dmGifOverlay");
+                    const search = document.getElementById("dmGifSearch");
+                    if (overlay) overlay.style.display = "flex";
+                    if (search) { search.value = ""; search.placeholder = getFriendHubLanguage() === "es" ? "Buscar GIFs" : "Search GIFs"; }
+                    await loadDmGifs("");
+                    }
+
+                    function closeDmGifPicker() {
+                    const overlay = document.getElementById("dmGifOverlay");
+                    if (overlay) overlay.style.display = "none";
+                    if (dmGifSearchTimer) clearTimeout(dmGifSearchTimer);
+                    dmGifSearchTimer = null;
+                    }
+
+                    function scheduleDmGifSearch() {
+                    if (dmGifSearchTimer) clearTimeout(dmGifSearchTimer);
+                    dmGifSearchTimer = setTimeout(() => {
+                      const q = document.getElementById("dmGifSearch")?.value?.trim() || "";
+                      loadDmGifs(q);
+                    }, 350);
+                    }
+
+                    async function loadDmGifs(query = "") {
+                    const grid = document.getElementById("dmGifGrid");
+                    if (!grid) return;
+                    const requestId = ++dmGifRequestId;
+                    grid.innerHTML = `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? "Cargando GIFs..." : "Loading GIFs..."}</div>`;
+                    try {
+                      const url = new URL(XOXO_GIPHY_ENDPOINT);
+                      if (query) url.searchParams.set("q", query);
+                      const response = await fetch(url.toString(), { headers:{ Accept:"application/json" } });
+                      if (!response.ok) throw new Error(`GIF API ${response.status}`);
+                      const result = await response.json();
+                      if (requestId !== dmGifRequestId) return;
+                      const gifs = Array.isArray(result.gifs) ? result.gifs.filter(g => g && g.original) : [];
+                      if (!gifs.length) {
+                        grid.innerHTML = `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? "No se encontraron GIFs." : "No GIFs found."}</div>`;
+                        return;
+                      }
+                      grid.innerHTML = gifs.map(g => {
+                        const original = escapeHtmlAttribute(String(g.original || ""));
+                        const preview = escapeHtmlAttribute(String(g.preview || g.url || g.original || ""));
+                        const title = escapeHtmlAttribute(String(g.title || "GIF"));
+                        return `<button type="button" class="dm-gif-item" onclick="sendDmGif('${original}')" title="${title}"><img src="${preview}" alt="${title}" loading="lazy"></button>`;
+                      }).join("");
+                    } catch (error) {
+                      console.error("GIPHY picker error:", error);
+                      if (requestId === dmGifRequestId) grid.innerHTML = `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? "No se pudieron cargar los GIFs." : "Could not load GIFs."}</div>`;
+                    }
+                    }
+
+                    async function sendDmGif(gifUrl) {
+                    if (!currentUser || !currentDmUserId || !/^https:\/\/media[0-9]*\.giphy\.com\//i.test(String(gifUrl || ""))) return;
+                    const gifButton = document.getElementById("dmGifButton");
+                    if (gifButton) gifButton.disabled = true;
+                    prepareDmSendSound();
+                    try {
+                      const payload = { sender_id:currentUser.id, recipient_id:currentDmUserId, content:`[[XOXO_GIF:${gifUrl}]]` };
+                      if (dmReplyTarget?.id) payload.reply_to_message_id = dmReplyTarget.id;
+                      const { error } = await supabaseClient.from("direct_messages").insert(payload);
+                      if (error) throw error;
+                      playDmSendSound();
+                      closeDmGifPicker();
+                      clearDmReply();
+                      setDmStatus("");
+                      dmLastRenderedSignature = "";
+                      try {
+                        const actorUsername = currentProfile?.username || "@User";
+                        const language = getFriendHubLanguage();
+                        await supabaseClient.from("notifications").insert({ user_id:currentDmUserId, actor_id:currentUser.id, post_id:null, type:"dm", message:language === "es" ? `${actorUsername} te envió un GIF.` : `${actorUsername} sent you a GIF.` });
+                      } catch (notificationError) { console.error("GIF notification error:", notificationError); }
+                      await loadDirectMessages();
+                    } catch (error) {
+                      console.error("Send GIF error:", error);
+                      setDmStatus(getFriendHubLanguage() === "es" ? "No se pudo enviar el GIF." : "Could not send GIF.", true);
+                    } finally {
+                      if (gifButton) gifButton.disabled = false;
+                    }
+                    }
+
                     function setDmStatus(message, isError = false) {
                     const status = document.getElementById("dmStatus");
                     if (!status) return;
@@ -8914,6 +9037,7 @@ function showPage(pageId) {
                     function getDmReplyPreviewText(message) {
                     if (!message) return "";
                     const text = String(message.content || "").trim();
+                    if (parseDmGifContent(text)) return "GIF";
                     if (text) return text.length > 110 ? `${text.slice(0, 107)}...` : text;
                     if (message.attachment_type === "video") return getFriendHubLanguage() === "es" ? "🎥 Video" : "🎥 Video";
                     if (message.attachment_type === "audio") return getFriendHubLanguage() === "es" ? "🎙️ Audio" : "🎙️ Audio";
@@ -9166,13 +9290,13 @@ function showPage(pageId) {
                     <div class="dm-bubble">
                     ${replyHtml}
                     ${attachmentHtml}
-                    ${message.content ? `<div class="dm-text">${escapeHtml(message.content)}</div>` : ""}
+                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text">${escapeHtml(message.content)}</div>`) : ""}
                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
                     <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
                     ${renderDmSeenStatus(message, mine)}
                     ${reactionsHtml}
                     <button type="button" class="dm-reply-button" onclick="startDmReply('${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Responder al mensaje" : "Reply to message"}" title="${getFriendHubLanguage() === "es" ? "Responder" : "Reply"}">↩ Reply</button>
-                    ${mine && message.content ? `<button type="button" class="dm-edit-button" onclick="startDmEdit('${escapeHtmlAttribute(String(message.id))}')" title="${getFriendHubLanguage() === "es" ? "Editar" : "Edit"}">✏️ Edit</button>` : ""}
+                    ${mine && message.content && !parseDmGifContent(message.content) ? `<button type="button" class="dm-edit-button" onclick="startDmEdit('${escapeHtmlAttribute(String(message.id))}')" title="${getFriendHubLanguage() === "es" ? "Editar" : "Edit"}">✏️ Edit</button>` : ""}
                     <button type="button" class="dm-react-button" onclick="openDmReactionPicker(event, '${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Reaccionar al mensaje" : "React to message"}" title="${getFriendHubLanguage() === "es" ? "Reaccionar" : "React"}">☺＋</button>
                     </div>
                     ${mine ? avatarHtml : ""}
