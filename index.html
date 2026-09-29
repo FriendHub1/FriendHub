@@ -4247,6 +4247,27 @@
 }
 </style>
 
+
+<style>
+/* XOXO Avenue — GIPHY for Feed posts */
+.post-gif-wrap{position:relative;display:inline-flex}
+.post-gif-btn{border:1px solid var(--fh-border,#dfe3eb);background:var(--fh-surface-strong,#fff);color:var(--fh-text,#263043);border-radius:10px;padding:9px 13px;font-weight:800;cursor:pointer;min-height:44px}
+.post-gif-btn:hover{background:var(--fh-soft,#f4f5ff);color:var(--fh-primary,#5865f2)}
+.post-gif-picker{display:none;position:absolute;left:0;bottom:calc(100% + 10px);z-index:10030;width:min(390px,calc(100vw - 40px));padding:12px;border:1px solid var(--fh-border,#dfe3eb);border-radius:16px;background:var(--fh-surface-strong,#fff);box-shadow:0 18px 48px rgba(0,0,0,.32)}
+.post-gif-picker.open{display:block}
+.post-gif-search{width:100%;min-height:44px;border:1px solid var(--fh-border,#dfe3eb);border-radius:11px;padding:9px 11px;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#263043);font-size:16px;outline:none}
+.post-gif-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;max-height:310px;overflow:auto;margin-top:9px}
+.post-gif-item{border:0;padding:0;background:transparent;cursor:pointer;border-radius:9px;overflow:hidden;aspect-ratio:1/1}
+.post-gif-item img{display:block;width:100%;height:100%;object-fit:cover}
+.post-gif-empty{grid-column:1/-1;padding:20px 8px;text-align:center;color:var(--fh-muted,#667085)}
+.post-gif-powered{text-align:right;margin-top:7px;font-size:11px;font-weight:800;color:var(--fh-muted,#667085)}
+.post-gif-preview{display:none;position:relative;width:min(420px,100%);margin:12px 0 0}
+.post-gif-preview.show{display:block}
+.post-gif-preview img{display:block;width:100%;max-height:420px;object-fit:contain;border-radius:12px;background:#090b20}
+.post-gif-remove{position:absolute;top:7px;right:7px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(5,7,20,.8);color:#fff;font-size:22px;cursor:pointer}
+@media(max-width:560px){.post-gif-picker{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:auto;max-height:62vh}.post-gif-grid{max-height:40vh}}
+</style>
+
 </head>
                     <body>
                     <header>
@@ -4553,6 +4574,14 @@
                     onchange="handleMedia(event)"
                     >
                     </div>
+                    <div class="post-gif-wrap">
+                    <button id="postGifButton" type="button" class="post-gif-btn" onclick="togglePostGifPicker(event)" title="Add GIF" aria-label="Add GIF">GIF</button>
+                    <div id="postGifPicker" class="post-gif-picker" onclick="event.stopPropagation()">
+                    <input id="postGifSearch" class="post-gif-search" type="search" placeholder="Search GIFs..." oninput="schedulePostGifSearch()">
+                    <div id="postGifGrid" class="post-gif-grid"></div>
+                    <div class="post-gif-powered">Powered by GIPHY</div>
+                    </div>
+                    </div>
                     </div>
                     <button class="btn btn-primary" onclick="createPost()">
                     Post
@@ -4566,6 +4595,10 @@
                     ×
                     </button>
                     <div id="mediaPreviewContent"></div>
+                    </div>
+                    <div id="postGifPreview" class="post-gif-preview">
+                    <img id="postGifPreviewImage" alt="Selected GIF">
+                    <button type="button" class="post-gif-remove" onclick="removePostGif()" aria-label="Remove GIF">×</button>
                     </div>
                     </div>
                     <div id="feed" class="feed"></div>
@@ -6553,6 +6586,7 @@ function showPage(pageId) {
                     );
                     }
                     function handleMedia(event) {
+                    removePostGif();
                     const file = event.target.files[0];
                     if (!file) {
                     return;
@@ -6899,6 +6933,96 @@ function showPage(pageId) {
                     loadMoreHomePosts();
                     }
                     }, { passive: true });
+
+                    /* =========================================================
+                    GIPHY — FEED POSTS
+                    ========================================================= */
+                    let selectedPostGifUrl = "";
+                    let postGifSearchTimer = null;
+                    let postGifRequestId = 0;
+
+                    function isXoxoGiphyUrl(value) {
+                    return /^https:\/\/media[0-9]*\.giphy\.com\//i.test(String(value || ""));
+                    }
+
+                    function togglePostGifPicker(event) {
+                    if (event) event.stopPropagation();
+                    const picker = document.getElementById("postGifPicker");
+                    if (!picker) return;
+                    const willOpen = !picker.classList.contains("open");
+                    picker.classList.toggle("open", willOpen);
+                    if (willOpen) {
+                      const search = document.getElementById("postGifSearch");
+                      if (search) search.value = "";
+                      loadPostGifs("");
+                    }
+                    }
+
+                    function closePostGifPicker() {
+                    document.getElementById("postGifPicker")?.classList.remove("open");
+                    }
+
+                    function schedulePostGifSearch() {
+                    if (postGifSearchTimer) clearTimeout(postGifSearchTimer);
+                    postGifSearchTimer = setTimeout(() => {
+                      const q = document.getElementById("postGifSearch")?.value?.trim() || "";
+                      loadPostGifs(q);
+                    }, 450);
+                    }
+
+                    async function loadPostGifs(query = "") {
+                    const grid = document.getElementById("postGifGrid");
+                    if (!grid) return;
+                    const requestId = ++postGifRequestId;
+                    grid.innerHTML = `<div class="post-gif-empty">${getFriendHubLanguage() === "es" ? "Cargando GIFs..." : "Loading GIFs..."}</div>`;
+                    try {
+                      const url = new URL(XOXO_GIPHY_ENDPOINT);
+                      if (query) url.searchParams.set("q", query);
+                      const response = await fetch(url.toString(), { headers:{Accept:"application/json"} });
+                      if (!response.ok) throw new Error(`GIF API ${response.status}`);
+                      const result = await response.json();
+                      if (requestId !== postGifRequestId) return;
+                      const gifs = Array.isArray(result.gifs) ? result.gifs.filter(g => g && g.original && isXoxoGiphyUrl(g.original)) : [];
+                      if (!gifs.length) {
+                        grid.innerHTML = `<div class="post-gif-empty">${getFriendHubLanguage() === "es" ? "No se encontraron GIFs." : "No GIFs found."}</div>`;
+                        return;
+                      }
+                      grid.innerHTML = gifs.map(g => {
+                        const original = escapeHtmlAttribute(String(g.original));
+                        const preview = escapeHtmlAttribute(String(g.preview || g.url || g.original));
+                        const title = escapeHtmlAttribute(String(g.title || "GIF"));
+                        return `<button type="button" class="post-gif-item" data-gif-url="${original}" onclick="selectPostGif(this.dataset.gifUrl)" title="${title}"><img src="${preview}" alt="${title}" loading="lazy"></button>`;
+                      }).join("");
+                    } catch (error) {
+                      console.error("Post GIPHY picker error:", error);
+                      if (requestId === postGifRequestId) grid.innerHTML = `<div class="post-gif-empty">${getFriendHubLanguage() === "es" ? "No se pudieron cargar los GIFs." : "Could not load GIFs."}</div>`;
+                    }
+                    }
+
+                    function selectPostGif(url) {
+                    if (!isXoxoGiphyUrl(url)) return;
+                    selectedPostGifUrl = String(url);
+                    const preview = document.getElementById("postGifPreview");
+                    const img = document.getElementById("postGifPreviewImage");
+                    if (img) img.src = selectedPostGifUrl;
+                    if (preview) preview.classList.add("show");
+                    if (typeof removeMedia === "function") removeMedia();
+                    closePostGifPicker();
+                    }
+
+                    function removePostGif() {
+                    selectedPostGifUrl = "";
+                    const preview = document.getElementById("postGifPreview");
+                    const img = document.getElementById("postGifPreviewImage");
+                    if (preview) preview.classList.remove("show");
+                    if (img) img.removeAttribute("src");
+                    }
+
+                    document.addEventListener("click", (event) => {
+                    const wrap = event.target?.closest?.(".post-gif-wrap");
+                    if (!wrap) closePostGifPicker();
+                    });
+
                     /* =========================================================
                     CREATE POST
                     ========================================================= */
@@ -6911,8 +7035,8 @@ function showPage(pageId) {
                     document.getElementById("loginRequiredMessage").classList.remove("show");
                     const textarea = document.getElementById("postText");
                     const text = textarea.value.trim();
-                    if (!text) {
-                    alert("Please write something before posting.");
+                    if (!text && !selectedMediaFile && !selectedPostGifUrl) {
+                    alert(getFriendHubLanguage() === "es" ? "Escribe algo o agrega contenido antes de publicar." : "Write something or add media before posting.");
                     return;
                     }
                     if (!currentProfile) {
@@ -6933,7 +7057,10 @@ function showPage(pageId) {
                     try {
                     let mediaUrl = null;
                     let mediaType = null;
-                    if (selectedMediaFile) {
+                    if (selectedPostGifUrl && isXoxoGiphyUrl(selectedPostGifUrl)) {
+                    mediaUrl = selectedPostGifUrl;
+                    mediaType = "gif";
+                    } else if (selectedMediaFile) {
                     mediaUrl = await uploadPostMedia(selectedMediaFile);
                     mediaType = selectedMedia.type;
                     }
@@ -6980,6 +7107,8 @@ function showPage(pageId) {
                     await createMentionNotifications(text, data.id);
                     textarea.value = "";
                     removeMedia();
+                    removePostGif();
+                    closePostGifPicker();
                     renderPosts();
                     } catch (error) {
                     console.error("Create post/upload error:", error);
@@ -7702,7 +7831,20 @@ function showPage(pageId) {
                     let mediaHtml = "";
                     if (post.media) {
                     const safePostId = escapeHtmlAttribute(String(post.id));
-                    if (post.media.type === "video") {
+                    if (post.media.type === "gif") {
+                    mediaHtml =
+                    `<div class="post-media" data-post-id="${safePostId}"
+                    ondblclick="handleDoubleTapLike('${safePostId}', event)"
+                    ontouchend="handleMediaTouch(event, '${safePostId}')">
+                    <img
+                    src="${escapeHtmlAttribute(post.media.src)}"
+                    alt="GIF"
+                    draggable="false"
+                    loading="lazy"
+                    >
+                    <div class="double-tap-heart" data-heart-post-id="${safePostId}"></div>
+                    </div>`;
+                    } else if (post.media.type === "video") {
                     mediaHtml =
                     `<div class="post-media" data-post-id="${safePostId}"
                     ondblclick="handleDoubleTapLike('${safePostId}', event)"
