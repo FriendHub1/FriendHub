@@ -2338,6 +2338,111 @@
                       }
                     }
 
+
+                    /* XOXO Avenue Home visual refresh */
+                    #home .hero {
+                      min-height: 540px;
+                      padding: 72px 0 58px;
+                      background:
+                        radial-gradient(circle at 18% 12%, color-mix(in srgb,var(--fh-primary) 24%,transparent), transparent 34%),
+                        radial-gradient(circle at 82% 76%, color-mix(in srgb,var(--fh-secondary) 22%,transparent), transparent 36%);
+                    }
+                    #home .hero-content { max-width: 780px; }
+                    #home .hero-badge {
+                      padding: 9px 17px;
+                      border-radius: 999px;
+                      backdrop-filter: blur(12px);
+                    }
+                    #home .hero h1 {
+                      font-size: clamp(46px,7vw,76px);
+                      line-height: 1.02;
+                      letter-spacing: -2.4px;
+                      margin-bottom: 20px;
+                    }
+                    #home .hero p { max-width: 660px; line-height: 1.65; }
+                    #home .hero-buttons { gap: 14px; }
+                    #home .hero-buttons .btn,
+                    #home .hero-buttons .friendhub-invite-btn {
+                      min-height: 52px;
+                      border-radius: 13px;
+                      padding: 12px 22px;
+                    }
+                    .xoxo-home-highlights {
+                      padding: 0 0 68px;
+                      background: transparent;
+                    }
+                    .xoxo-highlight-grid {
+                      display: grid;
+                      grid-template-columns: repeat(3,minmax(0,1fr));
+                      gap: 18px;
+                      margin-top: -18px;
+                    }
+                    .xoxo-highlight-card {
+                      position: relative;
+                      overflow: hidden;
+                      min-height: 205px;
+                      padding: 28px 24px;
+                      border-radius: 22px;
+                      text-align: center;
+                      cursor: pointer;
+                      background: linear-gradient(145deg,rgba(18,29,69,.88),rgba(7,14,39,.94));
+                      box-shadow: 0 18px 48px rgba(0,0,0,.18);
+                      transition: transform .2s ease, box-shadow .2s ease;
+                    }
+                    .xoxo-highlight-card::before {
+                      content: "";
+                      position: absolute;
+                      inset: 0;
+                      pointer-events: none;
+                      background: radial-gradient(circle at 50% 0%,currentColor,transparent 62%);
+                      opacity: .10;
+                    }
+                    .xoxo-highlight-card:hover, .xoxo-highlight-card:focus-visible {
+                      transform: translateY(-4px);
+                      outline: none;
+                    }
+                    .xoxo-highlight-blue { color: #1f8cff; border: 1px solid rgba(31,140,255,.72); box-shadow: 0 18px 48px rgba(31,140,255,.10); }
+                    .xoxo-highlight-purple { color: #d52cff; border: 1px solid rgba(213,44,255,.72); box-shadow: 0 18px 48px rgba(213,44,255,.10); }
+                    .xoxo-highlight-cyan { color: #00d9ff; border: 1px solid rgba(0,217,255,.72); box-shadow: 0 18px 48px rgba(0,217,255,.10); }
+                    .xoxo-highlight-icon {
+                      position: relative;
+                      font-size: 38px;
+                      line-height: 1;
+                      margin-bottom: 18px;
+                      filter: drop-shadow(0 0 14px currentColor);
+                    }
+                    .xoxo-highlight-card h3 {
+                      position: relative;
+                      color: var(--fh-text);
+                      font-size: 21px;
+                      margin: 0 0 10px;
+                    }
+                    .xoxo-highlight-card p {
+                      position: relative;
+                      color: var(--fh-muted);
+                      line-height: 1.55;
+                      margin: 0 auto;
+                      max-width: 245px;
+                    }
+                    @media (max-width:700px) {
+                      #home .hero { min-height:auto; padding:52px 0 58px; }
+                      #home .hero h1 { font-size:clamp(40px,12vw,54px); letter-spacing:-1.7px; }
+                      #home .hero-buttons { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+                      #home .hero-buttons .btn, #home .hero-buttons .friendhub-invite-btn { width:100%; margin:0; }
+                      #home .hero-buttons .btn:last-child { grid-column:1 / -1; }
+                      .xoxo-home-highlights { padding:0 0 44px; }
+                      .xoxo-highlight-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:-12px; }
+                      .xoxo-highlight-card { min-height:218px; padding:22px 10px; border-radius:18px; }
+                      .xoxo-highlight-icon { font-size:31px; margin-bottom:15px; }
+                      .xoxo-highlight-card h3 { font-size:17px; line-height:1.12; }
+                      .xoxo-highlight-card p { font-size:13px; line-height:1.42; }
+                    }
+                    @media (max-width:420px) {
+                      .xoxo-highlight-grid { gap:8px; }
+                      .xoxo-highlight-card { padding:20px 8px; }
+                      .xoxo-highlight-card h3 { font-size:16px; }
+                      .xoxo-highlight-card p { font-size:12px; }
+                    }
                     </style>
                     </head>
                     <body>
@@ -2429,36 +2534,23 @@
                     </div>
                     </div>
                     </div>
-                    <div class="features">
+                    <div class="features xoxo-home-highlights">
                     <div class="container">
-                    <div class="section-title">
-                    <h2>Find Your Community</h2>
-                    <p>Connect around the things you enjoy.</p>
-                    </div>
-                    <div class="feature-grid">
-                    <div class="feature-card" onclick="openDiscoverPeople()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverPeople();}" style="cursor:pointer;">
-                    <div class="feature-icon"></div>
+                    <div class="xoxo-highlight-grid">
+                    <div class="xoxo-highlight-card xoxo-highlight-blue" onclick="openDiscoverPeople()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverPeople();}">
+                    <div class="xoxo-highlight-icon" aria-hidden="true">&#128172;</div>
                     <h3>Meet People</h3>
-                    <p>
-                    Discover people with similar interests,
-                    languages, hobbies and goals.
-                    </p>
+                    <p>Discover people who share your interests.</p>
                     </div>
-                    <div class="feature-card" onclick="openDiscoverCommunities()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverCommunities();}" style="cursor:pointer;">
-                    <div class="feature-icon"></div>
-                    <h3>Find Communities</h3>
-                    <p>
-                    Discover WhatsApp and Telegram communities
-                    that match your interests.
-                    </p>
+                    <div class="xoxo-highlight-card xoxo-highlight-purple" onclick="openDiscoverAll()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverAll();}">
+                    <div class="xoxo-highlight-icon" aria-hidden="true">&#128101;</div>
+                    <h3>Make Friends</h3>
+                    <p>Connect, chat and build real friendships.</p>
                     </div>
-                    <div class="feature-card" onclick="openDiscoverAll()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverAll();}" style="cursor:pointer;">
-                    <div class="feature-icon"></div>
-                    <h3>Make Connections</h3>
-                    <p>
-                    Find new friends from different countries
-                    and backgrounds.
-                    </p>
+                    <div class="xoxo-highlight-card xoxo-highlight-cyan" onclick="openDiscoverCommunities()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDiscoverCommunities();}">
+                    <div class="xoxo-highlight-icon" aria-hidden="true">&#127758;</div>
+                    <h3>Find Your Community</h3>
+                    <p>Explore people and communities from around the world.</p>
                     </div>
                     </div>
                     </div>
