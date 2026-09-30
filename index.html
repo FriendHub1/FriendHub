@@ -7,6 +7,11 @@
                     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
                     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png">
                     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+                    <link rel="manifest" href="/manifest.webmanifest">
+                    <meta name="theme-color" content="#25106f">
+                    <meta name="apple-mobile-web-app-capable" content="yes">
+                    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+                    <meta name="apple-mobile-web-app-title" content="XOXO Avenue">
                     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
                     <style>
                     * {
@@ -12390,5 +12395,126 @@ function showPage(pageId) {
                     });
 
                     </script>
+
+<style id="xoxoPwaInstallStyles">
+.xoxo-pwa-install{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+  z-index:2147483000;width:min(92vw,520px);display:none;
+  align-items:center;gap:12px;padding:12px 14px;border-radius:18px;
+  background:rgba(20,13,52,.96);color:#fff;
+  border:1px solid rgba(173,102,255,.48);
+  box-shadow:0 16px 46px rgba(0,0,0,.35);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  font-family:inherit;
+}
+.xoxo-pwa-install.show{display:flex}
+.xoxo-pwa-install img{width:48px;height:48px;border-radius:12px;flex:0 0 48px}
+.xoxo-pwa-copy{min-width:0;flex:1}
+.xoxo-pwa-title{font-weight:800;font-size:14px;line-height:1.2;margin-bottom:3px}
+.xoxo-pwa-text{font-size:12px;line-height:1.35;color:rgba(255,255,255,.78)}
+.xoxo-pwa-actions{display:flex;gap:7px;align-items:center}
+.xoxo-pwa-btn{
+  border:0;border-radius:999px;padding:9px 12px;font:inherit;font-size:12px;font-weight:800;
+  cursor:pointer;color:#fff;background:linear-gradient(135deg,#ff3fb4,#7157ff);
+}
+.xoxo-pwa-close{
+  border:0;background:transparent;color:#fff;font-size:20px;line-height:1;
+  padding:5px;cursor:pointer;opacity:.8;
+}
+@media(max-width:520px){
+  .xoxo-pwa-install{left:12px;right:12px;bottom:12px;transform:none;width:auto}
+  .xoxo-pwa-actions{flex-direction:column-reverse;align-items:flex-end}
+}
+</style>
+<div id="xoxoPwaInstall" class="xoxo-pwa-install" role="status" aria-live="polite">
+  <img src="/icon-192x192.png" alt="">
+  <div class="xoxo-pwa-copy">
+    <div class="xoxo-pwa-title" id="xoxoPwaTitle">Install XOXO Avenue</div>
+    <div class="xoxo-pwa-text" id="xoxoPwaText">Add XOXO Avenue to your device and open it like an app.</div>
+  </div>
+  <div class="xoxo-pwa-actions">
+    <button type="button" id="xoxoPwaInstallBtn" class="xoxo-pwa-btn">Install</button>
+    <button type="button" id="xoxoPwaClose" class="xoxo-pwa-close" aria-label="Close">×</button>
+  </div>
+</div>
+<script id="xoxoPwaInstallScript">
+(function(){
+  const box = document.getElementById("xoxoPwaInstall");
+  const title = document.getElementById("xoxoPwaTitle");
+  const text = document.getElementById("xoxoPwaText");
+  const installBtn = document.getElementById("xoxoPwaInstallBtn");
+  const closeBtn = document.getElementById("xoxoPwaClose");
+  if (!box || !installBtn || !closeBtn) return;
+
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  if (standalone) return;
+
+  const lang = (document.documentElement.lang || navigator.language || "en").toLowerCase();
+  const es = lang.startsWith("es");
+  const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  let deferredPrompt = null;
+
+  function show(){
+    if (sessionStorage.getItem("xoxoPwaInstallDismissed") === "1") return;
+    box.classList.add("show");
+  }
+
+  if (es) {
+    title.textContent = "Instala XOXO Avenue";
+    text.textContent = "Agrégala a tu dispositivo y ábrela como una app.";
+    installBtn.textContent = "Instalar";
+    closeBtn.setAttribute("aria-label","Cerrar");
+  }
+
+  if (isiOS) {
+    title.textContent = es ? "Instala XOXO Avenue" : "Install XOXO Avenue";
+    text.textContent = es
+      ? "En Safari toca Compartir y luego “Agregar a pantalla de inicio”."
+      : "In Safari tap Share, then “Add to Home Screen”.";
+    installBtn.textContent = es ? "Cómo hacerlo" : "How to";
+    installBtn.addEventListener("click", function(){
+      alert(es
+        ? "En Safari: toca el botón Compartir (cuadro con flecha hacia arriba) → Agregar a pantalla de inicio → Agregar."
+        : "In Safari: tap Share (square with the up arrow) → Add to Home Screen → Add.");
+    });
+    setTimeout(show, 1800);
+  } else {
+    window.addEventListener("beforeinstallprompt", function(event){
+      event.preventDefault();
+      deferredPrompt = event;
+      show();
+    });
+    installBtn.addEventListener("click", async function(){
+      if (!deferredPrompt) {
+        alert(es
+          ? "Usa el menú de tu navegador y elige “Instalar XOXO Avenue” o “Agregar a pantalla de inicio”."
+          : "Use your browser menu and choose “Install XOXO Avenue” or “Add to Home Screen”.");
+        return;
+      }
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      box.classList.remove("show");
+    });
+  }
+
+  closeBtn.addEventListener("click", function(){
+    box.classList.remove("show");
+    sessionStorage.setItem("xoxoPwaInstallDismissed","1");
+  });
+
+  window.addEventListener("appinstalled", function(){
+    box.classList.remove("show");
+    deferredPrompt = null;
+  });
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("/service-worker.js").catch(function(){});
+    });
+  }
+})();
+</script>
+
 </body>
                     </html>
