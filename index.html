@@ -12516,5 +12516,117 @@ function showPage(pageId) {
 })();
 </script>
 
+
+<!-- XOXO AVENUE WEB PUSH — subscription opt-in -->
+<style id="xoxoPushStyles">
+.xoxo-push-card{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147482999;width:min(92vw,520px);display:none;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:rgba(20,13,52,.96);color:#fff;border:1px solid rgba(173,102,255,.48);box-shadow:0 16px 46px rgba(0,0,0,.35);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font-family:inherit}
+.xoxo-push-card.show{display:flex}.xoxo-push-icon{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;font-size:25px;background:linear-gradient(135deg,#ff3fb4,#7157ff);flex:0 0 48px}.xoxo-push-copy{min-width:0;flex:1}.xoxo-push-title{font-weight:800;font-size:14px;line-height:1.2;margin-bottom:3px}.xoxo-push-text{font-size:12px;line-height:1.35;color:rgba(255,255,255,.78)}.xoxo-push-btn{border:0;border-radius:999px;padding:9px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,#ff3fb4,#7157ff)}.xoxo-push-close{border:0;background:transparent;color:#fff;font-size:20px;line-height:1;padding:5px;cursor:pointer;opacity:.8}
+@media(max-width:520px){.xoxo-push-card{left:12px;right:12px;bottom:12px;transform:none;width:auto}}
+</style>
+<div id="xoxoPushCard" class="xoxo-push-card" role="status" aria-live="polite">
+  <div class="xoxo-push-icon">🔔</div>
+  <div class="xoxo-push-copy">
+    <div class="xoxo-push-title">Enable notifications</div>
+    <div class="xoxo-push-text">Get XOXO Avenue notifications on this device.</div>
+  </div>
+  <button type="button" id="xoxoPushEnable" class="xoxo-push-btn">Enable</button>
+  <button type="button" id="xoxoPushClose" class="xoxo-push-close" aria-label="Close">×</button>
+</div>
+<script id="xoxoPushSubscriptionScript">
+(function(){
+  const PUSH_API = "https://xoxo-push-app.paredesarixon.workers.dev";
+  const card = document.getElementById("xoxoPushCard");
+  const enableBtn = document.getElementById("xoxoPushEnable");
+  const closeBtn = document.getElementById("xoxoPushClose");
+  if (!card || !enableBtn || !closeBtn) return;
+
+  function b64ToUint8Array(base64String){
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(ch => ch.charCodeAt(0)));
+  }
+
+  async function saveSubscription(subscription){
+    if (!currentUser) throw new Error("Please log in first.");
+    const json = subscription.toJSON();
+    const { error } = await supabaseClient.from("push_subscriptions").upsert({
+      user_id: currentUser.id,
+      endpoint: json.endpoint,
+      p256dh: json.keys?.p256dh || "",
+      auth: json.keys?.auth || "",
+      updated_at: new Date().toISOString()
+    }, { onConflict: "endpoint" });
+    if (error) throw error;
+  }
+
+  async function getRegistration(){
+    let registration = await navigator.serviceWorker.getRegistration("/");
+    if (!registration) registration = await navigator.serviceWorker.register("/service-worker.js");
+    await navigator.serviceWorker.ready;
+    return registration;
+  }
+
+  async function alreadySubscribed(){
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
+    const registration = await navigator.serviceWorker.getRegistration("/");
+    if (!registration) return false;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return false;
+    if (currentUser) await saveSubscription(subscription);
+    return true;
+  }
+
+  async function maybeShowPushCard(){
+    if (!currentUser) return;
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    if (Notification.permission === "denied") return;
+    try {
+      if (await alreadySubscribed()) return;
+    } catch (e) { console.warn("Push subscription check:", e); }
+    if (sessionStorage.getItem("xoxoPushDismissed") !== "1") card.classList.add("show");
+  }
+
+  enableBtn.addEventListener("click", async function(){
+    enableBtn.disabled = true;
+    const oldText = enableBtn.textContent;
+    enableBtn.textContent = "...";
+    try {
+      if (!currentUser) throw new Error("Please log in first.");
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") throw new Error("Notification permission was not granted.");
+      const keyResponse = await fetch(PUSH_API + "/vapid-public-key", { cache: "no-store" });
+      const keyData = await keyResponse.json();
+      if (!keyResponse.ok || !keyData.publicKey) throw new Error("Could not load the VAPID public key.");
+      const registration = await getRegistration();
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: b64ToUint8Array(keyData.publicKey)
+        });
+      }
+      await saveSubscription(subscription);
+      card.classList.remove("show");
+      alert("Notifications are enabled for XOXO Avenue 🔔");
+    } catch (error) {
+      console.error("XOXO Push:", error);
+      alert(error?.message || "Could not enable notifications.");
+    } finally {
+      enableBtn.disabled = false;
+      enableBtn.textContent = oldText;
+    }
+  });
+
+  closeBtn.addEventListener("click", function(){
+    card.classList.remove("show");
+    sessionStorage.setItem("xoxoPushDismissed", "1");
+  });
+
+  window.addEventListener("load", function(){ setTimeout(maybeShowPushCard, 2200); });
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden) setTimeout(maybeShowPushCard, 700); });
+})();
+</script>
+
 </body>
                     </html>
