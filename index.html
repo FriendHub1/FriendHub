@@ -12633,26 +12633,43 @@ function showPage(pageId) {
     testBtn.disabled = true;
     const oldText = testBtn.textContent;
     testBtn.textContent = "Sending...";
+    let stage = "starting";
     try {
+      stage = "reading Supabase session";
       const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
-      if (sessionError) throw sessionError;
-      if (!session?.access_token) throw new Error("Please log in first.");
+      if (sessionError) throw new Error("Supabase session error: " + sessionError.message);
+      if (!session?.access_token) throw new Error("No Supabase access token. Please log in first.");
 
-      const response = await fetch(PUSH_API + "/test", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + session.access_token,
-          "Content-Type": "application/json"
-        }
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.ok) {
-        throw new Error(data.error || "Test notification failed.");
+      stage = "sending POST /test";
+      let response;
+      try {
+        response = await fetch(PUSH_API + "/test", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + session.access_token,
+            "Content-Type": "application/json"
+          }
+        });
+      } catch (fetchError) {
+        throw new Error("Fetch failed before a response was received: " + (fetchError?.message || String(fetchError)));
       }
-      alert("Test push sent 🔔");
+
+      stage = "reading Worker response";
+      const raw = await response.text();
+      let data = {};
+      try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
+
+      if (!response.ok || !data.ok) {
+        throw new Error(
+          "Worker HTTP " + response.status +
+          (data.error ? ": " + data.error : raw ? ": " + raw.slice(0, 180) : "")
+        );
+      }
+
+      alert("Test push sent 🔔\nHTTP " + response.status + "\nSent: " + (data.sent ?? "?") + "\nFailed: " + (data.failed ?? 0));
     } catch (error) {
-      console.error("XOXO Push test:", error);
-      alert(error?.message || "Could not send the test notification.");
+      console.error("XOXO Push diagnostic:", stage, error);
+      alert("Push diagnostic\nStage: " + stage + "\nError: " + (error?.message || String(error)));
     } finally {
       testBtn.disabled = false;
       testBtn.textContent = oldText;
