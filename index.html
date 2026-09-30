@@ -12663,6 +12663,7 @@ function showPage(pageId) {
         const details = [
           data.error ? "Error: " + data.error : "",
           data.detail ? "Detail: " + data.detail : "",
+          data.authDiagnostic ? "Auth diagnostic: " + data.authDiagnostic : "",
           data.stage ? "Worker stage: " + data.stage : "",
           data.status ? "Upstream status: " + data.status : "",
           data.body ? "Upstream body: " + String(data.body).slice(0, 500) : "",
