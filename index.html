@@ -12660,9 +12660,17 @@ function showPage(pageId) {
       try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
 
       if (!response.ok || !data.ok) {
+        const details = [
+          data.error ? "Error: " + data.error : "",
+          data.detail ? "Detail: " + data.detail : "",
+          data.stage ? "Worker stage: " + data.stage : "",
+          data.status ? "Upstream status: " + data.status : "",
+          data.body ? "Upstream body: " + String(data.body).slice(0, 500) : "",
+          (!data.error && !data.detail && raw) ? "Raw: " + raw.slice(0, 700) : ""
+        ].filter(Boolean).join("\n");
         throw new Error(
           "Worker HTTP " + response.status +
-          (data.error ? ": " + data.error : raw ? ": " + raw.slice(0, 180) : "")
+          (details ? "\n" + details : "")
         );
       }
 
