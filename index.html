@@ -9757,7 +9757,7 @@
 
                                     if (!message || !message.content || parseDmGifContent(message.content)) return;
 
-                                    const targetLanguage = localStorage.getItem(XOXO_TRANSLATION_LANGUAGE_KEY) || (getFriendHubLanguage() === "es" ? "Spanish" : "English");
+                                    const targetLanguage = getFriendHubLanguage() === "es" ? "Spanish" : "English";
                                     const originalButtonHtml = button ? button.innerHTML : "";
 
                                     if (button) {
@@ -10662,6 +10662,30 @@
                                     }
 
                                     if (!content && !attachment) return;
+
+                                    /* BLOCK USER — the blocker also cannot send DMs until they unblock. */
+                                    const { data: myDmBlock, error: myDmBlockError } = await supabaseClient
+                                      .from("user_blocks")
+                                      .select("id")
+                                      .eq("blocker_id", currentUser.id)
+                                      .eq("blocked_id", currentDmUserId)
+                                      .maybeSingle();
+
+                                    if (myDmBlockError) {
+                                    console.error("DM block check error:", myDmBlockError);
+                                    setDmStatus(getFriendHubLanguage() === "es"
+                                      ? "No se pudo comprobar el estado de bloqueo."
+                                      : "Could not check block status.", true);
+                                    return;
+                                    }
+
+                                    if (myDmBlock) {
+                                    setDmStatus(getFriendHubLanguage() === "es"
+                                      ? "No puedes enviar mensajes a este usuario mientras lo tengas bloqueado."
+                                      : "You can't send messages to this user while you have them blocked.", true);
+                                    return;
+                                    }
+
                                     /* Prime Web Audio while this send action is still a user gesture (important on iPhone/Safari). */
                                     prepareDmSendSound();
                                     if (content.length > 2000) {
