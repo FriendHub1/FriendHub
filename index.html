@@ -9409,13 +9409,6 @@
                                     openPublicProfile(String(currentDmUserId));
                                     }
 
-                                    function handleReceivedDmBubbleProfileClick(event) {
-                                    if (!event) return;
-                                    const interactive = event.target?.closest?.("button, a, input, textarea, select, video, audio, .dm-attachment, .dm-translate-wrap, .dm-replied-message, .dm-reactions");
-                                    if (interactive) return;
-                                    openCurrentDmPublicProfile();
-                                    }
-
                                     async function closeDirectChat() {
                                     stopDmPresenceRefresh();
                                     stopDmChatRefresh();
@@ -9911,7 +9904,7 @@
                                     const avatarPhoto = mine ? (currentProfile?.profile_photo || "") : (currentDmProfilePhoto || "");
                                     const avatarUsername = mine ? (currentProfile?.username || "@You") : (currentDmUsername || "@User");
                                     const avatarInitial = String(avatarUsername).replace(/^@/, "").trim().charAt(0).toUpperCase() || "?";
-                                    const avatarHtml = `<span class="dm-message-avatar" aria-hidden="true">${
+                                    const avatarHtml = `<span class="dm-message-avatar"${mine ? ` aria-hidden="true"` : ` onclick="openCurrentDmPublicProfile()" role="button" tabindex="0" aria-label="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}" title="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}" style="cursor:pointer;"`}>${
                                     avatarPhoto
                                     ? `<img src="${escapeHtmlAttribute(avatarPhoto)}" alt="">`
                                     : escapeHtml(avatarInitial)
@@ -9929,7 +9922,7 @@
                                     return `
                                     <div class="dm-row ${mine ? "mine" : "theirs"}" data-dm-message-id="${escapeHtmlAttribute(String(message.id))}" data-created-at="${escapeHtmlAttribute(String(message.created_at || ""))}">
                                     ${mine ? "" : avatarHtml}
-                                    <div class="dm-bubble"${mine ? "" : ` onclick="handleReceivedDmBubbleProfileClick(event)" role="button" tabindex="0" title="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}"`}>
+                                    <div class="dm-bubble">
                                     ${replyHtml}
                                     ${attachmentHtml}
                                     ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text">${escapeHtml(message.content)}</div>${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
