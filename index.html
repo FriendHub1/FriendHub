@@ -7856,7 +7856,8 @@
 
                                     if (url) {
                                     const safeUrl = escapeHtmlAttribute(url);
-                                    html += `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer nofollow" class="xoxo-safe-link" onclick="event.stopPropagation()">${escapeHtml(url)}</a>`;
+                                    const linkTarget = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true ? "_top" : "_blank";
+                                    html += `<a href="${safeUrl}" target="${linkTarget}" rel="noopener noreferrer nofollow" class="xoxo-safe-link" onclick="event.stopPropagation()">${escapeHtml(url)}</a>`;
                                     }
                                     html += renderPostTextSegment(trailing);
                                     lastIndex = match.index + match[0].length;
@@ -12074,7 +12075,8 @@ async function openPublicProfile(userId) {
 
                                     if (url) {
                                     const safeUrl = escapeHtmlAttribute(url);
-                                    html += `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer nofollow" class="xoxo-safe-link">${escapeHtml(url)}</a>`;
+                                    const linkTarget = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true ? "_top" : "_blank";
+                                    html += `<a href="${safeUrl}" target="${linkTarget}" rel="noopener noreferrer nofollow" class="xoxo-safe-link">${escapeHtml(url)}</a>`;
                                     }
                                     html += escapeHtml(trailing);
                                     lastIndex = match.index + match[0].length;
