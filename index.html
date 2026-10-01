@@ -8409,6 +8409,18 @@ async function openPublicProfile(userId) {
                                     if (content) content.innerHTML = '<div class="empty-state">This profile could not be loaded.</div>';
                                     return;
                                     }
+
+                                    /* XOXO Avenue — Profile Visits
+                                       Record a successful visit only when viewing another user's profile.
+                                       Supabase handles repeat visits through record_profile_view(). */
+                                    if (String(currentUser.id) !== String(userId)) {
+                                    const { error: profileViewError } = await supabaseClient
+                                    .rpc("record_profile_view", { target_profile_id: String(userId) });
+                                    if (profileViewError) {
+                                    console.error("Profile visit record error:", profileViewError);
+                                    }
+                                    }
+
                                     const [followersResult, followingResult, myFollowResult, myBlockResult, presenceResult] = await Promise.all([
                                     supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("following_id", String(userId)),
                                     supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("follower_id", String(userId)),
