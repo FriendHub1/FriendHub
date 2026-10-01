@@ -4889,6 +4889,27 @@
                             <button type="button" class="xoxo-dm-format-option" aria-label="Italic" title="Italic"><em>I</em></button>
                             <button type="button" class="xoxo-dm-format-option" aria-label="Underline" title="Underline"><u>U</u></button>
                             <button type="button" class="xoxo-dm-format-option" aria-label="Strikethrough" title="Strikethrough"><s>S</s></button>
+                        <div class="xoxo-dm-color-wrap">
+                          <button id="dmColorButton" type="button" class="xoxo-dm-format-option xoxo-dm-color-button" aria-label="Text color" title="Text color" aria-expanded="false" onclick="toggleDmColorPalette(event)">🎨</button>
+                          <div id="dmColorPalette" class="xoxo-dm-color-palette" style="display:none;" aria-label="Text color palette">
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#ffffff" aria-label="White" onclick="setDmTextColor('#ffffff',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#d1d5db" aria-label="Silver" onclick="setDmTextColor('#d1d5db',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#111827" aria-label="Black" onclick="setDmTextColor('#111827',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#ff3fd1" aria-label="Pink" onclick="setDmTextColor('#ff3fd1',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#ef4444" aria-label="Red" onclick="setDmTextColor('#ef4444',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#f97316" aria-label="Orange" onclick="setDmTextColor('#f97316',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#facc15" aria-label="Yellow" onclick="setDmTextColor('#facc15',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#22c55e" aria-label="Green" onclick="setDmTextColor('#22c55e',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#14b8a6" aria-label="Teal" onclick="setDmTextColor('#14b8a6',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#18c8ff" aria-label="Cyan" onclick="setDmTextColor('#18c8ff',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#3b82f6" aria-label="Blue" onclick="setDmTextColor('#3b82f6',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#6366f1" aria-label="Indigo" onclick="setDmTextColor('#6366f1',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#8b5cff" aria-label="Purple" onclick="setDmTextColor('#8b5cff',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#a855f7" aria-label="Violet" onclick="setDmTextColor('#a855f7',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#ec4899" aria-label="Rose" onclick="setDmTextColor('#ec4899',event)"></button>
+                            <button type="button" class="xoxo-dm-color-swatch" style="--swatch:#84cc16" aria-label="Lime" onclick="setDmTextColor('#84cc16',event)"></button>
+                          </div>
+                        </div>
                             </div>
                             </div>
                             <div id="dmAttachmentPreview" class="dm-attachment-preview" style="display:none;"></div>
@@ -12711,6 +12732,20 @@
         .xoxo-dm-format-option{width:34px;height:34px;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:rgba(255,255,255,.07);color:#fff;font-size:1rem;cursor:pointer}
         .xoxo-dm-format-option:hover{background:rgba(139,92,255,.22)}
         .xoxo-dm-format-option.xoxo-format-active{background:rgba(139,92,255,.34);border-color:rgba(139,92,255,.95);box-shadow:0 0 12px rgba(139,92,255,.25)}
+        .xoxo-dm-color-wrap{position:relative;display:flex}
+        .xoxo-dm-color-palette{
+          position:absolute;right:0;bottom:42px;z-index:60;
+          grid-template-columns:repeat(4,30px);gap:7px;padding:9px;
+          border:1px solid rgba(139,92,255,.65);border-radius:13px;
+          background:rgba(12,20,54,.98);box-shadow:0 14px 34px rgba(0,0,0,.34)
+        }
+        .xoxo-dm-color-swatch{
+          width:30px;height:30px;padding:0;border-radius:8px;
+          border:2px solid rgba(255,255,255,.30);background:var(--swatch);cursor:pointer
+        }
+        .xoxo-dm-color-swatch:hover{transform:scale(1.08);border-color:#fff}
+        .xoxo-dm-color-button.xoxo-color-selected{box-shadow:0 0 0 2px var(--dm-selected-color,#8b5cff) inset,0 0 12px rgba(139,92,255,.25)}
+
         </style>
         <script>
         function toggleDmBoldPreview(event){
@@ -12722,6 +12757,32 @@
           button.setAttribute("aria-pressed",active?"true":"false");
           button.classList.toggle("xoxo-format-active",active);
           input.style.fontWeight=active?"700":"400";
+          input.focus();
+        }
+
+        function toggleDmColorPalette(event){
+          if(event){event.preventDefault();event.stopPropagation();}
+          const palette=document.getElementById("dmColorPalette");
+          const button=document.getElementById("dmColorButton");
+          if(!palette||!button)return;
+          const opening=palette.style.display==="none"||!palette.style.display;
+          palette.style.display=opening?"grid":"none";
+          button.setAttribute("aria-expanded",opening?"true":"false");
+        }
+
+        function setDmTextColor(color,event){
+          if(event){event.preventDefault();event.stopPropagation();}
+          const input=document.getElementById("dmInput");
+          const palette=document.getElementById("dmColorPalette");
+          const button=document.getElementById("dmColorButton");
+          if(!input)return;
+          input.style.color=color;
+          if(button){
+            button.classList.add("xoxo-color-selected");
+            button.style.setProperty("--dm-selected-color",color);
+            button.setAttribute("aria-expanded","false");
+          }
+          if(palette)palette.style.display="none";
           input.focus();
         }
 
