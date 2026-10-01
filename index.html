@@ -9757,7 +9757,7 @@
 
                                     if (!message || !message.content || parseDmGifContent(message.content)) return;
 
-                                    const targetLanguage = getFriendHubLanguage() === "es" ? "Spanish" : "English";
+                                    const targetLanguage = localStorage.getItem(XOXO_TRANSLATION_LANGUAGE_KEY) || (getFriendHubLanguage() === "es" ? "Spanish" : "English");
                                     const originalButtonHtml = button ? button.innerHTML : "";
 
                                     if (button) {
