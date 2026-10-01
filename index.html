@@ -10949,10 +10949,10 @@
                                     : initial;
                                     const icon = notificationTypeIcon(String(item.type || ""));
                                     const clickAction = item.type === "follow"
-                                    ? `openFollowNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}')`
+                                    ? `openFollowNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}', '${escapeHtmlAttribute(String(item.id || ""))}')`
                                     : item.type === "dm"
-                                    ? `openDmNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}')`
-                                    : `openNotification('${escapeHtmlAttribute(String(item.post_id || ""))}', '${escapeHtmlAttribute(String(item.type || ""))}', '${escapeHtmlAttribute(String(item.actor_id || ""))}')`;
+                                    ? `openDmNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}', '${escapeHtmlAttribute(String(item.id || ""))}')`
+                                    : `openNotification('${escapeHtmlAttribute(String(item.post_id || ""))}', '${escapeHtmlAttribute(String(item.type || ""))}', '${escapeHtmlAttribute(String(item.actor_id || ""))}', '${escapeHtmlAttribute(String(item.id || ""))}')`;
                                     return `
                                     <div class="notification-item ${item.is_read ? "" : "unread"}" onclick="${clickAction}" role="button" tabindex="0">
                                     <div class="notification-avatar">${avatar}<span class="notification-type-icon">${icon}</span></div>
@@ -10964,7 +10964,32 @@
                                     </div>`;
                                     }).join("");
                                     }
-                                    async function openDmNotification(actorId) {
+                                    async function markNotificationAsRead(notificationId) {
+                                    if (!currentUser || !notificationId) return;
+                                    const target = notifications.find(item => String(item.id) === String(notificationId));
+                                    if (!target || target.is_read) return;
+
+                                    const { error } = await supabaseClient
+                                    .from("notifications")
+                                    .update({ is_read: true })
+                                    .eq("id", String(notificationId))
+                                    .eq("user_id", currentUser.id);
+
+                                    if (error) {
+                                    console.error("Mark notification read error:", error);
+                                    return;
+                                    }
+
+                                    notifications = notifications.map(item =>
+                                    String(item.id) === String(notificationId)
+                                    ? { ...item, is_read: true }
+                                    : item
+                                    );
+                                    renderNotifications();
+                                    }
+
+                                    async function openDmNotification(actorId, notificationId) {
+                                    await markNotificationAsRead(notificationId);
                                     const panel = document.getElementById("notificationPanel");
                                     if (panel) panel.classList.remove("open");
                                     if (!currentUser || !actorId || String(actorId) === String(currentUser.id)) return;
@@ -10987,13 +11012,15 @@
                                     );
                                     }
 
-                                    async function openFollowNotification(actorId) {
+                                    async function openFollowNotification(actorId, notificationId) {
+                                    await markNotificationAsRead(notificationId);
                                     const panel = document.getElementById("notificationPanel");
                                     if (panel) panel.classList.remove("open");
                                     if (!actorId) return;
                                     await openPublicProfile(String(actorId));
                                     }
-                                    async function openNotification(postId, type, actorId) {
+                                    async function openNotification(postId, type, actorId, notificationId) {
+                                    await markNotificationAsRead(notificationId);
                                     const panel = document.getElementById("notificationPanel");
                                     if (panel) panel.classList.remove("open");
                                     if (type === "follow") {
@@ -11020,11 +11047,6 @@
                                     panel.classList.toggle("open");
                                     if (opening) {
                                     await loadNotifications();
-                                    setTimeout(() => {
-                                    if (document.getElementById("notificationPanel")?.classList.contains("open")) {
-                                    markNotificationsAsRead();
-                                    }
-                                    }, 1800);
                                     }
                                     }
                                     async function markNotificationsAsRead() {
