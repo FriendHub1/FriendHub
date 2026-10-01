@@ -2079,6 +2079,33 @@
                                       border-bottom: 1px solid var(--border);
                                     }
                                     .dm-back-btn { padding: 9px 13px; }
+                                    .dm-chat-profile-link {
+                                      display: flex;
+                                      align-items: center;
+                                      gap: 10px;
+                                      min-width: 0;
+                                      padding: 0;
+                                      border: 0;
+                                      background: transparent;
+                                      color: inherit;
+                                      text-align: left;
+                                      cursor: pointer;
+                                    }
+                                    .dm-chat-profile-avatar {
+                                      width: 42px;
+                                      height: 42px;
+                                      flex: 0 0 42px;
+                                      border-radius: 50%;
+                                      display: inline-flex;
+                                      align-items: center;
+                                      justify-content: center;
+                                      overflow: hidden;
+                                      background: var(--card);
+                                      border: 1px solid var(--border);
+                                      font-weight: 800;
+                                    }
+                                    .dm-chat-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+                                    .dm-chat-profile-text { min-width: 0; }
                                     .dm-chat-username { font-weight: 800; font-size: 1.05rem; }
                                     .dm-chat-private { font-size: .82rem; opacity: .65; margin-top: 2px; }
                                     .dm-messages {
@@ -4917,12 +4944,15 @@
                                     <div id="dmChat" class="dm-chat" style="display:none;">
                                     <div class="dm-chat-header">
                                     <button class="btn btn-secondary dm-back-btn" type="button" onclick="closeDirectChat()">&#8592; Back</button>
-                                    <div>
-                                    <div id="dmChatUsername" class="dm-chat-username">@User</div>
-                                    <div id="dmChatPresence" class="friendhub-presence friendhub-presence-dm">—</div>
-                                    <div id="dmTypingIndicator" class="dm-typing-indicator" aria-live="polite"></div>
-                                    <div class="dm-chat-private">Private conversation</div>
-                                    </div>
+                                    <button id="dmChatProfileLink" class="dm-chat-profile-link" type="button" onclick="openCurrentDmPublicProfile()" aria-label="Open user profile" title="Open profile">
+                                    <span id="dmChatProfileAvatar" class="dm-chat-profile-avatar" aria-hidden="true">U</span>
+                                    <span class="dm-chat-profile-text">
+                                    <span id="dmChatUsername" class="dm-chat-username">@User</span>
+                                    <span id="dmChatPresence" class="friendhub-presence friendhub-presence-dm">—</span>
+                                    <span id="dmTypingIndicator" class="dm-typing-indicator" aria-live="polite"></span>
+                                    <span class="dm-chat-private">Private conversation</span>
+                                    </span>
+                                    </button>
                                     <button type="button" class="dm-chat-delete-button" onclick="openDmDeleteOptions()" title="Delete conversation" aria-label="Delete conversation">🗑️</button>
                                     </div>
                                     <div id="dmMessages" class="dm-messages"></div>
@@ -9347,10 +9377,17 @@
                                     const empty = document.getElementById("dmEmptyState");
                                     const chat = document.getElementById("dmChat");
                                     const name = document.getElementById("dmChatUsername");
+                                    const avatar = document.getElementById("dmChatProfileAvatar");
                                     const input = document.getElementById("dmInput");
                                     if (empty) empty.style.display = "none";
                                     if (chat) chat.style.display = "block";
                                     if (name) name.textContent = currentDmUsername;
+                                    if (avatar) {
+                                    const initial = String(currentDmUsername || "@User").replace(/^@/, "").trim().charAt(0).toUpperCase() || "U";
+                                    avatar.innerHTML = currentDmProfilePhoto
+                                      ? `<img src="${escapeHtmlAttribute(currentDmProfilePhoto)}" alt="">`
+                                      : escapeHtml(initial);
+                                    }
                                     if (input) {
                                     input.value = "";
                                     input.placeholder = getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : "Write a message...";
@@ -9365,6 +9402,11 @@
                                     startDmPresenceRefresh();
                                     startDmChatRefresh();
                                     startDmTypingRealtime();
+                                    }
+
+                                    function openCurrentDmPublicProfile() {
+                                    if (!currentDmUserId) return;
+                                    openPublicProfile(String(currentDmUserId));
                                     }
 
                                     async function closeDirectChat() {
