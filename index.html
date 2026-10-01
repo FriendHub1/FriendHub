@@ -4828,6 +4828,35 @@
                                     </div>
                                     </div>
                                     <div class="form-group">
+                                    <label for="preferredTranslationLanguage">
+                                    🌐 Preferred translation language
+                                    </label>
+                                    <select id="preferredTranslationLanguage" onchange="savePreferredTranslationLanguage(this.value)">
+                                    <option value="Spanish">🇪🇸 Español</option>
+                                    <option value="English">🇺🇸 English</option>
+                                    <option value="Portuguese">🇧🇷 Português</option>
+                                    <option value="French">🇫🇷 Français</option>
+                                    <option value="Italian">🇮🇹 Italiano</option>
+                                    <option value="German">🇩🇪 Deutsch</option>
+                                    <option value="Dutch">🇳🇱 Nederlands</option>
+                                    <option value="Polish">🇵🇱 Polski</option>
+                                    <option value="Russian">🇷🇺 Русский</option>
+                                    <option value="Ukrainian">🇺🇦 Українська</option>
+                                    <option value="Turkish">🇹🇷 Türkçe</option>
+                                    <option value="Arabic">🇸🇦 العربية</option>
+                                    <option value="Hindi">🇮🇳 हिन्दी</option>
+                                    <option value="Chinese">🇨🇳 中文</option>
+                                    <option value="Japanese">🇯🇵 日本語</option>
+                                    <option value="Korean">🇰🇷 한국어</option>
+                                    <option value="Indonesian">🇮🇩 Bahasa Indonesia</option>
+                                    <option value="Vietnamese">🇻🇳 Tiếng Việt</option>
+                                    <option value="Thai">🇹🇭 ไทย</option>
+                                    </select>
+                                    <div class="help-text">
+                                    Choose the language you want message translations to use. This preference is saved on this device.
+                                    </div>
+                                    </div>
+                                    <div class="form-group">
                                     <label>
                                     Languages
                                     </label>
@@ -9681,6 +9710,32 @@
                                     <span class="dm-checks">✓✓</span>
                                     </div>`;
                                     }
+
+                                    /* =========================================================
+                                    XOXO AVENUE — PREFERRED TRANSLATION LANGUAGE
+                                    Visual preference only for now. Saved locally on this device.
+                                    The working DM translation request is intentionally unchanged.
+                                    ========================================================= */
+                                    const XOXO_TRANSLATION_LANGUAGE_KEY = "xoxo_preferred_translation_language";
+
+                                    function savePreferredTranslationLanguage(language) {
+                                    if (!language) return;
+                                    localStorage.setItem(XOXO_TRANSLATION_LANGUAGE_KEY, language);
+                                    }
+
+                                    function loadPreferredTranslationLanguage() {
+                                    const select = document.getElementById("preferredTranslationLanguage");
+                                    if (!select) return;
+
+                                    const savedLanguage = localStorage.getItem(XOXO_TRANSLATION_LANGUAGE_KEY);
+                                    const fallbackLanguage = getFriendHubLanguage() === "es" ? "Spanish" : "English";
+                                    const preferredLanguage = savedLanguage || fallbackLanguage;
+
+                                    const hasOption = Array.from(select.options).some(option => option.value === preferredLanguage);
+                                    select.value = hasOption ? preferredLanguage : fallbackLanguage;
+                                    }
+
+                                    document.addEventListener("DOMContentLoaded", loadPreferredTranslationLanguage);
 
                                     async function toggleDmTranslationPreview(messageId, button) {
                                     const panel = document.getElementById(`dmTranslation-${messageId}`);
