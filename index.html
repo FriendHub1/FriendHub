@@ -9929,7 +9929,7 @@ async function openPublicProfile(userId) {
                                     <div class="dm-bubble">
                                     ${replyHtml}
                                     ${attachmentHtml}
-                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text">${escapeHtml(message.content)}</div>${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
+                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text">${renderSafeClickableLinks(message.content)}</div>${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
                                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
                                     <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
                                     ${renderDmSeenStatus(message, mine)}
@@ -12024,6 +12024,34 @@ async function openPublicProfile(userId) {
                                     .replace(/>/g, "&gt;")
                                     .replace(/"/g, "&quot;")
                                     .replace(/'/g, "&#039;");
+                                    }
+                                    function renderSafeClickableLinks(value) {
+                                    const raw = String(value ?? "");
+                                    const urlRegex = /https?:\/\/[^\s<>"']+/gi;
+                                    let html = "";
+                                    let lastIndex = 0;
+                                    let match;
+
+                                    while ((match = urlRegex.exec(raw)) !== null) {
+                                    html += escapeHtml(raw.slice(lastIndex, match.index));
+
+                                    let url = match[0];
+                                    let trailing = "";
+                                    while (/[.,!?;:)]$/.test(url)) {
+                                    trailing = url.slice(-1) + trailing;
+                                    url = url.slice(0, -1);
+                                    }
+
+                                    if (url) {
+                                    const safeUrl = escapeHtmlAttribute(url);
+                                    html += `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer nofollow" class="xoxo-safe-link">${escapeHtml(url)}</a>`;
+                                    }
+                                    html += escapeHtml(trailing);
+                                    lastIndex = match.index + match[0].length;
+                                    }
+
+                                    html += escapeHtml(raw.slice(lastIndex));
+                                    return html;
                                     }
                                     function escapeHtmlAttribute(value) {
                                     return escapeHtml(value);
