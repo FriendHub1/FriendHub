@@ -2109,6 +2109,28 @@
                                       border-color: rgba(139,92,255,.35);
                                     }
                                     .dm-text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
+                                    /* XOXO Avenue — visual shell for per-message translation. */
+                                    .dm-translate-wrap { margin-top: 7px; }
+                                    .dm-translate-button {
+                                      border: 0;
+                                      background: transparent;
+                                      color: var(--fh-primary);
+                                      padding: 2px 0;
+                                      font-size: .78rem;
+                                      font-weight: 700;
+                                      cursor: pointer;
+                                    }
+                                    .dm-translate-button:hover { text-decoration: underline; }
+                                    .dm-translation-preview {
+                                      display: none;
+                                      margin-top: 6px;
+                                      padding-top: 7px;
+                                      border-top: 1px solid var(--fh-border);
+                                      font-size: .88rem;
+                                      line-height: 1.45;
+                                      opacity: .82;
+                                    }
+                                    .dm-translation-preview.show { display: block; }
                                     .dm-time { font-size: .72rem; opacity: .58; margin-top: 5px; text-align: right; }
                                     .dm-composer {
                                       display: flex;
@@ -9660,6 +9682,16 @@
                                     </div>`;
                                     }
 
+                                    function toggleDmTranslationPreview(messageId, button) {
+                                    const panel = document.getElementById(`dmTranslation-${messageId}`);
+                                    if (!panel) return;
+                                    const show = !panel.classList.contains("show");
+                                    panel.classList.toggle("show", show);
+                                    if (button) button.innerHTML = show
+                                    ? `🌐 ${getFriendHubLanguage() === "es" ? "Mostrar original" : "Show original"}`
+                                    : `🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}`;
+                                    }
+
                                     async function renderDirectMessages(messages) {
                                     const container = document.getElementById("dmMessages");
                                     const buzzHistory = await loadDmBuzzHistory();
@@ -9732,7 +9764,7 @@
                                     <div class="dm-bubble">
                                     ${replyHtml}
                                     ${attachmentHtml}
-                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text">${escapeHtml(message.content)}</div>`) : ""}
+                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text">${escapeHtml(message.content)}</div>${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
                                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
                                     <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
                                     ${renderDmSeenStatus(message, mine)}
