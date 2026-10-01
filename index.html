@@ -9409,6 +9409,13 @@
                                     openPublicProfile(String(currentDmUserId));
                                     }
 
+                                    function handleReceivedDmBubbleProfileClick(event) {
+                                    if (!event) return;
+                                    const interactive = event.target?.closest?.("button, a, input, textarea, select, video, audio, .dm-attachment, .dm-translate-wrap, .dm-replied-message, .dm-reactions");
+                                    if (interactive) return;
+                                    openCurrentDmPublicProfile();
+                                    }
+
                                     async function closeDirectChat() {
                                     stopDmPresenceRefresh();
                                     stopDmChatRefresh();
@@ -9922,10 +9929,10 @@
                                     return `
                                     <div class="dm-row ${mine ? "mine" : "theirs"}" data-dm-message-id="${escapeHtmlAttribute(String(message.id))}" data-created-at="${escapeHtmlAttribute(String(message.created_at || ""))}">
                                     ${mine ? "" : avatarHtml}
-                                    <div class="dm-bubble">
+                                    <div class="dm-bubble"${mine ? "" : ` onclick="handleReceivedDmBubbleProfileClick(event)" role="button" tabindex="0" title="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}"`}>
                                     ${replyHtml}
                                     ${attachmentHtml}
-                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text"${mine ? "" : ` onclick="openCurrentDmPublicProfile()" role="button" tabindex="0" title="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}"`}>${escapeHtml(message.content)}</div>${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
+                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text">${escapeHtml(message.content)}</div>${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
                                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
                                     <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
                                     ${renderDmSeenStatus(message, mine)}
