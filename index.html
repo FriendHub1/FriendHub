@@ -9682,14 +9682,78 @@
                                     </div>`;
                                     }
 
-                                    function toggleDmTranslationPreview(messageId, button) {
+                                    async function toggleDmTranslationPreview(messageId, button) {
                                     const panel = document.getElementById(`dmTranslation-${messageId}`);
                                     if (!panel) return;
+
+                                    /* If this message was already translated, just show/hide the cached result. */
+                                    if (panel.dataset.translationReady === "1") {
                                     const show = !panel.classList.contains("show");
                                     panel.classList.toggle("show", show);
                                     if (button) button.innerHTML = show
-                                    ? `🌐 ${getFriendHubLanguage() === "es" ? "Mostrar original" : "Show original"}`
+                                    ? `🌐 ${getFriendHubLanguage() === "es" ? "Ocultar traducción" : "Hide translation"}`
                                     : `🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}`;
+                                    return;
+                                    }
+
+                                    const message = (window.__xoxoCurrentDmMessages || []).find(
+                                    item => String(item.id) === String(messageId)
+                                    );
+
+                                    if (!message || !message.content || parseDmGifContent(message.content)) return;
+
+                                    const targetLanguage = getFriendHubLanguage() === "es" ? "Spanish" : "English";
+                                    const originalButtonHtml = button ? button.innerHTML : "";
+
+                                    if (button) {
+                                    button.disabled = true;
+                                    button.innerHTML = `🌐 ${getFriendHubLanguage() === "es" ? "Traduciendo..." : "Translating..."}`;
+                                    }
+
+                                    panel.textContent = getFriendHubLanguage() === "es"
+                                    ? "Traduciendo mensaje..."
+                                    : "Translating message...";
+                                    panel.classList.add("show");
+
+                                    try {
+                                    const response = await fetch("https://xoxo-translate-app.paredesarixon.workers.dev/translate", {
+                                    method: "POST",
+                                    headers: {
+                                    "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify({
+                                    text: message.content,
+                                    targetLanguage
+                                    })
+                                    });
+
+                                    const data = await response.json().catch(() => ({}));
+
+                                    if (!response.ok || !data?.translation) {
+                                    throw new Error(data?.error || "Translation failed");
+                                    }
+
+                                    panel.textContent = data.translation;
+                                    panel.dataset.translationReady = "1";
+                                    panel.classList.add("show");
+
+                                    if (button) {
+                                    button.innerHTML = `🌐 ${getFriendHubLanguage() === "es" ? "Ocultar traducción" : "Hide translation"}`;
+                                    }
+                                    } catch (error) {
+                                    console.error("DM translation error:", error);
+                                    panel.textContent = getFriendHubLanguage() === "es"
+                                    ? "No se pudo traducir este mensaje. Inténtalo de nuevo."
+                                    : "Could not translate this message. Please try again.";
+                                    panel.dataset.translationReady = "0";
+                                    panel.classList.add("show");
+
+                                    if (button) {
+                                    button.innerHTML = originalButtonHtml || `🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}`;
+                                    }
+                                    } finally {
+                                    if (button) button.disabled = false;
+                                    }
                                     }
 
                                     async function renderDirectMessages(messages) {
