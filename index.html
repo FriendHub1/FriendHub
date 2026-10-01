@@ -7824,7 +7824,11 @@
                                     }
                                     }
                                     function renderTextWithMentions(value) {
-                                    let safe = escapeHtml(value || "");
+                                    const raw = String(value || "");
+                                    const urlRegex = /https?:\/\/[^\s<>"']+/gi;
+
+                                    function renderPostTextSegment(segment) {
+                                    let safe = escapeHtml(segment);
                                     safe = safe.replace(/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{1,20})(?![A-Za-z0-9_])/g, (match, prefix, username) => {
                                     const encoded = encodeURIComponent(username);
                                     return `${prefix}<span class="mention-link" role="button" tabindex="0" onclick="event.stopPropagation(); openMentionProfile(decodeURIComponent('${encoded}'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();openMentionProfile(decodeURIComponent('${encoded}'));}">${username}</span>`;
@@ -7834,6 +7838,32 @@
                                     return `${prefix}<a class="hashtag-link" href="#hashtag=${encoded}" data-hashtag="${encoded}" onclick="event.preventDefault();event.stopPropagation();openHashtag(decodeURIComponent(this.dataset.hashtag));">${hashtag}</a>`;
                                     });
                                     return safe;
+                                    }
+
+                                    let html = "";
+                                    let lastIndex = 0;
+                                    let match;
+
+                                    while ((match = urlRegex.exec(raw)) !== null) {
+                                    html += renderPostTextSegment(raw.slice(lastIndex, match.index));
+
+                                    let url = match[0];
+                                    let trailing = "";
+                                    while (/[.,!?;:)]$/.test(url)) {
+                                    trailing = url.slice(-1) + trailing;
+                                    url = url.slice(0, -1);
+                                    }
+
+                                    if (url) {
+                                    const safeUrl = escapeHtmlAttribute(url);
+                                    html += `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer nofollow" class="xoxo-safe-link" onclick="event.stopPropagation()">${escapeHtml(url)}</a>`;
+                                    }
+                                    html += renderPostTextSegment(trailing);
+                                    lastIndex = match.index + match[0].length;
+                                    }
+
+                                    html += renderPostTextSegment(raw.slice(lastIndex));
+                                    return html;
                                     }
 
                                     async function loadGlobalHashtagPosts(reset = false) {
