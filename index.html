@@ -987,6 +987,7 @@
                                     .public-profile-card { background:white; border:1px solid #e3e7ef; border-radius:18px; padding:28px; margin-bottom:25px; text-align:center; }
                                     .public-profile-avatar { width:110px; height:110px; border-radius:50%; margin:0 auto 12px; background:#eef0ff; color:#5865f2; display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:800; overflow:hidden; }
                                     .public-profile-avatar img { width:100%; height:100%; object-fit:cover; }
+.public-profile-avatar.has-photo{cursor:pointer}.profile-photo-viewer{position:fixed;inset:0;z-index:5000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.88)}.profile-photo-viewer.open{display:flex}.profile-photo-viewer-image{display:block;max-width:min(92vw,900px);max-height:88vh;width:auto;height:auto;object-fit:contain;border-radius:16px}.profile-photo-viewer-close{position:fixed;top:18px;right:18px;width:46px;height:46px;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:30px;display:grid;place-items:center;cursor:pointer;z-index:5001}
                                     .public-profile-username { font-size:28px; font-weight:800; margin-bottom:6px; }
                                     .public-profile-country { color:#667085; margin-bottom:10px; }
                                     .public-profile-bio { color:#475467; max-width:620px; margin:0 auto 18px; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
@@ -8350,7 +8351,10 @@
                                     }
                                     await openPublicProfile(String(profile.user_id));
                                     }
-                                    async function openPublicProfile(userId) {
+                                    function openProfilePhotoViewer(photoUrl){if(!photoUrl)return;const v=document.getElementById("profilePhotoViewer"),i=document.getElementById("profilePhotoViewerImage");if(!v||!i)return;i.src=String(photoUrl);v.classList.add("open");v.setAttribute("aria-hidden","false");document.body.style.overflow="hidden"}
+function closeProfilePhotoViewer(event,force=false){const v=document.getElementById("profilePhotoViewer"),i=document.getElementById("profilePhotoViewerImage");if(!v)return;if(!force&&event&&event.target!==v)return;v.classList.remove("open");v.setAttribute("aria-hidden","true");if(i)i.src="";document.body.style.overflow=""}
+
+async function openPublicProfile(userId) {
                                     if (!currentUser || !userId) { if (!currentUser) openAuth("login"); return; }
                                     currentPublicProfileUserId = String(userId);
                                     showPageWithoutReload("publicProfile");
@@ -8394,7 +8398,7 @@
                                     const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : initial;
                                     content.innerHTML = `
                                     <div class="public-profile-card">
-                                    <div class="public-profile-avatar">${avatar}</div>
+                                    <div class="public-profile-avatar${profile.profile_photo ? " has-photo" : ""}"${profile.profile_photo ? ` onclick="openProfilePhotoViewer('${escapeHtmlAttribute(profile.profile_photo)}')" role="button" tabindex="0" title="${getFriendHubLanguage() === "es" ? "Ver foto de perfil" : "View profile photo"}"` : ""}>${avatar}</div>
                                     <div class="public-profile-username">${escapeHtml(username)}</div>
                                     ${renderFriendHubPresence(presenceResult.data?.last_active_at || null, "friendhub-presence-profile")}
                                     <div class="public-profile-country">${escapeHtml(profile.country || "Country not added")}</div>
@@ -13098,5 +13102,6 @@
                 });
                 </script>
 
-                </body>
+                <div id="profilePhotoViewer" class="profile-photo-viewer" onclick="closeProfilePhotoViewer(event)" aria-hidden="true"><button type="button" class="profile-photo-viewer-close" onclick="closeProfilePhotoViewer(event,true)" aria-label="Close">&times;</button><img id="profilePhotoViewerImage" class="profile-photo-viewer-image" src="" alt="Profile photo" onclick="event.stopPropagation()"></div>
+</body>
                                     </html>
