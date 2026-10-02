@@ -5380,20 +5380,22 @@ if (!currentUser) {
 openAuth("login");
 return;
 }
-if (
-String(id).startsWith("sample-")
-) {
+
+if (String(id).startsWith("sample-")) {
 return;
 }
+
 const post =
 posts.find(
 item =>
 String(item.id) ===
 String(id)
 );
+
 if (!post) {
 return;
 }
+
 /*
 Always check Supabase first.
 This keeps the button synchronized with the
@@ -5411,6 +5413,7 @@ await supabaseClient
 .eq("post_id", id)
 .eq("user_id", currentUser.id)
 .maybeSingle();
+
 if (checkError) {
 console.error(
 "Check like error:",
@@ -5421,6 +5424,7 @@ alert(
 );
 return;
 }
+
 if (existingLike) {
 /*
 The Like already exists.
@@ -5435,6 +5439,7 @@ await supabaseClient
 .delete()
 .eq("post_id", id)
 .eq("user_id", currentUser.id);
+
 if (error) {
 console.error(
 "Remove like error:",
@@ -5445,6 +5450,7 @@ alert(
 );
 return;
 }
+
 } else {
 /*
 No Like exists yet, so create one.
@@ -5460,6 +5466,7 @@ id,
 user_id:
 currentUser.id
 });
+
 if (error) {
 /*
 PostgreSQL code 23505 / HTTP 409 means
@@ -5484,8 +5491,105 @@ alert(
 );
 return;
 }
+
+} else {
+
+/*
+====================================================
+CREATE LIKE NOTIFICATION + PUSH
+====================================================
+
+Only runs after a NEW Like was successfully
+inserted into post_likes.
+
+post.userId is the owner of the post.
+*/
+const targetUserId =
+String(post.userId || "").trim();
+
+const actorUsername =
+String(
+currentProfile?.username ||
+currentUser?.user_metadata?.username ||
+"@User"
+).trim();
+
+/*
+Do not notify yourself.
+*/
+if (
+targetUserId &&
+targetUserId !== String(currentUser.id)
+) {
+try {
+const {
+data: sessionData,
+error: sessionError
+} =
+await supabaseClient.auth.getSession();
+
+if (sessionError) {
+console.error(
+"Like notification session error:",
+sessionError
+);
+} else if (
+sessionData?.session?.access_token
+) {
+
+const pushResponse =
+await fetch(
+"https://xoxo-push-app.paredesarixon.workers.dev/notify-like",
+{
+method: "POST",
+headers: {
+"Authorization":
+`Bearer ${sessionData.session.access_token}`,
+"Content-Type":
+"application/json",
+"Origin":
+"https://xoxoavenue.com"
+},
+body: JSON.stringify({
+targetUserId,
+postId: String(id),
+actorUsername
+})
+}
+);
+
+const pushResult =
+await pushResponse.json()
+.catch(() => null);
+
+if (!pushResponse.ok) {
+console.error(
+"Like notification HTTP error:",
+pushResponse.status,
+pushResult
+);
+} else {
+console.log(
+"Like notification result:",
+pushResult
+);
 }
 }
+} catch (notificationError) {
+/*
+IMPORTANT:
+A notification/Push problem must NOT undo
+the Like that was already saved.
+*/
+console.error(
+"Like notification error:",
+notificationError
+);
+}
+}
+}
+}
+
 /*
 Reload everything from Supabase so the
 Like count and heart state are always
