@@ -11254,6 +11254,8 @@ async function openPublicProfile(userId) {
                                         return;
                                       }
 
+                                      let nowLiked = false;
+
                                       if (existing) {
                                         const { error } = await supabaseClient
                                           .from("post_likes")
@@ -11277,9 +11279,24 @@ async function openPublicProfile(userId) {
                                           console.error("Could not add like:", error);
                                           return;
                                         }
+                                        nowLiked = true;
                                       }
 
-                                      await loadPosts();
+                                      const post = posts.find(item => String(item.id) === String(id));
+                                      if (post) {
+                                        const previousLiked = !!post.liked;
+                                        post.liked = nowLiked;
+                                        post.likes = Math.max(0, Number(post.likes || 0) + (nowLiked === previousLiked ? 0 : (nowLiked ? 1 : -1)));
+                                      }
+
+                                      const postElement = document.getElementById(`post-${String(id)}`);
+                                      const likeButton = postElement?.querySelector('.post-action[onclick*="toggleLike"]');
+                                      if (likeButton && post) {
+                                        likeButton.classList.toggle("liked", !!post.liked);
+                                        likeButton.textContent = `${post.liked ? " Liked" : " Like"}${post.likes ? ` ${post.likes}` : ""}`;
+                                      }
+
+                                      loadPosts();
                                     }
                                     async function commentPost(id) {
                                     if (!currentUser) {
