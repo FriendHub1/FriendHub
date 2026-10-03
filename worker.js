@@ -27,25 +27,25 @@ async function getPublicProfile(userId) {
     );
 
     if (!response.ok) {
-      console.error(
-        "XOXO profile RPC failed:",
-        response.status,
-        await response.text()
+      const errorText = await response.text();
+
+      throw new Error(
+        `SUPABASE_RPC_${response.status}: ${errorText}`
       );
-      return null;
     }
 
     const rows = await response.json();
 
     if (!Array.isArray(rows) || !rows.length) {
-      console.error("XOXO profile RPC returned no profile:", userId);
-      return null;
+      throw new Error(
+        `SUPABASE_RPC_EMPTY: No public profile returned for ${userId}`
+      );
     }
 
     return rows[0];
   } catch (error) {
     console.error("XOXO profile RPC error:", error);
-    return null;
+    throw error;
   }
 }
 
@@ -56,7 +56,9 @@ function makeDescription(profile) {
     return bio.slice(0, 180);
   }
 
-  const lookingFor = String(profile?.looking_for || "").trim();
+  const lookingFor = String(
+    profile?.looking_for || ""
+  ).trim();
 
   if (lookingFor) {
     return `Looking for ${lookingFor} on XOXO Avenue.`;
@@ -66,10 +68,14 @@ function makeDescription(profile) {
 }
 
 function getProfileImageUrl(profile, origin, userId) {
-  const photo = String(profile?.profile_photo || "").trim();
+  const photo = String(
+    profile?.profile_photo || ""
+  ).trim();
 
   if (photo.startsWith("data:image/")) {
-    return `${origin}/profile-preview-image/${encodeURIComponent(userId)}`;
+    return `${origin}/profile-preview-image/${encodeURIComponent(
+      userId
+    )}`;
   }
 
   if (photo) {
@@ -106,7 +112,11 @@ function decodeBase64Image(dataUrl) {
       bytes,
     };
   } catch (error) {
-    console.error("XOXO base64 image decode failed:", error);
+    console.error(
+      "XOXO base64 image decode failed:",
+      error
+    );
+
     return null;
   }
 }
@@ -115,20 +125,22 @@ async function serveProfileImage(userId) {
   const profile = await getPublicProfile(userId);
 
   if (!profile) {
-    return new Response("Profile image not found", {
-      status: 404,
-      headers: {
-        "X-XOXO-Worker": "profile-image-profile-not-found",
-      },
-    });
+    return new Response(
+      "Profile image not found",
+      {
+        status: 404,
+        headers: {
+          "X-XOXO-Worker":
+            "profile-image-profile-not-found",
+        },
+      }
+    );
   }
 
-  const photo = String(profile.profile_photo || "").trim();
+  const photo = String(
+    profile.profile_photo || ""
+  ).trim();
 
-  /*
-   * If the profile already uses a normal public HTTPS image,
-   * redirect the crawler directly to it.
-   */
   if (
     photo.startsWith("https://") ||
     photo.startsWith("http://")
@@ -136,26 +148,27 @@ async function serveProfileImage(userId) {
     return Response.redirect(photo, 302);
   }
 
-  /*
-   * XOXO currently stores some profile photos as Base64 data URLs.
-   * Convert that stored image into a real HTTP image response.
-   */
   const decoded = decodeBase64Image(photo);
 
   if (!decoded) {
-    return new Response("Profile image not available", {
-      status: 404,
-      headers: {
-        "X-XOXO-Worker": "profile-image-invalid",
-      },
-    });
+    return new Response(
+      "Profile image not available",
+      {
+        status: 404,
+        headers: {
+          "X-XOXO-Worker":
+            "profile-image-invalid",
+        },
+      }
+    );
   }
 
   return new Response(decoded.bytes, {
     status: 200,
     headers: {
       "Content-Type": decoded.contentType,
-      "Cache-Control": "public, max-age=3600",
+      "Cache-Control":
+        "public, max-age=3600",
       "X-Content-Type-Options": "nosniff",
       "X-XOXO-Worker": "profile-image",
     },
@@ -164,6 +177,7 @@ async function serveProfileImage(userId) {
 
 function injectPreview(response, metadata) {
   return new HTMLRewriter()
+
     .on("title", {
       text(text) {
         text.replace(metadata.title);
@@ -184,18 +198,36 @@ function injectPreview(response, metadata) {
         element.append(
           `
 <meta property="og:type" content="profile">
-<meta property="og:title" content="${escapeHtml(metadata.title)}">
-<meta property="og:description" content="${escapeHtml(metadata.description)}">
-<meta property="og:image" content="${escapeHtml(metadata.image)}">
-<meta property="og:image:secure_url" content="${escapeHtml(metadata.image)}">
-<meta property="og:image:alt" content="${escapeHtml(metadata.title)}">
-<meta property="og:url" content="${escapeHtml(metadata.url)}">
+<meta property="og:title" content="${escapeHtml(
+            metadata.title
+          )}">
+<meta property="og:description" content="${escapeHtml(
+            metadata.description
+          )}">
+<meta property="og:image" content="${escapeHtml(
+            metadata.image
+          )}">
+<meta property="og:image:secure_url" content="${escapeHtml(
+            metadata.image
+          )}">
+<meta property="og:image:alt" content="${escapeHtml(
+            metadata.title
+          )}">
+<meta property="og:url" content="${escapeHtml(
+            metadata.url
+          )}">
 <meta property="og:site_name" content="XOXO Avenue">
 
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="${escapeHtml(metadata.title)}">
-<meta name="twitter:description" content="${escapeHtml(metadata.description)}">
-<meta name="twitter:image" content="${escapeHtml(metadata.image)}">
+<meta name="twitter:title" content="${escapeHtml(
+            metadata.title
+          )}">
+<meta name="twitter:description" content="${escapeHtml(
+            metadata.description
+          )}">
+<meta name="twitter:image" content="${escapeHtml(
+            metadata.image
+          )}">
 `,
           { html: true }
         );
@@ -210,58 +242,61 @@ export default {
     const url = new URL(request.url);
 
     /*
-     * ------------------------------------------------
-     * PUBLIC PROFILE IMAGE
-     * ------------------------------------------------
-     *
-     * Converts a Base64 profile photo stored in Supabase
-     * into a real HTTPS image that WhatsApp, Messages,
-     * Facebook and other crawlers can request.
+     * ==========================================
+     * PROFILE IMAGE ENDPOINT
+     * ==========================================
      */
+
     const imageMatch = url.pathname.match(
       /^\/profile-preview-image\/([0-9a-fA-F-]+)$/
     );
 
     if (imageMatch) {
-      const userId = decodeURIComponent(imageMatch[1]);
+      const userId =
+        decodeURIComponent(imageMatch[1]);
 
-      return serveProfileImage(userId);
+      try {
+        return await serveProfileImage(userId);
+      } catch (error) {
+        return new Response(
+          String(
+            error?.message ||
+              error ||
+              "Unknown profile image error"
+          ),
+          {
+            status: 500,
+            headers: {
+              "Content-Type":
+                "text/plain; charset=utf-8",
+              "Cache-Control": "no-store",
+              "X-XOXO-Worker":
+                "profile-image-debug-error",
+            },
+          }
+        );
+      }
     }
 
     /*
-     * ------------------------------------------------
+     * ==========================================
      * NORMAL XOXO PAGE
-     * ------------------------------------------------
+     * ==========================================
      */
-    const profileId = url.searchParams.get("profile");
+
+    const profileId =
+      url.searchParams.get("profile");
 
     if (!profileId) {
-      const response = await env.ASSETS.fetch(request);
+      const response =
+        await env.ASSETS.fetch(request);
 
-      const headers = new Headers(response.headers);
-      headers.set("X-XOXO-Worker", "normal-page");
+      const headers =
+        new Headers(response.headers);
 
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers,
-      });
-    }
-
-    /*
-     * ------------------------------------------------
-     * SHARED PROFILE
-     * ------------------------------------------------
-     */
-    const profile = await getPublicProfile(profileId);
-
-    if (!profile) {
-      const response = await env.ASSETS.fetch(request);
-
-      const headers = new Headers(response.headers);
       headers.set(
         "X-XOXO-Worker",
-        "profile-not-found"
+        "normal-page"
       );
 
       return new Response(response.body, {
@@ -272,9 +307,49 @@ export default {
     }
 
     /*
-     * Fetch the SPA index without carrying the profile
-     * query string into the static asset lookup.
+     * ==========================================
+     * SHARED PROFILE — DEBUG MODE
+     * ==========================================
      */
+
+    let profile;
+
+    try {
+      profile =
+        await getPublicProfile(profileId);
+    } catch (error) {
+      /*
+       * TEMPORARY:
+       * Return the exact Supabase error directly.
+       *
+       * Once we find the problem, this debug
+       * response will be removed.
+       */
+      return new Response(
+        String(
+          error?.message ||
+            error ||
+            "Unknown Supabase profile error"
+        ),
+        {
+          status: 500,
+          headers: {
+            "Content-Type":
+              "text/plain; charset=utf-8",
+            "Cache-Control": "no-store",
+            "X-XOXO-Worker":
+              "supabase-debug-error",
+          },
+        }
+      );
+    }
+
+    /*
+     * ==========================================
+     * FETCH XOXO INDEX
+     * ==========================================
+     */
+
     const indexRequest = new Request(
       `${url.origin}/`,
       request
@@ -284,7 +359,9 @@ export default {
       await env.ASSETS.fetch(indexRequest);
 
     const contentType =
-      assetResponse.headers.get("content-type") || "";
+      assetResponse.headers.get(
+        "content-type"
+      ) || "";
 
     if (!contentType.includes("text/html")) {
       const headers =
@@ -295,20 +372,30 @@ export default {
         "profile-non-html"
       );
 
-      return new Response(assetResponse.body, {
-        status: assetResponse.status,
-        statusText: assetResponse.statusText,
-        headers,
-      });
+      return new Response(
+        assetResponse.body,
+        {
+          status: assetResponse.status,
+          statusText:
+            assetResponse.statusText,
+          headers,
+        }
+      );
     }
 
-    const username =
-      String(
-        profile.username || "@XOXOAvenue"
-      ).trim();
+    /*
+     * ==========================================
+     * BUILD DYNAMIC PROFILE METADATA
+     * ==========================================
+     */
+
+    const username = String(
+      profile.username || "@XOXOAvenue"
+    ).trim();
 
     const metadata = {
-      title: `${username} · XOXO Avenue`,
+      title:
+        `${username} · XOXO Avenue`,
 
       description:
         makeDescription(profile),
@@ -326,6 +413,12 @@ export default {
         )}`,
     };
 
+    /*
+     * ==========================================
+     * INJECT OPEN GRAPH TAGS
+     * ==========================================
+     */
+
     const transformed =
       injectPreview(
         assetResponse,
@@ -335,10 +428,6 @@ export default {
     const headers =
       new Headers(transformed.headers);
 
-    /*
-     * Short cache because users can change their
-     * username, bio and profile photo.
-     */
     headers.set(
       "Cache-Control",
       "public, max-age=60"
