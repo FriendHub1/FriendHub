@@ -4791,7 +4791,7 @@
                                     placeholder="@username"
                                     readonly
                                     >
-                                    <button type="button" class="btn btn-secondary" id="changeUsernameBtn" onclick="startUsernameChange()" style="margin-top:10px;">
+                                    <button type="button" class="btn btn-secondary" id="changeUsernameBtn" ontouchstart="prepareUsernameInputForEdit()" onclick="startUsernameChange()" style="margin-top:10px;">
                                     ✏️ Change username
                                     </button>
                                     <div class="help-text" id="usernameChangeHelp">
@@ -6644,6 +6644,13 @@
                                     ? `You can change your username again in ${remaining} day${remaining === 1 ? "" : "s"}.`
                                     : "Your username is public. You can change it once every 30 days.";
                                     }
+                                    function prepareUsernameInputForEdit() {
+                                    if (!currentProfile || getUsernameCooldownDays() > 0) return;
+                                    const input = document.getElementById("username");
+                                    if (!input) return;
+                                    input.readOnly = false;
+                                    input.removeAttribute("readonly");
+                                    }
                                     function startUsernameChange() {
                                     if (!currentProfile) return;
                                     const remaining = getUsernameCooldownDays();
@@ -6653,9 +6660,12 @@
                                     return;
                                     }
                                     const input = document.getElementById("username");
+                                    if (!input) return;
                                     input.readOnly = false;
-                                    input.focus();
-                                    input.select();
+                                    input.removeAttribute("readonly");
+                                    input.focus({ preventScroll: true });
+                                    const end = input.value.length;
+                                    try { input.setSelectionRange(end, end); } catch (_) {}
                                     showProfileMessage("Enter your new username, then press Save Profile.", "success");
                                     }
                                     async function saveProfile() {
