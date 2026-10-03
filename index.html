@@ -4144,6 +4144,25 @@
                   line-height: 1.5;
                 }
 
+                #publicProfile .public-profile-guest-posts-note {
+                  margin: 22px 0 8px;
+                  padding: 18px 20px;
+                  border: 1px solid color-mix(in srgb,var(--fh-primary) 28%,var(--fh-border));
+                  border-radius: 18px;
+                  background: color-mix(in srgb,var(--fh-primary) 7%,var(--fh-surface));
+                  color: var(--fh-text);
+                  line-height: 1.5;
+                  text-align: center;
+                }
+                #publicProfile .public-profile-guest-posts-note strong {
+                  display: block;
+                  margin-bottom: 5px;
+                }
+                #publicProfile .public-profile-guest-posts-note span {
+                  opacity: .78;
+                  font-size: .94rem;
+                }
+
                 #publicProfile .public-profile-posts-title {
                   position: relative;
                   margin: 34px 0 18px;
@@ -8502,7 +8521,7 @@
 function closeProfilePhotoViewer(event,force=false){const v=document.getElementById("profilePhotoViewer"),i=document.getElementById("profilePhotoViewerImage");if(!v)return;if(!force&&event&&event.target!==v)return;v.classList.remove("open");v.setAttribute("aria-hidden","true");if(i)i.src="";document.body.style.overflow=""}
 
 async function openPublicProfile(userId) {
-                                    if (!currentUser || !userId) { if (!currentUser) openAuth("login"); return; }
+                                    if (!userId) return;
                                     currentPublicProfileUserId = String(userId);
                                     showPageWithoutReload("publicProfile");
                                     const content = document.getElementById("publicProfileContent");
@@ -8520,10 +8539,17 @@ async function openPublicProfile(userId) {
                                     return;
                                     }
 
+                                    const { data: publicPostCountData, error: publicPostCountError } = await supabaseClient
+                                    .rpc("get_public_post_count", { target_user_id: String(userId) });
+                                    if (publicPostCountError) {
+                                    console.error("Public post count error:", publicPostCountError);
+                                    }
+                                    const publicPostCount = Number(publicPostCountData || 0);
+
                                     /* XOXO Avenue — Profile Visits
                                        Record a successful visit only when viewing another user's profile.
                                        Supabase handles repeat visits through record_profile_view(). */
-                                    if (String(currentUser.id) !== String(userId)) {
+                                    if (currentUser && String(currentUser.id) !== String(userId)) {
                                     const { error: profileViewError } = await supabaseClient
                                     .rpc("record_profile_view", { target_profile_id: String(userId) });
                                     if (profileViewError) {
@@ -8534,10 +8560,10 @@ async function openPublicProfile(userId) {
                                     const [followersResult, followingResult, myFollowResult, myBlockResult, presenceResult] = await Promise.all([
                                     supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("following_id", String(userId)),
                                     supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("follower_id", String(userId)),
-                                    String(currentUser.id) === String(userId)
+                                    !currentUser || String(currentUser.id) === String(userId)
                                     ? Promise.resolve({ data: null, error: null })
                                     : supabaseClient.from("user_follows").select("id").eq("follower_id", currentUser.id).eq("following_id", String(userId)).maybeSingle(),
-                                    String(currentUser.id) === String(userId)
+                                    !currentUser || String(currentUser.id) === String(userId)
                                     ? Promise.resolve({ data: null, error: null })
                                     : supabaseClient.from("user_blocks").select("id").eq("blocker_id", currentUser.id).eq("blocked_id", String(userId)).maybeSingle(),
                                     supabaseClient.from("user_presence").select("last_active_at").eq("user_id", String(userId)).maybeSingle()
@@ -8549,7 +8575,7 @@ async function openPublicProfile(userId) {
                                     if (presenceResult.error) console.error("Presence status error:", presenceResult.error);
                                     const followersCount = followersResult.count || 0;
                                     const followingCount = followingResult.count || 0;
-                                    const isOwnProfile = String(currentUser.id) === String(userId);
+                                    const isOwnProfile = !!currentUser && String(currentUser.id) === String(userId);
                                     const isFollowing = !!myFollowResult.data;
                                     const isBlocked = !!myBlockResult.data;
                                     const username = profile.username || "@User";
@@ -8581,7 +8607,17 @@ async function openPublicProfile(userId) {
                                     </div>`;
                                     await loadPosts();
                                     showPageWithoutReload("publicProfile");
-                                    if (isBlocked) {
+                                    if (!currentUser) {
+                                    if (postsContainer) {
+                                    const guestPostText = getFriendHubLanguage() === "es"
+                                    ? `👀 ${escapeHtml(username)} tiene ${publicPostCount} ${publicPostCount === 1 ? "publicación" : "publicaciones"}.`
+                                    : `👀 ${escapeHtml(username)} has ${publicPostCount} ${publicPostCount === 1 ? "post" : "posts"}.`;
+                                    const guestLoginText = getFriendHubLanguage() === "es"
+                                    ? "Regístrate o inicia sesión para ver sus publicaciones."
+                                    : "Sign up or log in to see their posts.";
+                                    postsContainer.innerHTML = `<div class="public-profile-guest-posts-note"><strong>${guestPostText}</strong><span>${guestLoginText}</span></div>`;
+                                    }
+                                    } else if (isBlocked) {
                                     if (postsContainer) postsContainer.innerHTML = '<div class="empty-state">You blocked this user. Unblock them to see their posts.</div>';
                                     } else {
                                     renderPublicProfilePosts(String(userId), profile.profile_photo || null);
@@ -8630,15 +8666,6 @@ async function openPublicProfile(userId) {
                                     const params = new URLSearchParams(window.location.search);
                                     const userId = params.get("profile");
                                     if (!userId) return;
-
-                                    if (!currentUser) {
-                                    const language = getFriendHubLanguage();
-                                    alert(language === "es"
-                                    ? "Inicia sesión para ver este perfil compartido."
-                                    : "Log in to view this shared profile.");
-                                    openAuth("login");
-                                    return;
-                                    }
 
                                     await openPublicProfile(String(userId));
                                     }
@@ -8856,7 +8883,11 @@ async function openPublicProfile(userId) {
                                     }
 
                                     async function toggleFollow(userId) {
-                                    if (!currentUser || !userId || String(currentUser.id) === String(userId)) return;
+                                    if (!currentUser) {
+                                    openAuth("login");
+                                    return;
+                                    }
+                                    if (!userId || String(currentUser.id) === String(userId)) return;
                                     const button = document.getElementById("publicFollowButton");
                                     if (button) button.disabled = true;
                                     try {
@@ -11115,7 +11146,11 @@ async function openPublicProfile(userId) {
                                     }
 
                                     async function toggleBlockUser(userId, username) {
-                                    if (!currentUser || !userId || String(currentUser.id) === String(userId)) return;
+                                    if (!currentUser) {
+                                    openAuth("login");
+                                    return;
+                                    }
+                                    if (!userId || String(currentUser.id) === String(userId)) return;
 
                                     const language = getFriendHubLanguage();
                                     const currentlyBlocked = blockedUserIds.has(String(userId));
