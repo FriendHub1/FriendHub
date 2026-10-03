@@ -6795,11 +6795,18 @@
                                     username,
                                     selectedProfilePhoto
                                     );
+                                    const usernameWasChanged = Boolean(oldUsername && oldUsername !== username);
                                     showProfileMessage(
-                                    "Profile saved successfully! ",
+                                    usernameWasChanged
+                                    ? `Profile saved successfully! Your username is now ${username}. You can change it again in 30 days.`
+                                    : "Profile saved successfully!",
                                     "success"
                                     );
+                                    try {
                                     await loadPosts();
+                                    } catch (refreshError) {
+                                    console.warn("Profile saved, but posts refresh failed:", refreshError);
+                                    }
                                     }
                                     function showProfileMessage(message, type) {
                                     const box =
