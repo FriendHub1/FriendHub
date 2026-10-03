@@ -8270,11 +8270,11 @@
                                     return `
                                     <article class="post" id="post-${escapeHtmlAttribute(String(post.id))}" data-post-id="${escapeHtmlAttribute(String(post.id))}">
                                     <div class="post-header">
-                                    <div class="avatar ${String(post.id).startsWith("sample-") ? "" : "clickable-user"}" ${String(post.id).startsWith("sample-") ? "" : `data-public-username="${escapeHtmlAttribute(String(post.username || ""))}" onclick="openPublicProfileByUsername(this.dataset.publicUsername)"`}>
+                                    <div class="avatar ${String(post.id).startsWith("sample-") ? "" : "clickable-user"}" ${String(post.id).startsWith("sample-") ? "" : `data-public-user-id="${escapeHtmlAttribute(String(post.userId || ""))}" onclick="openPublicProfile(this.dataset.publicUserId)"`}>
                                     ${avatarHtml}
                                     </div>
                                     <div>
-                                    <div class="post-user ${String(post.id).startsWith("sample-") ? "" : "clickable-user"}" ${String(post.id).startsWith("sample-") ? "" : `data-public-username="${escapeHtmlAttribute(String(post.username || ""))}" onclick="openPublicProfileByUsername(this.dataset.publicUsername)"`}>
+                                    <div class="post-user ${String(post.id).startsWith("sample-") ? "" : "clickable-user"}" ${String(post.id).startsWith("sample-") ? "" : `data-public-user-id="${escapeHtmlAttribute(String(post.userId || ""))}" onclick="openPublicProfile(this.dataset.publicUserId)"`}>
                                     ${username}
                                     </div>
                                     <div class="post-meta">
