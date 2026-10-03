@@ -6307,6 +6307,7 @@
                                     }
                                     updateProfileVisibility();
                                     await openSharedPostFromUrl();
+                                    await openSharedProfileFromUrl();
                                     }
                                     function updateAuthUI() {
                                     const loginBtn =
@@ -8568,6 +8569,7 @@ async function openPublicProfile(userId) {
                                     ${isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary public-profile-follow${isFollowing ? " following" : ""}" onclick="toggleFollow('${escapeHtmlAttribute(String(userId))}')">${isFollowing ? "Following" : "Follow"}</button>`}
                                     ${isOwnProfile ? "" : `<button id="publicBlockButton" class="btn public-profile-block${isBlocked ? " blocked" : ""}" onclick="toggleBlockUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">${isBlocked ? "Unblock" : "Block"}</button>`}
                                     ${isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${getFriendHubLanguage() === "es" ? "Reportar usuario" : "Report user"}</button>`}
+                                    ${isOwnProfile ? "" : `<button id="publicShareButton" class="btn btn-secondary" onclick="sharePublicProfile('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#128279; ${getFriendHubLanguage() === "es" ? "Compartir perfil" : "Share profile"}</button>`}
                                     ${isOwnProfile || isBlocked ? "" : `<button id="publicMessageButton" class="btn public-profile-message" onclick="openDirectChat('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(profile.profile_photo || "")}')">&#128172; ${getFriendHubLanguage() === "es" ? "Mensaje" : "Message"}</button>`}
                                     <div class="public-profile-details">
                                     ${profile.gender_identity && profile.gender_identity !== "Prefer not to say" ? `<div class="public-profile-detail"><strong>Gender</strong><span>${escapeHtml(profile.gender_identity)}</span></div>` : ""}
@@ -8585,6 +8587,62 @@ async function openPublicProfile(userId) {
                                     renderPublicProfilePosts(String(userId), profile.profile_photo || null);
                                     }
                                     }
+                                    async function sharePublicProfile(userId, username = "@User") {
+                                    if (!userId) return;
+                                    const language = getFriendHubLanguage();
+                                    const url = `${window.location.origin}${window.location.pathname}?profile=${encodeURIComponent(String(userId))}`;
+                                    const cleanUsername = String(username || "@User");
+                                    const shareData = {
+                                    title: `${cleanUsername} · XOXO Avenue`,
+                                    text: language === "es"
+                                    ? `Mira el perfil de ${cleanUsername} en XOXO Avenue.`
+                                    : `Check out ${cleanUsername}'s profile on XOXO Avenue.`,
+                                    url
+                                    };
+
+                                    if (navigator.share) {
+                                    try {
+                                    await navigator.share(shareData);
+                                    return;
+                                    } catch (error) {
+                                    if (error && error.name === "AbortError") return;
+                                    console.error("Profile share error:", error);
+                                    }
+                                    }
+
+                                    try {
+                                    await navigator.clipboard.writeText(url);
+                                    alert(language === "es"
+                                    ? "Enlace del perfil copiado."
+                                    : "Profile link copied.");
+                                    } catch (error) {
+                                    console.error("Profile share copy error:", error);
+                                    window.prompt(
+                                    language === "es"
+                                    ? "Copia este enlace para compartir el perfil:"
+                                    : "Copy this link to share the profile:",
+                                    url
+                                    );
+                                    }
+                                    }
+
+                                    async function openSharedProfileFromUrl() {
+                                    const params = new URLSearchParams(window.location.search);
+                                    const userId = params.get("profile");
+                                    if (!userId) return;
+
+                                    if (!currentUser) {
+                                    const language = getFriendHubLanguage();
+                                    alert(language === "es"
+                                    ? "Inicia sesión para ver este perfil compartido."
+                                    : "Log in to view this shared profile.");
+                                    openAuth("login");
+                                    return;
+                                    }
+
+                                    await openPublicProfile(String(userId));
+                                    }
+
                                     async function openReportUser(userId, username = "@User") {
                                     if (!currentUser || !userId) {
                                     if (!currentUser) openAuth("login");
