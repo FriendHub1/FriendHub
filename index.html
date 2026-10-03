@@ -9417,8 +9417,10 @@ async function openPublicProfile(userId) {
                                     const currentActivityTime = new Date(conversation.lastActivityAt || conversation.lastMessage.created_at || 0).getTime();
                                     if (reactionTime <= currentActivityTime) return;
 
-                                    let quoted = String(reactedMessage.content || "").trim();
-                                    if (parseDmGifContent(quoted)) quoted = "GIF";
+                                    let quotedRaw = String(reactedMessage.content || "").trim();
+                                    let quoted = parseDmGifContent(quotedRaw)
+                                    ? "GIF"
+                                    : decodeDmFormattedContent(quotedRaw).text.trim();
                                     if (!quoted) {
                                     quoted = reactedMessage.attachment_type === "video"
                                     ? (language === "es" ? "Video" : "Video")
@@ -9466,9 +9468,12 @@ async function openPublicProfile(userId) {
                                     const avatar = photo
                                     ? `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`
                                     : initial;
-                                    const lastContent = String(conversation.lastMessage.content || "");
+                                    const lastContentRaw = String(conversation.lastMessage.content || "");
+                                    const lastContent = parseDmGifContent(lastContentRaw)
+                                    ? lastContentRaw
+                                    : decodeDmFormattedContent(lastContentRaw).text;
                                     const preview = conversation.reactionPreview
-                                    || (parseDmGifContent(lastContent) ? "GIF" : lastContent)
+                                    || (parseDmGifContent(lastContentRaw) ? "GIF" : lastContent)
                                     || (conversation.lastMessage.attachment_type === "video"
                                     ? "🎥 Video"
                                     : conversation.lastMessage.attachment_type === "audio"
@@ -10069,7 +10074,7 @@ async function openPublicProfile(userId) {
                                       : "");
 
                                     return `
-                                    <div class="dm-row ${mine ? "mine" : "theirs"}" data-dm-message-id="${escapeHtmlAttribute(String(message.id))}" data-created-at="${escapeHtmlAttribute(String(message.created_at || ""))}">
+                                    <div class="dm-row ${mine ? "mine" : "theirs"}" data-dm-owner="${mine ? "me" : "other"}" data-dm-message-id="${escapeHtmlAttribute(String(message.id))}" data-created-at="${escapeHtmlAttribute(String(message.created_at || ""))}">
                                     ${mine ? "" : avatarHtml}
                                     <div class="dm-bubble">
                                     ${replyHtml}
