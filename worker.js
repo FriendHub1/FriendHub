@@ -19,6 +19,10 @@ async function getPublicProfile(userId) {
           apikey: SUPABASE_KEY,
           Authorization: `Bearer ${SUPABASE_KEY}`,
           "Content-Type": "application/json",
+
+          // Force PostgREST to use the public schema.
+          "Accept-Profile": "public",
+          "Content-Profile": "public",
         },
         body: JSON.stringify({
           target_user_id: userId,
@@ -27,25 +31,31 @@ async function getPublicProfile(userId) {
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
-
-      throw new Error(
-        `SUPABASE_RPC_${response.status}: ${errorText}`
+      console.error(
+        "XOXO profile RPC failed:",
+        response.status,
+        await response.text()
       );
+      return null;
     }
 
     const rows = await response.json();
 
     if (!Array.isArray(rows) || !rows.length) {
-      throw new Error(
-        `SUPABASE_RPC_EMPTY: No public profile returned for ${userId}`
+      console.error(
+        "XOXO profile RPC returned no profile:",
+        userId
       );
+      return null;
     }
 
     return rows[0];
   } catch (error) {
-    console.error("XOXO profile RPC error:", error);
-    throw error;
+    console.error(
+      "XOXO profile RPC error:",
+      error
+    );
+    return null;
   }
 }
 
@@ -72,16 +82,20 @@ function getProfileImageUrl(profile, origin, userId) {
     profile?.profile_photo || ""
   ).trim();
 
+  // Profile photos are currently stored as Base64.
+  // Social crawlers cannot use data:image/... directly,
+  // so expose the image through our Worker endpoint.
   if (photo.startsWith("data:image/")) {
     return `${origin}/profile-preview-image/${encodeURIComponent(
       userId
     )}`;
   }
 
-  if (photo) {
-    try {
-      return new URL(photo, origin).href;
-    } catch (_) {}
+  if (
+    photo.startsWith("https://") ||
+    photo.startsWith("http://")
+  ) {
+    return photo;
   }
 
   return `${origin}/xoxoavenue-social.png`;
@@ -130,6 +144,9 @@ async function serveProfileImage(userId) {
       {
         status: 404,
         headers: {
+          "Content-Type":
+            "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
           "X-XOXO-Worker":
             "profile-image-profile-not-found",
         },
@@ -156,6 +173,9 @@ async function serveProfileImage(userId) {
       {
         status: 404,
         headers: {
+          "Content-Type":
+            "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
           "X-XOXO-Worker":
             "profile-image-invalid",
         },
@@ -243,7 +263,7 @@ export default {
 
     /*
      * ==========================================
-     * PROFILE IMAGE ENDPOINT
+     * PUBLIC PROFILE IMAGE
      * ==========================================
      */
 
@@ -255,32 +275,12 @@ export default {
       const userId =
         decodeURIComponent(imageMatch[1]);
 
-      try {
-        return await serveProfileImage(userId);
-      } catch (error) {
-        return new Response(
-          String(
-            error?.message ||
-              error ||
-              "Unknown profile image error"
-          ),
-          {
-            status: 500,
-            headers: {
-              "Content-Type":
-                "text/plain; charset=utf-8",
-              "Cache-Control": "no-store",
-              "X-XOXO-Worker":
-                "profile-image-debug-error",
-            },
-          }
-        );
-      }
+      return serveProfileImage(userId);
     }
 
     /*
      * ==========================================
-     * NORMAL XOXO PAGE
+     * NORMAL PAGE
      * ==========================================
      */
 
@@ -308,45 +308,35 @@ export default {
 
     /*
      * ==========================================
-     * SHARED PROFILE — DEBUG MODE
+     * LOAD PUBLIC PROFILE
      * ==========================================
      */
 
-    let profile;
+    const profile =
+      await getPublicProfile(profileId);
 
-    try {
-      profile =
-        await getPublicProfile(profileId);
-    } catch (error) {
-      /*
-       * TEMPORARY:
-       * Return the exact Supabase error directly.
-       *
-       * Once we find the problem, this debug
-       * response will be removed.
-       */
-      return new Response(
-        String(
-          error?.message ||
-            error ||
-            "Unknown Supabase profile error"
-        ),
-        {
-          status: 500,
-          headers: {
-            "Content-Type":
-              "text/plain; charset=utf-8",
-            "Cache-Control": "no-store",
-            "X-XOXO-Worker":
-              "supabase-debug-error",
-          },
-        }
+    if (!profile) {
+      const response =
+        await env.ASSETS.fetch(request);
+
+      const headers =
+        new Headers(response.headers);
+
+      headers.set(
+        "X-XOXO-Worker",
+        "profile-not-found"
       );
+
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      });
     }
 
     /*
      * ==========================================
-     * FETCH XOXO INDEX
+     * LOAD XOXO INDEX
      * ==========================================
      */
 
@@ -385,7 +375,7 @@ export default {
 
     /*
      * ==========================================
-     * BUILD DYNAMIC PROFILE METADATA
+     * DYNAMIC PROFILE METADATA
      * ==========================================
      */
 
@@ -415,7 +405,7 @@ export default {
 
     /*
      * ==========================================
-     * INJECT OPEN GRAPH TAGS
+     * OPEN GRAPH / SOCIAL PREVIEW
      * ==========================================
      */
 
