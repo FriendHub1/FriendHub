@@ -4789,8 +4789,12 @@
                                     type="text"
                                     maxlength="20"
                                     placeholder="@username"
+                                    readonly
                                     >
-                                    <div class="help-text">
+                                    <button type="button" class="btn btn-secondary" id="changeUsernameBtn" onclick="startUsernameChange()" style="margin-top:10px;">
+                                    ✏️ Change username
+                                    </button>
+                                    <div class="help-text" id="usernameChangeHelp">
                                     Your username is public. You can change it once every 30 days.
                                     </div>
                                     </div>
@@ -6526,6 +6530,7 @@
                                     data;
                                     document.getElementById("username").value =
                                     data.username || "";
+                                    updateUsernameChangeUI();
                                     document.getElementById("age").value =
                                     data.age || "";
                                     document.getElementById("country").value =
@@ -6620,6 +6625,39 @@
                                     null
                                     );
                                     }
+                                    function getUsernameCooldownDays() {
+                                    const changedAt = currentProfile?.username_changed_at;
+                                    if (!changedAt) return 0;
+                                    const elapsed = Date.now() - new Date(changedAt).getTime();
+                                    return Math.max(0, Math.ceil(30 - (elapsed / (1000 * 60 * 60 * 24))));
+                                    }
+                                    function updateUsernameChangeUI() {
+                                    const input = document.getElementById("username");
+                                    const button = document.getElementById("changeUsernameBtn");
+                                    const help = document.getElementById("usernameChangeHelp");
+                                    if (!input || !button || !help) return;
+                                    input.readOnly = true;
+                                    const remaining = getUsernameCooldownDays();
+                                    button.disabled = remaining > 0;
+                                    button.textContent = remaining > 0 ? `🔒 Change username (${remaining}d)` : "✏️ Change username";
+                                    help.textContent = remaining > 0
+                                    ? `You can change your username again in ${remaining} day${remaining === 1 ? "" : "s"}.`
+                                    : "Your username is public. You can change it once every 30 days.";
+                                    }
+                                    function startUsernameChange() {
+                                    if (!currentProfile) return;
+                                    const remaining = getUsernameCooldownDays();
+                                    if (remaining > 0) {
+                                    showProfileMessage(`You can change your username again in ${remaining} day${remaining === 1 ? "" : "s"}.`, "error");
+                                    updateUsernameChangeUI();
+                                    return;
+                                    }
+                                    const input = document.getElementById("username");
+                                    input.readOnly = false;
+                                    input.focus();
+                                    input.select();
+                                    showProfileMessage("Enter your new username, then press Save Profile.", "success");
+                                    }
                                     async function saveProfile() {
                                     if (!currentUser) {
                                     openAuth("signup");
@@ -6677,33 +6715,6 @@
                                     getSelectedOptions("interests");
                                     const lookingFor =
                                     getSelectedOptions("lookingFor");
-                                    if (
-                                    currentProfile &&
-                                    currentProfile.username &&
-                                    currentProfile.username !== username
-                                    ) {
-                                    const lastChange =
-                                    localStorage.getItem(
-                                    "friendhub_username_change"
-                                    );
-                                    if (lastChange) {
-                                    const daysPassed =
-                                    (
-                                    Date.now() -
-                                    Number(lastChange)
-                                    ) /
-                                    (1000 * 60 * 60 * 24);
-                                    if (daysPassed < 30) {
-                                    const remaining =
-                                    Math.ceil(30 - daysPassed);
-                                    showProfileMessage(
-                                    `You can change your username again in ${remaining} day${remaining === 1 ? "" : "s"}.`,
-                                    "error"
-                                    );
-                                    return;
-                                    }
-                                    }
-                                    }
                                     const oldUsername =
                                     currentProfile?.username || null;
                                     const profileData = {
@@ -6743,7 +6754,11 @@
                                     }
                                     if (result.error) {
                                     console.error(result.error);
-                                    if (
+                                    if (String(result.error.message || "").includes("once every 30 days")) {
+                                    const remaining = getUsernameCooldownDays();
+                                    showProfileMessage(`You can change your username again in ${remaining || 30} day${(remaining || 30) === 1 ? "" : "s"}.`, "error");
+                                    updateUsernameChangeUI();
+                                    } else if (
                                     result.error.code === "23505"
                                     ) {
                                     showProfileMessage(
@@ -6760,28 +6775,12 @@
                                     }
                                     currentProfile =
                                     result.data;
+                                    updateUsernameChangeUI();
                                     localStorage.setItem(
                                     "friendhub_username",
                                     username
                                     );
-                                    if (
-                                    oldUsername &&
-                                    oldUsername !== username
-                                    ) {
-                                    localStorage.setItem(
-                                    "friendhub_username_change",
-                                    Date.now().toString()
-                                    );
-                                    } else if (
-                                    !localStorage.getItem(
-                                    "friendhub_username_change"
-                                    )
-                                    ) {
-                                    localStorage.setItem(
-                                    "friendhub_username_change",
-                                    Date.now().toString()
-                                    );
-                                    }
+
                                     updateProfileAvatar(
                                     username,
                                     selectedProfilePhoto
