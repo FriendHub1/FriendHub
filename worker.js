@@ -32,11 +32,11 @@ async function getPublicProfile(userId) {
       headers: {
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        target_user_id: userId,
-      }),
+        target_user_id: userId
+      })
     }
   );
 
@@ -77,9 +77,9 @@ function injectPreview(response, metadata) {
     .on("title", {
       text(element) {
         element.replace(metadata.title, {
-          html: false,
+          html: false
         });
-      },
+      }
     })
 
     .on('meta[name="description"]', {
@@ -88,7 +88,7 @@ function injectPreview(response, metadata) {
           "content",
           metadata.description
         );
-      },
+      }
     })
 
     .on("head", {
@@ -99,19 +99,21 @@ function injectPreview(response, metadata) {
 <meta property="og:title" content="${escapeHtml(metadata.title)}">
 <meta property="og:description" content="${escapeHtml(metadata.description)}">
 <meta property="og:image" content="${escapeHtml(metadata.image)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:url" content="${escapeHtml(metadata.url)}">
 <meta property="og:site_name" content="XOXO Avenue">
 
-<meta name="twitter:card" content="summary">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${escapeHtml(metadata.title)}">
 <meta name="twitter:description" content="${escapeHtml(metadata.description)}">
 <meta name="twitter:image" content="${escapeHtml(metadata.image)}">
 `,
           {
-            html: true,
+            html: true
           }
         );
-      },
+      }
     })
 
     .transform(response);
@@ -123,15 +125,12 @@ export default {
 
     const profileId = url.searchParams.get("profile");
 
-    // Normal XOXO Avenue requests continue
-    // to the existing static assets.
     if (!profileId) {
       return env.ASSETS.fetch(request);
     }
 
     const assetResponse = await env.ASSETS.fetch(request);
 
-    // Only transform HTML responses.
     const contentType =
       assetResponse.headers.get("content-type") || "";
 
@@ -139,10 +138,9 @@ export default {
       return assetResponse;
     }
 
-    const profile = await getPublicProfile(profileId);
+    const profile =
+      await getPublicProfile(profileId);
 
-    // If the profile cannot be loaded,
-    // return the normal page unchanged.
     if (!profile) {
       return assetResponse;
     }
@@ -153,14 +151,16 @@ export default {
     const metadata = {
       title: `${username} · XOXO Avenue`,
 
-      description: makeDescription(profile),
+      description:
+        makeDescription(profile),
 
-      image: absoluteUrl(
-        profile.profile_photo,
-        url.origin
-      ),
+      image:
+        absoluteUrl(
+          profile.profile_photo,
+          url.origin
+        ),
 
-      url: url.href,
+      url: url.href
     };
 
     const transformed =
@@ -170,7 +170,9 @@ export default {
       );
 
     const headers =
-      new Headers(transformed.headers);
+      new Headers(
+        transformed.headers
+      );
 
     headers.set(
       "Cache-Control",
@@ -187,8 +189,8 @@ export default {
       {
         status: transformed.status,
         statusText: transformed.statusText,
-        headers,
+        headers
       }
     );
-  },
+  }
 };
