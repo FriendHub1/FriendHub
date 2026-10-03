@@ -8528,11 +8528,10 @@ async function openPublicProfile(userId) {
                                     const postsContainer = document.getElementById("publicProfilePosts");
                                     if (content) content.innerHTML = '<div class="empty-state">Loading profile...</div>';
                                     if (postsContainer) postsContainer.innerHTML = '';
-                                    const { data: profile, error } = await supabaseClient
-                                    .from("friendhub_public_profiles")
-                                    .select("user_id, username, country, languages, interests, looking_for, profile_photo, bio, gender_identity, sexual_orientation")
-                                    .eq("user_id", String(userId))
-                                    .maybeSingle();
+                                    const { data: profileRows, error } = await supabaseClient
+                                    .rpc("get_public_profile", { target_user_id: String(userId) });
+
+                                    const profile = Array.isArray(profileRows) ? profileRows[0] : null;
                                     if (error || !profile) {
                                     console.error("Public profile load error:", error);
                                     if (content) content.innerHTML = '<div class="empty-state">This profile could not be loaded.</div>';
