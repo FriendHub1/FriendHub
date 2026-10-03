@@ -11683,6 +11683,7 @@ async function openPublicProfile(userId) {
                                     }
                                     currentComments.push({
                                     ...data,
+                                    profilePhoto: currentProfile?.profile_photo || null,
                                     likesCount: 0,
                                     liked: false
                                     });
