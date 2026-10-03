@@ -4995,9 +4995,9 @@
                                     <button id="dmFormatButton" class="xoxo-dm-format-button" type="button" onclick="toggleDmFormatToolbar(event)" aria-label="Text formatting" title="Text formatting" aria-expanded="false">Aa</button>
                                     <div id="dmFormatToolbar" class="xoxo-dm-format-toolbar" style="display:none;" aria-label="Text formatting options">
                                     <button id="dmBoldButton" type="button" class="xoxo-dm-format-option" aria-label="Bold" title="Bold" aria-pressed="false" onclick="toggleDmBoldPreview(event)"><strong>B</strong></button>
-                                    <button type="button" class="xoxo-dm-format-option" aria-label="Italic" title="Italic"><em>I</em></button>
-                                    <button type="button" class="xoxo-dm-format-option" aria-label="Underline" title="Underline"><u>U</u></button>
-                                    <button type="button" class="xoxo-dm-format-option" aria-label="Strikethrough" title="Strikethrough"><s>S</s></button>
+                                    <button id="dmItalicButton" type="button" class="xoxo-dm-format-option" aria-label="Italic" title="Italic" aria-pressed="false" onclick="toggleDmStylePreview('italic',event)"><em>I</em></button>
+                                    <button id="dmUnderlineButton" type="button" class="xoxo-dm-format-option" aria-label="Underline" title="Underline" aria-pressed="false" onclick="toggleDmStylePreview('underline',event)"><u>U</u></button>
+                                    <button id="dmStrikeButton" type="button" class="xoxo-dm-format-option" aria-label="Strikethrough" title="Strikethrough" aria-pressed="false" onclick="toggleDmStylePreview('strike',event)"><s>S</s></button>
                                 <div class="xoxo-dm-color-wrap">
                                   <button id="dmColorButton" type="button" class="xoxo-dm-format-option xoxo-dm-color-button" aria-label="Text color" title="Text color" aria-expanded="false" onclick="toggleDmColorPalette(event)">🎨</button>
                                   <div id="dmColorPalette" class="xoxo-dm-color-palette" style="display:none;" aria-label="Text color palette">
@@ -9717,8 +9717,9 @@ async function openPublicProfile(userId) {
 
                                     function getDmReplyPreviewText(message) {
                                     if (!message) return "";
-                                    const text = String(message.content || "").trim();
-                                    if (parseDmGifContent(text)) return "GIF";
+                                    const rawText = String(message.content || "").trim();
+                                    if (parseDmGifContent(rawText)) return "GIF";
+                                    const text = decodeDmFormattedContent(rawText).text.trim();
                                     if (text) return text.length > 110 ? `${text.slice(0, 107)}...` : text;
                                     if (message.attachment_type === "video") return getFriendHubLanguage() === "es" ? "🎥 Video" : "🎥 Video";
                                     if (message.attachment_type === "audio") return getFriendHubLanguage() === "es" ? "🎙️ Audio" : "🎙️ Audio";
@@ -9757,7 +9758,9 @@ async function openPublicProfile(userId) {
                                     const input = document.getElementById("dmInput");
                                     const button = document.getElementById("dmSendButton");
                                     if (input) {
-                                      input.value = message.content || "";
+                                      const decoded = decodeDmFormattedContent(message.content || "");
+                                      input.value = decoded.text;
+                                      applyDmFormatState(decoded.format);
                                       input.focus();
                                       input.setSelectionRange(input.value.length, input.value.length);
                                     }
@@ -9965,7 +9968,7 @@ async function openPublicProfile(userId) {
                                     "Content-Type": "application/json"
                                     },
                                     body: JSON.stringify({
-                                    text: message.content,
+                                    text: decodeDmFormattedContent(message.content).text,
                                     targetLanguage
                                     })
                                     });
@@ -10071,7 +10074,7 @@ async function openPublicProfile(userId) {
                                     <div class="dm-bubble">
                                     ${replyHtml}
                                     ${attachmentHtml}
-                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `<div class="dm-text">${renderSafeClickableLinks(message.content)}</div>${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
+                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `${dmFormattedTextHtml(message.content)}${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
                                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
                                     <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
                                     ${renderDmSeenStatus(message, mine)}
@@ -10830,11 +10833,12 @@ async function openPublicProfile(userId) {
                                     try {
                                     const { error: editError } = await supabaseClient
                                       .from("direct_messages")
-                                      .update({ content, edited_at:new Date().toISOString() })
+                                      .update({ content:encodeDmFormattedContent(content), edited_at:new Date().toISOString() })
                                       .eq("id", dmEditTarget.id)
                                       .eq("sender_id", currentUser.id);
                                     if (editError) throw editError;
                                     if (input) input.value = "";
+                                    resetDmFormatting();
                                     clearDmEdit();
                                     setDmStatus("");
                                     dmLastRenderedSignature = "";
@@ -10895,7 +10899,7 @@ async function openPublicProfile(userId) {
                                     try {
                                     if (attachment) uploaded = await uploadDmAttachment(attachment);
 
-                                    const payload = { sender_id: currentUser.id, recipient_id: currentDmUserId, content: content || "" };
+                                    const payload = { sender_id: currentUser.id, recipient_id: currentDmUserId, content: content ? encodeDmFormattedContent(content) : "" };
                                     if (dmReplyTarget?.id) payload.reply_to_message_id = dmReplyTarget.id;
                                     if (uploaded) {
                                     payload.attachment_path = uploaded.path;
@@ -10943,6 +10947,7 @@ async function openPublicProfile(userId) {
                                     }
 
                                     if (input) input.value = "";
+                                    resetDmFormatting();
                                     clearDmAttachment();
                                     clearDmReply();
                                     setDmStatus("");
@@ -13206,6 +13211,131 @@ async function openPublicProfile(userId) {
 
                 </style>
                 <script>
+                const XOXO_DM_FORMAT_PREFIX = "[[XOXO_FMT:";
+
+                function decodeDmFormattedContent(value){
+                  const raw=String(value||"");
+                  if(!raw.startsWith(XOXO_DM_FORMAT_PREFIX)) return {text:raw,format:{}};
+                  const end=raw.indexOf("]]");
+                  if(end<0) return {text:raw,format:{}};
+                  try{
+                    const format=JSON.parse(raw.slice(XOXO_DM_FORMAT_PREFIX.length,end));
+                    return {text:raw.slice(end+2),format:format&&typeof format==="object"?format:{}};
+                  }catch(_){
+                    return {text:raw,format:{}};
+                  }
+                }
+
+                function getDmFormatState(){
+                  const input=document.getElementById("dmInput");
+                  const pressed=id=>document.getElementById(id)?.getAttribute("aria-pressed")==="true";
+                  const fontButton=document.getElementById("dmFontButton");
+                  const selectedFont=fontButton?.dataset?.font || "";
+                  const color=input?.dataset?.dmColor || "";
+                  return {
+                    b:pressed("dmBoldButton")?1:0,
+                    i:pressed("dmItalicButton")?1:0,
+                    u:pressed("dmUnderlineButton")?1:0,
+                    s:pressed("dmStrikeButton")?1:0,
+                    c:color,
+                    f:selectedFont
+                  };
+                }
+
+                function encodeDmFormattedContent(text){
+                  const format=getDmFormatState();
+                  const hasFormat=format.b||format.i||format.u||format.s||format.c||format.f;
+                  return hasFormat ? XOXO_DM_FORMAT_PREFIX+JSON.stringify(format)+"]]"+String(text||"") : String(text||"");
+                }
+
+                function dmFontStack(font){
+                  const stacks={
+                    "Arial":"Arial,sans-serif",
+                    "Courier New":"'Courier New',monospace",
+                    "Bradley Hand":"'Bradley Hand','Bradley Hand ITC',cursive",
+                    "Impact":"Impact,'Arial Black',sans-serif",
+                    "Times New Roman":"'Times New Roman',Times,serif",
+                    "Cavolini":"Cavolini,'Bradley Hand','Segoe Print',cursive"
+                  };
+                  return stacks[font]||"";
+                }
+
+                function dmFormattedTextHtml(value){
+                  const decoded=decodeDmFormattedContent(value);
+                  const f=decoded.format||{};
+                  const styles=[];
+                  if(f.b) styles.push("font-weight:700");
+                  if(f.i) styles.push("font-style:italic");
+                  const decorations=[];
+                  if(f.u) decorations.push("underline");
+                  if(f.s) decorations.push("line-through");
+                  if(decorations.length) styles.push("text-decoration:"+decorations.join(" "));
+                  if(/^#[0-9a-f]{6}$/i.test(String(f.c||""))) styles.push("color:"+f.c);
+                  const stack=dmFontStack(f.f);
+                  if(stack) styles.push("font-family:"+stack);
+                  return `<div class="dm-text" style="${escapeHtmlAttribute(styles.join(";"))}">${renderSafeClickableLinks(decoded.text)}</div>`;
+                }
+
+                function applyDmFormatState(format){
+                  const input=document.getElementById("dmInput");
+                  const f=format||{};
+                  const setPressed=(id,on)=>{
+                    const b=document.getElementById(id);
+                    if(!b)return;
+                    b.setAttribute("aria-pressed",on?"true":"false");
+                    b.classList.toggle("xoxo-format-active",!!on);
+                  };
+                  setPressed("dmBoldButton",!!f.b);
+                  setPressed("dmItalicButton",!!f.i);
+                  setPressed("dmUnderlineButton",!!f.u);
+                  setPressed("dmStrikeButton",!!f.s);
+                  if(input){
+                    input.style.fontWeight=f.b?"700":"400";
+                    input.style.fontStyle=f.i?"italic":"normal";
+                    const decorations=[];
+                    if(f.u)decorations.push("underline");
+                    if(f.s)decorations.push("line-through");
+                    input.style.textDecoration=decorations.join(" ");
+                    input.style.color=/^#[0-9a-f]{6}$/i.test(String(f.c||""))?f.c:"";
+                    input.dataset.dmColor=/^#[0-9a-f]{6}$/i.test(String(f.c||""))?f.c:"";
+                    input.style.fontFamily=dmFontStack(f.f)||"";
+                  }
+                  const colorButton=document.getElementById("dmColorButton");
+                  if(colorButton){
+                    colorButton.classList.toggle("xoxo-color-selected",!!f.c);
+                    if(f.c)colorButton.style.setProperty("--dm-selected-color",f.c);
+                    else colorButton.style.removeProperty("--dm-selected-color");
+                  }
+                  const fontButton=document.getElementById("dmFontButton");
+                  if(fontButton){
+                    fontButton.dataset.font=f.f||"";
+                    fontButton.textContent=(f.f||"Font")+" ▾";
+                    fontButton.classList.toggle("xoxo-font-selected",!!f.f);
+                  }
+                }
+
+                function resetDmFormatting(){
+                  applyDmFormatState({});
+                }
+
+                function toggleDmStylePreview(kind,event){
+                  if(event){event.preventDefault();event.stopPropagation();}
+                  const ids={italic:"dmItalicButton",underline:"dmUnderlineButton",strike:"dmStrikeButton"};
+                  const button=document.getElementById(ids[kind]);
+                  const input=document.getElementById("dmInput");
+                  if(!button||!input)return;
+                  const active=button.getAttribute("aria-pressed")!=="true";
+                  button.setAttribute("aria-pressed",active?"true":"false");
+                  button.classList.toggle("xoxo-format-active",active);
+                  if(kind==="italic") input.style.fontStyle=active?"italic":"normal";
+                  if(kind==="underline"||kind==="strike"){
+                    const underline=document.getElementById("dmUnderlineButton")?.getAttribute("aria-pressed")==="true";
+                    const strike=document.getElementById("dmStrikeButton")?.getAttribute("aria-pressed")==="true";
+                    input.style.textDecoration=[underline?"underline":"",strike?"line-through":""].filter(Boolean).join(" ");
+                  }
+                  input.focus();
+                }
+
                 function toggleDmBoldPreview(event){
                   if(event){event.preventDefault();event.stopPropagation();}
                   const input=document.getElementById("dmInput");
@@ -13235,6 +13365,7 @@ async function openPublicProfile(userId) {
                   const button=document.getElementById("dmColorButton");
                   if(!input)return;
                   input.style.color=color;
+                  input.dataset.dmColor=color;
                   if(button){
                     button.classList.add("xoxo-color-selected");
                     button.style.setProperty("--dm-selected-color",color);
@@ -13268,6 +13399,7 @@ async function openPublicProfile(userId) {
         "Cavolini":"Cavolini,'Bradley Hand','Segoe Print',cursive"
       };
           input.style.fontFamily=stacks[font]||"Arial,sans-serif";
+          if(button) button.dataset.font=font;
           if(button){
             button.textContent=font+" ▾";
             button.title=font;
