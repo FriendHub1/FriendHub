@@ -2,8 +2,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FriendHub</title>
-<meta name="description" content="Meet people, make friends, and discover communities on FriendHub.">
+<title>XOXO Avenue</title>
+<meta name="description" content="Meet people, make friends, and discover communities on XOXO Avenue.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * {
@@ -1822,7 +1822,7 @@ animation: friendhubSeenPop .48s cubic-bezier(.2,.9,.25,1.35);
 <header>
 <div class="container nav">
 <div class="logo" onclick="showPage('home')">
-FriendHub
+XOXO Avenue
 </div>
 <nav class="nav-links">
 <button onclick="showPage('home')">Home</button>
@@ -1843,9 +1843,6 @@ FriendHub
 <button class="notification-bell" id="notificationBell" onclick="toggleNotifications(event)" aria-label="Notifications" title="Notifications">
 &#128276;
 <span class="notification-badge" id="notificationBadge">0</span>
-</button>
-<button class="btn btn-secondary" id="pushEnableBtn" type="button" onclick="enablePushNotifications()" style="display:none;">
-Enable notifications
 </button>
 <div class="notification-panel" id="notificationPanel">
 <div class="notification-panel-header">
@@ -2505,80 +2502,6 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
 }
 
-async function updatePushNotificationButton() {
-const button = document.getElementById("pushEnableBtn");
-if (!button) return;
-
-if (!currentUser) {
-button.style.display = "none";
-return;
-}
-
-if (!("Notification" in window)) {
-button.style.display = "none";
-return;
-}
-
-if (Notification.permission === "granted") {
-button.style.display = "none";
-return;
-}
-
-button.style.display = "inline-block";
-
-if (Notification.permission === "denied") {
-button.textContent = "Enable notifications in Settings";
-button.title = "Open iPhone Settings and allow notifications for XOXO Avenue";
-} else {
-button.textContent = "Enable notifications";
-button.title = "Enable XOXO Avenue notifications";
-}
-}
-
-async function enablePushNotifications() {
-const button = document.getElementById("pushEnableBtn");
-
-try {
-if (!currentUser) {
-openAuth("login");
-return;
-}
-
-if (!("Notification" in window)) {
-alert("Notifications are not supported on this device/browser.");
-return;
-}
-
-if (Notification.permission === "denied") {
-alert("Notifications are blocked. On iPhone, open Settings and allow notifications for XOXO Avenue, then return here.");
-return;
-}
-
-if (button) {
-button.disabled = true;
-button.textContent = "Enabling...";
-}
-
-const permission = await Notification.requestPermission();
-
-if (permission !== "granted") {
-if (button) button.disabled = false;
-await updatePushNotificationButton();
-return;
-}
-
-await ensurePushSubscription();
-
-if (button) button.disabled = false;
-await updatePushNotificationButton();
-} catch (error) {
-console.error("[push] permission/setup failed", error);
-if (button) button.disabled = false;
-await updatePushNotificationButton();
-alert("Could not enable notifications. Please try again.");
-}
-}
-
 async function ensurePushSubscription() {
   try {
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return;
@@ -3066,7 +2989,6 @@ await loadPosts();
 await loadNotifications();
 startNotificationRefresh();
 ensurePushSubscription();
-updatePushNotificationButton();
 } else {
 stopNotificationRefresh();
 stopDmUnreadRefresh();
@@ -3101,7 +3023,6 @@ await loadPosts();
 await loadNotifications();
 startNotificationRefresh();
 ensurePushSubscription();
-updatePushNotificationButton();
 } else {
 stopNotificationRefresh();
 clearNotifications();
@@ -3130,7 +3051,6 @@ logoutBtn.style.display =
 if (notificationWrap) {
 notificationWrap.style.display = "flex";
 }
-updatePushNotificationButton();
 startDmUnreadRefresh();
 startFriendHubPresence();
 } else {
@@ -3143,7 +3063,6 @@ logoutBtn.style.display =
 if (notificationWrap) {
 notificationWrap.style.display = "none";
 }
-updatePushNotificationButton();
 stopDmUnreadRefresh();
 stopFriendHubPresence();
 stopDmPresenceRefresh();
