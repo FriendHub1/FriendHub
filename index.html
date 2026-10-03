@@ -8970,6 +8970,50 @@ async function openPublicProfile(userId) {
                                     return [String(currentUser.id), String(otherUserId)].sort().join("--");
                                     }
 
+                                    /* XOXO Avenue — soft typing tone for the OTHER person's typing indicator.
+                                       It plays once when a new typing session starts, never on every keystroke. */
+                                    let dmRemoteTypingWasActive = false;
+                                    let dmTypingToneLastPlayedAt = 0;
+
+                                    function playDmTypingTone() {
+                                    try {
+                                    const nowMs = Date.now();
+                                    if (nowMs - dmTypingToneLastPlayedAt < 2200) return;
+                                    dmTypingToneLastPlayedAt = nowMs;
+
+                                    const audioContext = prepareDmSendSound();
+                                    if (!audioContext || audioContext.state !== "running") return;
+
+                                    const now = audioContext.currentTime;
+                                    const gain = audioContext.createGain();
+                                    const tone1 = audioContext.createOscillator();
+                                    const tone2 = audioContext.createOscillator();
+
+                                    tone1.type = "sine";
+                                    tone1.frequency.setValueAtTime(520, now);
+                                    tone1.frequency.exponentialRampToValueAtTime(610, now + 0.055);
+
+                                    tone2.type = "sine";
+                                    tone2.frequency.setValueAtTime(690, now + 0.07);
+                                    tone2.frequency.exponentialRampToValueAtTime(760, now + 0.13);
+
+                                    gain.gain.setValueAtTime(0.0001, now);
+                                    gain.gain.exponentialRampToValueAtTime(0.035, now + 0.012);
+                                    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
+                                    tone1.connect(gain);
+                                    tone2.connect(gain);
+                                    gain.connect(audioContext.destination);
+
+                                    tone1.start(now);
+                                    tone1.stop(now + 0.075);
+                                    tone2.start(now + 0.07);
+                                    tone2.stop(now + 0.16);
+                                    } catch (error) {
+                                    console.warn("DM typing tone error:", error);
+                                    }
+                                    }
+
                                     function setRemoteDmTyping(isTyping) {
                                     const indicator = document.getElementById("dmTypingIndicator");
                                     if (!indicator) return;
@@ -8978,7 +9022,17 @@ async function openPublicProfile(userId) {
                                     clearInterval(window.dmTypingDotsTimer);
                                     window.dmTypingDotsTimer = null;
                                     }
-                                    if (!isTyping) { indicator.replaceChildren(); indicator.classList.remove("show"); return; }
+                                    if (!isTyping) {
+                                    dmRemoteTypingWasActive = false;
+                                    indicator.replaceChildren();
+                                    indicator.classList.remove("show");
+                                    return;
+                                    }
+
+                                    if (!dmRemoteTypingWasActive) {
+                                    dmRemoteTypingWasActive = true;
+                                    playDmTypingTone();
+                                    }
 
                                     const typingLabel = document.createElement("span");
                                     typingLabel.textContent = getFriendHubLanguage() === "es" ? "escribiendo" : "typing";
@@ -10679,6 +10733,12 @@ async function openPublicProfile(userId) {
                                     return null;
                                     }
                                     }
+
+                                    ["pointerdown","touchstart","keydown"].forEach(eventName => {
+                                    document.addEventListener(eventName, () => {
+                                    prepareDmSendSound();
+                                    }, { once:true, passive:true });
+                                    });
 
                                     function playDmSendSound() {
                                     try {
