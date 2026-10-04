@@ -5998,7 +5998,13 @@
                                     const searchInput = document.getElementById("searchInput");
                                     if (searchInput && searchInput.value.trim().startsWith("#")) searchInput.value = "";
                                     loadPosts();
+                                    const friendSuggestionsList = document.getElementById("friendSuggestionsList");
+                                    const friendSuggestionsSection = document.getElementById("friendSuggestionsSection");
+                                    if (friendSuggestionsList && friendSuggestionsList.querySelector(".friend-suggestion-card")) {
+                                    if (friendSuggestionsSection) friendSuggestionsSection.style.display = "";
+                                    } else {
                                     loadFriendSuggestions();
+                                    }
                                     }
                                     if (pageId === "saved") {
                                     if (!currentUser) {
@@ -6344,6 +6350,8 @@
 
                                     if (authUser) {
                                     await loadCurrentProfile();
+                                    /* Prefetch Discover suggestions in the background so they are ready when Discover opens. */
+                                    loadFriendSuggestions();
                                     await loadPosts();
                                     await loadNotifications();
                                     startNotificationRefresh();
@@ -6382,6 +6390,8 @@
                                     updateAuthUI();
                                     if (currentUser) {
                                     await loadCurrentProfile();
+                                    /* Prefetch Discover suggestions in the background so they are ready when Discover opens. */
+                                    loadFriendSuggestions();
                                     await loadPosts();
                                     await loadNotifications();
                                     startNotificationRefresh();
