@@ -13769,19 +13769,36 @@ function renderXoxoAdminUsers(){
   const q=(document.getElementById("xoxoAdminUserSearch")?.value||"").trim().toLowerCase();
   const rows=xoxoAdminUsers.filter(u=>!q||String(u.username||"").toLowerCase().includes(q)||String(u.email||"").toLowerCase().includes(q));
   if(!rows.length){list.innerHTML='<div class="empty-state">No users found.</div>';return;}
-  list.innerHTML=rows.map(u=>{const id=escapeHtmlAttribute(String(u.user_id));return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">${escapeHtml(u.username||"No username")}</div><div>${escapeHtml(u.email||"No email")}</div><div class="xoxo-admin-meta">Joined: ${escapeHtml(xoxoAdminDate(u.created_at))}<br>Confirmed: ${escapeHtml(xoxoAdminDate(u.email_confirmed_at))}<br>Last sign-in: ${escapeHtml(xoxoAdminDate(u.last_sign_in_at))}</div></div><span class="xoxo-admin-badge">${escapeHtml(String(u.user_id).slice(0,8))}…</span></div><div class="xoxo-admin-actions"><button class="danger" onclick="xoxoAdminSuspendUser('${id}')">Suspend</button><button class="success" onclick="xoxoAdminReactivateUser('${id}')">Reactivate</button></div></div>`}).join("");
+  list.innerHTML=rows.map(u=>{
+    const id=escapeHtmlAttribute(String(u.user_id));
+    const isAdmin=u.is_admin===true;
+    const isSuspended=u.is_suspended===true;
+    const statusLabel=isAdmin?"👑 Admin":(isSuspended?"🔒 Suspended":"✅ Active");
+    const statusStyle=isAdmin?"background:#fef3c7;color:#92400e;":(isSuspended?"background:#fee2e2;color:#b91c1c;":"background:#dcfce7;color:#166534;");
+    const reason=(!isAdmin&&isSuspended&&u.suspension_reason)?`<div class="xoxo-admin-meta" style="margin-top:8px;"><strong>Suspension reason:</strong> ${escapeHtml(u.suspension_reason)}</div>`:"";
+    const actions=isAdmin?'<div class="xoxo-admin-meta" style="margin-top:12px;">Administrator account protected.</div>':(isSuspended?`<div class="xoxo-admin-actions"><button class="success" onclick="xoxoAdminReactivateUser('${id}')">Reactivate</button></div>`:`<div class="xoxo-admin-actions"><button class="danger" onclick="xoxoAdminSuspendUser('${id}')">Suspend</button></div>`);
+    return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">${escapeHtml(u.username||"No username")}</div><div>${escapeHtml(u.email||"No email")}</div><div class="xoxo-admin-meta">Joined: ${escapeHtml(xoxoAdminDate(u.created_at))}<br>Confirmed: ${escapeHtml(xoxoAdminDate(u.email_confirmed_at))}<br>Last sign-in: ${escapeHtml(xoxoAdminDate(u.last_sign_in_at))}</div>${reason}</div><span class="xoxo-admin-badge" style="${statusStyle}">${statusLabel}</span></div>${actions}</div>`;
+  }).join("");
 }
 
 async function xoxoAdminSuspendUser(userId){
   if(!xoxoIsAdmin)return; const reason=prompt("Reason for suspension (optional):",""); if(reason===null)return;
   if(!confirm("Suspend this user?"))return;
   const {error}=await supabaseClient.rpc("xoxo_admin_suspend_user",{target_user_id:userId,suspension_reason:reason||null});
-  if(error){setXoxoAdminStatus(error.message,"error");return;} setXoxoAdminStatus("User suspended.","success");
+  if(error){setXoxoAdminStatus(error.message,"error");return;}
+  const row=xoxoAdminUsers.find(u=>String(u.user_id)===String(userId));
+  if(row){row.is_suspended=true;row.suspension_reason=reason||null;}
+  renderXoxoAdminUsers();
+  setXoxoAdminStatus("User suspended.","success");
 }
 async function xoxoAdminReactivateUser(userId){
   if(!xoxoIsAdmin||!confirm("Reactivate this user?"))return;
   const {error}=await supabaseClient.rpc("xoxo_admin_reactivate_user",{target_user_id:userId});
-  if(error){setXoxoAdminStatus(error.message,"error");return;} setXoxoAdminStatus("User reactivated.","success");
+  if(error){setXoxoAdminStatus(error.message,"error");return;}
+  const row=xoxoAdminUsers.find(u=>String(u.user_id)===String(userId));
+  if(row){row.is_suspended=false;row.suspension_reason=null;}
+  renderXoxoAdminUsers();
+  setXoxoAdminStatus("User reactivated.","success");
 }
 
 function renderXoxoAdminReports(){
