@@ -5876,6 +5876,8 @@
                                     const lastTapTimes = new Map();
                                     const doubleTapLikeBusy = new Set();
                                     const recentDoubleTapTriggers = new Map();
+                                    const mediaSingleTapTimers = new Map();
+                                    let lastPostMediaTouchAt = 0;
                                     let authMode = "login";
                                     let posts = [];
                                     let savedPostIds = new Set();
@@ -8380,6 +8382,7 @@
                                     if (post.media.type === "gif") {
                                     mediaHtml =
                                     `<div class="post-media" data-post-id="${safePostId}"
+                                    onclick="handleMediaClick(event, '${safePostId}')"
                                     ondblclick="handleDoubleTapLike('${safePostId}', event)"
                                     ontouchend="handleMediaTouch(event, '${safePostId}')">
                                     <img
@@ -8388,7 +8391,7 @@
                                     draggable="false"
                                     loading="lazy"
                                     >
-                                    <div class="double-tap-heart" data-heart-post-id="${safePostId}"></div>
+                                    <div class="double-tap-heart" data-heart-post-id="${safePostId}">❤️</div>
                                     </div>`;
                                     } else if (post.media.type === "video") {
                                     mediaHtml =
@@ -8401,11 +8404,12 @@
                                     playsinline
                                     draggable="false"
                                     ></video>
-                                    <div class="double-tap-heart" data-heart-post-id="${safePostId}"></div>
+                                    <div class="double-tap-heart" data-heart-post-id="${safePostId}">❤️</div>
                                     </div>`;
                                     } else {
                                     mediaHtml =
                                     `<div class="post-media" data-post-id="${safePostId}"
+                                    onclick="handleMediaClick(event, '${safePostId}')"
                                     ondblclick="handleDoubleTapLike('${safePostId}', event)"
                                     ontouchend="handleMediaTouch(event, '${safePostId}')">
                                     <img
@@ -8413,7 +8417,7 @@
                                     alt="Post media"
                                     draggable="false"
                                     >
-                                    <div class="double-tap-heart" data-heart-post-id="${safePostId}"></div>
+                                    <div class="double-tap-heart" data-heart-post-id="${safePostId}">❤️</div>
                                     </div>`;
                                     }
                                     }
@@ -12192,20 +12196,56 @@ async function openPublicProfile(userId) {
                                     heart.classList.remove("show");
                                     }, 800);
                                     }
+                                    function getPostImageUrl(postId) {
+                                    const container = findPostMediaContainer(postId);
+                                    const image = container?.querySelector("img");
+                                    return image?.src || "";
+                                    }
+                                    function cancelMediaSingleTap(postId) {
+                                    const id = String(postId);
+                                    const timer = mediaSingleTapTimers.get(id);
+                                    if (timer) {
+                                    clearTimeout(timer);
+                                    mediaSingleTapTimers.delete(id);
+                                    }
+                                    }
+                                    function schedulePostImageOpen(postId) {
+                                    const id = String(postId);
+                                    cancelMediaSingleTap(id);
+                                    const timer = setTimeout(() => {
+                                    mediaSingleTapTimers.delete(id);
+                                    const imageUrl = getPostImageUrl(id);
+                                    if (imageUrl) openProfilePhotoViewer(imageUrl);
+                                    }, 360);
+                                    mediaSingleTapTimers.set(id, timer);
+                                    }
+                                    function handleMediaClick(event, postId) {
+                                    if (Date.now() - lastPostMediaTouchAt < 700) return;
+                                    if (event?.detail && event.detail > 1) {
+                                    cancelMediaSingleTap(postId);
+                                    return;
+                                    }
+                                    schedulePostImageOpen(postId);
+                                    }
                                     function handleMediaTouch(event, postId) {
                                     if (!event || event.touches && event.touches.length > 0) {
                                     return;
                                     }
+                                    lastPostMediaTouchAt = Date.now();
+                                    const id = String(postId);
                                     const now = Date.now();
-                                    const last = lastTapTimes.get(String(postId)) || 0;
+                                    const last = lastTapTimes.get(id) || 0;
                                     if (now - last < 350) {
-                                    lastTapTimes.set(String(postId), 0);
-                                    handleDoubleTapLike(postId, event);
+                                    lastTapTimes.set(id, 0);
+                                    cancelMediaSingleTap(id);
+                                    handleDoubleTapLike(id, event);
                                     } else {
-                                    lastTapTimes.set(String(postId), now);
+                                    lastTapTimes.set(id, now);
+                                    schedulePostImageOpen(id);
                                     }
                                     }
                                     async function handleDoubleTapLike(postId, event) {
+                                    cancelMediaSingleTap(postId);
                                     const id = String(postId);
                                     const lastTrigger = recentDoubleTapTriggers.get(id) || 0;
                                     const now = Date.now();
