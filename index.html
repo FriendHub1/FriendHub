@@ -13684,7 +13684,20 @@ function renderXoxoAdminPosts(){
   const q=(document.getElementById("xoxoAdminPostSearch")?.value||"").trim().toLowerCase();
   const rows=xoxoAdminPosts.filter(p=>!q||String(p.username||"").toLowerCase().includes(q)||String(p.content||"").toLowerCase().includes(q));
   if(!rows.length){list.innerHTML='<div class="empty-state">No posts found.</div>';return;}
-  list.innerHTML=rows.map(p=>{const id=escapeHtmlAttribute(String(p.post_id));return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">${escapeHtml(p.username||"Unknown user")}</div><div class="xoxo-admin-meta">${escapeHtml(p.post_type||"post")} · ${escapeHtml(xoxoAdminDate(p.created_at))}</div></div><span class="xoxo-admin-badge">${escapeHtml(String(p.post_id).slice(0,8))}…</span></div>${p.content?`<p style="margin-top:10px;white-space:pre-wrap;">${escapeHtml(p.content)}</p>`:""}${p.link?`<div class="xoxo-admin-meta">Link: ${escapeHtml(p.link)}</div>`:""}<div class="xoxo-admin-actions"><button class="danger" onclick="xoxoAdminDeletePost('${id}')">🗑️ Delete post</button></div></div>`}).join("");
+  list.innerHTML=rows.map(p=>{
+    const id=escapeHtmlAttribute(String(p.post_id));
+    const mediaUrl=p.media_url?escapeHtmlAttribute(String(p.media_url)):"";
+    const mediaType=String(p.media_type||"").toLowerCase();
+    let mediaHtml="";
+    if(mediaUrl){
+      if(mediaType==="video"){
+        mediaHtml=`<div style="margin-top:12px;"><div class="xoxo-admin-meta" style="margin-bottom:6px;">🎬 Video</div><video controls playsinline preload="metadata" src="${mediaUrl}" style="display:block;width:100%;max-width:560px;max-height:520px;border-radius:14px;background:#000;object-fit:contain;"></video></div>`;
+      }else{
+        mediaHtml=`<div style="margin-top:12px;"><div class="xoxo-admin-meta" style="margin-bottom:6px;">🖼️ Photo</div><img src="${mediaUrl}" alt="Post media" loading="lazy" style="display:block;width:100%;max-width:560px;max-height:520px;border-radius:14px;object-fit:contain;background:rgba(255,255,255,.04);" onclick="openProfilePhotoViewer(this.src)"></div>`;
+      }
+    }
+    return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">${escapeHtml(p.username||"Unknown user")}</div><div class="xoxo-admin-meta">${escapeHtml(p.post_type||"post")} · ${escapeHtml(xoxoAdminDate(p.created_at))}</div></div><span class="xoxo-admin-badge">${escapeHtml(String(p.post_id).slice(0,8))}…</span></div>${p.content?`<p style="margin-top:10px;white-space:pre-wrap;">${escapeHtml(p.content)}</p>`:""}${p.link?`<div class="xoxo-admin-meta">Link: ${escapeHtml(p.link)}</div>`:""}${mediaHtml}<div class="xoxo-admin-actions"><button class="danger" onclick="xoxoAdminDeletePost('${id}')">🗑️ Delete post</button></div></div>`;
+  }).join("");
 }
 async function xoxoAdminDeletePost(postId){
   if(!xoxoIsAdmin||!confirm("Permanently delete this post? This cannot be undone."))return;
