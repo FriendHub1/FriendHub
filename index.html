@@ -6319,6 +6319,7 @@
                                     async (event, session) => {
                                     currentUser =
                                     session?.user || null;
+                                    if (currentUser && await enforceXoxoSuspension()) return;
                                     updateAuthUI();
                                     if (event === "PASSWORD_RECOVERY") {
                                     const newPassword = document.getElementById("newPassword");
@@ -6364,6 +6365,7 @@
                                     }
                                     currentUser =
                                     data.session?.user || null;
+                                    if (currentUser && await enforceXoxoSuspension()) return;
                                     updateAuthUI();
                                     if (currentUser) {
                                     await loadCurrentProfile();
@@ -13663,6 +13665,37 @@ async function openPublicProfile(userId) {
    Sensitive reads/actions use security-definer admin RPCs.
    ========================================================= */
 let xoxoIsAdmin = false;
+let xoxoSuspensionSignoutInProgress = false;
+
+async function enforceXoxoSuspension() {
+  if (!currentUser || xoxoSuspensionSignoutInProgress) return false;
+  try {
+    const { data, error } = await supabaseClient.rpc("is_xoxo_suspended");
+    if (error) {
+      console.error("Suspension check failed:", error);
+      return false;
+    }
+    if (data !== true) return false;
+
+    xoxoSuspensionSignoutInProgress = true;
+    alert(
+      getFriendHubLanguage() === "es"
+        ? "Esta cuenta está suspendida. Si crees que se trata de un error, contacta a soporte de XOXO Avenue."
+        : "This account is suspended. If you believe this is a mistake, contact XOXO Avenue support."
+    );
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    updateAuthUI();
+    try { showPage("home"); } catch (_) {}
+    return true;
+  } catch (error) {
+    console.error("Suspension enforcement failed:", error);
+    return false;
+  } finally {
+    xoxoSuspensionSignoutInProgress = false;
+  }
+}
+
 let xoxoAdminUsers = [];
 let xoxoAdminReports = [];
 let xoxoAdminPosts = [];
