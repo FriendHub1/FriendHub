@@ -6668,8 +6668,10 @@
                                     if (bioCount) bioCount.textContent = String((bioInput?.value || "").length);
                                     }
                                     function clearProfileForm() {
-                                    document.getElementById("username").value =
-                                    "";
+                                    const usernameInput = document.getElementById("username");
+                                    usernameInput.value = "";
+                                    usernameInput.readOnly = false;
+                                    usernameInput.removeAttribute("readonly");
                                     document.getElementById("age").value =
                                     "";
                                     document.getElementById("country").value =
@@ -6719,14 +6721,13 @@
                                     : "Your username is public. You can change it once every 30 days.";
                                     }
                                     function prepareUsernameInputForEdit() {
-                                    if (!currentProfile || getUsernameCooldownDays() > 0) return;
+                                    if (currentProfile && getUsernameCooldownDays() > 0) return;
                                     const input = document.getElementById("username");
                                     if (!input) return;
                                     input.readOnly = false;
                                     input.removeAttribute("readonly");
                                     }
                                     function startUsernameChange() {
-                                    if (!currentProfile) return;
                                     const remaining = getUsernameCooldownDays();
                                     if (remaining > 0) {
                                     showProfileMessage(`You can change your username again in ${remaining} day${remaining === 1 ? "" : "s"}.`, "error");
