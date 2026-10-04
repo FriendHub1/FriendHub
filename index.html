@@ -4510,10 +4510,10 @@
                                     </div>
                                     </div>
                                     </div>
-                                    <button class="btn btn-secondary" id="loginBtn" onclick="openAuth('login')">
+                                    <button class="btn btn-secondary" id="loginBtn" onclick="openAuth('login')" style="display:none;">
                                     Log In
                                     </button>
-                                    <button class="btn btn-primary" id="signupBtn" onclick="openAuth('signup')">
+                                    <button class="btn btn-primary" id="signupBtn" onclick="openAuth('signup')" style="display:none;">
                                     Create Account
                                     </button>
                                     <button class="btn btn-secondary" id="logoutBtn" onclick="logout()" style="display:none;">
@@ -6361,6 +6361,8 @@
                                     } = await supabaseClient.auth.getSession();
                                     if (error) {
                                     console.error(error);
+                                    currentUser = null;
+                                    updateAuthUI();
                                     return;
                                     }
                                     currentUser =
@@ -13265,16 +13267,26 @@ async function openPublicProfile(userId) {
                   }
 
                   async function saveSubscription(subscription){
-                    if (!currentUser) throw new Error("Please log in first.");
-                    const json = subscription.toJSON();
-                    const { error } = await supabaseClient.from("push_subscriptions").upsert({
-                      user_id: currentUser.id,
-                      endpoint: json.endpoint,
-                      p256dh: json.keys?.p256dh || "",
-                      auth: json.keys?.auth || "",
-                      updated_at: new Date().toISOString()
-                    }, { onConflict: "endpoint" });
-                    if (error) throw error;
+                    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                    if (sessionError) throw new Error("Supabase session error: " + sessionError.message);
+                    if (!session?.access_token || !session?.user?.id) throw new Error("Please log in first.");
+
+                    const response = await fetch(PUSH_API + "/subscribe", {
+                      method: "POST",
+                      headers: {
+                        "Authorization": "Bearer " + session.access_token,
+                        "Content-Type": "application/json"
+                      },
+                      body: JSON.stringify(subscription.toJSON())
+                    });
+
+                    const raw = await response.text();
+                    let data = {};
+                    try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
+
+                    if (!response.ok || !data.ok) {
+                      throw new Error(data.error || data.detail || ("Push subscription failed (HTTP " + response.status + ")"));
+                    }
                   }
 
                   async function getRegistration(){
@@ -13404,6 +13416,13 @@ async function openPublicProfile(userId) {
 
                   window.addEventListener("load", function(){ setTimeout(maybeShowPushCard, 2200); });
                   document.addEventListener("visibilitychange", function(){ if (!document.hidden) setTimeout(maybeShowPushCard, 700); });
+                  supabaseClient.auth.onAuthStateChange(function(_event, session){
+                    if (session?.user) {
+                      setTimeout(maybeShowPushCard, 300);
+                    } else {
+                      card.classList.remove("show");
+                    }
+                  });
                 })();
                 </script>
 
