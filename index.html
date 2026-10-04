@@ -6829,11 +6829,18 @@
                                     interests:
                                     JSON.stringify(interests),
                                     looking_for:
-                                    JSON.stringify(lookingFor),
-                                    profile_photo:
-                                    selectedProfilePhoto || null
+                                    JSON.stringify(lookingFor)
                                     };
+
+                                    /* Only send profile_photo when it actually changed.
+                                       Re-sending an existing large Base64 photo on every
+                                       profile edit can make Safari fail the request. */
+                                    const previousProfilePhoto = currentProfile?.profile_photo || null;
+                                    if (!currentProfile || selectedProfilePhoto !== previousProfilePhoto) {
+                                    profileData.profile_photo = selectedProfilePhoto || null;
+                                    }
                                     let result;
+                                    try {
                                     if (currentProfile) {
                                     result =
                                     await supabaseClient
@@ -6849,6 +6856,14 @@
                                     .insert(profileData)
                                     .select()
                                     .single();
+                                    }
+                                    } catch (saveError) {
+                                    console.error("Profile save network error:", saveError);
+                                    showProfileMessage(
+                                    "Could not save your profile. Please check your connection and try again.",
+                                    "error"
+                                    );
+                                    return;
                                     }
                                     if (result.error) {
                                     console.error(result.error);
