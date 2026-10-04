@@ -5998,13 +5998,7 @@
                                     const searchInput = document.getElementById("searchInput");
                                     if (searchInput && searchInput.value.trim().startsWith("#")) searchInput.value = "";
                                     loadPosts();
-                                    const friendSuggestionsList = document.getElementById("friendSuggestionsList");
-                                    const friendSuggestionsSection = document.getElementById("friendSuggestionsSection");
-                                    if (friendSuggestionsList && friendSuggestionsList.querySelector(".friend-suggestion-card")) {
-                                    if (friendSuggestionsSection) friendSuggestionsSection.style.display = "";
-                                    } else {
                                     loadFriendSuggestions();
-                                    }
                                     }
                                     if (pageId === "saved") {
                                     if (!currentUser) {
@@ -6350,8 +6344,6 @@
 
                                     if (authUser) {
                                     await loadCurrentProfile();
-                                    /* Prefetch Discover suggestions in the background so they are ready when Discover opens. */
-                                    loadFriendSuggestions();
                                     await loadPosts();
                                     await loadNotifications();
                                     startNotificationRefresh();
@@ -6390,8 +6382,6 @@
                                     updateAuthUI();
                                     if (currentUser) {
                                     await loadCurrentProfile();
-                                    /* Prefetch Discover suggestions in the background so they are ready when Discover opens. */
-                                    loadFriendSuggestions();
                                     await loadPosts();
                                     await loadNotifications();
                                     startNotificationRefresh();
@@ -8847,7 +8837,7 @@ async function openPublicProfile(userId) {
                                     .from("user_follows")
                                     .select("following_id")
                                     .eq("follower_id", myId);
-                                    if (myFollowingError) throw myFollowingError;
+                                    if (myFollowingError) console.warn("Friend suggestions: following lookup skipped:", myFollowingError);
 
                                     const alreadyFollowing = new Set((myFollowingRows || []).map(row => String(row.following_id)));
                                     const firstDegree = [...alreadyFollowing];
@@ -8859,7 +8849,7 @@ async function openPublicProfile(userId) {
                                     .from("user_follows")
                                     .select("follower_id, following_id")
                                     .in("follower_id", firstDegree);
-                                    if (error) throw error;
+                                    if (error) console.warn("Friend suggestions: mutual lookup skipped:", error);
                                     secondDegreeRows = data || [];
                                     }
 
@@ -8888,7 +8878,7 @@ async function openPublicProfile(userId) {
                                     .from("friendhub_public_profiles")
                                     .select("user_id, username, country, profile_photo")
                                     .in("user_id", candidateIds);
-                                    if (error) throw error;
+                                    if (error) console.warn("Friend suggestions: mutual profiles skipped:", error);
                                     profiles = data || [];
                                     }
 
