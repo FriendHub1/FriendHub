@@ -4432,7 +4432,36 @@
                 }
                 </style>
 
-                </head>
+                
+<style id="xoxoAdminPanelStyles">
+/* =========================================================
+   XOXO AVENUE — SECURE ADMIN PANEL UI
+   Data/actions remain protected by Supabase admin-only RPCs.
+   ========================================================= */
+#adminNavBtn{display:none}
+.xoxo-admin-shell{display:grid;gap:18px}
+.xoxo-admin-hero{padding:24px;border:1px solid var(--fh-border,#e3e7ef);border-radius:22px;background:var(--fh-surface,#fff);box-shadow:var(--fh-shadow,0 8px 25px rgba(16,24,40,.06))}
+.xoxo-admin-hero h1{margin:0 0 6px}.xoxo-admin-hero p{margin:0;color:var(--fh-muted,#667085)}
+.xoxo-admin-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.xoxo-admin-tab{border:1px solid var(--fh-border,#dfe3eb);background:var(--fh-surface-strong,#fff);color:var(--fh-text,#172033);border-radius:999px;padding:9px 14px;font-weight:800;cursor:pointer}
+.xoxo-admin-tab.active{background:var(--fh-primary,#5865f2);border-color:var(--fh-primary,#5865f2);color:#fff}
+.xoxo-admin-panel{display:none}.xoxo-admin-panel.active{display:block}
+.xoxo-admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.xoxo-admin-stat{padding:18px;border:1px solid var(--fh-border,#e3e7ef);border-radius:18px;background:var(--fh-surface,#fff);text-align:center}
+.xoxo-admin-stat strong{display:block;font-size:30px}.xoxo-admin-stat span{color:var(--fh-muted,#667085);font-weight:700}
+.xoxo-admin-card{padding:18px;border:1px solid var(--fh-border,#e3e7ef);border-radius:18px;background:var(--fh-surface,#fff);margin-bottom:12px;overflow-wrap:anywhere}
+.xoxo-admin-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.xoxo-admin-card-title{font-weight:900;font-size:16px}.xoxo-admin-meta{font-size:12px;color:var(--fh-muted,#667085);margin-top:4px}
+.xoxo-admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.xoxo-admin-actions button{border:1px solid var(--fh-border,#dfe3eb);border-radius:10px;padding:8px 11px;font-weight:800;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#172033);cursor:pointer}
+.xoxo-admin-actions .danger{background:#fee2e2;color:#b91c1c;border-color:#fecaca}.xoxo-admin-actions .success{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+.xoxo-admin-search{width:100%;padding:12px 14px;border:1px solid var(--fh-border,#dfe3eb);border-radius:12px;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#172033);margin-bottom:14px}
+.xoxo-admin-status{padding:12px 14px;border-radius:12px;margin-bottom:14px;display:none}.xoxo-admin-status.show{display:block}.xoxo-admin-status.error{background:#fee2e2;color:#991b1b}.xoxo-admin-status.success{background:#dcfce7;color:#166534}
+.xoxo-admin-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900;background:var(--fh-soft,#eef0ff);color:var(--fh-primary,#5865f2)}
+@media(max-width:700px){.xoxo-admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+</head>
                                     <body>
                                     <header>
                                     <div class="container nav">
@@ -4446,6 +4475,7 @@
                                     <button onclick="showPage('profile')">Profile</button>
                                     <button onclick="showPage('saved')">Saved</button>
                                     <button id="messagesNavBtn" onclick="openMessagesInbox()">Messages<span id="messagesUnreadBadge" class="messages-unread-badge" style="display:none;">0</span></button>
+                                    <button id="adminNavBtn" type="button" onclick="openXoxoAdminPanel()">👑 Admin</button>
                                     <button onclick="showPage('about')">About</button>
                                     <button onclick="showPage('support')">Support</button>
                                     </nav>
@@ -5522,6 +5552,28 @@
                                     </div>
                                     </div>
                                     </section>
+
+                                    
+<section id="admin" class="page" aria-label="XOXO Avenue Admin Panel">
+  <div class="container xoxo-admin-shell">
+    <button type="button" class="safe-back-home" onclick="showPage('home')" aria-label="Back to Home">&#8592; Back</button>
+    <div class="xoxo-admin-hero">
+      <h1>👑 XOXO Avenue Admin</h1>
+      <p>Private moderation dashboard for authorized administrators.</p>
+    </div>
+    <div id="xoxoAdminStatus" class="xoxo-admin-status"></div>
+    <div class="xoxo-admin-tabs">
+      <button class="xoxo-admin-tab active" data-admin-tab="overview" onclick="switchXoxoAdminTab('overview',this)">Overview</button>
+      <button class="xoxo-admin-tab" data-admin-tab="users" onclick="switchXoxoAdminTab('users',this)">Users</button>
+      <button class="xoxo-admin-tab" data-admin-tab="reports" onclick="switchXoxoAdminTab('reports',this)">Reports</button>
+      <button class="xoxo-admin-tab" data-admin-tab="posts" onclick="switchXoxoAdminTab('posts',this)">Posts</button>
+    </div>
+    <div id="xoxoAdminOverview" class="xoxo-admin-panel active"><div id="xoxoAdminStats" class="xoxo-admin-stats"><div class="empty-state">Loading statistics...</div></div></div>
+    <div id="xoxoAdminUsers" class="xoxo-admin-panel"><input id="xoxoAdminUserSearch" class="xoxo-admin-search" type="search" placeholder="Search username or email..." oninput="renderXoxoAdminUsers()"><div id="xoxoAdminUsersList"></div></div>
+    <div id="xoxoAdminReports" class="xoxo-admin-panel"><div id="xoxoAdminReportsList"></div></div>
+    <div id="xoxoAdminPosts" class="xoxo-admin-panel"><input id="xoxoAdminPostSearch" class="xoxo-admin-search" type="search" placeholder="Search posts or usernames..." oninput="renderXoxoAdminPosts()"><div id="xoxoAdminPostsList"></div></div>
+  </div>
+</section>
 
                                     </main>
                                     <footer>
@@ -13603,5 +13655,129 @@ async function openPublicProfile(userId) {
                 </script>
 
                 <div id="profilePhotoViewer" class="profile-photo-viewer" onclick="closeProfilePhotoViewer(event)" aria-hidden="true"><button type="button" class="profile-photo-viewer-close" onclick="closeProfilePhotoViewer(event,true)" aria-label="Close">&times;</button><img id="profilePhotoViewerImage" class="profile-photo-viewer-image" src="" alt="Profile photo" onclick="event.stopPropagation()"></div>
+
+<script id="xoxoAdminPanelScript">
+/* =========================================================
+   XOXO AVENUE — ADMIN PANEL
+   Authorization is verified by public.is_xoxo_admin().
+   Sensitive reads/actions use security-definer admin RPCs.
+   ========================================================= */
+let xoxoIsAdmin = false;
+let xoxoAdminUsers = [];
+let xoxoAdminReports = [];
+let xoxoAdminPosts = [];
+
+async function refreshXoxoAdminAccess() {
+  const button = document.getElementById("adminNavBtn");
+  xoxoIsAdmin = false;
+  if (button) button.style.display = "none";
+  if (!currentUser) return false;
+  try {
+    const { data, error } = await supabaseClient.rpc("is_xoxo_admin");
+    if (error) throw error;
+    xoxoIsAdmin = data === true;
+    if (button) button.style.display = xoxoIsAdmin ? "inline-block" : "none";
+    return xoxoIsAdmin;
+  } catch (error) {
+    console.error("Admin access check failed:", error);
+    return false;
+  }
+}
+
+function setXoxoAdminStatus(message, type="success") {
+  const box = document.getElementById("xoxoAdminStatus");
+  if (!box) return;
+  if (!message) { box.textContent=""; box.className="xoxo-admin-status"; return; }
+  box.textContent = message;
+  box.className = `xoxo-admin-status show ${type}`;
+}
+
+async function openXoxoAdminPanel() {
+  const allowed = await refreshXoxoAdminAccess();
+  if (!allowed) { alert(getFriendHubLanguage() === "es" ? "Acceso de administrador requerido." : "Administrator access required."); return; }
+  showPage("admin");
+  switchXoxoAdminTab("overview", document.querySelector('[data-admin-tab="overview"]'));
+  await loadXoxoAdminDashboard();
+}
+
+function switchXoxoAdminTab(tab, button) {
+  document.querySelectorAll(".xoxo-admin-panel").forEach(el=>el.classList.remove("active"));
+  document.querySelectorAll(".xoxo-admin-tab").forEach(el=>el.classList.remove("active"));
+  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",reports:"xoxoAdminReports",posts:"xoxoAdminPosts"};
+  const panel=document.getElementById(map[tab]); if(panel) panel.classList.add("active");
+  if(button) button.classList.add("active");
+}
+
+async function loadXoxoAdminDashboard() {
+  if (!xoxoIsAdmin) return;
+  setXoxoAdminStatus("");
+  const [statsResult, usersResult, reportsResult, postsResult] = await Promise.all([
+    supabaseClient.rpc("get_xoxo_admin_stats"),
+    supabaseClient.rpc("get_xoxo_admin_users"),
+    supabaseClient.rpc("get_xoxo_admin_reports"),
+    supabaseClient.rpc("get_xoxo_admin_posts")
+  ]);
+  const failed=[statsResult,usersResult,reportsResult,postsResult].find(r=>r.error);
+  if(failed){ console.error(failed.error); setXoxoAdminStatus(failed.error.message || "Could not load admin data.","error"); return; }
+  renderXoxoAdminStats(statsResult.data || {});
+  xoxoAdminUsers=usersResult.data || []; xoxoAdminReports=reportsResult.data || []; xoxoAdminPosts=postsResult.data || [];
+  renderXoxoAdminUsers(); renderXoxoAdminReports(); renderXoxoAdminPosts();
+}
+
+function renderXoxoAdminStats(stats) {
+  const el=document.getElementById("xoxoAdminStats"); if(!el)return;
+  const items=[["Users",stats.users],["Profiles",stats.profiles],["Posts",stats.posts],["Comments",stats.comments]];
+  el.innerHTML=items.map(([label,value])=>`<div class="xoxo-admin-stat"><strong>${Number(value||0).toLocaleString()}</strong><span>${label}</span></div>`).join("");
+}
+function xoxoAdminDate(value){ if(!value)return "—"; const d=new Date(value); return Number.isNaN(d.getTime())?"—":d.toLocaleString(); }
+
+function renderXoxoAdminUsers(){
+  const list=document.getElementById("xoxoAdminUsersList"); if(!list)return;
+  const q=(document.getElementById("xoxoAdminUserSearch")?.value||"").trim().toLowerCase();
+  const rows=xoxoAdminUsers.filter(u=>!q||String(u.username||"").toLowerCase().includes(q)||String(u.email||"").toLowerCase().includes(q));
+  if(!rows.length){list.innerHTML='<div class="empty-state">No users found.</div>';return;}
+  list.innerHTML=rows.map(u=>{const id=escapeHtmlAttribute(String(u.user_id));return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">${escapeHtml(u.username||"No username")}</div><div>${escapeHtml(u.email||"No email")}</div><div class="xoxo-admin-meta">Joined: ${escapeHtml(xoxoAdminDate(u.created_at))}<br>Confirmed: ${escapeHtml(xoxoAdminDate(u.email_confirmed_at))}<br>Last sign-in: ${escapeHtml(xoxoAdminDate(u.last_sign_in_at))}</div></div><span class="xoxo-admin-badge">${escapeHtml(String(u.user_id).slice(0,8))}…</span></div><div class="xoxo-admin-actions"><button class="danger" onclick="xoxoAdminSuspendUser('${id}')">Suspend</button><button class="success" onclick="xoxoAdminReactivateUser('${id}')">Reactivate</button></div></div>`}).join("");
+}
+
+async function xoxoAdminSuspendUser(userId){
+  if(!xoxoIsAdmin)return; const reason=prompt("Reason for suspension (optional):",""); if(reason===null)return;
+  if(!confirm("Suspend this user?"))return;
+  const {error}=await supabaseClient.rpc("xoxo_admin_suspend_user",{target_user_id:userId,suspension_reason:reason||null});
+  if(error){setXoxoAdminStatus(error.message,"error");return;} setXoxoAdminStatus("User suspended.","success");
+}
+async function xoxoAdminReactivateUser(userId){
+  if(!xoxoIsAdmin||!confirm("Reactivate this user?"))return;
+  const {error}=await supabaseClient.rpc("xoxo_admin_reactivate_user",{target_user_id:userId});
+  if(error){setXoxoAdminStatus(error.message,"error");return;} setXoxoAdminStatus("User reactivated.","success");
+}
+
+function renderXoxoAdminReports(){
+  const list=document.getElementById("xoxoAdminReportsList"); if(!list)return;
+  if(!xoxoAdminReports.length){list.innerHTML='<div class="empty-state">No reports found.</div>';return;}
+  list.innerHTML=xoxoAdminReports.map(r=>{const id=escapeHtmlAttribute(String(r.report_id));return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">${escapeHtml(r.reason||"Report")}</div><div class="xoxo-admin-meta">Reporter: ${escapeHtml(r.reporter_username||String(r.reporter_id||"Unknown"))}<br>Reported user: ${escapeHtml(r.reported_username||String(r.reported_user_id||"—"))}<br>Post: ${escapeHtml(r.reported_post_id||"—")}<br>${escapeHtml(xoxoAdminDate(r.created_at))}</div></div><span class="xoxo-admin-badge">${escapeHtml(r.status||"open")}</span></div>${r.details?`<p style="margin-top:10px;">${escapeHtml(r.details)}</p>`:""}<div class="xoxo-admin-actions"><button onclick="xoxoAdminSetReportStatus('${id}','open')">Mark open</button><button class="success" onclick="xoxoAdminSetReportStatus('${id}','resolved')">Resolve</button></div></div>`}).join("");
+}
+async function xoxoAdminSetReportStatus(reportId,status){
+  const {error}=await supabaseClient.rpc("xoxo_admin_update_report_status",{target_report_id:reportId,new_status:status});
+  if(error){setXoxoAdminStatus(error.message,"error");return;} const row=xoxoAdminReports.find(r=>String(r.report_id)===String(reportId)); if(row)row.status=status; renderXoxoAdminReports(); setXoxoAdminStatus(`Report marked ${status}.`,"success");
+}
+
+function renderXoxoAdminPosts(){
+  const list=document.getElementById("xoxoAdminPostsList"); if(!list)return;
+  const q=(document.getElementById("xoxoAdminPostSearch")?.value||"").trim().toLowerCase();
+  const rows=xoxoAdminPosts.filter(p=>!q||String(p.username||"").toLowerCase().includes(q)||String(p.content||"").toLowerCase().includes(q));
+  if(!rows.length){list.innerHTML='<div class="empty-state">No posts found.</div>';return;}
+  list.innerHTML=rows.map(p=>{const id=escapeHtmlAttribute(String(p.post_id));return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">${escapeHtml(p.username||"Unknown user")}</div><div class="xoxo-admin-meta">${escapeHtml(p.post_type||"post")} · ${escapeHtml(xoxoAdminDate(p.created_at))}</div></div><span class="xoxo-admin-badge">${escapeHtml(String(p.post_id).slice(0,8))}…</span></div>${p.content?`<p style="margin-top:10px;white-space:pre-wrap;">${escapeHtml(p.content)}</p>`:""}${p.link?`<div class="xoxo-admin-meta">Link: ${escapeHtml(p.link)}</div>`:""}<div class="xoxo-admin-actions"><button class="danger" onclick="xoxoAdminDeletePost('${id}')">🗑️ Delete post</button></div></div>`}).join("");
+}
+async function xoxoAdminDeletePost(postId){
+  if(!xoxoIsAdmin||!confirm("Permanently delete this post? This cannot be undone."))return;
+  const {error}=await supabaseClient.rpc("xoxo_admin_delete_post",{target_post_id:postId});
+  if(error){setXoxoAdminStatus(error.message,"error");return;} xoxoAdminPosts=xoxoAdminPosts.filter(p=>String(p.post_id)!==String(postId)); renderXoxoAdminPosts(); setXoxoAdminStatus("Post deleted.","success");
+}
+
+/* Keep the Admin button synchronized with login/logout without changing existing auth logic. */
+window.addEventListener("load",()=>{ setTimeout(refreshXoxoAdminAccess,500); });
+supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0); });
+</script>
+
 </body>
                                     </html>
