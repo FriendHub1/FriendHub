@@ -6316,11 +6316,20 @@
                                     "message show " + type;
                                     }
                                     supabaseClient.auth.onAuthStateChange(
-                                    async (event, session) => {
-                                    currentUser =
-                                    session?.user || null;
-                                    if (currentUser && await enforceXoxoSuspension()) return;
+                                    (event, session) => {
+                                    const authUser = session?.user || null;
+                                    currentUser = authUser;
                                     updateAuthUI();
+
+                                    /* IMPORTANT: do not await Supabase calls inside onAuthStateChange.
+                                       Safari/iPhone can otherwise leave auth operations waiting and
+                                       the UI can incorrectly fall back to Log In / Create Account. */
+                                    setTimeout(async () => {
+                                    if (authUser && currentUser?.id !== authUser.id) return;
+                                    if (!authUser && currentUser) return;
+
+                                    if (authUser && await enforceXoxoSuspension()) return;
+
                                     if (event === "PASSWORD_RECOVERY") {
                                     const newPassword = document.getElementById("newPassword");
                                     const newPasswordConfirm = document.getElementById("newPasswordConfirm");
@@ -6333,7 +6342,8 @@
                                     }
                                     openModal("newPasswordModal");
                                     }
-                                    if (currentUser) {
+
+                                    if (authUser) {
                                     await loadCurrentProfile();
                                     await loadPosts();
                                     await loadNotifications();
@@ -6350,8 +6360,10 @@
                                     posts = [...samplePosts];
                                     renderPosts();
                                     }
+
                                     updateProfileVisibility();
                                     await openSharedPostFromUrl();
+                                    }, 0);
                                     }
                                     );
                                     async function checkSession() {
