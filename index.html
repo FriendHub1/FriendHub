@@ -3494,6 +3494,127 @@
                 }
 
 
+
+                /* XOXO AVENUE — MY PROFILE NAVIGATION */
+                .my-profile-tabs {
+                  display: flex;
+                  gap: 10px;
+                  margin: 0 0 22px;
+                  padding: 8px;
+                  overflow-x: auto;
+                  border: 1px solid var(--fh-border);
+                  border-radius: 20px;
+                  background: var(--fh-surface);
+                  box-shadow: var(--fh-shadow);
+                  scrollbar-width: none;
+                  -webkit-overflow-scrolling: touch;
+                }
+                .my-profile-tabs::-webkit-scrollbar { display: none; }
+                .my-profile-tab {
+                  flex: 1 0 auto;
+                  min-height: 44px;
+                  border: 1px solid transparent;
+                  border-radius: 14px;
+                  padding: 10px 14px;
+                  background: transparent;
+                  color: var(--fh-muted);
+                  font-weight: 800;
+                  cursor: pointer;
+                  white-space: nowrap;
+                }
+                .my-profile-tab:hover {
+                  border-color: var(--fh-border);
+                  color: var(--fh-text);
+                }
+                .my-profile-tab.active {
+                  background: linear-gradient(135deg,#27c8ff,#7d5cff);
+                  color: #fff;
+                  box-shadow: 0 8px 24px rgba(39,200,255,.16);
+                }
+                .my-profile-panel { display: none; }
+                .my-profile-panel.active { display: block; }
+                .my-profile-panel-heading {
+                  margin: 0 0 18px;
+                  padding: 20px 22px;
+                  border: 1px solid var(--fh-border);
+                  border-radius: 20px;
+                  background: var(--fh-surface);
+                  box-shadow: var(--fh-shadow);
+                }
+                .my-profile-panel-heading h2 { margin: 0 0 5px; }
+                .my-profile-panel-heading p { margin: 0; color: var(--fh-muted); }
+                .my-profile-people-list {
+                  display: grid;
+                  gap: 10px;
+                }
+                .my-profile-person {
+                  width: 100%;
+                  display: flex;
+                  align-items: center;
+                  gap: 13px;
+                  padding: 13px 15px;
+                  border: 1px solid var(--fh-border);
+                  border-radius: 17px;
+                  background: var(--fh-surface);
+                  color: var(--fh-text);
+                  text-align: left;
+                  cursor: pointer;
+                  box-shadow: var(--fh-shadow);
+                }
+                .my-profile-person:hover { transform: translateY(-1px); }
+                .my-profile-person-avatar {
+                  width: 48px;
+                  height: 48px;
+                  flex: 0 0 48px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  overflow: hidden;
+                  border-radius: 50%;
+                  background: rgba(125,92,255,.14);
+                  font-weight: 900;
+                }
+                .my-profile-person-avatar img {
+                  width: 100%;
+                  height: 100%;
+                  object-fit: cover;
+                }
+                .my-profile-person-info {
+                  min-width: 0;
+                  flex: 1;
+                  display: flex;
+                  flex-direction: column;
+                  gap: 3px;
+                }
+                .my-profile-person-info strong {
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                }
+                .my-profile-person-info span {
+                  color: var(--fh-muted);
+                  font-size: .86rem;
+                }
+                .my-profile-person-arrow {
+                  color: var(--fh-muted);
+                  font-size: 1.7rem;
+                  line-height: 1;
+                }
+                @media (max-width: 600px) {
+                  .my-profile-tabs {
+                    gap: 7px;
+                    padding: 7px;
+                  }
+                  .my-profile-tab {
+                    flex: 0 0 auto;
+                    min-height: 42px;
+                    padding: 9px 12px;
+                  }
+                  .my-profile-panel-heading {
+                    padding: 17px;
+                  }
+                }
+
                 /* XOXO AVENUE — NOTIFICATIONS VISUAL REFRESH
                    CSS only: notification logic, filters, mark-read and bell behavior are unchanged. */
                 .notification-panel {
@@ -4804,6 +4925,14 @@
                                     <h1>Your Profile</h1>
                                     <p>Customize how people discover you on XOXO Avenue.</p>
                                     </div>
+
+                                    <div id="myProfileTabs" class="my-profile-tabs" style="display:none;">
+                                    <button type="button" class="my-profile-tab active" data-my-profile-tab="profile" onclick="showMyProfileTab('profile', this)">👤 Profile</button>
+                                    <button type="button" class="my-profile-tab" data-my-profile-tab="posts" onclick="showMyProfileTab('posts', this)">📝 My Posts</button>
+                                    <button type="button" class="my-profile-tab" data-my-profile-tab="following" onclick="showMyProfileTab('following', this)">💜 Following</button>
+                                    <button type="button" class="my-profile-tab" data-my-profile-tab="followers" onclick="showMyProfileTab('followers', this)">👥 Followers</button>
+                                    </div>
+
                                     <div id="profileLoginMessage" class="content-card" style="display:none;">
                                     <h2>Create an account first</h2>
                                     <p>
@@ -4814,6 +4943,7 @@
                                     Create Account
                                     </button>
                                     </div>
+                                    <div id="myProfileMainPanel" class="my-profile-panel active">
                                     <div id="profileCard" class="profile-card">
                                     <div class="profile-photo-section">
                                     <div id="profileAvatar" class="profile-avatar">
@@ -4996,6 +5126,37 @@
                                     </div>
                                     <div id="profileVisitorsList" class="profile-visitors-list">
                                     <div class="empty-state">Loading visitors...</div>
+                                    </div>
+                                    </div>
+                                    </div>
+
+                                    <div id="myProfilePostsPanel" class="my-profile-panel">
+                                    <div class="my-profile-panel-heading">
+                                    <h2>📝 My Posts</h2>
+                                    <p>Everything you have shared on XOXO Avenue.</p>
+                                    </div>
+                                    <div id="myProfilePostsFeed" class="feed">
+                                    <div class="empty-state">Open this tab to load your posts.</div>
+                                    </div>
+                                    </div>
+
+                                    <div id="myProfileFollowingPanel" class="my-profile-panel">
+                                    <div class="my-profile-panel-heading">
+                                    <h2>💜 Following</h2>
+                                    <p>People you follow on XOXO Avenue.</p>
+                                    </div>
+                                    <div id="myProfileFollowingList" class="my-profile-people-list">
+                                    <div class="empty-state">Open this tab to load the people you follow.</div>
+                                    </div>
+                                    </div>
+
+                                    <div id="myProfileFollowersPanel" class="my-profile-panel">
+                                    <div class="my-profile-panel-heading">
+                                    <h2>👥 Followers</h2>
+                                    <p>People who follow you on XOXO Avenue.</p>
+                                    </div>
+                                    <div id="myProfileFollowersList" class="my-profile-people-list">
+                                    <div class="empty-state">Open this tab to load your followers.</div>
                                     </div>
                                     </div>
                                     </div>
@@ -6069,9 +6230,12 @@
                                     }
                                     if (pageId === "profile") {
                                     updateProfileVisibility();
+                                    const myProfileTabs = document.getElementById("myProfileTabs");
+                                    if (myProfileTabs) myProfileTabs.style.display = currentUser ? "flex" : "none";
                                     if (currentUser) {
                                     loadCurrentProfile();
                                     loadProfileVisitors();
+                                    showMyProfileTab("profile", document.querySelector('[data-my-profile-tab="profile"]'));
                                     }
                                     }
                                     }
@@ -9124,6 +9288,98 @@ async function openPublicProfile(userId) {
                                     if (button) button.disabled = false;
                                     }
                                     }
+                                    function showMyProfileTab(tab, button) {
+                                    if (!currentUser) return;
+                                    const safeTab = ["profile", "posts", "following", "followers"].includes(tab) ? tab : "profile";
+                                    document.querySelectorAll(".my-profile-tab").forEach(item => item.classList.remove("active"));
+                                    const activeButton = button || document.querySelector(`[data-my-profile-tab="${safeTab}"]`);
+                                    if (activeButton) activeButton.classList.add("active");
+
+                                    const panels = {
+                                    profile: document.getElementById("myProfileMainPanel"),
+                                    posts: document.getElementById("myProfilePostsPanel"),
+                                    following: document.getElementById("myProfileFollowingPanel"),
+                                    followers: document.getElementById("myProfileFollowersPanel")
+                                    };
+                                    Object.entries(panels).forEach(([key, panel]) => {
+                                    if (panel) panel.classList.toggle("active", key === safeTab);
+                                    });
+
+                                    if (safeTab === "posts") loadMyProfilePosts();
+                                    if (safeTab === "following") loadMyProfilePeople("following");
+                                    if (safeTab === "followers") loadMyProfilePeople("followers");
+                                    }
+
+                                    async function loadMyProfilePosts() {
+                                    const feed = document.getElementById("myProfilePostsFeed");
+                                    if (!feed || !currentUser) return;
+                                    feed.innerHTML = '<div class="empty-state">Loading your posts...</div>';
+                                    await loadPosts();
+                                    const mine = posts.filter(post => String(post.userId || "") === String(currentUser.id));
+                                    if (!mine.length) {
+                                    feed.innerHTML = '<div class="empty-state">You have not posted anything yet.</div>';
+                                    return;
+                                    }
+                                    feed.innerHTML = mine.map(post => renderPost(post)).join("");
+                                    }
+
+                                    async function loadMyProfilePeople(kind) {
+                                    if (!currentUser || !["followers", "following"].includes(kind)) return;
+                                    const list = document.getElementById(kind === "following" ? "myProfileFollowingList" : "myProfileFollowersList");
+                                    if (!list) return;
+                                    list.innerHTML = '<div class="empty-state">Loading...</div>';
+
+                                    const column = kind === "followers" ? "following_id" : "follower_id";
+                                    const idField = kind === "followers" ? "follower_id" : "following_id";
+                                    const { data: rows, error } = await supabaseClient
+                                    .from("user_follows")
+                                    .select(idField)
+                                    .eq(column, currentUser.id)
+                                    .order("created_at", { ascending: false });
+
+                                    if (error) {
+                                    console.error(`My profile ${kind} error:`, error);
+                                    list.innerHTML = '<div class="empty-state">Could not load this list.</div>';
+                                    return;
+                                    }
+
+                                    const ids = [...new Set((rows || []).map(row => String(row[idField] || "")).filter(Boolean))];
+                                    if (!ids.length) {
+                                    list.innerHTML = `<div class="empty-state">${kind === "following" ? "You are not following anyone yet." : "You do not have any followers yet."}</div>`;
+                                    return;
+                                    }
+
+                                    const { data: profiles, error: profileError } = await getCachedPublicProfiles(
+                                    ids,
+                                    ["username", "country", "profile_photo"]
+                                    );
+
+                                    if (profileError) {
+                                    console.error(`My profile ${kind} profiles error:`, profileError);
+                                    list.innerHTML = '<div class="empty-state">Could not load this list.</div>';
+                                    return;
+                                    }
+
+                                    const byId = new Map((profiles || []).map(profile => [String(profile.user_id), profile]));
+                                    list.innerHTML = ids.map(id => {
+                                    const profile = byId.get(id);
+                                    if (!profile) return "";
+                                    const username = profile.username || "@User";
+                                    const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
+                                    const avatar = profile.profile_photo
+                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+                                    : initial;
+                                    return `<button type="button" class="my-profile-person" onclick="openPublicProfile('${escapeHtmlAttribute(id)}')">
+                                    <span class="my-profile-person-avatar">${avatar}</span>
+                                    <span class="my-profile-person-info">
+                                    <strong>${escapeHtml(username)}</strong>
+                                    <span>${escapeHtml(profile.country || "Country not added")}</span>
+                                    </span>
+                                    <span class="my-profile-person-arrow">›</span>
+                                    </button>`;
+                                    }).join("") || `<div class="empty-state">No ${kind} yet.</div>`;
+                                    }
+
                                     async function openFollowList(kind, userId) {
                                     if (!currentUser || !userId || !["followers", "following"].includes(kind)) return;
                                     const title = document.getElementById("followListTitle");
