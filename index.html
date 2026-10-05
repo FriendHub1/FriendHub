@@ -5825,6 +5825,59 @@
                                     );
                                     let currentUser = null;
                                     let currentProfile = null;
+
+                                    /* XOXO Avenue — short-lived public profile cache.
+                                       Reuses profile data already loaded during this page session so
+                                       posts, notifications, visitors and messages do not repeatedly
+                                       request the same username/profile photo from Supabase. */
+                                    const PUBLIC_PROFILE_CACHE_TTL_MS = 5 * 60 * 1000;
+                                    const publicProfileCache = new Map();
+
+                                    function invalidatePublicProfileCache(userId) {
+                                    if (!userId) return;
+                                    publicProfileCache.delete(String(userId));
+                                    }
+
+                                    async function getCachedPublicProfiles(userIds, fields = []) {
+                                    const ids = [...new Set((userIds || []).map(id => String(id || "")).filter(Boolean))];
+                                    if (!ids.length) return { data: [], error: null };
+
+                                    const requestedFields = [...new Set((fields || []).filter(field => field && field !== "user_id"))];
+                                    const now = Date.now();
+                                    const idsToFetch = ids.filter(id => {
+                                    const cached = publicProfileCache.get(id);
+                                    if (!cached || (now - cached.cachedAt) >= PUBLIC_PROFILE_CACHE_TTL_MS) return true;
+                                    return requestedFields.some(field => !cached.loadedFields.has(field));
+                                    });
+
+                                    if (idsToFetch.length) {
+                                    const { data, error } = await supabaseClient
+                                    .from("friendhub_public_profiles")
+                                    .select(["user_id", ...requestedFields].join(", "))
+                                    .in("user_id", idsToFetch);
+
+                                    if (error) return { data: [], error };
+
+                                    const returnedById = new Map((data || []).map(row => [String(row.user_id), row]));
+                                    idsToFetch.forEach(id => {
+                                    const previous = publicProfileCache.get(id);
+                                    const row = returnedById.get(id);
+                                    const loadedFields = new Set(previous?.loadedFields || []);
+                                    requestedFields.forEach(field => loadedFields.add(field));
+                                    publicProfileCache.set(id, {
+                                    data: row ? { ...(previous?.data || {}), ...row } : (previous?.data || { user_id: id }),
+                                    exists: row ? true : (previous?.exists ?? false),
+                                    loadedFields,
+                                    cachedAt: now
+                                    });
+                                    });
+                                    }
+
+                                    return {
+                                    data: ids.map(id => publicProfileCache.get(id)).filter(entry => entry?.exists).map(entry => entry.data),
+                                    error: null
+                                    };
+                                    }
                                     let notifications = [];
                                     let notificationRefreshTimer = null;
                                     let currentFilter = "all";
@@ -6559,10 +6612,10 @@
                                     }
 
                                     const viewerIds = [...new Set(rows.map(row => String(row.viewer_id || "")).filter(Boolean))];
-                                    const { data: visitorProfiles, error: profilesError } = await supabaseClient
-                                    .from("friendhub_public_profiles")
-                                    .select("user_id, username, profile_photo")
-                                    .in("user_id", viewerIds);
+                                    const { data: visitorProfiles, error: profilesError } = await getCachedPublicProfiles(
+                                    viewerIds,
+                                    ["username", "profile_photo"]
+                                    );
 
                                     if (profilesError) {
                                     console.error("Profile visitor profiles error:", profilesError);
@@ -6907,6 +6960,7 @@
                                     }
                                     currentProfile =
                                     result.data;
+                                    invalidatePublicProfileCache(currentUser.id);
                                     selectedProfilePhoto = result.data?.profile_photo || savedProfilePhoto || null;
                                     selectedProfilePhotoFile = null;
                                     updateUsernameChangeUI();
@@ -7268,10 +7322,10 @@
                                     )];
                                     let postAuthorProfiles = [];
                                     if (postAuthorIds.length) {
-                                    const { data: authorProfileData, error: authorProfileError } = await supabaseClient
-                                    .from("friendhub_public_profiles")
-                                    .select("user_id, profile_photo")
-                                    .in("user_id", postAuthorIds);
+                                    const { data: authorProfileData, error: authorProfileError } = await getCachedPublicProfiles(
+                                    postAuthorIds,
+                                    ["profile_photo"]
+                                    );
                                     if (authorProfileError) {
                                     console.error("Post author profiles load error:", authorProfileError);
                                     } else {
@@ -8950,10 +9004,10 @@ async function openPublicProfile(userId) {
                                     /* If there are not enough mutuals yet, add public profiles as discovery suggestions. */
                                     let profiles = [];
                                     if (candidateIds.length) {
-                                    const { data, error } = await supabaseClient
-                                    .from("friendhub_public_profiles")
-                                    .select("user_id, username, country, profile_photo")
-                                    .in("user_id", candidateIds);
+                                    const { data, error } = await getCachedPublicProfiles(
+                                    candidateIds,
+                                    ["username", "country", "profile_photo"]
+                                    );
                                     if (error) throw error;
                                     profiles = data || [];
                                     }
@@ -9083,7 +9137,10 @@ async function openPublicProfile(userId) {
                                     if (error) { console.error("Follow list error:", error); if (list) list.innerHTML = '<div class="empty-state">Could not load this list.</div>'; return; }
                                     const ids = [...new Set((rows || []).map(row => String(row[idField])).filter(Boolean))];
                                     if (!ids.length) { if (list) list.innerHTML = `<div class="empty-state">No ${kind} yet.</div>`; return; }
-                                    const { data: profiles, error: profileError } = await supabaseClient.from("friendhub_public_profiles").select("user_id, username, country, profile_photo").in("user_id", ids);
+                                    const { data: profiles, error: profileError } = await getCachedPublicProfiles(
+                                    ids,
+                                    ["username", "country", "profile_photo"]
+                                    );
                                     if (profileError) { console.error("Follow profiles error:", profileError); if (list) list.innerHTML = '<div class="empty-state">Could not load this list.</div>'; return; }
                                     const byId = new Map((profiles || []).map(profile => [String(profile.user_id), profile]));
                                     if (list) list.innerHTML = ids.map(id => {
@@ -9759,10 +9816,10 @@ async function openPublicProfile(userId) {
                                     }
 
                                     const userIds = [...conversations.keys()];
-                                    const { data: profiles, error: profileError } = await supabaseClient
-                                    .from("friendhub_public_profiles")
-                                    .select("user_id, username, profile_photo")
-                                    .in("user_id", userIds);
+                                    const { data: profiles, error: profileError } = await getCachedPublicProfiles(
+                                    userIds,
+                                    ["username", "profile_photo"]
+                                    );
 
                                     if (profileError) console.error("DM inbox profile load error:", profileError);
 
@@ -11395,10 +11452,10 @@ async function openPublicProfile(userId) {
                                     const actorIds = [...new Set(notifications.map(item => String(item.actor_id || "")).filter(Boolean))];
                                     notificationActorProfiles = new Map();
                                     if (actorIds.length) {
-                                    const { data: actorProfiles, error: actorError } = await supabaseClient
-                                    .from("friendhub_public_profiles")
-                                    .select("user_id, username, profile_photo")
-                                    .in("user_id", actorIds);
+                                    const { data: actorProfiles, error: actorError } = await getCachedPublicProfiles(
+                                    actorIds,
+                                    ["username", "profile_photo"]
+                                    );
                                     if (actorError) {
                                     console.error("Notification actor profiles error:", actorError);
                                     } else {
@@ -11684,10 +11741,10 @@ async function openPublicProfile(userId) {
                                     let commentAuthorProfiles = [];
                                     if (commentAuthorIds.length) {
                                     const { data: commentProfileData, error: commentProfileError } =
-                                    await supabaseClient
-                                    .from("friendhub_public_profiles")
-                                    .select("user_id, profile_photo")
-                                    .in("user_id", commentAuthorIds);
+                                    await getCachedPublicProfiles(
+                                    commentAuthorIds,
+                                    ["profile_photo"]
+                                    );
                                     if (commentProfileError) {
                                     console.error("Comment author profiles load error:", commentProfileError);
                                     } else {
