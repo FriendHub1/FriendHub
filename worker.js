@@ -890,46 +890,53 @@ async function insertInboundSupportMessage(
   message,
   env
 ) {
-  const response =
-    await fetch(
-      `${SUPABASE_URL}/rest/v1/support_messages`,
-      {
-        method: "POST",
-        headers: {
-          apikey:
-            env.SUPABASE_SECRET_KEY,
-          Authorization:
-            `Bearer ${env.SUPABASE_SECRET_KEY}`,
-          "Content-Type":
-            "application/json",
-          Prefer:
-            "return=minimal",
-        },
-        body:
-          JSON.stringify({
-            case_id:
-              supportCase.id,
-            sender_id:
-              senderId,
-            sender_type:
-              "user",
-            message:
-              message,
-          }),
-      }
-    );
+  const payload = {
+    case_id: supportCase.id,
+    sender_id: senderId,
+    sender_type: "user",
+    message: message,
+  };
+
+  console.log(
+    "XOXO attempting support_messages insert:",
+    JSON.stringify(payload)
+  );
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/support_messages`,
+    {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const responseText = await response.text();
+
+  console.log(
+    "XOXO support_messages response:",
+    response.status,
+    responseText
+  );
 
   if (!response.ok) {
-    console.error(
-      "XOXO inbound support message insert failed:",
-      response.status,
-      await response.text()
-    );
-
-    return false;
+    return {
+      ok: false,
+      status: response.status,
+      error: responseText,
+    };
   }
 
-  return true;
+  return {
+    ok: true,
+    status: response.status,
+    error: null,
+  };
 }
 
 /*
@@ -1251,12 +1258,13 @@ async function handleSupportEmailInbound(
       env
     );
 
-  if (!inserted) {
+  if (!inserted.ok) {
     return jsonResponse(
       {
         ok: false,
-        error:
-          "Could not save support message",
+        error: "Could not save support message",
+        supabase_status: inserted.status,
+        supabase_error: inserted.error,
       },
       500
     );
