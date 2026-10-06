@@ -6030,6 +6030,19 @@
     <div id="xoxoAdminReports" class="xoxo-admin-panel"><div id="xoxoAdminReportsList"></div></div>
     <div id="xoxoAdminPosts" class="xoxo-admin-panel"><input id="xoxoAdminPostSearch" class="xoxo-admin-search" type="search" placeholder="Search posts or usernames..." oninput="renderXoxoAdminPosts()"><div id="xoxoAdminPostsList"></div></div>
     <div id="xoxoAdminSupport" class="xoxo-admin-panel">
+      <div id="xoxoAdminSupportToggleCard" class="xoxo-admin-card" style="margin-bottom:16px;">
+        <div class="xoxo-admin-card-head">
+          <div>
+            <div class="xoxo-admin-card-title">💬 Live Chat availability</div>
+            <div id="xoxoAdminSupportToggleText" class="xoxo-admin-meta">Checking current status...</div>
+          </div>
+          <span id="xoxoAdminSupportToggleBadge" class="xoxo-admin-badge">Checking...</span>
+        </div>
+        <div class="xoxo-admin-actions" style="margin-top:14px;">
+          <button id="xoxoSupportOnlineBtn" class="success" type="button" onclick="setXoxoAdminSupportOnline(true)">🟢 Online</button>
+          <button id="xoxoSupportOfflineBtn" type="button" onclick="setXoxoAdminSupportOnline(false)">⚫ Offline</button>
+        </div>
+      </div>
       <div id="xoxoAdminSupportCases"><div class="empty-state">Open Support Cases to load conversations.</div></div>
       <div id="xoxoAdminSupportConversation" style="display:none;"></div>
     </div>
@@ -14383,6 +14396,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 
   window.loadXoxoAdminSupportCases=async function(){
     if(!(await isSupportAdmin())) return;
+    if (window.refreshXoxoAdminSupportToggle) await window.refreshXoxoAdminSupportToggle();
     const list=document.getElementById("xoxoAdminSupportCases");
     const convo=document.getElementById("xoxoAdminSupportConversation");
     if(!list) return;
@@ -14993,6 +15007,91 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   }
 
   window.refreshXoxoSupportStatus = refreshXoxoSupportStatus;
+
+  function renderXoxoAdminSupportToggle(isOnline, hasError = false) {
+    const badge = document.getElementById("xoxoAdminSupportToggleBadge");
+    const text = document.getElementById("xoxoAdminSupportToggleText");
+    const onlineBtn = document.getElementById("xoxoSupportOnlineBtn");
+    const offlineBtn = document.getElementById("xoxoSupportOfflineBtn");
+    if (!badge || !text) return;
+
+    if (hasError) {
+      badge.textContent = "Unavailable";
+      badge.style.background = "#fee2e2";
+      badge.style.color = "#991b1b";
+      text.textContent = "Could not check Live Chat status.";
+      return;
+    }
+
+    if (isOnline) {
+      badge.textContent = "🟢 Online";
+      badge.style.background = "#dcfce7";
+      badge.style.color = "#166534";
+      text.textContent = "Users currently see Live Chat as Online.";
+      if (onlineBtn) onlineBtn.disabled = true;
+      if (offlineBtn) offlineBtn.disabled = false;
+    } else {
+      badge.textContent = "⚫ Offline";
+      badge.style.background = "#eef0f4";
+      badge.style.color = "#475467";
+      text.textContent = "Users currently see Live Chat as Offline.";
+      if (onlineBtn) onlineBtn.disabled = false;
+      if (offlineBtn) offlineBtn.disabled = true;
+    }
+  }
+
+  window.refreshXoxoAdminSupportToggle = async function() {
+    if (typeof supabaseClient === "undefined") return;
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (String(authData?.user?.id || "") !== XOXO_SUPPORT_ADMIN_ID) return;
+
+    const { data, error } = await supabaseClient
+      .from("support_status")
+      .select("is_online, updated_at")
+      .eq("admin_id", XOXO_SUPPORT_ADMIN_ID)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Admin support status load error:", error);
+      renderXoxoAdminSupportToggle(false, true);
+      return;
+    }
+
+    renderXoxoAdminSupportToggle(Boolean(data && data.is_online));
+  };
+
+  window.setXoxoAdminSupportOnline = async function(isOnline) {
+    if (typeof supabaseClient === "undefined") return;
+
+    const { data: authData } = await supabaseClient.auth.getUser();
+    if (String(authData?.user?.id || "") !== XOXO_SUPPORT_ADMIN_ID) {
+      alert("Only the XOXO Avenue administrator can change Live Chat status.");
+      return;
+    }
+
+    const onlineBtn = document.getElementById("xoxoSupportOnlineBtn");
+    const offlineBtn = document.getElementById("xoxoSupportOfflineBtn");
+    if (onlineBtn) onlineBtn.disabled = true;
+    if (offlineBtn) offlineBtn.disabled = true;
+
+    const { error } = await supabaseClient
+      .from("support_status")
+      .update({
+        is_online: Boolean(isOnline),
+        updated_at: new Date().toISOString()
+      })
+      .eq("admin_id", XOXO_SUPPORT_ADMIN_ID);
+
+    if (error) {
+      console.error("Admin support status update error:", error);
+      alert("Could not change Live Chat status.");
+      await window.refreshXoxoAdminSupportToggle();
+      return;
+    }
+
+    renderXoxoAdminSupportToggle(Boolean(isOnline));
+    await refreshXoxoSupportStatus();
+  };
 
   window.addEventListener("load", () => {
     setTimeout(startXoxoSupportStatusRefresh, 500);
