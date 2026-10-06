@@ -6044,6 +6044,15 @@
           <button id="xoxoSupportOfflineBtn" type="button" onclick="setXoxoAdminSupportOnline(false)">⚫ Offline</button>
         </div>
       </div>
+      <div id="xoxoAdminSupportTools" style="margin-bottom:14px;">
+        <input id="xoxoAdminSupportSearch" class="xoxo-admin-search" type="search" placeholder="Search case #..." oninput="renderXoxoAdminSupportCases()" style="margin-bottom:10px;">
+        <div class="xoxo-admin-actions" style="margin-top:0;display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="xoxoSupportFilterAll" class="success" type="button" onclick="setXoxoAdminSupportFilter('all')">All</button>
+          <button id="xoxoSupportFilterOpen" type="button" onclick="setXoxoAdminSupportFilter('open')">🔵 Open</button>
+          <button id="xoxoSupportFilterPending" type="button" onclick="setXoxoAdminSupportFilter('pending')">🟡 Pending</button>
+          <button id="xoxoSupportFilterClosed" type="button" onclick="setXoxoAdminSupportFilter('closed')">⚫ Closed</button>
+        </div>
+      </div>
       <div id="xoxoAdminSupportCases"><div class="empty-state">Open Support Cases to load conversations.</div></div>
       <div id="xoxoAdminSupportConversation" style="display:none;"></div>
     </div>
@@ -14388,6 +14397,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   let adminSupportCase=null;
   let adminSupportTimer=null;
   let adminSupportListTimer=null;
+  let adminSupportCasesCache=[];
+  let adminSupportFilter="all";
 
   function aEsc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
   function aTime(v){try{return new Date(v).toLocaleString([], {dateStyle:"short",timeStyle:"short"});}catch{return "";}}
@@ -14395,6 +14406,46 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     const {data}=await supabaseClient.auth.getUser();
     return String(data?.user?.id||"")===SUPPORT_ADMIN_ID;
   }
+
+  window.setXoxoAdminSupportFilter=function(filter){
+    adminSupportFilter=filter||"all";
+    ["all","open","pending","closed"].forEach(name=>{
+      const id="xoxoSupportFilter"+name.charAt(0).toUpperCase()+name.slice(1);
+      const btn=document.getElementById(id);
+      if(btn) btn.classList.toggle("success",name===adminSupportFilter);
+    });
+    renderXoxoAdminSupportCases();
+  };
+
+  window.renderXoxoAdminSupportCases=function(){
+    const list=document.getElementById("xoxoAdminSupportCases");
+    if(!list) return;
+    const search=(document.getElementById("xoxoAdminSupportSearch")?.value||"").trim().replace(/^#/,"").toLowerCase();
+    const filtered=(adminSupportCasesCache||[]).filter(item=>{
+      const c=item.caseData;
+      const matchesFilter=adminSupportFilter==="all" || String(c.status||"").toLowerCase()===adminSupportFilter;
+      const matchesSearch=!search || String(c.case_number||"").toLowerCase().includes(search);
+      return matchesFilter && matchesSearch;
+    });
+    if(!filtered.length){
+      list.innerHTML='<div class="empty-state">No support cases match your search or filter.</div>';
+      return;
+    }
+    list.innerHTML=filtered.map(item=>{
+      const c=item.caseData,m=item.message,unread=item.unread,who=item.who,activityTime=item.activityTime;
+      const newBadge=unread
+        ? `<span class="xoxo-admin-badge" style="background:#2563eb;color:#fff;margin-right:6px;">${unread===1?"● New":"● "+unread+" New"}</span>`
+        : "";
+      return `<div class="xoxo-admin-card xoxo-support-case" onclick="openXoxoAdminSupportCase('${aEsc(c.id)}')" style="${unread?"border-color:rgba(59,130,246,.8);box-shadow:0 0 0 1px rgba(59,130,246,.18);":""}">
+        <div class="xoxo-admin-card-head">
+          <div><div class="xoxo-admin-card-title">Support case #${aEsc(c.case_number)}</div>
+          <div class="xoxo-admin-meta">@${aEsc(who)} · ${aEsc(aTime(activityTime))}</div></div>
+          <div>${newBadge}<span class="xoxo-admin-badge">${aEsc(c.status)}</span></div>
+        </div>
+        <div class="xoxo-support-case-preview">${aEsc(m?.message||"No messages yet.")}</div>
+      </div>`;
+    }).join("");
+  };
 
   window.loadXoxoAdminSupportCases=async function(){
     if(!(await isSupportAdmin())) return;
@@ -14448,24 +14499,15 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       return bt-at;
     });
 
-    list.innerHTML=cases.map(c=>{
+    adminSupportCasesCache=cases.map(c=>{
       const key=String(c.id);
       const m=latest.get(key);
       const unread=unreadByCase.get(key)||0;
       const who=names.get(String(c.user_id))||"User";
       const activityTime=m?.created_at||c.updated_at||c.created_at;
-      const newBadge=unread
-        ? `<span class="xoxo-admin-badge" style="background:#2563eb;color:#fff;margin-right:6px;">${unread===1?"● New":"● "+unread+" New"}</span>`
-        : "";
-      return `<div class="xoxo-admin-card xoxo-support-case" onclick="openXoxoAdminSupportCase('${aEsc(c.id)}')" style="${unread?"border-color:rgba(59,130,246,.8);box-shadow:0 0 0 1px rgba(59,130,246,.18);":""}">
-        <div class="xoxo-admin-card-head">
-          <div><div class="xoxo-admin-card-title">Support case #${aEsc(c.case_number)}</div>
-          <div class="xoxo-admin-meta">@${aEsc(who)} · ${aEsc(aTime(activityTime))}</div></div>
-          <div>${newBadge}<span class="xoxo-admin-badge">${aEsc(c.status)}</span></div>
-        </div>
-        <div class="xoxo-support-case-preview">${aEsc(m?.message||"No messages yet.")}</div>
-      </div>`;
-    }).join("");
+      return {caseData:c,message:m,unread,who,activityTime};
+    });
+    renderXoxoAdminSupportCases();
 
     /* Refresh the inbox while the case list is visible. */
     if(!adminSupportListTimer){
