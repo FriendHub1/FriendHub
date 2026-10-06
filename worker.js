@@ -374,6 +374,108 @@ async function sendResendEmail(env, payload) {
   return { ok: true, data };
 }
 
+function decodeBase64(value) {
+  try {
+    const normalized = String(value || "")
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+
+    const padded =
+      normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+
+    const binary = atob(padded);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return bytes;
+  } catch {
+    return null;
+  }
+}
+
+async function verifyResendWebhook(rawBody, request, env) {
+  const secret = String(env.RESEND_WEBHOOK_SECRET || "").trim();
+  const svixId = String(request.headers.get("svix-id") || "").trim();
+  const svixTimestamp =
+    String(request.headers.get("svix-timestamp") || "").trim();
+  const svixSignature =
+    String(request.headers.get("svix-signature") || "").trim();
+
+  if (!secret || !svixId || !svixTimestamp || !svixSignature) {
+    return false;
+  }
+
+  const timestampNumber = Number(svixTimestamp);
+
+  if (
+    !Number.isFinite(timestampNumber) ||
+    Math.abs(Date.now() / 1000 - timestampNumber) > 300
+  ) {
+    return false;
+  }
+
+  const secretValue = secret.startsWith("whsec_")
+    ? secret.slice(6)
+    : secret;
+
+  const secretBytes = decodeBase64(secretValue);
+
+  if (!secretBytes) {
+    return false;
+  }
+
+  const signedContent =
+    `${svixId}.${svixTimestamp}.${rawBody}`;
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    secretBytes,
+    {
+      name: "HMAC",
+      hash: "SHA-256",
+    },
+    false,
+    ["verify"]
+  );
+
+  const data = new TextEncoder().encode(signedContent);
+
+  const signatures = svixSignature
+    .split(" ")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  for (const item of signatures) {
+    const parts = item.split(",");
+
+    if (parts.length !== 2 || parts[0] !== "v1") {
+      continue;
+    }
+
+    const signatureBytes = decodeBase64(parts[1]);
+
+    if (!signatureBytes) {
+      continue;
+    }
+
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signatureBytes,
+      data
+    );
+
+    if (valid) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 async function handleSupportEmailInbound(request, env) {
   if (request.method !== "POST") {
     return jsonResponse(
@@ -382,16 +484,42 @@ async function handleSupportEmailInbound(request, env) {
     );
   }
 
-  /*
-   * Bootstrap endpoint for Resend inbound email.
-   * It deliberately does NOT store inbound email yet.
-   * After the webhook is created, we will add signature
-   * verification before allowing messages into support_messages.
-   */
+  if (!env.RESEND_WEBHOOK_SECRET) {
+    console.error("XOXO Resend webhook secret is missing");
+    return jsonResponse(
+      { ok: false, error: "Server configuration error" },
+      500
+    );
+  }
+
+  const rawBody = await request.text();
+
+  let verified = false;
+
+  try {
+    verified = await verifyResendWebhook(
+      rawBody,
+      request,
+      env
+    );
+  } catch (error) {
+    console.error(
+      "XOXO Resend webhook verification error:",
+      error
+    );
+  }
+
+  if (!verified) {
+    return jsonResponse(
+      { ok: false, error: "Invalid webhook signature" },
+      400
+    );
+  }
+
   let event;
 
   try {
-    event = await request.json();
+    event = JSON.parse(rawBody);
   } catch {
     return jsonResponse(
       { ok: false, error: "Invalid JSON" },
@@ -403,9 +531,16 @@ async function handleSupportEmailInbound(request, env) {
     return jsonResponse({ ok: true, ignored: true });
   }
 
+  /*
+   * Signature verified successfully.
+   * We still do NOT insert the email into support_messages yet.
+   * The next step will safely map the inbound recipient to a
+   * support case and verify the sender before storing the reply.
+   */
   return jsonResponse({
     ok: true,
     received: true,
+    verified: true,
     processing: false,
   });
 }
