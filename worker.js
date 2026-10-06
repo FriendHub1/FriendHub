@@ -1830,7 +1830,7 @@ ${escapeHtml(message)}
 
     textBody =
       [
-        "# This is an automated message. Please do not reply #",
+        "# This is an automated confirmation #",
         "",
         "Hey there,",
         "",
@@ -1838,7 +1838,7 @@ ${escapeHtml(message)}
         "",
         `This is to confirm we received your message. Your support case number is #${caseNumber}.`,
         "",
-        "We'll get back to you as soon as possible.",
+        "We'll get back to you as soon as possible. You can reply directly to this email at any time to continue your conversation with XOXO Avenue Support.",
         "",
         "Warmly,",
         "XOXO Avenue Support 💜",
