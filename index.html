@@ -14473,12 +14473,42 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     const message=input?.value.trim(); if(!message)return;
     btn.disabled=true;
     const {data:u}=await supabaseClient.auth.getUser();
-    const {error}=await supabaseClient.from("support_messages").insert({case_id:adminSupportCase.id,sender_id:u.user.id,sender_type:"admin",message});
-    btn.disabled=false;
-    if(error){console.error("Admin support reply error:",error);alert("Could not send support reply.");return;}
+    const {data:inserted,error}=await supabaseClient.from("support_messages").insert({case_id:adminSupportCase.id,sender_id:u.user.id,sender_type:"admin",message}).select("id").single();
+    if(error){btn.disabled=false;console.error("Admin support reply error:",error);alert("Could not send support reply.");return;}
     input.value="";
     await supabaseClient.from("support_cases").update({status:"open",updated_at:new Date().toISOString()}).eq("id",adminSupportCase.id);
     await loadXoxoAdminSupportMessages();
+
+    try{
+      const {data:sessionData}=await supabaseClient.auth.getSession();
+      const token=sessionData?.session?.access_token;
+      if(!token) throw new Error("No active session");
+
+      const emailResponse=await fetch("/api/support-email",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":`Bearer ${token}`
+        },
+        body:JSON.stringify({
+          type:"admin_reply",
+          case_id:adminSupportCase.id,
+          message
+        })
+      });
+
+      if(!emailResponse.ok){
+        let emailError={};
+        try{emailError=await emailResponse.json();}catch{}
+        console.error("Admin support reply email error:",emailResponse.status,emailError);
+        alert("The reply was sent in chat, but the email could not be delivered.");
+      }
+    }catch(emailError){
+      console.error("Admin support reply email error:",emailError);
+      alert("The reply was sent in chat, but the email could not be delivered.");
+    }finally{
+      btn.disabled=false;
+    }
   };
 
   window.setXoxoSupportCaseStatus=async function(status){
