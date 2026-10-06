@@ -14429,7 +14429,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       let img="";
       if(m.attachment_url){
         const {data:signed}=await supabaseClient.storage.from("support-attachments").createSignedUrl(m.attachment_url,3600);
-        if(signed?.signedUrl) img=`<img class="xoxo-support-msg-image" src="${aEsc(signed.signedUrl)}" alt="Support attachment" onclick="window.open(this.src,'_blank')">`;
+        if(signed?.signedUrl) img=`<img class="xoxo-support-msg-image" src="${aEsc(signed.signedUrl)}" alt="Support attachment" onclick="openProfilePhotoViewer(this.src)">`;
       }
       rendered.push(`<div class="xoxo-support-msg ${m.sender_type==="admin"?"admin":"user"}">${aEsc(m.message)}${img}<span class="xoxo-support-msg-time">${aEsc(aTime(m.created_at))}</span></div>`);
     }
@@ -14589,7 +14589,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
           .from("support-attachments")
           .createSignedUrl(row.attachment_url, 3600);
         if (signed?.signedUrl) {
-          imageHtml = '<img class="support-chat-image" src="'+supportEsc(signed.signedUrl)+'" alt="Support attachment" onclick="window.open(this.src,\'_blank\')">';
+          imageHtml = '<img class="support-chat-image" src="'+supportEsc(signed.signedUrl)+'" alt="Support attachment" onclick="openProfilePhotoViewer(this.src)">';
         }
       }
       rendered.push('<div class="support-chat-message '+who+'">'
