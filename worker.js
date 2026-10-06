@@ -9,6 +9,12 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;");
 }
 
+/*
+ * ==========================================
+ * PUBLIC PROFILE
+ * ==========================================
+ */
+
 async function getPublicProfile(userId) {
   try {
     const response = await fetch(
@@ -19,6 +25,7 @@ async function getPublicProfile(userId) {
           apikey: SUPABASE_KEY,
           Authorization: `Bearer ${SUPABASE_KEY}`,
           "Content-Type": "application/json",
+          Accept: "application/json",
           "Accept-Profile": "public",
           "Content-Profile": "public",
         },
@@ -53,6 +60,7 @@ async function getPublicProfile(userId) {
       "XOXO profile RPC error:",
       error
     );
+
     return null;
   }
 }
@@ -75,7 +83,11 @@ function makeDescription(profile) {
   return "Meet people, make friends, and discover communities on XOXO Avenue.";
 }
 
-function getProfileImageUrl(profile, origin, userId) {
+function getProfileImageUrl(
+  profile,
+  origin,
+  userId
+) {
   const photo = String(
     profile?.profile_photo || ""
   ).trim();
@@ -110,10 +122,17 @@ function decodeBase64Image(dataUrl) {
     const base64 = match[2].replace(/\s/g, "");
     const binary = atob(base64);
 
-    const bytes = new Uint8Array(binary.length);
+    const bytes = new Uint8Array(
+      binary.length
+    );
 
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+    for (
+      let i = 0;
+      i < binary.length;
+      i++
+    ) {
+      bytes[i] =
+        binary.charCodeAt(i);
     }
 
     return {
@@ -131,7 +150,8 @@ function decodeBase64Image(dataUrl) {
 }
 
 async function serveProfileImage(userId) {
-  const profile = await getPublicProfile(userId);
+  const profile =
+    await getPublicProfile(userId);
 
   if (!profile) {
     return new Response(
@@ -141,7 +161,8 @@ async function serveProfileImage(userId) {
         headers: {
           "Content-Type":
             "text/plain; charset=utf-8",
-          "Cache-Control": "no-store",
+          "Cache-Control":
+            "no-store",
           "X-XOXO-Worker":
             "profile-image-profile-not-found",
         },
@@ -157,10 +178,14 @@ async function serveProfileImage(userId) {
     photo.startsWith("https://") ||
     photo.startsWith("http://")
   ) {
-    return Response.redirect(photo, 302);
+    return Response.redirect(
+      photo,
+      302
+    );
   }
 
-  const decoded = decodeBase64Image(photo);
+  const decoded =
+    decodeBase64Image(photo);
 
   if (!decoded) {
     return new Response(
@@ -170,7 +195,8 @@ async function serveProfileImage(userId) {
         headers: {
           "Content-Type":
             "text/plain; charset=utf-8",
-          "Cache-Control": "no-store",
+          "Cache-Control":
+            "no-store",
           "X-XOXO-Worker":
             "profile-image-invalid",
         },
@@ -178,35 +204,49 @@ async function serveProfileImage(userId) {
     );
   }
 
-  return new Response(decoded.bytes, {
-    status: 200,
-    headers: {
-      "Content-Type": decoded.contentType,
-      "Cache-Control":
-        "public, max-age=3600",
-      "X-Content-Type-Options": "nosniff",
-      "X-XOXO-Worker": "profile-image",
-    },
-  });
+  return new Response(
+    decoded.bytes,
+    {
+      status: 200,
+      headers: {
+        "Content-Type":
+          decoded.contentType,
+        "Cache-Control":
+          "public, max-age=3600",
+        "X-Content-Type-Options":
+          "nosniff",
+        "X-XOXO-Worker":
+          "profile-image",
+      },
+    }
+  );
 }
 
-function injectPreview(response, metadata) {
+function injectPreview(
+  response,
+  metadata
+) {
   return new HTMLRewriter()
 
     .on("title", {
       text(text) {
-        text.replace(metadata.title);
-      },
-    })
-
-    .on('meta[name="description"]', {
-      element(element) {
-        element.setAttribute(
-          "content",
-          metadata.description
+        text.replace(
+          metadata.title
         );
       },
     })
+
+    .on(
+      'meta[name="description"]',
+      {
+        element(element) {
+          element.setAttribute(
+            "content",
+            metadata.description
+          );
+        },
+      }
+    )
 
     .on("head", {
       element(element) {
@@ -244,7 +284,9 @@ function injectPreview(response, metadata) {
             metadata.image
           )}">
 `,
-          { html: true }
+          {
+            html: true,
+          }
         );
       },
     })
@@ -254,39 +296,71 @@ function injectPreview(response, metadata) {
 
 /*
  * ==========================================
- * SUPPORT EMAIL API
+ * GENERAL JSON RESPONSE
  * ==========================================
  */
 
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
+function jsonResponse(
+  data,
+  status = 200
+) {
+  return new Response(
+    JSON.stringify(data),
+    {
+      status,
+      headers: {
+        "Content-Type":
+          "application/json; charset=utf-8",
+        "Cache-Control":
+          "no-store",
+      },
+    }
+  );
 }
 
-async function getAuthenticatedUser(request) {
-  const authorization = request.headers.get("Authorization") || "";
+/*
+ * ==========================================
+ * AUTHENTICATION
+ * ==========================================
+ */
 
-  if (!authorization.startsWith("Bearer ")) {
+async function getAuthenticatedUser(
+  request
+) {
+  const authorization =
+    request.headers.get(
+      "Authorization"
+    ) || "";
+
+  if (
+    !authorization.startsWith(
+      "Bearer "
+    )
+  ) {
     return null;
   }
 
-  const token = authorization.slice(7).trim();
+  const token =
+    authorization
+      .slice(7)
+      .trim();
 
   if (!token) {
     return null;
   }
 
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/auth/v1/user`,
+      {
+        headers: {
+          apikey:
+            SUPABASE_KEY,
+          Authorization:
+            `Bearer ${token}`,
+        },
+      }
+    );
 
   if (!response.ok) {
     return null;
@@ -295,16 +369,24 @@ async function getAuthenticatedUser(request) {
   return response.json();
 }
 
-async function getAuthUserById(userId, env) {
-  const response = await fetch(
-    `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
-    {
-      headers: {
-        apikey: env.SUPABASE_SECRET_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
-      },
-    }
-  );
+async function getAuthUserById(
+  userId,
+  env
+) {
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(
+        userId
+      )}`,
+      {
+        headers: {
+          apikey:
+            env.SUPABASE_SECRET_KEY,
+          Authorization:
+            `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        },
+      }
+    );
 
   if (!response.ok) {
     console.error(
@@ -312,23 +394,39 @@ async function getAuthUserById(userId, env) {
       response.status,
       await response.text()
     );
+
     return null;
   }
 
   return response.json();
 }
 
-async function getSupportCase(caseId, env) {
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/support_cases?id=eq.${encodeURIComponent(caseId)}&select=id,case_number,user_id,status`,
-    {
-      headers: {
-        apikey: env.SUPABASE_SECRET_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
-        "Accept-Profile": "public",
-      },
-    }
-  );
+/*
+ * ==========================================
+ * SUPPORT CASE
+ * ==========================================
+ */
+
+async function getSupportCase(
+  caseId,
+  env
+) {
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/support_cases?id=eq.${encodeURIComponent(
+        caseId
+      )}&select=id,case_number,user_id,status`,
+      {
+        headers: {
+          apikey:
+            env.SUPABASE_SECRET_KEY,
+          Authorization:
+            `Bearer ${env.SUPABASE_SECRET_KEY}`,
+          "Accept-Profile":
+            "public",
+        },
+      }
+    );
 
   if (!response.ok) {
     console.error(
@@ -336,30 +434,100 @@ async function getSupportCase(caseId, env) {
       response.status,
       await response.text()
     );
+
     return null;
   }
 
-  const rows = await response.json();
-  return Array.isArray(rows) && rows.length ? rows[0] : null;
+  const rows =
+    await response.json();
+
+  return Array.isArray(rows) &&
+    rows.length
+    ? rows[0]
+    : null;
 }
 
-async function sendResendEmail(env, payload) {
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+async function getSupportCaseByNumber(
+  caseNumber,
+  env
+) {
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/support_cases?case_number=eq.${encodeURIComponent(
+        caseNumber
+      )}&select=id,case_number,user_id,status`,
+      {
+        headers: {
+          apikey:
+            env.SUPABASE_SECRET_KEY,
+          Authorization:
+            `Bearer ${env.SUPABASE_SECRET_KEY}`,
+          "Accept-Profile":
+            "public",
+        },
+      }
+    );
 
-  const text = await response.text();
+  if (!response.ok) {
+    console.error(
+      "XOXO support case number lookup failed:",
+      response.status,
+      await response.text()
+    );
+
+    return null;
+  }
+
+  const rows =
+    await response.json();
+
+  return Array.isArray(rows) &&
+    rows.length
+    ? rows[0]
+    : null;
+}
+
+/*
+ * ==========================================
+ * RESEND OUTGOING EMAIL
+ * ==========================================
+ */
+
+async function sendResendEmail(
+  env,
+  payload
+) {
+  const response =
+    await fetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+        headers: {
+          Authorization:
+            `Bearer ${env.RESEND_API_KEY}`,
+          "Content-Type":
+            "application/json",
+        },
+        body:
+          JSON.stringify(
+            payload
+          ),
+      }
+    );
+
+  const text =
+    await response.text();
+
   let data = {};
 
   try {
-    data = text ? JSON.parse(text) : {};
+    data = text
+      ? JSON.parse(text)
+      : {};
   } catch {
-    data = { raw: text };
+    data = {
+      raw: text,
+    };
   }
 
   if (!response.ok) {
@@ -368,26 +536,120 @@ async function sendResendEmail(env, payload) {
       response.status,
       data
     );
-    return { ok: false, status: response.status };
+
+    return {
+      ok: false,
+      status:
+        response.status,
+    };
   }
 
-  return { ok: true, data };
+  return {
+    ok: true,
+    data,
+  };
 }
 
-function decodeBase64(value) {
+/*
+ * ==========================================
+ * RESEND INBOUND EMAIL
+ * ==========================================
+ */
+
+async function getReceivedEmail(
+  emailId,
+  env
+) {
+  const response =
+    await fetch(
+      `https://api.resend.com/emails/receiving/${encodeURIComponent(
+        emailId
+      )}`,
+      {
+        headers: {
+          Authorization:
+            `Bearer ${env.RESEND_INBOUND_API_KEY}`,
+          Accept:
+            "application/json",
+        },
+      }
+    );
+
+  const text =
+    await response.text();
+
+  let data = {};
+
   try {
-    const normalized = String(value || "")
-      .replace(/-/g, "+")
-      .replace(/_/g, "/");
+    data = text
+      ? JSON.parse(text)
+      : {};
+  } catch {
+    data = {
+      raw: text,
+    };
+  }
+
+  if (!response.ok) {
+    console.error(
+      "XOXO received email lookup failed:",
+      response.status,
+      data
+    );
+
+    return null;
+  }
+
+  return data;
+}
+
+/*
+ * ==========================================
+ * WEBHOOK SIGNATURE
+ * ==========================================
+ */
+
+function decodeBase64(
+  value
+) {
+  try {
+    const normalized =
+      String(value || "")
+        .replace(
+          /-/g,
+          "+"
+        )
+        .replace(
+          /_/g,
+          "/"
+        );
 
     const padded =
-      normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+      normalized +
+      "=".repeat(
+        (4 -
+          (normalized.length %
+            4)) %
+          4
+      );
 
-    const binary = atob(padded);
-    const bytes = new Uint8Array(binary.length);
+    const binary =
+      atob(padded);
 
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
+    const bytes =
+      new Uint8Array(
+        binary.length
+      );
+
+    for (
+      let i = 0;
+      i < binary.length;
+      i++
+    ) {
+      bytes[i] =
+        binary.charCodeAt(
+          i
+        );
     }
 
     return bytes;
@@ -396,32 +658,75 @@ function decodeBase64(value) {
   }
 }
 
-async function verifyResendWebhook(rawBody, request, env) {
-  const secret = String(env.RESEND_WEBHOOK_SECRET || "").trim();
-  const svixId = String(request.headers.get("svix-id") || "").trim();
+async function verifyResendWebhook(
+  rawBody,
+  request,
+  env
+) {
+  const secret =
+    String(
+      env.RESEND_WEBHOOK_SECRET ||
+        ""
+    ).trim();
+
+  const svixId =
+    String(
+      request.headers.get(
+        "svix-id"
+      ) || ""
+    ).trim();
+
   const svixTimestamp =
-    String(request.headers.get("svix-timestamp") || "").trim();
+    String(
+      request.headers.get(
+        "svix-timestamp"
+      ) || ""
+    ).trim();
+
   const svixSignature =
-    String(request.headers.get("svix-signature") || "").trim();
-
-  if (!secret || !svixId || !svixTimestamp || !svixSignature) {
-    return false;
-  }
-
-  const timestampNumber = Number(svixTimestamp);
+    String(
+      request.headers.get(
+        "svix-signature"
+      ) || ""
+    ).trim();
 
   if (
-    !Number.isFinite(timestampNumber) ||
-    Math.abs(Date.now() / 1000 - timestampNumber) > 300
+    !secret ||
+    !svixId ||
+    !svixTimestamp ||
+    !svixSignature
   ) {
     return false;
   }
 
-  const secretValue = secret.startsWith("whsec_")
-    ? secret.slice(6)
-    : secret;
+  const timestampNumber =
+    Number(
+      svixTimestamp
+    );
 
-  const secretBytes = decodeBase64(secretValue);
+  if (
+    !Number.isFinite(
+      timestampNumber
+    ) ||
+    Math.abs(
+      Date.now() / 1000 -
+        timestampNumber
+    ) > 300
+  ) {
+    return false;
+  }
+
+  const secretValue =
+    secret.startsWith(
+      "whsec_"
+    )
+      ? secret.slice(6)
+      : secret;
+
+  const secretBytes =
+    decodeBase64(
+      secretValue
+    );
 
   if (!secretBytes) {
     return false;
@@ -430,43 +735,61 @@ async function verifyResendWebhook(rawBody, request, env) {
   const signedContent =
     `${svixId}.${svixTimestamp}.${rawBody}`;
 
-  const key = await crypto.subtle.importKey(
-    "raw",
-    secretBytes,
-    {
-      name: "HMAC",
-      hash: "SHA-256",
-    },
-    false,
-    ["verify"]
-  );
+  const key =
+    await crypto.subtle.importKey(
+      "raw",
+      secretBytes,
+      {
+        name: "HMAC",
+        hash: "SHA-256",
+      },
+      false,
+      ["verify"]
+    );
 
-  const data = new TextEncoder().encode(signedContent);
+  const data =
+    new TextEncoder().encode(
+      signedContent
+    );
 
-  const signatures = svixSignature
-    .split(" ")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const signatures =
+    svixSignature
+      .split(" ")
+      .map(
+        (item) =>
+          item.trim()
+      )
+      .filter(Boolean);
 
-  for (const item of signatures) {
-    const parts = item.split(",");
+  for (
+    const item of signatures
+  ) {
+    const parts =
+      item.split(",");
 
-    if (parts.length !== 2 || parts[0] !== "v1") {
+    if (
+      parts.length !== 2 ||
+      parts[0] !== "v1"
+    ) {
       continue;
     }
 
-    const signatureBytes = decodeBase64(parts[1]);
+    const signatureBytes =
+      decodeBase64(
+        parts[1]
+      );
 
     if (!signatureBytes) {
       continue;
     }
 
-    const valid = await crypto.subtle.verify(
-      "HMAC",
-      key,
-      signatureBytes,
-      data
-    );
+    const valid =
+      await crypto.subtle.verify(
+        "HMAC",
+        key,
+        signatureBytes,
+        data
+      );
 
     if (valid) {
       return true;
@@ -476,32 +799,204 @@ async function verifyResendWebhook(rawBody, request, env) {
   return false;
 }
 
-async function handleSupportEmailInbound(request, env) {
-  if (request.method !== "POST") {
+/*
+ * ==========================================
+ * EMAIL HELPERS
+ * ==========================================
+ */
+
+function extractEmailAddress(
+  value
+) {
+  const text =
+    String(value || "")
+      .trim();
+
+  const match =
+    text.match(
+      /<([^<>@\s]+@[^<>@\s]+)>/
+    );
+
+  if (match) {
+    return match[1]
+      .toLowerCase();
+  }
+
+  const direct =
+    text.match(
+      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
+    );
+
+  return direct
+    ? direct[0].toLowerCase()
+    : "";
+}
+
+function getCaseNumberFromInbound(
+  event
+) {
+  const recipients =
+    Array.isArray(
+      event?.data?.to
+    )
+      ? event.data.to
+      : event?.data?.to
+        ? [event.data.to]
+        : [];
+
+  for (
+    const recipient of recipients
+  ) {
+    const address =
+      extractEmailAddress(
+        recipient
+      );
+
+    const match =
+      address.match(
+        /^case-(\d+)@reply\.xoxoavenue\.com$/i
+      );
+
+    if (match) {
+      return match[1];
+    }
+  }
+
+  const subject =
+    String(
+      event?.data?.subject ||
+        ""
+    );
+
+  const subjectMatch =
+    subject.match(
+      /\[##(\d+)##\]/
+    );
+
+  return subjectMatch
+    ? subjectMatch[1]
+    : null;
+}
+
+/*
+ * ==========================================
+ * SAVE INBOUND SUPPORT MESSAGE
+ * ==========================================
+ */
+
+async function insertInboundSupportMessage(
+  supportCase,
+  senderId,
+  message,
+  env
+) {
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/support_messages`,
+      {
+        method: "POST",
+        headers: {
+          apikey:
+            env.SUPABASE_SECRET_KEY,
+          Authorization:
+            `Bearer ${env.SUPABASE_SECRET_KEY}`,
+          "Content-Type":
+            "application/json",
+          Prefer:
+            "return=minimal",
+        },
+        body:
+          JSON.stringify({
+            case_id:
+              supportCase.id,
+            sender_id:
+              senderId,
+            sender_type:
+              "user",
+            message:
+              message,
+          }),
+      }
+    );
+
+  if (!response.ok) {
+    console.error(
+      "XOXO inbound support message insert failed:",
+      response.status,
+      await response.text()
+    );
+
+    return false;
+  }
+
+  return true;
+}
+
+/*
+ * ==========================================
+ * INBOUND SUPPORT EMAIL
+ * ==========================================
+ */
+
+async function handleSupportEmailInbound(
+  request,
+  env
+) {
+  if (
+    request.method !==
+    "POST"
+  ) {
     return jsonResponse(
-      { ok: false, error: "Method not allowed" },
+      {
+        ok: false,
+        error:
+          "Method not allowed",
+      },
       405
     );
   }
 
-  if (!env.RESEND_WEBHOOK_SECRET) {
-    console.error("XOXO Resend webhook secret is missing");
+  if (
+    !env.RESEND_WEBHOOK_SECRET ||
+    !env.RESEND_INBOUND_API_KEY ||
+    !env.SUPABASE_SECRET_KEY ||
+    !env.RESEND_API_KEY
+  ) {
+    console.error(
+      "XOXO inbound email secrets are missing"
+    );
+
     return jsonResponse(
-      { ok: false, error: "Server configuration error" },
+      {
+        ok: false,
+        error:
+          "Server configuration error",
+      },
       500
     );
   }
 
-  const rawBody = await request.text();
+  /*
+   * Read raw webhook body.
+   */
 
-  let verified = false;
+  const rawBody =
+    await request.text();
+
+  /*
+   * Verify Resend/Svix signature.
+   */
+
+  let verified =
+    false;
 
   try {
-    verified = await verifyResendWebhook(
-      rawBody,
-      request,
-      env
-    );
+    verified =
+      await verifyResendWebhook(
+        rawBody,
+        request,
+        env
+      );
   } catch (error) {
     console.error(
       "XOXO Resend webhook verification error:",
@@ -511,61 +1006,407 @@ async function handleSupportEmailInbound(request, env) {
 
   if (!verified) {
     return jsonResponse(
-      { ok: false, error: "Invalid webhook signature" },
+      {
+        ok: false,
+        error:
+          "Invalid webhook signature",
+      },
       400
     );
   }
+
+  /*
+   * Parse webhook.
+   */
 
   let event;
 
   try {
-    event = JSON.parse(rawBody);
+    event =
+      JSON.parse(
+        rawBody
+      );
   } catch {
     return jsonResponse(
-      { ok: false, error: "Invalid JSON" },
+      {
+        ok: false,
+        error:
+          "Invalid JSON",
+      },
       400
     );
   }
 
-  if (event?.type !== "email.received") {
-    return jsonResponse({ ok: true, ignored: true });
+  /*
+   * Ignore other Resend events.
+   */
+
+  if (
+    event?.type !==
+    "email.received"
+  ) {
+    return jsonResponse({
+      ok: true,
+      ignored: true,
+    });
   }
 
   /*
-   * Signature verified successfully.
-   * We still do NOT insert the email into support_messages yet.
-   * The next step will safely map the inbound recipient to a
-   * support case and verify the sender before storing the reply.
+   * Get received email ID.
    */
-  return jsonResponse({
-    ok: true,
-    received: true,
-    verified: true,
-    processing: false,
-  });
-}
 
-async function handleSupportEmail(request, env) {
-  if (request.method !== "POST") {
+  const emailId =
+    String(
+      event?.data?.email_id ||
+        ""
+    ).trim();
+
+  if (!emailId) {
     return jsonResponse(
-      { ok: false, error: "Method not allowed" },
-      405
+      {
+        ok: false,
+        error:
+          "Missing received email ID",
+      },
+      400
     );
   }
 
-  if (!env.RESEND_API_KEY || !env.SUPABASE_SECRET_KEY) {
-    console.error("XOXO support email secrets are missing");
+  /*
+   * Determine case number.
+   */
+
+  const caseNumber =
+    getCaseNumberFromInbound(
+      event
+    );
+
+  if (!caseNumber) {
+    console.error(
+      "XOXO could not determine support case:",
+      event?.data?.to,
+      event?.data?.subject
+    );
+
     return jsonResponse(
-      { ok: false, error: "Server configuration error" },
+      {
+        ok: false,
+        error:
+          "Support case could not be determined",
+      },
+      400
+    );
+  }
+
+  /*
+   * Find support case.
+   */
+
+  const supportCase =
+    await getSupportCaseByNumber(
+      caseNumber,
+      env
+    );
+
+  if (!supportCase) {
+    return jsonResponse(
+      {
+        ok: false,
+        error:
+          "Support case not found",
+      },
+      404
+    );
+  }
+
+  /*
+   * Retrieve complete email from Resend.
+   */
+
+  const receivedEmail =
+    await getReceivedEmail(
+      emailId,
+      env
+    );
+
+  if (!receivedEmail) {
+    return jsonResponse(
+      {
+        ok: false,
+        error:
+          "Could not retrieve received email",
+      },
+      502
+    );
+  }
+
+  /*
+   * Determine sender.
+   */
+
+  const sender =
+    extractEmailAddress(
+      receivedEmail.from ||
+        event?.data?.from
+    );
+
+  if (!sender) {
+    return jsonResponse(
+      {
+        ok: false,
+        error:
+          "Sender email not found",
+      },
+      400
+    );
+  }
+
+  /*
+   * Confirm the sender owns this case.
+   */
+
+  const authUser =
+    await getAuthUserById(
+      supportCase.user_id,
+      env
+    );
+
+  const expectedEmail =
+    String(
+      authUser?.email ||
+        ""
+    )
+      .trim()
+      .toLowerCase();
+
+  if (
+    !expectedEmail ||
+    sender !==
+      expectedEmail
+  ) {
+    console.error(
+      "XOXO inbound sender mismatch:",
+      {
+        sender,
+        expectedEmail,
+        caseNumber,
+      }
+    );
+
+    return jsonResponse(
+      {
+        ok: false,
+        error:
+          "Sender does not belong to support case",
+      },
+      403
+    );
+  }
+
+  /*
+   * Extract message body.
+   */
+
+  let message =
+    String(
+      receivedEmail.text ||
+        receivedEmail.text_body ||
+        ""
+    ).trim();
+
+  /*
+   * If plain text is unavailable,
+   * use HTML as fallback.
+   */
+
+  if (!message) {
+    message =
+      String(
+        receivedEmail.html ||
+          ""
+      ).trim();
+  }
+
+  if (!message) {
+    return jsonResponse(
+      {
+        ok: false,
+        error:
+          "Received email has no readable content",
+      },
+      400
+    );
+  }
+
+  /*
+   * Save the user's reply
+   * inside the support case.
+   */
+
+  const inserted =
+    await insertInboundSupportMessage(
+      supportCase,
+      supportCase.user_id,
+      message,
+      env
+    );
+
+  if (!inserted) {
+    return jsonResponse(
+      {
+        ok: false,
+        error:
+          "Could not save support message",
+      },
       500
     );
   }
 
-  const signedInUser = await getAuthenticatedUser(request);
+  /*
+   * Send notification to official
+   * XOXO Avenue Support Gmail.
+   */
+
+  const notificationSubject =
+    `[##${caseNumber}##] - User replied to XOXO Avenue Support`;
+
+  const notificationText =
+    [
+      `A user replied to support case #${caseNumber}.`,
+      "",
+      `From: ${sender}`,
+      "",
+      message,
+      "",
+      `Case: #${caseNumber}`,
+    ].join("\n");
+
+  const notificationHtml = `
+<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:650px;margin:0 auto;">
+  <h2>XOXO Avenue Support</h2>
+
+  <p>
+    A user replied to support case
+    <strong>#${escapeHtml(
+      caseNumber
+    )}</strong>.
+  </p>
+
+  <p>
+    <strong>From:</strong>
+    ${escapeHtml(sender)}
+  </p>
+
+  <div style="white-space:pre-wrap;margin:20px 0;padding:16px;background:#f6f4ff;border-radius:12px;">
+${escapeHtml(message)}
+  </div>
+
+  <p>
+    <strong>Case:</strong>
+    #${escapeHtml(
+      caseNumber
+    )}
+  </p>
+</div>
+`;
+
+  const notification =
+    await sendResendEmail(
+      env,
+      {
+        from:
+          "XOXO Avenue Support <support@xoxoavenue.com>",
+        to: [
+          "xoxoavenuesupport@gmail.com",
+        ],
+        reply_to:
+          `case-${caseNumber}@reply.xoxoavenue.com`,
+        subject:
+          notificationSubject,
+        text:
+          notificationText,
+        html:
+          notificationHtml,
+      }
+    );
+
+  if (!notification.ok) {
+    console.error(
+      "XOXO support notification email failed"
+    );
+  }
+
+  /*
+   * Respond successfully to Resend.
+   */
+
+  return jsonResponse({
+    ok: true,
+    received: true,
+    verified: true,
+    processing: true,
+    case_number:
+      supportCase.case_number,
+    message_saved: true,
+    support_notification_sent:
+      notification.ok,
+  });
+}
+
+/*
+ * ==========================================
+ * OUTGOING SUPPORT EMAIL
+ * ==========================================
+ */
+
+async function handleSupportEmail(
+  request,
+  env
+) {
+  if (
+    request.method !==
+    "POST"
+  ) {
+    return jsonResponse(
+      {
+        ok: false,
+        error:
+          "Method not allowed",
+      },
+      405
+    );
+  }
+
+  if (
+    !env.RESEND_API_KEY ||
+    !env.SUPABASE_SECRET_KEY
+  ) {
+    console.error(
+      "XOXO support email secrets are missing"
+    );
+
+    return jsonResponse(
+      {
+        ok: false,
+        error:
+          "Server configuration error",
+      },
+      500
+    );
+  }
+
+  const signedInUser =
+    await getAuthenticatedUser(
+      request
+    );
 
   if (!signedInUser?.id) {
     return jsonResponse(
-      { ok: false, error: "Unauthorized" },
+      {
+        ok: false,
+        error:
+          "Unauthorized",
+      },
       401
     );
   }
@@ -573,36 +1414,73 @@ async function handleSupportEmail(request, env) {
   let body;
 
   try {
-    body = await request.json();
+    body =
+      await request.json();
   } catch {
     return jsonResponse(
-      { ok: false, error: "Invalid JSON" },
+      {
+        ok: false,
+        error:
+          "Invalid JSON",
+      },
       400
     );
   }
 
-  const caseId = String(body?.case_id || "").trim();
-  const emailType = String(body?.type || "confirmation").trim();
+  const caseId =
+    String(
+      body?.case_id ||
+        ""
+    ).trim();
+
+  const emailType =
+    String(
+      body?.type ||
+        "confirmation"
+    ).trim();
 
   if (!caseId) {
     return jsonResponse(
-      { ok: false, error: "Missing case_id" },
+      {
+        ok: false,
+        error:
+          "Missing case_id",
+      },
       400
     );
   }
 
-  if (!["confirmation", "admin_reply"].includes(emailType)) {
+  if (
+    ![
+      "confirmation",
+      "admin_reply",
+    ].includes(
+      emailType
+    )
+  ) {
     return jsonResponse(
-      { ok: false, error: "Unsupported email type" },
+      {
+        ok: false,
+        error:
+          "Unsupported email type",
+      },
       400
     );
   }
 
-  const supportCase = await getSupportCase(caseId, env);
+  const supportCase =
+    await getSupportCase(
+      caseId,
+      env
+    );
 
   if (!supportCase) {
     return jsonResponse(
-      { ok: false, error: "Support case not found" },
+      {
+        ok: false,
+        error:
+          "Support case not found",
+      },
       404
     );
   }
@@ -610,57 +1488,107 @@ async function handleSupportEmail(request, env) {
   const XOXO_ADMIN_USER_ID =
     "d9ea1914-fdba-465c-9700-5e640ff48763";
 
-  if (emailType === "confirmation") {
-    if (supportCase.user_id !== signedInUser.id) {
+  if (
+    emailType ===
+    "confirmation"
+  ) {
+    if (
+      supportCase.user_id !==
+      signedInUser.id
+    ) {
       return jsonResponse(
-        { ok: false, error: "Forbidden" },
+        {
+          ok: false,
+          error:
+            "Forbidden",
+        },
         403
       );
     }
   }
 
-  if (emailType === "admin_reply") {
-    if (signedInUser.id !== XOXO_ADMIN_USER_ID) {
+  if (
+    emailType ===
+    "admin_reply"
+  ) {
+    if (
+      signedInUser.id !==
+      XOXO_ADMIN_USER_ID
+    ) {
       return jsonResponse(
-        { ok: false, error: "Forbidden" },
+        {
+          ok: false,
+          error:
+            "Forbidden",
+        },
         403
       );
     }
   }
 
-  const authUser = await getAuthUserById(
-    supportCase.user_id,
-    env
-  );
+  const authUser =
+    await getAuthUserById(
+      supportCase.user_id,
+      env
+    );
 
-  const recipient = String(authUser?.email || "").trim();
+  const recipient =
+    String(
+      authUser?.email ||
+        ""
+    ).trim();
 
   if (!recipient) {
     return jsonResponse(
-      { ok: false, error: "User email not found" },
+      {
+        ok: false,
+        error:
+          "User email not found",
+      },
       404
     );
   }
 
-  const caseNumber = String(supportCase.case_number);
+  const caseNumber =
+    String(
+      supportCase.case_number
+    );
 
   let subject;
   let textBody;
   let htmlBody;
 
-  if (emailType === "admin_reply") {
-    const message = String(body?.message || "").trim();
+  if (
+    emailType ===
+    "admin_reply"
+  ) {
+    const message =
+      String(
+        body?.message ||
+          ""
+      ).trim();
 
     if (!message) {
       return jsonResponse(
-        { ok: false, error: "Missing message" },
+        {
+          ok: false,
+          error:
+            "Missing message",
+        },
         400
       );
     }
 
-    if (message.length > 5000) {
+    if (
+      message.length >
+      5000
+    ) {
       return jsonResponse(
-        { ok: false, error: "Message is too long" },
+        {
+          ok: false,
+          error:
+            "Message is too long",
+        },
         400
       );
     }
@@ -668,200 +1596,298 @@ async function handleSupportEmail(request, env) {
     subject =
       `[##${caseNumber}##] - XOXO Avenue Support replied`;
 
-    textBody = [
-      `XOXO Avenue Support replied to your case #${caseNumber}:`,
-      "",
-      message,
-      "",
-      "Warmly,",
-      "XOXO Avenue Support 💜",
-    ].join("\n");
+    textBody =
+      [
+        `XOXO Avenue Support replied to your case #${caseNumber}:`,
+        "",
+        message,
+        "",
+        "Warmly,",
+        "XOXO Avenue Support 💜",
+      ].join("\n");
 
     htmlBody = `
-      <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
-        <p>
-          XOXO Avenue Support replied to your case
-          <strong>#${escapeHtml(caseNumber)}</strong>:
-        </p>
-        <div style="white-space:pre-wrap;margin:20px 0;padding:16px;background:#f6f4ff;border-radius:12px;">${escapeHtml(message)}</div>
-        <p>
-          Warmly,<br>
-          <strong>XOXO Avenue Support 💜</strong>
-        </p>
-      </div>
-    `;
+<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+  <p>
+    XOXO Avenue Support replied to your case
+    <strong>#${escapeHtml(
+      caseNumber
+    )}</strong>:
+  </p>
+
+  <div style="white-space:pre-wrap;margin:20px 0;padding:16px;background:#f6f4ff;border-radius:12px;">
+${escapeHtml(message)}
+  </div>
+
+  <p>
+    Warmly,<br>
+    <strong>XOXO Avenue Support 💜</strong>
+  </p>
+</div>
+`;
   } else {
     subject =
       `[##${caseNumber}##] - Message received!`;
 
-    textBody = [
-      "# This is an automated message. Please do not reply #",
-      "",
-      "Hey there,",
-      "",
-      "Thanks for reaching out! 🙂",
-      "",
-      `This is to confirm we received your message. Your support case number is #${caseNumber}.`,
-      "",
-      "We'll get back to you as soon as possible.",
-      "",
-      "Warmly,",
-      "XOXO Avenue Support 💜",
-    ].join("\n");
+    textBody =
+      [
+        "# This is an automated message. Please do not reply #",
+        "",
+        "Hey there,",
+        "",
+        "Thanks for reaching out! 🙂",
+        "",
+        `This is to confirm we received your message. Your support case number is #${caseNumber}.`,
+        "",
+        "We'll get back to you as soon as possible.",
+        "",
+        "Warmly,",
+        "XOXO Avenue Support 💜",
+      ].join("\n");
 
     htmlBody = `
-      <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
-        <p style="font-weight:700;"># This is an automated message. Please do not reply #</p>
-        <p>Hey there,</p>
-        <p>Thanks for reaching out! 🙂</p>
-        <p>
-          This is to confirm we received your message.
-          Your support case number is <strong>#${escapeHtml(caseNumber)}</strong>.
-        </p>
-        <p>We'll get back to you as soon as possible.</p>
-        <p>
-          Warmly,<br>
-          <strong>XOXO Avenue Support 💜</strong>
-        </p>
-      </div>
-    `;
+<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+  <p style="font-weight:700;">
+    # This is an automated message. Please do not reply #
+  </p>
+
+  <p>Hey there,</p>
+
+  <p>Thanks for reaching out! 🙂</p>
+
+  <p>
+    This is to confirm we received your message.
+    Your support case number is
+    <strong>#${escapeHtml(
+      caseNumber
+    )}</strong>.
+  </p>
+
+  <p>
+    We'll get back to you as soon as possible.
+  </p>
+
+  <p>
+    Warmly,<br>
+    <strong>XOXO Avenue Support 💜</strong>
+  </p>
+</div>
+`;
   }
 
-  const result = await sendResendEmail(env, {
-    from: "XOXO Avenue Support <support@xoxoavenue.com>",
-    to: [recipient],
-    reply_to: `case-${caseNumber}@reply.xoxoavenue.com`,
-    subject,
-    text: textBody,
-    html: htmlBody,
-  });
+  /*
+   * IMPORTANT:
+   * Each admin reply uses a case-specific
+   * Reply-To address.
+   */
+
+  const result =
+    await sendResendEmail(
+      env,
+      {
+        from:
+          "XOXO Avenue Support <support@xoxoavenue.com>",
+
+        to: [
+          recipient,
+        ],
+
+        reply_to:
+          `case-${caseNumber}@reply.xoxoavenue.com`,
+
+        subject,
+        text:
+          textBody,
+        html:
+          htmlBody,
+      }
+    );
 
   if (!result.ok) {
     return jsonResponse(
-      { ok: false, error: "Email delivery failed" },
+      {
+        ok: false,
+        error:
+          "Email delivery failed",
+      },
       502
     );
   }
 
   return jsonResponse({
     ok: true,
-    case_number: supportCase.case_number,
+    case_number:
+      supportCase.case_number,
   });
 }
 
+/*
+ * ==========================================
+ * MAIN WORKER
+ * ==========================================
+ */
+
 export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
+  async fetch(
+    request,
+    env
+  ) {
+    const url =
+      new URL(
+        request.url
+      );
 
     /*
-     * ==========================================
      * SUPPORT EMAIL API
-     * ==========================================
      */
 
-    if (url.pathname === "/api/support-email") {
-      return handleSupportEmail(request, env);
-    }
-
-    if (url.pathname === "/api/support-email-inbound") {
-      return handleSupportEmailInbound(request, env);
+    if (
+      url.pathname ===
+      "/api/support-email"
+    ) {
+      return handleSupportEmail(
+        request,
+        env
+      );
     }
 
     /*
-     * ==========================================
-     * PUBLIC PROFILE IMAGE
-     * ==========================================
+     * INBOUND SUPPORT EMAIL WEBHOOK
      */
 
-    const imageMatch = url.pathname.match(
-      /^\/profile-preview-image\/([0-9a-fA-F-]+)$/
-    );
+    if (
+      url.pathname ===
+      "/api/support-email-inbound"
+    ) {
+      return handleSupportEmailInbound(
+        request,
+        env
+      );
+    }
+
+    /*
+     * PUBLIC PROFILE IMAGE
+     */
+
+    const imageMatch =
+      url.pathname.match(
+        /^\/profile-preview-image\/([0-9a-fA-F-]+)$/
+      );
 
     if (imageMatch) {
       const userId =
-        decodeURIComponent(imageMatch[1]);
+        decodeURIComponent(
+          imageMatch[1]
+        );
 
-      return serveProfileImage(userId);
+      return serveProfileImage(
+        userId
+      );
     }
 
     /*
-     * ==========================================
      * NORMAL PAGE
-     * ==========================================
      */
 
     const profileId =
-      url.searchParams.get("profile");
+      url.searchParams.get(
+        "profile"
+      );
 
     if (!profileId) {
       const response =
-        await env.ASSETS.fetch(request);
+        await env.ASSETS.fetch(
+          request
+        );
 
       const headers =
-        new Headers(response.headers);
+        new Headers(
+          response.headers
+        );
 
       headers.set(
         "X-XOXO-Worker",
         "normal-page"
       );
 
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers,
-      });
+      return new Response(
+        response.body,
+        {
+          status:
+            response.status,
+          statusText:
+            response.statusText,
+          headers,
+        }
+      );
     }
 
     /*
-     * ==========================================
      * LOAD PUBLIC PROFILE
-     * ==========================================
      */
 
     const profile =
-      await getPublicProfile(profileId);
+      await getPublicProfile(
+        profileId
+      );
 
     if (!profile) {
       const response =
-        await env.ASSETS.fetch(request);
+        await env.ASSETS.fetch(
+          request
+        );
 
       const headers =
-        new Headers(response.headers);
+        new Headers(
+          response.headers
+        );
 
       headers.set(
         "X-XOXO-Worker",
         "profile-not-found"
       );
 
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers,
-      });
+      return new Response(
+        response.body,
+        {
+          status:
+            response.status,
+          statusText:
+            response.statusText,
+          headers,
+        }
+      );
     }
 
     /*
-     * ==========================================
      * LOAD XOXO INDEX
-     * ==========================================
      */
 
-    const indexRequest = new Request(
-      `${url.origin}/`,
-      request
-    );
+    const indexRequest =
+      new Request(
+        `${url.origin}/`,
+        request
+      );
 
     const assetResponse =
-      await env.ASSETS.fetch(indexRequest);
+      await env.ASSETS.fetch(
+        indexRequest
+      );
 
     const contentType =
       assetResponse.headers.get(
         "content-type"
       ) || "";
 
-    if (!contentType.includes("text/html")) {
+    if (
+      !contentType.includes(
+        "text/html"
+      )
+    ) {
       const headers =
-        new Headers(assetResponse.headers);
+        new Headers(
+          assetResponse.headers
+        );
 
       headers.set(
         "X-XOXO-Worker",
@@ -871,7 +1897,8 @@ export default {
       return new Response(
         assetResponse.body,
         {
-          status: assetResponse.status,
+          status:
+            assetResponse.status,
           statusText:
             assetResponse.statusText,
           headers,
@@ -880,21 +1907,23 @@ export default {
     }
 
     /*
-     * ==========================================
      * DYNAMIC PROFILE METADATA
-     * ==========================================
      */
 
-    const username = String(
-      profile.username || "@XOXOAvenue"
-    ).trim();
+    const username =
+      String(
+        profile.username ||
+          "@XOXOAvenue"
+      ).trim();
 
     const metadata = {
       title:
         `${username} · XOXO Avenue`,
 
       description:
-        makeDescription(profile),
+        makeDescription(
+          profile
+        ),
 
       image:
         getProfileImageUrl(
@@ -910,9 +1939,7 @@ export default {
     };
 
     /*
-     * ==========================================
      * OPEN GRAPH / SOCIAL PREVIEW
-     * ==========================================
      */
 
     const transformed =
@@ -922,7 +1949,9 @@ export default {
       );
 
     const headers =
-      new Headers(transformed.headers);
+      new Headers(
+        transformed.headers
+      );
 
     headers.set(
       "Cache-Control",
@@ -937,7 +1966,8 @@ export default {
     return new Response(
       transformed.body,
       {
-        status: transformed.status,
+        status:
+          transformed.status,
         statusText:
           transformed.statusText,
         headers,
