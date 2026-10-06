@@ -880,6 +880,56 @@ function getCaseNumberFromInbound(
 
 /*
  * ==========================================
+ * CLEAN QUOTED EMAIL REPLIES
+ * ==========================================
+ */
+
+function cleanInboundEmailReply(value) {
+  let text = String(value || "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
+
+  if (!text) {
+    return "";
+  }
+
+  const lines = text.split("\n");
+  const kept = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    /* Gmail / common mail-client reply separators. */
+    if (
+      /^On .+ wrote:\s*$/i.test(trimmed) ||
+      /^El .+ escribió:\s*$/i.test(trimmed) ||
+      /^Le .+ a écrit\s*:\s*$/i.test(trimmed) ||
+      /^Am .+ schrieb .+:\s*$/i.test(trimmed) ||
+      /^Em .+ escreveu:\s*$/i.test(trimmed) ||
+      /^-{2,}\s*Original Message\s*-{2,}$/i.test(trimmed) ||
+      /^-{2,}\s*Mensaje original\s*-{2,}$/i.test(trimmed) ||
+      /^From:\s.+/i.test(trimmed) ||
+      /^De:\s.+/i.test(trimmed)
+    ) {
+      break;
+    }
+
+    /* A quoted block means the previous conversation begins here. */
+    if (/^>/.test(trimmed)) {
+      break;
+    }
+
+    kept.push(line);
+  }
+
+  return kept
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/*
+ * ==========================================
  * SAVE INBOUND SUPPORT MESSAGE
  * ==========================================
  */
@@ -1245,6 +1295,21 @@ async function handleSupportEmailInbound(
       },
       400
     );
+  }
+
+  /*
+   * Remove Gmail/mail-client quoted history so only
+   * the newly written reply is saved and forwarded.
+   */
+
+  const cleanedMessage =
+    cleanInboundEmailReply(
+      message
+    );
+
+  if (cleanedMessage) {
+    message =
+      cleanedMessage;
   }
 
   /*
