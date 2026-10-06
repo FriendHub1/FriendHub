@@ -14386,6 +14386,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   const SUPPORT_ADMIN_ID="d9ea1914-fdba-465c-9700-5e640ff48763";
   let adminSupportCase=null;
   let adminSupportTimer=null;
+  let adminSupportListTimer=null;
 
   function aEsc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
   function aTime(v){try{return new Date(v).toLocaleString([], {dateStyle:"short",timeStyle:"short"});}catch{return "";}}
@@ -14415,29 +14416,63 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     const caseIds=cases.map(c=>c.id);
     const userIds=[...new Set(cases.map(c=>c.user_id).filter(Boolean))];
     const [{data:msgs},{data:profiles}]=await Promise.all([
-      supabaseClient.from("support_messages").select("case_id,message,sender_type,created_at,attachment_url,attachment_type").in("case_id",caseIds).order("created_at",{ascending:false}),
+      supabaseClient.from("support_messages").select("case_id,message,sender_type,created_at,read_at,attachment_url,attachment_type").in("case_id",caseIds).order("created_at",{ascending:false}),
       userIds.length ? supabaseClient.from("profiles").select("user_id,username").in("user_id",userIds) : Promise.resolve({data:[]})
     ]);
     const names=new Map((profiles||[]).map(p=>[String(p.user_id),p.username||"User"]));
     const latest=new Map();
-    (msgs||[]).forEach(m=>{if(!latest.has(String(m.case_id))) latest.set(String(m.case_id),m);});
+    const unreadByCase=new Map();
+
+    (msgs||[]).forEach(m=>{
+      const key=String(m.case_id);
+      if(!latest.has(key)) latest.set(key,m);
+      if(m.sender_type==="user" && !m.read_at){
+        unreadByCase.set(key,(unreadByCase.get(key)||0)+1);
+      }
+    });
+
+    /* Most recently active conversation always appears first. */
+    cases.sort((a,b)=>{
+      const am=latest.get(String(a.id));
+      const bm=latest.get(String(b.id));
+      const at=new Date(am?.created_at||a.updated_at||a.created_at||0).getTime();
+      const bt=new Date(bm?.created_at||b.updated_at||b.created_at||0).getTime();
+      return bt-at;
+    });
 
     list.innerHTML=cases.map(c=>{
-      const m=latest.get(String(c.id));
+      const key=String(c.id);
+      const m=latest.get(key);
+      const unread=unreadByCase.get(key)||0;
       const who=names.get(String(c.user_id))||"User";
-      return `<div class="xoxo-admin-card xoxo-support-case" onclick="openXoxoAdminSupportCase('${aEsc(c.id)}')">
+      const activityTime=m?.created_at||c.updated_at||c.created_at;
+      const newBadge=unread
+        ? `<span class="xoxo-admin-badge" style="background:#2563eb;color:#fff;margin-right:6px;">${unread===1?"● New":"● "+unread+" New"}</span>`
+        : "";
+      return `<div class="xoxo-admin-card xoxo-support-case" onclick="openXoxoAdminSupportCase('${aEsc(c.id)}')" style="${unread?"border-color:rgba(59,130,246,.8);box-shadow:0 0 0 1px rgba(59,130,246,.18);":""}">
         <div class="xoxo-admin-card-head">
           <div><div class="xoxo-admin-card-title">Support case #${aEsc(c.case_number)}</div>
-          <div class="xoxo-admin-meta">@${aEsc(who)} · ${aEsc(aTime(c.updated_at||c.created_at))}</div></div>
-          <span class="xoxo-admin-badge">${aEsc(c.status)}</span>
+          <div class="xoxo-admin-meta">@${aEsc(who)} · ${aEsc(aTime(activityTime))}</div></div>
+          <div>${newBadge}<span class="xoxo-admin-badge">${aEsc(c.status)}</span></div>
         </div>
         <div class="xoxo-support-case-preview">${aEsc(m?.message||"No messages yet.")}</div>
       </div>`;
     }).join("");
+
+    /* Refresh the inbox while the case list is visible. */
+    if(!adminSupportListTimer){
+      adminSupportListTimer=setInterval(()=>{
+        const listEl=document.getElementById("xoxoAdminSupportCases");
+        if(document.visibilityState!=="hidden" && listEl && listEl.style.display!=="none" && !adminSupportCase){
+          loadXoxoAdminSupportCases();
+        }
+      },10000);
+    }
   };
 
   window.openXoxoAdminSupportCase=async function(caseId){
     if(!(await isSupportAdmin())) return;
+    if(adminSupportListTimer){clearInterval(adminSupportListTimer);adminSupportListTimer=null;}
     const {data:c,error}=await supabaseClient.from("support_cases").select("id,case_number,user_id,status,created_at,updated_at").eq("id",caseId).single();
     if(error||!c){console.error(error);return;}
     adminSupportCase=c;
@@ -14454,6 +14489,15 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     <button id="xoxoAdminSupportSend" type="button" onclick="sendXoxoAdminSupportReply()">Send Reply</button></div>
     <div class="xoxo-admin-actions"><button class="success" type="button" onclick="setXoxoSupportCaseStatus('open')">Open</button><button type="button" onclick="setXoxoSupportCaseStatus('pending')">Pending</button><button type="button" onclick="setXoxoSupportCaseStatus('closed')">Close case</button></div>`;
     await loadXoxoAdminSupportMessages();
+
+    const {error:readError}=await supabaseClient
+      .from("support_messages")
+      .update({read_at:new Date().toISOString()})
+      .eq("case_id",c.id)
+      .eq("sender_type","user")
+      .is("read_at",null);
+    if(readError) console.error("Admin support read status error:",readError);
+
     if(adminSupportTimer) clearInterval(adminSupportTimer);
     adminSupportTimer=setInterval(()=>{if(document.visibilityState!=="hidden"&&adminSupportCase?.id) loadXoxoAdminSupportMessages();},5000);
   };
