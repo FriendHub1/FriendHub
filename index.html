@@ -3876,6 +3876,118 @@
                   color: var(--fh-muted,#94a3b8);
                   font-size: .88rem;
                 }
+                #support .support-chat-actions {
+                  margin-top: 18px;
+                  display: flex;
+                  gap: 10px;
+                  flex-wrap: wrap;
+                }
+                #support .support-chat-start {
+                  border: 0;
+                  border-radius: 14px;
+                  padding: 12px 18px;
+                  background: linear-gradient(135deg,#27c8ff,#8b5cff);
+                  color: #fff;
+                  font: inherit;
+                  font-weight: 900;
+                  cursor: pointer;
+                }
+                #support .support-chat-panel {
+                  display: none;
+                  margin-top: 18px;
+                  padding-top: 18px;
+                  border-top: 1px solid rgba(148,163,184,.20);
+                }
+                #support .support-chat-panel.open { display:block; }
+                #support .support-case-label {
+                  margin-bottom: 12px;
+                  font-size: .88rem;
+                  font-weight: 900;
+                  color: #cbd5e1;
+                }
+                #support .support-chat-messages {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 10px;
+                  max-height: 360px;
+                  overflow-y: auto;
+                  margin-bottom: 14px;
+                  padding: 4px 2px;
+                }
+                #support .support-chat-empty {
+                  padding: 18px;
+                  border: 1px dashed rgba(148,163,184,.28);
+                  border-radius: 16px;
+                  text-align: center;
+                  color: #94a3b8;
+                }
+                #support .support-chat-message {
+                  max-width: 82%;
+                  padding: 11px 13px;
+                  border-radius: 16px;
+                  white-space: pre-wrap;
+                  overflow-wrap: anywhere;
+                }
+                #support .support-chat-message.user {
+                  align-self: flex-end;
+                  background: linear-gradient(135deg,rgba(39,200,255,.22),rgba(139,92,255,.24));
+                  border: 1px solid rgba(39,200,255,.25);
+                }
+                #support .support-chat-message.admin {
+                  align-self: flex-start;
+                  background: rgba(148,163,184,.12);
+                  border: 1px solid rgba(148,163,184,.22);
+                }
+                #support .support-chat-time {
+                  display:block;
+                  margin-top:5px;
+                  font-size:.72rem;
+                  opacity:.65;
+                }
+                #support .support-chat-compose {
+                  display: flex;
+                  gap: 10px;
+                  align-items: flex-end;
+                }
+                #support .support-chat-compose textarea {
+                  flex: 1;
+                  min-height: 82px;
+                  max-height: 180px;
+                  resize: vertical;
+                  padding: 12px 13px;
+                  border: 1px solid rgba(139,92,255,.42);
+                  border-radius: 14px;
+                  background: rgba(7,14,40,.72);
+                  color: inherit;
+                  font: inherit;
+                  outline: none;
+                }
+                #support .support-chat-compose textarea:focus {
+                  border-color: rgba(39,200,255,.72);
+                  box-shadow: 0 0 0 3px rgba(39,200,255,.08);
+                }
+                #support .support-chat-send {
+                  min-height: 46px;
+                  border: 0;
+                  border-radius: 14px;
+                  padding: 11px 17px;
+                  background: linear-gradient(135deg,#27c8ff,#8b5cff);
+                  color:#fff;
+                  font:inherit;
+                  font-weight:900;
+                  cursor:pointer;
+                }
+                #support .support-chat-send:disabled,
+                #support .support-chat-start:disabled {
+                  opacity:.55;
+                  cursor:not-allowed;
+                }
+                #support .support-chat-feedback {
+                  min-height: 20px;
+                  margin-top: 10px;
+                  font-size: .86rem;
+                  color: #94a3b8;
+                }
                 @media (max-width:700px) {
                   #support .support-live-card {
                     padding: 22px 20px 23px;
@@ -5475,6 +5587,20 @@
                                     </div>
                                     </div>
                                     <p id="supportLiveMessage">Checking whether XOXO Avenue Support is available right now.</p>
+                                    <div class="support-chat-actions">
+                                    <button id="supportChatStartBtn" class="support-chat-start" type="button" onclick="openXoxoSupportChat()">Start Live Chat</button>
+                                    </div>
+                                    <div id="supportChatPanel" class="support-chat-panel">
+                                    <div id="supportCaseLabel" class="support-case-label">Support conversation</div>
+                                    <div id="supportChatMessages" class="support-chat-messages">
+                                    <div class="support-chat-empty">Send a message to XOXO Avenue Support.</div>
+                                    </div>
+                                    <div class="support-chat-compose">
+                                    <textarea id="supportChatInput" maxlength="5000" placeholder="Write your message..." aria-label="Support message"></textarea>
+                                    <button id="supportChatSendBtn" class="support-chat-send" type="button" onclick="sendXoxoSupportMessage()">Send</button>
+                                    </div>
+                                    <div id="supportChatFeedback" class="support-chat-feedback" aria-live="polite"></div>
+                                    </div>
                                     </div>
                                     <div class="content-card support-contact-card">
                                     <div class="support-contact-icon">✉️</div>
@@ -14182,6 +14308,219 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 
 <script>
 /* =========================================================
+   XOXO AVENUE — SUPPORT CASES + USER CHAT
+   Uses public.support_cases and public.support_messages.
+   ========================================================= */
+(function () {
+  let xoxoSupportCase = null;
+  let xoxoSupportMessagesTimer = null;
+
+  function supportEsc(value) {
+    return String(value ?? "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+  }
+
+  function supportCaseNumber(value) {
+    return value ? "#" + String(value) : "";
+  }
+
+  function supportFeedback(message, isError = false) {
+    const el = document.getElementById("supportChatFeedback");
+    if (!el) return;
+    el.textContent = message || "";
+    el.style.color = isError ? "#ff9baf" : "";
+  }
+
+  async function getSupportSessionUser() {
+    if (typeof supabaseClient === "undefined") return null;
+    const { data, error } = await supabaseClient.auth.getUser();
+    if (error) return null;
+    return data?.user || null;
+  }
+
+  async function loadOwnOpenSupportCase() {
+    const user = await getSupportSessionUser();
+    if (!user) return null;
+
+    const { data, error } = await supabaseClient
+      .from("support_cases")
+      .select("id,case_number,status,created_at,updated_at")
+      .eq("user_id", user.id)
+      .in("status", ["open","pending"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Support case load error:", error);
+      return null;
+    }
+    xoxoSupportCase = data || null;
+    return xoxoSupportCase;
+  }
+
+  async function createSupportCase() {
+    const user = await getSupportSessionUser();
+    if (!user) {
+      if (typeof openAuth === "function") openAuth("login");
+      supportFeedback("Please log in to contact XOXO Avenue Support.", true);
+      return null;
+    }
+
+    const existing = await loadOwnOpenSupportCase();
+    if (existing) return existing;
+
+    const { data, error } = await supabaseClient
+      .from("support_cases")
+      .insert({ user_id: user.id })
+      .select("id,case_number,status,created_at,updated_at")
+      .single();
+
+    if (error) {
+      console.error("Support case create error:", error);
+      supportFeedback("We couldn't start your support case. Please try again.", true);
+      return null;
+    }
+
+    xoxoSupportCase = data;
+    return data;
+  }
+
+  async function loadSupportMessages() {
+    if (!xoxoSupportCase?.id) return;
+    const box = document.getElementById("supportChatMessages");
+    const label = document.getElementById("supportCaseLabel");
+    if (!box || !label) return;
+
+    const { data, error } = await supabaseClient
+      .from("support_messages")
+      .select("id,sender_type,message,created_at")
+      .eq("case_id", xoxoSupportCase.id)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Support messages load error:", error);
+      supportFeedback("Messages could not be loaded right now.", true);
+      return;
+    }
+
+    label.textContent = "Support case " + supportCaseNumber(xoxoSupportCase.case_number);
+
+    if (!data?.length) {
+      box.innerHTML = '<div class="support-chat-empty">Send a message to XOXO Avenue Support.</div>';
+      return;
+    }
+
+    box.innerHTML = data.map(row => {
+      const who = row.sender_type === "admin" ? "admin" : "user";
+      const time = row.created_at
+        ? new Date(row.created_at).toLocaleString([], { dateStyle:"short", timeStyle:"short" })
+        : "";
+      return '<div class="support-chat-message '+who+'">'
+        + supportEsc(row.message)
+        + '<span class="support-chat-time">'+supportEsc(time)+'</span></div>';
+    }).join("");
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function openSupportChat() {
+    const panel = document.getElementById("supportChatPanel");
+    if (!panel) return;
+
+    const user = await getSupportSessionUser();
+    if (!user) {
+      if (typeof openAuth === "function") openAuth("login");
+      return;
+    }
+
+    panel.classList.add("open");
+    supportFeedback("");
+    await loadOwnOpenSupportCase();
+
+    if (xoxoSupportCase) {
+      await loadSupportMessages();
+    } else {
+      const label = document.getElementById("supportCaseLabel");
+      if (label) label.textContent = "New support conversation";
+    }
+
+    const input = document.getElementById("supportChatInput");
+    if (input) input.focus();
+
+    if (xoxoSupportMessagesTimer) clearInterval(xoxoSupportMessagesTimer);
+    xoxoSupportMessagesTimer = setInterval(() => {
+      if (document.visibilityState !== "hidden" && xoxoSupportCase?.id) loadSupportMessages();
+    }, 5000);
+  }
+
+  async function sendSupportMessage() {
+    const input = document.getElementById("supportChatInput");
+    const sendBtn = document.getElementById("supportChatSendBtn");
+    if (!input || !sendBtn) return;
+
+    const message = input.value.trim();
+    if (!message) {
+      supportFeedback("Write a message first.", true);
+      return;
+    }
+
+    const user = await getSupportSessionUser();
+    if (!user) {
+      if (typeof openAuth === "function") openAuth("login");
+      return;
+    }
+
+    sendBtn.disabled = true;
+    supportFeedback("Sending...");
+
+    let supportCase = xoxoSupportCase || await createSupportCase();
+    if (!supportCase) {
+      sendBtn.disabled = false;
+      return;
+    }
+
+    const { error } = await supabaseClient
+      .from("support_messages")
+      .insert({
+        case_id: supportCase.id,
+        sender_id: user.id,
+        sender_type: "user",
+        message
+      });
+
+    sendBtn.disabled = false;
+
+    if (error) {
+      console.error("Support message send error:", error);
+      supportFeedback("Your message could not be sent. Please try again.", true);
+      return;
+    }
+
+    input.value = "";
+    supportFeedback("Message received! Your support case is " + supportCaseNumber(supportCase.case_number) + ".");
+    await loadSupportMessages();
+  }
+
+  window.openXoxoSupportChat = openSupportChat;
+  window.sendXoxoSupportMessage = sendSupportMessage;
+
+  window.addEventListener("load", () => {
+    const input = document.getElementById("supportChatInput");
+    if (input) {
+      input.addEventListener("keydown", event => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendSupportMessage();
+        }
+      });
+    }
+  });
+})();
+</script>
+
+<script>
+/* =========================================================
    XOXO AVENUE — LIVE SUPPORT ONLINE/OFFLINE STATUS
    Reads public.support_status without changing DM/auth logic.
    ========================================================= */
@@ -14207,11 +14546,15 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     if (isOnline) {
       box.classList.add("online");
       label.textContent = "Online";
-      message.textContent = "XOXO Avenue Support is online right now. Live messaging will be available here soon.";
+      message.textContent = "XOXO Avenue Support is online right now.";
+      const startBtn = document.getElementById("supportChatStartBtn");
+      if (startBtn) startBtn.textContent = "Start Live Chat";
     } else {
       box.classList.add("offline");
       label.textContent = "Offline";
-      message.textContent = "XOXO Avenue Support is currently offline. You can still contact us by email.";
+      message.textContent = "XOXO Avenue Support is currently offline. You can leave a message here or contact us by email.";
+      const startBtn = document.getElementById("supportChatStartBtn");
+      if (startBtn) startBtn.textContent = "Leave a Message";
     }
   }
 
