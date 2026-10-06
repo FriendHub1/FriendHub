@@ -1931,7 +1931,7 @@ async function handleNewProfileNotification(request, env) {
     return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
   }
 
-  if (!env.RESEND_API_KEY || !env.NEW_PROFILE_WEBHOOK_SECRET) {
+  if (!env.RESEND_API_KEY || !env.PROFILE_WEBHOOK_SECRET) {
     console.error("XOXO new profile notification secrets are missing");
     return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
   }
@@ -1939,7 +1939,7 @@ async function handleNewProfileNotification(request, env) {
   const providedSecret = String(
     request.headers.get("X-XOXO-Webhook-Secret") || ""
   ).trim();
-  const expectedSecret = String(env.NEW_PROFILE_WEBHOOK_SECRET || "").trim();
+  const expectedSecret = String(env.PROFILE_WEBHOOK_SECRET || "").trim();
 
   if (!providedSecret || providedSecret !== expectedSecret) {
     return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
