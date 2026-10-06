@@ -14673,6 +14673,24 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     refreshXoxoAdminTyping();
   }
 
+  function xoxoSupportSentSound(){
+    try{
+      const Ctx=window.AudioContext||window.webkitAudioContext;
+      if(!Ctx) return;
+      window.__xoxoSupportSentAudioCtx=window.__xoxoSupportSentAudioCtx||new Ctx();
+      const ctx=window.__xoxoSupportSentAudioCtx;
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(520,ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(760,ctx.currentTime+0.09);
+      gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.08,ctx.currentTime+0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.14);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.15);
+    }catch(e){console.debug("Support sent sound unavailable",e);}
+  }
+
   window.sendXoxoAdminSupportReply=async function(){
     if(!adminSupportCase?.id||!(await isSupportAdmin()))return;
     const input=document.getElementById("xoxoAdminSupportReply"),btn=document.getElementById("xoxoAdminSupportSend");
@@ -14684,6 +14702,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     const {data:inserted,error}=await supabaseClient.from("support_messages").insert({case_id:adminSupportCase.id,sender_id:u.user.id,sender_type:"admin",message}).select("id").single();
     if(error){btn.disabled=false;console.error("Admin support reply error:",error);alert("Could not send support reply.");return;}
     input.value="";
+    xoxoSupportSentSound();
     await supabaseClient.from("support_cases").update({status:"open",updated_at:new Date().toISOString()}).eq("id",adminSupportCase.id);
     await loadXoxoAdminSupportMessages();
 
@@ -15132,6 +15151,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     }
 
     input.value = "";
+    xoxoSupportSentSound();
     clearSupportAttachment();
     supportFeedback("Message received! Your support case is " + supportCaseNumber(supportCase.case_number) + ".");
 
