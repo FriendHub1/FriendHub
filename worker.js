@@ -957,6 +957,7 @@ async function insertInboundSupportMessage(
   senderId,
   senderType,
   message,
+  inboundEmailId,
   env
 ) {
   const payload = {
@@ -964,6 +965,7 @@ async function insertInboundSupportMessage(
     sender_id: senderId,
     sender_type: senderType,
     message: message,
+    inbound_email_id: inboundEmailId,
   };
 
   console.log(
@@ -996,8 +998,22 @@ async function insertInboundSupportMessage(
   );
 
   if (!response.ok) {
+    if (
+      response.status === 409 &&
+      responseText.includes("23505") &&
+      responseText.includes("inbound_email_id")
+    ) {
+      return {
+        ok: true,
+        duplicate: true,
+        status: response.status,
+        error: null,
+      };
+    }
+
     return {
       ok: false,
+      duplicate: false,
       status: response.status,
       error: responseText,
     };
@@ -1005,6 +1021,7 @@ async function insertInboundSupportMessage(
 
   return {
     ok: true,
+    duplicate: false,
     status: response.status,
     error: null,
   };
@@ -1350,8 +1367,20 @@ async function handleSupportEmailInbound(
       inboundSenderId,
       inboundSenderType,
       message,
+      emailId,
       env
     );
+
+  if (inserted.duplicate) {
+    return jsonResponse({
+      ok: true,
+      received: true,
+      verified: true,
+      processing: false,
+      duplicate: true,
+      case_number: supportCase.case_number,
+    });
+  }
 
   if (!inserted.ok) {
     return jsonResponse(
