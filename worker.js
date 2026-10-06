@@ -1922,6 +1922,87 @@ ${escapeHtml(message)}
 
 /*
  * ==========================================
+ * NEW PROFILE EMAIL NOTIFICATION
+ * ==========================================
+ */
+
+async function handleNewProfileNotification(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
+  }
+
+  if (!env.RESEND_API_KEY || !env.NEW_PROFILE_WEBHOOK_SECRET) {
+    console.error("XOXO new profile notification secrets are missing");
+    return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
+  }
+
+  const providedSecret = String(
+    request.headers.get("X-XOXO-Webhook-Secret") || ""
+  ).trim();
+  const expectedSecret = String(env.NEW_PROFILE_WEBHOOK_SECRET || "").trim();
+
+  if (!providedSecret || providedSecret !== expectedSecret) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "Invalid JSON" }, 400);
+  }
+
+  const record = body?.record || body?.new || {};
+  const username = String(record?.username || "").trim();
+  const userId = String(record?.user_id || record?.id || "").trim();
+
+  if (!username) {
+    return jsonResponse({ ok: true, ignored: true, reason: "Profile has no username" });
+  }
+
+  let memberEmail = "";
+  if (userId && env.SUPABASE_SECRET_KEY) {
+    const authUser = await getAuthUserById(userId, env);
+    memberEmail = String(authUser?.email || "").trim();
+  }
+
+  const displayUsername = username.startsWith("@") ? username : `@${username}`;
+  const subject = `🎉 New XOXO Avenue member: ${displayUsername}`;
+  const textBody = [
+    "A new member completed their XOXO Avenue profile.",
+    "",
+    `Username: ${displayUsername}`,
+    memberEmail ? `Email: ${memberEmail}` : "Email: Not available",
+    "",
+    "XOXO Avenue 💜",
+  ].join("\n");
+
+  const htmlBody = `
+<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+  <h2>🎉 New XOXO Avenue member</h2>
+  <p>A new member completed their XOXO Avenue profile.</p>
+  <p><strong>Username:</strong> ${escapeHtml(displayUsername)}</p>
+  <p><strong>Email:</strong> ${escapeHtml(memberEmail || "Not available")}</p>
+  <p>XOXO Avenue 💜</p>
+</div>`;
+
+  const result = await sendResendEmail(env, {
+    from: "XOXO Avenue Support <support@xoxoavenue.com>",
+    to: ["xoxoavenuesupport@gmail.com"],
+    subject,
+    text: textBody,
+    html: htmlBody,
+  });
+
+  if (!result.ok) {
+    return jsonResponse({ ok: false, error: "Email delivery failed" }, 502);
+  }
+
+  return jsonResponse({ ok: true, notification_sent: true });
+}
+
+/*
+ * ==========================================
  * MAIN WORKER
  * ==========================================
  */
@@ -1935,6 +2016,20 @@ export default {
       new URL(
         request.url
       );
+
+    /*
+     * NEW PROFILE EMAIL NOTIFICATION
+     */
+
+    if (
+      url.pathname ===
+        "/api/new-profile-notification"
+    ) {
+      return handleNewProfileNotification(
+        request,
+        env
+      );
+    }
 
     /*
      * SUPPORT EMAIL API
