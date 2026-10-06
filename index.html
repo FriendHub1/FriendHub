@@ -14567,18 +14567,28 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     }
   };
 
+  window.openXoxoSupportUserProfile=function(){
+    if(!adminSupportCase?.user_id) return;
+    if(typeof openPublicProfile==="function"){
+      openPublicProfile(String(adminSupportCase.user_id));
+    }
+  };
+
   window.openXoxoAdminSupportCase=async function(caseId){
     if(!(await isSupportAdmin())) return;
     if(adminSupportListTimer){clearInterval(adminSupportListTimer);adminSupportListTimer=null;}
     const {data:c,error}=await supabaseClient.from("support_cases").select("id,case_number,user_id,status,created_at,updated_at").eq("id",caseId).single();
     if(error||!c){console.error(error);return;}
-    adminSupportCase=c;
+    const cachedCase=adminSupportCasesCache.find(item=>String(item.caseData.id)===String(c.id));
+    adminSupportCase={...c,supportUsername:cachedCase?.who||"User"};
     document.getElementById("xoxoAdminSupportCases").style.display="none";
     const convo=document.getElementById("xoxoAdminSupportConversation");
     convo.style.display="block";
     convo.innerHTML=`<div class="xoxo-support-chat-head">
       <div><button class="xoxo-support-back" type="button" onclick="closeXoxoAdminSupportCase()">← Cases</button>
-      <strong style="margin-left:10px">Case #${aEsc(c.case_number)}</strong></div>
+      <strong style="margin-left:10px">Case #${aEsc(c.case_number)}</strong>
+      <span style="margin-left:8px;opacity:.75;">@${aEsc(adminSupportCase.supportUsername)}</span>
+      <button type="button" class="xoxo-support-back" style="margin-left:8px;" onclick="openXoxoSupportUserProfile()">👤 View Profile</button></div>
       <span class="xoxo-admin-badge">${aEsc(c.status)}</span>
     </div>
     <div id="xoxoAdminSupportMessages" class="xoxo-support-chat-messages"><div class="empty-state">Loading messages...</div></div>
