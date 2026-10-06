@@ -14673,25 +14673,43 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     refreshXoxoAdminTyping();
   }
 
-  function xoxoSupportSentSound(){
+  function xoxoPrepareSupportSentSound(){
     try{
       const Ctx=window.AudioContext||window.webkitAudioContext;
       if(!Ctx) return;
       window.__xoxoSupportSentAudioCtx=window.__xoxoSupportSentAudioCtx||new Ctx();
       const ctx=window.__xoxoSupportSentAudioCtx;
-      const osc=ctx.createOscillator();
-      const gain=ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(520,ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(760,ctx.currentTime+0.09);
-      gain.gain.setValueAtTime(0.0001,ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.08,ctx.currentTime+0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.14);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.15);
+      if(ctx.state==="suspended") ctx.resume().catch(()=>{});
+      /* Unlock audio immediately inside the Send click gesture. */
+      const unlockOsc=ctx.createOscillator();
+      const unlockGain=ctx.createGain();
+      unlockGain.gain.value=0.00001;
+      unlockOsc.connect(unlockGain); unlockGain.connect(ctx.destination);
+      unlockOsc.start(); unlockOsc.stop(ctx.currentTime+0.01);
+    }catch(e){console.debug("Support sent audio could not be prepared",e);}
+  }
+
+  function xoxoSupportSentSound(){
+    try{
+      const ctx=window.__xoxoSupportSentAudioCtx;
+      if(!ctx) return;
+      const play=()=>{
+        const osc=ctx.createOscillator();
+        const gain=ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(520,ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(760,ctx.currentTime+0.09);
+        gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.11,ctx.currentTime+0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.16);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.17);
+      };
+      if(ctx.state==="suspended") ctx.resume().then(play).catch(()=>{}); else play();
     }catch(e){console.debug("Support sent sound unavailable",e);}
   }
 
   window.sendXoxoAdminSupportReply=async function(){
+    xoxoPrepareSupportSentSound();
     if(!adminSupportCase?.id||!(await isSupportAdmin()))return;
     const input=document.getElementById("xoxoAdminSupportReply"),btn=document.getElementById("xoxoAdminSupportSend");
     const message=input?.value.trim(); if(!message)return;
@@ -15094,6 +15112,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   }
 
   async function sendSupportMessage() {
+    xoxoPrepareSupportSentSound();
     const input = document.getElementById("supportChatInput");
     const sendBtn = document.getElementById("supportChatSendBtn");
     if (!input || !sendBtn) return;
@@ -15163,6 +15182,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 
     await loadSupportMessages();
     await refreshSupportConversationState();
+    /* Keep the final state visible after all async refreshes finish. */
+    supportFeedback("Message sent ✓");
   }
 
   window.openXoxoSupportChat = openSupportChat;
