@@ -19,8 +19,6 @@ async function getPublicProfile(userId) {
           apikey: SUPABASE_KEY,
           Authorization: `Bearer ${SUPABASE_KEY}`,
           "Content-Type": "application/json",
-
-          // Force PostgREST to use the public schema.
           "Accept-Profile": "public",
           "Content-Profile": "public",
         },
@@ -82,9 +80,6 @@ function getProfileImageUrl(profile, origin, userId) {
     profile?.profile_photo || ""
   ).trim();
 
-  // Profile photos are currently stored as Base64.
-  // Social crawlers cannot use data:image/... directly,
-  // so expose the image through our Worker endpoint.
   if (photo.startsWith("data:image/")) {
     return `${origin}/profile-preview-image/${encodeURIComponent(
       userId
@@ -257,9 +252,287 @@ function injectPreview(response, metadata) {
     .transform(response);
 }
 
+/*
+ * ==========================================
+ * SUPPORT EMAIL API
+ * ==========================================
+ */
+
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
+}
+
+async function getAuthenticatedUser(request) {
+  const authorization = request.headers.get("Authorization") || "";
+
+  if (!authorization.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authorization.slice(7).trim();
+
+  if (!token) {
+    return null;
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return response.json();
+}
+
+async function getAuthUserById(userId, env) {
+  const response = await fetch(
+    `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
+    {
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    console.error(
+      "XOXO support auth user lookup failed:",
+      response.status,
+      await response.text()
+    );
+    return null;
+  }
+
+  return response.json();
+}
+
+async function getSupportCase(caseId, env) {
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/support_cases?id=eq.${encodeURIComponent(caseId)}&select=id,case_number,user_id,status`,
+    {
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        "Accept-Profile": "public",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    console.error(
+      "XOXO support case lookup failed:",
+      response.status,
+      await response.text()
+    );
+    return null;
+  }
+
+  const rows = await response.json();
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
+}
+
+async function sendResendEmail(env, payload) {
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await response.text();
+  let data = {};
+
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+
+  if (!response.ok) {
+    console.error(
+      "XOXO Resend email failed:",
+      response.status,
+      data
+    );
+    return { ok: false, status: response.status };
+  }
+
+  return { ok: true, data };
+}
+
+async function handleSupportEmail(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(
+      { ok: false, error: "Method not allowed" },
+      405
+    );
+  }
+
+  if (!env.RESEND_API_KEY || !env.SUPABASE_SECRET_KEY) {
+    console.error("XOXO support email secrets are missing");
+    return jsonResponse(
+      { ok: false, error: "Server configuration error" },
+      500
+    );
+  }
+
+  const signedInUser = await getAuthenticatedUser(request);
+
+  if (!signedInUser?.id) {
+    return jsonResponse(
+      { ok: false, error: "Unauthorized" },
+      401
+    );
+  }
+
+  let body;
+
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse(
+      { ok: false, error: "Invalid JSON" },
+      400
+    );
+  }
+
+  const caseId = String(body?.case_id || "").trim();
+  const emailType = String(body?.type || "confirmation").trim();
+
+  if (!caseId) {
+    return jsonResponse(
+      { ok: false, error: "Missing case_id" },
+      400
+    );
+  }
+
+  if (emailType !== "confirmation") {
+    return jsonResponse(
+      { ok: false, error: "Unsupported email type" },
+      400
+    );
+  }
+
+  const supportCase = await getSupportCase(caseId, env);
+
+  if (!supportCase) {
+    return jsonResponse(
+      { ok: false, error: "Support case not found" },
+      404
+    );
+  }
+
+  /*
+   * For this first endpoint, only the owner of the case
+   * can request its confirmation email.
+   */
+  if (supportCase.user_id !== signedInUser.id) {
+    return jsonResponse(
+      { ok: false, error: "Forbidden" },
+      403
+    );
+  }
+
+  const authUser = await getAuthUserById(
+    supportCase.user_id,
+    env
+  );
+
+  const recipient = String(authUser?.email || "").trim();
+
+  if (!recipient) {
+    return jsonResponse(
+      { ok: false, error: "User email not found" },
+      404
+    );
+  }
+
+  const caseNumber = String(supportCase.case_number);
+
+  const subject =
+    `[##${caseNumber}##] - Message received!`;
+
+  const textBody = [
+    "# This is an automated message. Please do not reply #",
+    "",
+    "Hey there,",
+    "",
+    "Thanks for reaching out! 🙂",
+    "",
+    `This is to confirm we received your message. Your support case number is #${caseNumber}.`,
+    "",
+    "We'll get back to you as soon as possible.",
+    "",
+    "Warmly,",
+    "XOXO Avenue Support 💜",
+  ].join("\n");
+
+  const htmlBody = `
+    <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+      <p style="font-weight:700;"># This is an automated message. Please do not reply #</p>
+      <p>Hey there,</p>
+      <p>Thanks for reaching out! 🙂</p>
+      <p>
+        This is to confirm we received your message.
+        Your support case number is <strong>#${escapeHtml(caseNumber)}</strong>.
+      </p>
+      <p>We'll get back to you as soon as possible.</p>
+      <p>
+        Warmly,<br>
+        <strong>XOXO Avenue Support 💜</strong>
+      </p>
+    </div>
+  `;
+
+  const result = await sendResendEmail(env, {
+    from: "XOXO Avenue Support <support@xoxoavenue.com>",
+    to: [recipient],
+    reply_to: "xoxoavenuesupport@gmail.com",
+    subject,
+    text: textBody,
+    html: htmlBody,
+  });
+
+  if (!result.ok) {
+    return jsonResponse(
+      { ok: false, error: "Email delivery failed" },
+      502
+    );
+  }
+
+  return jsonResponse({
+    ok: true,
+    case_number: supportCase.case_number,
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+
+    /*
+     * ==========================================
+     * SUPPORT EMAIL API
+     * ==========================================
+     */
+
+    if (url.pathname === "/api/support-email") {
+      return handleSupportEmail(request, env);
+    }
 
     /*
      * ==========================================
