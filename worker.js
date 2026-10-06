@@ -937,13 +937,14 @@ function cleanInboundEmailReply(value) {
 async function insertInboundSupportMessage(
   supportCase,
   senderId,
+  senderType,
   message,
   env
 ) {
   const payload = {
     case_id: supportCase.id,
     sender_id: senderId,
-    sender_type: "user",
+    sender_type: senderType,
     message: message,
   };
 
@@ -1238,20 +1239,22 @@ async function handleSupportEmailInbound(
       .trim()
       .toLowerCase();
 
-  if (
-    !expectedEmail ||
-    sender !==
-      expectedEmail
-  ) {
+  const XOXO_SUPPORT_GMAIL =
+    "xoxoavenuesupport@gmail.com";
+  const XOXO_ADMIN_USER_ID =
+    "d9ea1914-fdba-465c-9700-5e640ff48763";
+
+  const isAdminSender =
+    sender === XOXO_SUPPORT_GMAIL;
+  const isUserSender =
+    Boolean(expectedEmail) &&
+    sender === expectedEmail;
+
+  if (!isAdminSender && !isUserSender) {
     console.error(
       "XOXO inbound sender mismatch:",
-      {
-        sender,
-        expectedEmail,
-        caseNumber,
-      }
+      { sender, expectedEmail, caseNumber }
     );
-
     return jsonResponse(
       {
         ok: false,
@@ -1313,14 +1316,21 @@ async function handleSupportEmailInbound(
   }
 
   /*
-   * Save the user's reply
-   * inside the support case.
+   * Save the reply inside the support case.
    */
+
+  const inboundSenderId =
+    isAdminSender
+      ? XOXO_ADMIN_USER_ID
+      : supportCase.user_id;
+  const inboundSenderType =
+    isAdminSender ? "admin" : "user";
 
   const inserted =
     await insertInboundSupportMessage(
       supportCase,
-      supportCase.user_id,
+      inboundSenderId,
+      inboundSenderType,
       message,
       env
     );
@@ -1335,6 +1345,72 @@ async function handleSupportEmailInbound(
       },
       500
     );
+  }
+
+  /*
+   * Official support Gmail reply:
+   * save as Admin, forward to the case owner,
+   * and do not notify support Gmail again.
+   */
+  if (isAdminSender) {
+    const recipient =
+      String(authUser?.email || "").trim();
+
+    if (!recipient) {
+      console.error("Admin Gmail reply saved but user email was not found");
+      return jsonResponse({
+        ok: true,
+        received: true,
+        verified: true,
+        processing: true,
+        case_number: supportCase.case_number,
+        message_saved: true,
+        sender_type: "admin",
+        user_email_sent: false,
+      });
+    }
+
+    const adminReplySubject =
+      `[##${caseNumber}##] - XOXO Avenue Support replied`;
+    const adminReplyText = [
+      `XOXO Avenue Support replied to your case #${caseNumber}:`,
+      "",
+      message,
+      "",
+      "Warmly,",
+      "XOXO Avenue Support 💜",
+    ].join("\n");
+
+    const adminReplyHtml = `
+<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+  <p>XOXO Avenue Support replied to your case <strong>#${escapeHtml(caseNumber)}</strong>:</p>
+  <div style="white-space:pre-wrap;margin:20px 0;padding:16px;background:#f6f4ff;border-radius:12px;">${escapeHtml(message)}</div>
+  <p>Warmly,<br><strong>XOXO Avenue Support 💜</strong></p>
+</div>`;
+
+    const userEmail = await sendResendEmail(env, {
+      from: "XOXO Avenue Support <support@xoxoavenue.com>",
+      to: [recipient],
+      reply_to: `case-${caseNumber}@reply.xoxoavenue.com`,
+      subject: adminReplySubject,
+      text: adminReplyText,
+      html: adminReplyHtml,
+    });
+
+    if (!userEmail.ok) {
+      console.error("Admin Gmail reply saved but user email failed");
+    }
+
+    return jsonResponse({
+      ok: true,
+      received: true,
+      verified: true,
+      processing: true,
+      case_number: supportCase.case_number,
+      message_saved: true,
+      sender_type: "admin",
+      user_email_sent: userEmail.ok,
+    });
   }
 
   /*
