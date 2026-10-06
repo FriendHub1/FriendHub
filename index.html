@@ -3784,6 +3784,108 @@
                 }
 
 
+
+                /* XOXO AVENUE — LIVE SUPPORT STATUS */
+                #support .support-live-card {
+                  position: relative;
+                  overflow: hidden;
+                  margin: 0 0 18px;
+                  padding: 28px;
+                  border: 1px solid rgba(39,200,255,.52);
+                  border-radius: 24px;
+                  background:
+                    radial-gradient(circle at 100% 0%, rgba(39,200,255,.12), transparent 36%),
+                    rgba(12,20,54,.84);
+                }
+                #support .support-live-card::before {
+                  content: "";
+                  position: absolute;
+                  left: 0;
+                  top: 22px;
+                  bottom: 22px;
+                  width: 3px;
+                  border-radius: 999px;
+                  background: linear-gradient(180deg,#27c8ff,#8b5cff);
+                  box-shadow: 0 0 12px rgba(39,200,255,.42);
+                }
+                #support .support-live-top {
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  gap: 16px;
+                  flex-wrap: wrap;
+                }
+                #support .support-live-title-wrap {
+                  display: flex;
+                  align-items: center;
+                  gap: 13px;
+                  min-width: 0;
+                }
+                #support .support-live-icon {
+                  display: grid;
+                  place-items: center;
+                  width: 52px;
+                  height: 52px;
+                  flex: 0 0 52px;
+                  border: 1px solid rgba(39,200,255,.38);
+                  border-radius: 16px;
+                  background: rgba(39,200,255,.08);
+                  font-size: 1.55rem;
+                }
+                #support .support-live-card h2 {
+                  margin: 0 0 4px;
+                  font-size: clamp(1.35rem,4vw,1.85rem);
+                }
+                #support .support-live-card p {
+                  margin: 14px 0 0;
+                  line-height: 1.6;
+                }
+                #support .support-live-status {
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 8px;
+                  min-height: 38px;
+                  padding: 8px 13px;
+                  border: 1px solid rgba(148,163,184,.38);
+                  border-radius: 999px;
+                  background: rgba(148,163,184,.10);
+                  font-size: .88rem;
+                  font-weight: 900;
+                  white-space: nowrap;
+                }
+                #support .support-live-dot {
+                  width: 10px;
+                  height: 10px;
+                  border-radius: 50%;
+                  background: #94a3b8;
+                  box-shadow: 0 0 10px rgba(148,163,184,.45);
+                }
+                #support .support-live-status.online {
+                  color: #5ff0a5;
+                  border-color: rgba(18,216,122,.45);
+                  background: rgba(18,216,122,.10);
+                }
+                #support .support-live-status.online .support-live-dot {
+                  background: #12d87a;
+                  box-shadow: 0 0 12px rgba(18,216,122,.75);
+                }
+                #support .support-live-status.offline {
+                  color: #cbd5e1;
+                }
+                #support .support-live-note {
+                  color: var(--fh-muted,#94a3b8);
+                  font-size: .88rem;
+                }
+                @media (max-width:700px) {
+                  #support .support-live-card {
+                    padding: 22px 20px 23px;
+                    border-radius: 21px;
+                  }
+                  #support .support-live-top {
+                    align-items: flex-start;
+                  }
+                }
+
                 /* XOXO AVENUE — SUPPORT PAGE VISUAL REFRESH */
                 #support .support-hero {
                   position: relative;
@@ -5357,6 +5459,22 @@
                                     <div class="support-kicker">💌 XOXO Avenue Support</div>
                                     <h1>Support</h1>
                                     <p>Need help with XOXO Avenue?</p>
+                                    </div>
+                                    <div class="content-card support-live-card">
+                                    <div class="support-live-top">
+                                    <div class="support-live-title-wrap">
+                                    <div class="support-live-icon">💬</div>
+                                    <div>
+                                    <h2>Live Chat</h2>
+                                    <div class="support-live-note">XOXO Avenue Support</div>
+                                    </div>
+                                    </div>
+                                    <div id="supportLiveStatus" class="support-live-status" aria-live="polite">
+                                    <span class="support-live-dot"></span>
+                                    <span id="supportLiveStatusText">Checking status...</span>
+                                    </div>
+                                    </div>
+                                    <p id="supportLiveMessage">Checking whether XOXO Avenue Support is available right now.</p>
                                     </div>
                                     <div class="content-card support-contact-card">
                                     <div class="support-contact-icon">✉️</div>
@@ -14059,6 +14177,89 @@ async function xoxoAdminDeletePost(postId){
 /* Keep the Admin button synchronized with login/logout without changing existing auth logic. */
 window.addEventListener("load",()=>{ setTimeout(refreshXoxoAdminAccess,500); });
 supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0); });
+</script>
+
+
+<script>
+/* =========================================================
+   XOXO AVENUE — LIVE SUPPORT ONLINE/OFFLINE STATUS
+   Reads public.support_status without changing DM/auth logic.
+   ========================================================= */
+(function () {
+  const XOXO_SUPPORT_ADMIN_ID = "d9ea1914-fdba-465c-9700-5e640ff48763";
+  let xoxoSupportStatusTimer = null;
+
+  function renderXoxoSupportStatus(isOnline, hasError = false) {
+    const box = document.getElementById("supportLiveStatus");
+    const label = document.getElementById("supportLiveStatusText");
+    const message = document.getElementById("supportLiveMessage");
+    if (!box || !label || !message) return;
+
+    box.classList.remove("online", "offline");
+
+    if (hasError) {
+      box.classList.add("offline");
+      label.textContent = "Status unavailable";
+      message.textContent = "Live Chat status could not be checked right now. You can still contact XOXO Avenue Support by email.";
+      return;
+    }
+
+    if (isOnline) {
+      box.classList.add("online");
+      label.textContent = "Online";
+      message.textContent = "XOXO Avenue Support is online right now. Live messaging will be available here soon.";
+    } else {
+      box.classList.add("offline");
+      label.textContent = "Offline";
+      message.textContent = "XOXO Avenue Support is currently offline. You can still contact us by email.";
+    }
+  }
+
+  async function refreshXoxoSupportStatus() {
+    if (typeof supabaseClient === "undefined") return;
+
+    const { data, error } = await supabaseClient
+      .from("support_status")
+      .select("is_online, updated_at")
+      .eq("admin_id", XOXO_SUPPORT_ADMIN_ID)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Support status load error:", error);
+      renderXoxoSupportStatus(false, true);
+      return;
+    }
+
+    renderXoxoSupportStatus(Boolean(data && data.is_online));
+  }
+
+  function startXoxoSupportStatusRefresh() {
+    if (xoxoSupportStatusTimer) clearInterval(xoxoSupportStatusTimer);
+    refreshXoxoSupportStatus();
+    xoxoSupportStatusTimer = setInterval(() => {
+      if (document.visibilityState !== "hidden") refreshXoxoSupportStatus();
+    }, 15000);
+  }
+
+  window.refreshXoxoSupportStatus = refreshXoxoSupportStatus;
+
+  window.addEventListener("load", () => {
+    setTimeout(startXoxoSupportStatusRefresh, 500);
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshXoxoSupportStatus();
+  });
+
+  document.addEventListener("click", event => {
+    const trigger = event.target.closest("button");
+    if (!trigger) return;
+    const action = trigger.getAttribute("onclick") || "";
+    if (action.includes("showPage('support')") || action.includes('showPage("support")')) {
+      setTimeout(refreshXoxoSupportStatus, 0);
+    }
+  });
+})();
 </script>
 
 </body>
