@@ -14399,12 +14399,48 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   let adminSupportListTimer=null;
   let adminSupportCasesCache=[];
   let adminSupportFilter="all";
+  let adminSupportUnreadSnapshot=null;
+  let adminSupportAudioCtx=null;
 
   function aEsc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");}
   function aTime(v){try{return new Date(v).toLocaleString([], {dateStyle:"short",timeStyle:"short"});}catch{return "";}}
   async function isSupportAdmin(){
     const {data}=await supabaseClient.auth.getUser();
     return String(data?.user?.id||"")===SUPPORT_ADMIN_ID;
+  }
+
+  function xoxoSupportNotificationSound(){
+    try{
+      adminSupportAudioCtx=adminSupportAudioCtx||new (window.AudioContext||window.webkitAudioContext)();
+      const ctx=adminSupportAudioCtx;
+      const osc=ctx.createOscillator();
+      const gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.setValueAtTime(740,ctx.currentTime);
+      gain.gain.setValueAtTime(0.0001,ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.12,ctx.currentTime+0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.22);
+      osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.23);
+    }catch(e){console.debug("Support notification sound unavailable",e);}
+  }
+
+  function xoxoSupportNotificationToast(caseNumber,count){
+    let toast=document.getElementById("xoxoSupportAdminToast");
+    if(!toast){
+      toast=document.createElement("div");
+      toast.id="xoxoSupportAdminToast";
+      toast.style.cssText="position:fixed;right:20px;bottom:20px;z-index:99999;max-width:330px;padding:14px 16px;border-radius:14px;background:#171717;color:#fff;box-shadow:0 12px 35px rgba(0,0,0,.35);font-size:14px;cursor:pointer;";
+      document.body.appendChild(toast);
+    }
+    toast.innerHTML=`<strong>💬 New support message</strong><div style="margin-top:4px;opacity:.85;">Case #${aEsc(caseNumber)}${count>1?" · "+count+" unread":""}</div>`;
+    toast.style.display="block";
+    toast.onclick=()=>{
+      const item=adminSupportCasesCache.find(x=>String(x.caseData.case_number)===String(caseNumber));
+      if(item) openXoxoAdminSupportCase(item.caseData.id);
+      toast.style.display="none";
+    };
+    clearTimeout(toast._hideTimer);
+    toast._hideTimer=setTimeout(()=>{toast.style.display="none";},6000);
   }
 
   window.setXoxoAdminSupportFilter=function(filter){
@@ -14507,6 +14543,17 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       const activityTime=m?.created_at||c.updated_at||c.created_at;
       return {caseData:c,message:m,unread,who,activityTime};
     });
+
+    const nextSnapshot=new Map(adminSupportCasesCache.map(item=>[String(item.caseData.id),item.unread||0]));
+    if(adminSupportUnreadSnapshot){
+      const newlyUnread=adminSupportCasesCache.filter(item=>(item.unread||0)>(adminSupportUnreadSnapshot.get(String(item.caseData.id))||0));
+      if(newlyUnread.length){
+        const newest=newlyUnread[0];
+        xoxoSupportNotificationToast(newest.caseData.case_number,newest.unread||1);
+        xoxoSupportNotificationSound();
+      }
+    }
+    adminSupportUnreadSnapshot=nextSnapshot;
     renderXoxoAdminSupportCases();
 
     /* Refresh the inbox while the case list is visible. */
