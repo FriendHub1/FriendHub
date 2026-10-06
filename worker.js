@@ -896,11 +896,29 @@ function cleanInboundEmailReply(value) {
   const lines = text.split("\n");
   const kept = [];
 
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
+    const nextTrimmed =
+      i + 1 < lines.length
+        ? lines[i + 1].trim()
+        : "";
 
-    /* Gmail / common mail-client reply separators. */
+    /*
+     * Gmail sometimes wraps its quoted-reply separator:
+     * "On Tue, ... <support@...>"
+     * "wrote:"
+     */
+    const gmailWrappedSeparator =
+      /^On\s.+/i.test(trimmed) &&
+      (
+        /wrote:\s*$/i.test(trimmed) ||
+        /^wrote:\s*$/i.test(nextTrimmed) ||
+        /<[^<>@\s]+@[^<>@\s]+>\s*$/i.test(trimmed)
+      );
+
     if (
+      gmailWrappedSeparator ||
       /^On .+ wrote:\s*$/i.test(trimmed) ||
       /^El .+ escribió:\s*$/i.test(trimmed) ||
       /^Le .+ a écrit\s*:\s*$/i.test(trimmed) ||
@@ -914,7 +932,6 @@ function cleanInboundEmailReply(value) {
       break;
     }
 
-    /* A quoted block means the previous conversation begins here. */
     if (/^>/.test(trimmed)) {
       break;
     }
