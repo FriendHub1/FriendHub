@@ -5644,6 +5644,7 @@
                                     <div id="supportChatMessages" class="support-chat-messages">
                                     <div class="support-chat-empty">Send a message to XOXO Avenue Support.</div>
                                     </div>
+                                    <div id="xoxoSupportTyping" style="display:none;padding:6px 4px;font-size:13px;opacity:.75;">XOXO Avenue Support is typing…</div>
                                     <div id="supportAttachmentPreview" class="support-attachment-preview"></div>
                                     <div class="support-chat-compose">
                                     <input id="supportAttachmentInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onchange="handleXoxoSupportAttachment(event)">
@@ -14492,6 +14493,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       <span class="xoxo-admin-badge">${aEsc(c.status)}</span>
     </div>
     <div id="xoxoAdminSupportMessages" class="xoxo-support-chat-messages"><div class="empty-state">Loading messages...</div></div>
+    <div id="xoxoAdminSupportTyping" style="display:none;padding:6px 4px;font-size:13px;opacity:.75;">User is typing…</div>
     <div class="xoxo-support-reply"><textarea id="xoxoAdminSupportReply" maxlength="5000" placeholder="Write a reply..."></textarea>
     <button id="xoxoAdminSupportSend" type="button" onclick="sendXoxoAdminSupportReply()">Send Reply</button></div>
     <div class="xoxo-admin-actions"><button class="success" type="button" onclick="setXoxoSupportCaseStatus('open')">Open</button><button type="button" onclick="setXoxoSupportCaseStatus('pending')">Pending</button><button type="button" onclick="setXoxoSupportCaseStatus('closed')">Close case</button></div>`;
@@ -14505,6 +14507,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       .is("read_at",null);
     if(readError) console.error("Admin support read status error:",readError);
 
+    bindXoxoAdminTyping();
     if(adminSupportTimer) clearInterval(adminSupportTimer);
     adminSupportTimer=setInterval(()=>{if(document.visibilityState!=="hidden"&&adminSupportCase?.id) loadXoxoAdminSupportMessages();},5000);
   };
@@ -14532,10 +14535,44 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     box.scrollTop=box.scrollHeight;
   };
 
+  let xoxoAdminTypingStopTimer=null;
+  let xoxoAdminTypingPollTimer=null;
+
+  async function setXoxoAdminTyping(isTyping){
+    if(!adminSupportCase?.id || !(await isSupportAdmin())) return;
+    const {data:u}=await supabaseClient.auth.getUser();
+    if(!u?.user?.id) return;
+    if(isTyping){
+      await supabaseClient.from("support_typing").upsert({case_id:adminSupportCase.id,user_id:u.user.id,sender_type:"admin",updated_at:new Date().toISOString()},{onConflict:"case_id,user_id"});
+    }else{
+      await supabaseClient.from("support_typing").delete().eq("case_id",adminSupportCase.id).eq("user_id",u.user.id);
+    }
+  }
+  async function refreshXoxoAdminTyping(){
+    if(!adminSupportCase?.id) return;
+    const el=document.getElementById("xoxoAdminSupportTyping"); if(!el)return;
+    const cutoff=new Date(Date.now()-6000).toISOString();
+    const {data,error}=await supabaseClient.from("support_typing").select("updated_at").eq("case_id",adminSupportCase.id).eq("sender_type","user").gte("updated_at",cutoff).limit(1);
+    el.style.display=!error&&data?.length?"block":"none";
+  }
+  function bindXoxoAdminTyping(){
+    const input=document.getElementById("xoxoAdminSupportReply"); if(!input)return;
+    input.addEventListener("input",()=>{
+      setXoxoAdminTyping(true);
+      clearTimeout(xoxoAdminTypingStopTimer);
+      xoxoAdminTypingStopTimer=setTimeout(()=>setXoxoAdminTyping(false),2500);
+    });
+    if(xoxoAdminTypingPollTimer)clearInterval(xoxoAdminTypingPollTimer);
+    xoxoAdminTypingPollTimer=setInterval(refreshXoxoAdminTyping,1500);
+    refreshXoxoAdminTyping();
+  }
+
   window.sendXoxoAdminSupportReply=async function(){
     if(!adminSupportCase?.id||!(await isSupportAdmin()))return;
     const input=document.getElementById("xoxoAdminSupportReply"),btn=document.getElementById("xoxoAdminSupportSend");
     const message=input?.value.trim(); if(!message)return;
+    clearTimeout(xoxoAdminTypingStopTimer);
+    setXoxoAdminTyping(false);
     btn.disabled=true;
     const {data:u}=await supabaseClient.auth.getUser();
     const {data:inserted,error}=await supabaseClient.from("support_messages").insert({case_id:adminSupportCase.id,sender_id:u.user.id,sender_type:"admin",message}).select("id").single();
@@ -14605,6 +14642,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   let xoxoSupportAttachmentFile = null;
   let xoxoSupportAttachmentPreviewUrl = null;
   let xoxoSupportCaseJustCreated = false;
+  let xoxoSupportTypingStopTimer = null;
+  let xoxoSupportTypingPollTimer = null;
 
   function supportEsc(value) {
     return String(value ?? "")
@@ -14816,6 +14855,30 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     box.scrollTop = box.scrollHeight;
   }
 
+  async function setXoxoUserTyping(isTyping) {
+    if (!xoxoSupportCase?.id) return;
+    const user = await getSupportSessionUser();
+    if (!user?.id) return;
+    if (isTyping) {
+      await supabaseClient.from("support_typing").upsert({
+        case_id:xoxoSupportCase.id,
+        user_id:user.id,
+        sender_type:"user",
+        updated_at:new Date().toISOString()
+      }, { onConflict:"case_id,user_id" });
+    } else {
+      await supabaseClient.from("support_typing").delete().eq("case_id",xoxoSupportCase.id).eq("user_id",user.id);
+    }
+  }
+
+  async function refreshXoxoSupportTyping() {
+    if (!xoxoSupportCase?.id) return;
+    const el=document.getElementById("xoxoSupportTyping"); if(!el)return;
+    const cutoff=new Date(Date.now()-6000).toISOString();
+    const {data,error}=await supabaseClient.from("support_typing").select("updated_at").eq("case_id",xoxoSupportCase.id).eq("sender_type","admin").gte("updated_at",cutoff).limit(1);
+    el.style.display=!error&&data?.length?"block":"none";
+  }
+
   async function openSupportChat() {
     const panel = document.getElementById("supportChatPanel");
     if (!panel) return;
@@ -14846,6 +14909,9 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     xoxoSupportMessagesTimer = setInterval(() => {
       if (document.visibilityState !== "hidden" && xoxoSupportCase?.id) loadSupportMessages();
     }, 5000);
+    if (xoxoSupportTypingPollTimer) clearInterval(xoxoSupportTypingPollTimer);
+    xoxoSupportTypingPollTimer = setInterval(refreshXoxoSupportTyping,1500);
+    refreshXoxoSupportTyping();
   }
 
   function clearSupportAttachment() {
@@ -14909,6 +14975,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       return;
     }
 
+    clearTimeout(xoxoSupportTypingStopTimer);
+    setXoxoUserTyping(false);
     sendBtn.disabled = true;
     supportFeedback("Sending...");
 
@@ -14968,6 +15036,12 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     await loadOwnOpenSupportCase();
     const input = document.getElementById("supportChatInput");
     if (input) {
+      input.addEventListener("input", () => {
+        if (!xoxoSupportCase?.id) return;
+        setXoxoUserTyping(true);
+        clearTimeout(xoxoSupportTypingStopTimer);
+        xoxoSupportTypingStopTimer=setTimeout(()=>setXoxoUserTyping(false),2500);
+      });
       input.addEventListener("keydown", event => {
         if (event.key === "Enter" && !event.shiftKey) {
           event.preventDefault();
