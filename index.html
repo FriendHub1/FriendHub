@@ -14708,6 +14708,9 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     }catch(e){console.debug("Support sent sound unavailable",e);}
   }
 
+  window.xoxoPrepareSupportSentSound=xoxoPrepareSupportSentSound;
+  window.xoxoSupportSentSound=xoxoSupportSentSound;
+
   window.sendXoxoAdminSupportReply=async function(){
     xoxoPrepareSupportSentSound();
     if(!adminSupportCase?.id||!(await isSupportAdmin()))return;
@@ -15112,7 +15115,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   }
 
   async function sendSupportMessage() {
-    xoxoPrepareSupportSentSound();
+    window.xoxoPrepareSupportSentSound?.();
     const input = document.getElementById("supportChatInput");
     const sendBtn = document.getElementById("supportChatSendBtn");
     if (!input || !sendBtn) return;
@@ -15170,7 +15173,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     }
 
     input.value = "";
-    xoxoSupportSentSound();
+    window.xoxoSupportSentSound?.();
     clearSupportAttachment();
     supportFeedback("Message received! Your support case is " + supportCaseNumber(supportCase.case_number) + ".");
 
