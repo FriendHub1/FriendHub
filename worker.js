@@ -909,13 +909,14 @@ function cleanInboundEmailReply(value) {
      * "On Tue, ... <support@...>"
      * "wrote:"
      */
+    /*
+     * Gmail may split the quoted header across several lines.
+     * Once a line begins with "On " in an email reply, the
+     * previous conversation starts there, so discard it and
+     * everything after it.
+     */
     const gmailWrappedSeparator =
-      /^On\s.+/i.test(trimmed) &&
-      (
-        /wrote:\s*$/i.test(trimmed) ||
-        /^wrote:\s*$/i.test(nextTrimmed) ||
-        /<[^<>@\s]+@[^<>@\s]+>\s*$/i.test(trimmed)
-      );
+      /^On\s+/i.test(trimmed);
 
     if (
       gmailWrappedSeparator ||
