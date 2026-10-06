@@ -14448,17 +14448,22 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     if(!adminSupportCase?.id) return;
     const box=document.getElementById("xoxoAdminSupportMessages"); if(!box)return;
     const {data,error}=await supabaseClient.from("support_messages").select("id,sender_type,message,created_at,attachment_url,attachment_type").eq("case_id",adminSupportCase.id).order("created_at",{ascending:true});
-    if(error){console.error("Admin support messages error:",error);box.innerHTML='<div class="empty-state">Could not load messages.</div>';return;}
-    const rendered=[];
-    for(const m of (data||[])){
+    if(error){console.error("Admin support messages error:",error);if(!box.querySelector("[data-support-message-id]"))box.innerHTML='<div class="empty-state">Could not load messages.</div>';return;}
+    if(!(data||[]).length){if(!box.querySelector("[data-support-message-id]"))box.innerHTML='<div class="empty-state">No messages yet.</div>';return;}
+
+    const existingIds=new Set(Array.from(box.querySelectorAll("[data-support-message-id]")).map(el=>el.dataset.supportMessageId));
+    const newRows=(data||[]).filter(m=>!existingIds.has(String(m.id)));
+    if(!newRows.length) return;
+    const empty=box.querySelector(".empty-state"); if(empty) empty.remove();
+
+    for(const m of newRows){
       let img="";
       if(m.attachment_url){
         const {data:signed}=await supabaseClient.storage.from("support-attachments").createSignedUrl(m.attachment_url,3600);
         if(signed?.signedUrl) img=`<img class="xoxo-support-msg-image" src="${aEsc(signed.signedUrl)}" alt="Support attachment" onclick="openProfilePhotoViewer(this.src)">`;
       }
-      rendered.push(`<div class="xoxo-support-msg ${m.sender_type==="admin"?"admin":"user"}">${aEsc(m.message)}${img}<span class="xoxo-support-msg-time">${aEsc(aTime(m.created_at))}</span></div>`);
+      box.insertAdjacentHTML("beforeend",`<div class="xoxo-support-msg ${m.sender_type==="admin"?"admin":"user"}" data-support-message-id="${aEsc(m.id)}">${aEsc(m.message)}${img}<span class="xoxo-support-msg-time">${aEsc(aTime(m.created_at))}</span></div>`);
     }
-    box.innerHTML=rendered.join("")||'<div class="empty-state">No messages yet.</div>';
     box.scrollTop=box.scrollHeight;
   };
 
@@ -14643,12 +14648,23 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     label.textContent = "Support case " + supportCaseNumber(xoxoSupportCase.case_number);
 
     if (!data?.length) {
-      box.innerHTML = '<div class="support-chat-empty">Send a message to XOXO Avenue Support.</div>';
+      if (!box.querySelector("[data-support-message-id]")) {
+        box.innerHTML = '<div class="support-chat-empty">Send a message to XOXO Avenue Support.</div>';
+      }
       return;
     }
 
-    const rendered = [];
-    for (const row of data) {
+    const existingIds = new Set(
+      Array.from(box.querySelectorAll("[data-support-message-id]"))
+        .map(el => el.dataset.supportMessageId)
+    );
+    const newRows = data.filter(row => !existingIds.has(String(row.id)));
+    if (!newRows.length) return;
+
+    const empty = box.querySelector(".support-chat-empty");
+    if (empty) empty.remove();
+
+    for (const row of newRows) {
       const who = row.sender_type === "admin" ? "admin" : "user";
       const time = row.created_at
         ? new Date(row.created_at).toLocaleString([], { dateStyle:"short", timeStyle:"short" })
@@ -14662,12 +14678,11 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
           imageHtml = '<img class="support-chat-image" src="'+supportEsc(signed.signedUrl)+'" alt="Support attachment" onclick="openProfilePhotoViewer(this.src)">';
         }
       }
-      rendered.push('<div class="support-chat-message '+who+'">'
+      box.insertAdjacentHTML("beforeend", '<div class="support-chat-message '+who+'" data-support-message-id="'+supportEsc(row.id)+'">'
         + supportEsc(row.message)
         + imageHtml
         + '<span class="support-chat-time">'+supportEsc(time)+'</span></div>');
     }
-    box.innerHTML = rendered.join("");
     box.scrollTop = box.scrollHeight;
   }
 
