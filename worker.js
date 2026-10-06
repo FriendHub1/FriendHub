@@ -910,6 +910,8 @@ async function insertInboundSupportMessage(
         apikey: env.SUPABASE_SECRET_KEY,
         Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
         "Content-Type": "application/json",
+        "Content-Profile": "public",
+        "Accept-Profile": "public",
         Prefer: "return=minimal",
       },
       body: JSON.stringify(payload),
