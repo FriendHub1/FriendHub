@@ -374,6 +374,42 @@ async function sendResendEmail(env, payload) {
   return { ok: true, data };
 }
 
+async function handleSupportEmailInbound(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse(
+      { ok: false, error: "Method not allowed" },
+      405
+    );
+  }
+
+  /*
+   * Bootstrap endpoint for Resend inbound email.
+   * It deliberately does NOT store inbound email yet.
+   * After the webhook is created, we will add signature
+   * verification before allowing messages into support_messages.
+   */
+  let event;
+
+  try {
+    event = await request.json();
+  } catch {
+    return jsonResponse(
+      { ok: false, error: "Invalid JSON" },
+      400
+    );
+  }
+
+  if (event?.type !== "email.received") {
+    return jsonResponse({ ok: true, ignored: true });
+  }
+
+  return jsonResponse({
+    ok: true,
+    received: true,
+    processing: false,
+  });
+}
+
 async function handleSupportEmail(request, env) {
   if (request.method !== "POST") {
     return jsonResponse(
@@ -590,6 +626,10 @@ export default {
 
     if (url.pathname === "/api/support-email") {
       return handleSupportEmail(request, env);
+    }
+
+    if (url.pathname === "/api/support-email-inbound") {
+      return handleSupportEmailInbound(request, env);
     }
 
     /*
