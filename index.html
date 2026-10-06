@@ -14509,6 +14509,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   let xoxoSupportMessagesTimer = null;
   let xoxoSupportAttachmentFile = null;
   let xoxoSupportAttachmentPreviewUrl = null;
+  let xoxoSupportCaseJustCreated = false;
 
   function supportEsc(value) {
     return String(value ?? "")
@@ -14609,7 +14610,10 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     }
 
     const existing = await loadOwnOpenSupportCase();
-    if (existing) return existing;
+    if (existing) {
+      xoxoSupportCaseJustCreated = false;
+      return existing;
+    }
 
     const { data, error } = await supabaseClient
       .from("support_cases")
@@ -14624,7 +14628,38 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     }
 
     xoxoSupportCase = data;
+    xoxoSupportCaseJustCreated = true;
     return data;
+  }
+
+  async function sendSupportCaseConfirmationEmail(supportCase) {
+    if (!supportCase?.id) return false;
+    try {
+      const { data: sessionData } = await supabaseClient.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) return false;
+
+      const response = await fetch("/api/support-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+          type: "confirmation",
+          case_id: supportCase.id
+        })
+      });
+
+      if (!response.ok) {
+        console.error("Support confirmation email failed:", response.status, await response.text());
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error("Support confirmation email error:", error);
+      return false;
+    }
   }
 
   async function loadSupportMessages() {
@@ -14820,6 +14855,13 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     input.value = "";
     clearSupportAttachment();
     supportFeedback("Message received! Your support case is " + supportCaseNumber(supportCase.case_number) + ".");
+
+    // Send one confirmation email only when this message created a brand-new case.
+    if (xoxoSupportCaseJustCreated) {
+      xoxoSupportCaseJustCreated = false;
+      sendSupportCaseConfirmationEmail(supportCase);
+    }
+
     await loadSupportMessages();
     await refreshSupportConversationState();
   }
