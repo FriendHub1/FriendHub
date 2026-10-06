@@ -14416,7 +14416,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     const caseIds=cases.map(c=>c.id);
     const userIds=[...new Set(cases.map(c=>c.user_id).filter(Boolean))];
     const [{data:msgs},{data:profiles}]=await Promise.all([
-      supabaseClient.from("support_messages").select("case_id,message,sender_type,created_at,read_at,attachment_url,attachment_type").in("case_id",caseIds).order("created_at",{ascending:false}),
+      supabaseClient.from("support_messages").select("case_id,message,sender_type,created_at,attachment_url,attachment_type").in("case_id",caseIds).order("created_at",{ascending:false}),
       userIds.length ? supabaseClient.from("profiles").select("user_id,username").in("user_id",userIds) : Promise.resolve({data:[]})
     ]);
     const names=new Map((profiles||[]).map(p=>[String(p.user_id),p.username||"User"]));
@@ -14426,9 +14426,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     (msgs||[]).forEach(m=>{
       const key=String(m.case_id);
       if(!latest.has(key)) latest.set(key,m);
-      if(m.sender_type==="user" && !m.read_at){
-        unreadByCase.set(key,(unreadByCase.get(key)||0)+1);
-      }
+      /* Unread count is loaded separately after the existing message preview query. */
     });
 
     /* Most recently active conversation always appears first. */
@@ -14489,14 +14487,6 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     <button id="xoxoAdminSupportSend" type="button" onclick="sendXoxoAdminSupportReply()">Send Reply</button></div>
     <div class="xoxo-admin-actions"><button class="success" type="button" onclick="setXoxoSupportCaseStatus('open')">Open</button><button type="button" onclick="setXoxoSupportCaseStatus('pending')">Pending</button><button type="button" onclick="setXoxoSupportCaseStatus('closed')">Close case</button></div>`;
     await loadXoxoAdminSupportMessages();
-
-    const {error:readError}=await supabaseClient
-      .from("support_messages")
-      .update({read_at:new Date().toISOString()})
-      .eq("case_id",c.id)
-      .eq("sender_type","user")
-      .is("read_at",null);
-    if(readError) console.error("Admin support read status error:",readError);
 
     if(adminSupportTimer) clearInterval(adminSupportTimer);
     adminSupportTimer=setInterval(()=>{if(document.visibilityState!=="hidden"&&adminSupportCase?.id) loadXoxoAdminSupportMessages();},5000);
