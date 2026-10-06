@@ -3882,6 +3882,29 @@
                   gap: 10px;
                   flex-wrap: wrap;
                 }
+                #support .support-case-summary {
+                  display: none;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 9px 12px;
+                  border: 1px solid rgba(139,92,246,.35);
+                  border-radius: 12px;
+                  color: #dbeafe;
+                  font-size: .84rem;
+                  font-weight: 800;
+                  background: rgba(99,102,241,.10);
+                }
+                #support .support-case-summary.show { display: inline-flex; }
+                #support .support-new-badge {
+                  display: none;
+                  padding: 5px 9px;
+                  border-radius: 999px;
+                  background: #2563eb;
+                  color: #fff;
+                  font-size: .78rem;
+                  font-weight: 900;
+                }
+                #support .support-new-badge.show { display: inline-flex; }
                 #support .support-chat-start {
                   border: 0;
                   border-radius: 14px;
@@ -5613,6 +5636,8 @@
                                     <p id="supportLiveMessage">Checking whether XOXO Avenue Support is available right now.</p>
                                     <div class="support-chat-actions">
                                     <button id="supportChatStartBtn" class="support-chat-start" type="button" onclick="openXoxoSupportChat()">Start Live Chat</button>
+                                    <span id="supportActiveCaseSummary" class="support-case-summary"></span>
+                                    <span id="supportNewMessageBadge" class="support-new-badge"></span>
                                     </div>
                                     <div id="supportChatPanel" class="support-chat-panel">
                                     <div id="supportCaseLabel" class="support-case-label">Support conversation</div>
@@ -14504,6 +14529,50 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     return data?.user || null;
   }
 
+  async function refreshSupportConversationState() {
+    const summary = document.getElementById("supportActiveCaseSummary");
+    const badge = document.getElementById("supportNewMessageBadge");
+    if (!xoxoSupportCase?.id) {
+      window.xoxoSupportActiveCase = null;
+      window.xoxoSupportUnreadCount = 0;
+      if (summary) { summary.classList.remove("show"); summary.textContent = ""; }
+      if (badge) { badge.classList.remove("show"); badge.textContent = ""; }
+      if (typeof window.renderXoxoSupportButton === "function") window.renderXoxoSupportButton();
+      return;
+    }
+
+    const { count, error } = await supabaseClient
+      .from("support_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("case_id", xoxoSupportCase.id)
+      .eq("sender_type", "admin")
+      .is("read_at", null);
+
+    const unread = error ? 0 : (count || 0);
+    window.xoxoSupportActiveCase = { ...xoxoSupportCase };
+    window.xoxoSupportUnreadCount = unread;
+    if (summary) {
+      summary.textContent = "Case " + supportCaseNumber(xoxoSupportCase.case_number) + " · " + (xoxoSupportCase.status === "pending" ? "Pending" : "Open");
+      summary.classList.add("show");
+    }
+    if (badge) {
+      badge.textContent = unread === 1 ? "🔵 1 New message" : (unread > 1 ? "🔵 " + unread + " New messages" : "");
+      badge.classList.toggle("show", unread > 0);
+    }
+    if (typeof window.renderXoxoSupportButton === "function") window.renderXoxoSupportButton();
+  }
+
+  async function markAdminSupportMessagesRead() {
+    if (!xoxoSupportCase?.id) return;
+    const { error } = await supabaseClient
+      .from("support_messages")
+      .update({ read_at: new Date().toISOString() })
+      .eq("case_id", xoxoSupportCase.id)
+      .eq("sender_type", "admin")
+      .is("read_at", null);
+    if (error) console.error("Support read status error:", error);
+  }
+
   async function loadOwnOpenSupportCase() {
     const user = await getSupportSessionUser();
     if (!user) return null;
@@ -14522,6 +14591,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       return null;
     }
     xoxoSupportCase = data || null;
+    await refreshSupportConversationState();
     return xoxoSupportCase;
   }
 
@@ -14617,6 +14687,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 
     if (xoxoSupportCase) {
       await loadSupportMessages();
+      await markAdminSupportMessagesRead();
+      await refreshSupportConversationState();
     } else {
       const label = document.getElementById("supportCaseLabel");
       if (label) label.textContent = "New support conversation";
@@ -14734,12 +14806,14 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     clearSupportAttachment();
     supportFeedback("Message received! Your support case is " + supportCaseNumber(supportCase.case_number) + ".");
     await loadSupportMessages();
+    await refreshSupportConversationState();
   }
 
   window.openXoxoSupportChat = openSupportChat;
   window.sendXoxoSupportMessage = sendSupportMessage;
 
-  window.addEventListener("load", () => {
+  window.addEventListener("load", async () => {
+    await loadOwnOpenSupportCase();
     const input = document.getElementById("supportChatInput");
     if (input) {
       input.addEventListener("keydown", event => {
@@ -14761,6 +14835,17 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 (function () {
   const XOXO_SUPPORT_ADMIN_ID = "d9ea1914-fdba-465c-9700-5e640ff48763";
   let xoxoSupportStatusTimer = null;
+  window.xoxoSupportIsOnline = false;
+
+  window.renderXoxoSupportButton = function() {
+    const startBtn = document.getElementById("supportChatStartBtn");
+    if (!startBtn) return;
+    if (window.xoxoSupportActiveCase?.id) {
+      startBtn.textContent = window.xoxoSupportIsOnline ? "Return to Live Chat" : "Return to conversation";
+    } else {
+      startBtn.textContent = window.xoxoSupportIsOnline ? "Start Live Chat" : "Leave a Message";
+    }
+  };
 
   function renderXoxoSupportStatus(isOnline, hasError = false) {
     const box = document.getElementById("supportLiveStatus");
@@ -14774,6 +14859,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       box.classList.add("offline");
       label.textContent = "Status unavailable";
       message.textContent = "Live Chat status could not be checked right now. You can still contact XOXO Avenue Support by email.";
+      window.xoxoSupportIsOnline = false;
+      window.renderXoxoSupportButton();
       return;
     }
 
@@ -14781,14 +14868,14 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       box.classList.add("online");
       label.textContent = "Online";
       message.textContent = "XOXO Avenue Support is online right now.";
-      const startBtn = document.getElementById("supportChatStartBtn");
-      if (startBtn) startBtn.textContent = "Start Live Chat";
+      window.xoxoSupportIsOnline = true;
+      window.renderXoxoSupportButton();
     } else {
       box.classList.add("offline");
       label.textContent = "Offline";
       message.textContent = "XOXO Avenue Support is currently offline. You can leave a message here or contact us by email.";
-      const startBtn = document.getElementById("supportChatStartBtn");
-      if (startBtn) startBtn.textContent = "Leave a Message";
+      window.xoxoSupportIsOnline = false;
+      window.renderXoxoSupportButton();
     }
   }
 
