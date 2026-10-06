@@ -14505,7 +14505,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     const userIds=[...new Set(cases.map(c=>c.user_id).filter(Boolean))];
     const [{data:msgs},{data:profiles},{data:unreadMsgs,error:unreadError}]=await Promise.all([
       supabaseClient.from("support_messages").select("case_id,message,sender_type,created_at,attachment_url,attachment_type").in("case_id",caseIds).order("created_at",{ascending:false}),
-      userIds.length ? supabaseClient.from("profiles").select("user_id,username").in("user_id",userIds) : Promise.resolve({data:[]}),
+      userIds.length ? supabaseClient.from("friendhub_public_profiles").select("user_id,username").in("user_id",userIds) : Promise.resolve({data:[]}),
       supabaseClient.from("support_messages").select("case_id").in("case_id",caseIds).eq("sender_type","user").is("read_at",null)
     ]);
     const names=new Map((profiles||[]).map(p=>[String(p.user_id),p.username||"User"]));
