@@ -1838,7 +1838,7 @@ ${escapeHtml(message)}
         "",
         `This is to confirm we received your message. Your support case number is #${caseNumber}.`,
         "",
-        "We'll get back to you as soon as possible. You can reply directly to this email at any time to continue your conversation with XOXO Avenue Support.",
+        "We'll get back to you as soon as possible. You can reply directly to this email at any time to continue your conversation with XOXO Avenue Support. You can reply directly to this email at any time to continue your conversation with XOXO Avenue Support.",
         "",
         "Warmly,",
         "XOXO Avenue Support 💜",
@@ -1847,7 +1847,7 @@ ${escapeHtml(message)}
     htmlBody = `
 <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
   <p style="font-weight:700;">
-    # This is an automated message. Please do not reply #
+    # This is an automated confirmation #
   </p>
 
   <p>Hey there,</p>
@@ -1863,7 +1863,7 @@ ${escapeHtml(message)}
   </p>
 
   <p>
-    We'll get back to you as soon as possible.
+    We'll get back to you as soon as possible. You can reply directly to this email at any time to continue your conversation with XOXO Avenue Support.
   </p>
 
   <p>
