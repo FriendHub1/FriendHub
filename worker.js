@@ -916,7 +916,8 @@ function cleanInboundEmailReply(value) {
      * everything after it.
      */
     const gmailWrappedSeparator =
-      /^On\s+/i.test(trimmed);
+      /^On\s+/i.test(trimmed) ||
+      /^El\s+/i.test(trimmed);
 
     if (
       gmailWrappedSeparator ||
