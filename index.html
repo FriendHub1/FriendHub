@@ -14515,11 +14515,17 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   window.loadXoxoAdminSupportMessages=async function(){
     if(!adminSupportCase?.id) return;
     const box=document.getElementById("xoxoAdminSupportMessages"); if(!box)return;
-    const {data,error}=await supabaseClient.from("support_messages").select("id,sender_type,message,created_at,attachment_url,attachment_type").eq("case_id",adminSupportCase.id).order("created_at",{ascending:true});
+    const {data,error}=await supabaseClient.from("support_messages").select("id,sender_type,message,created_at,read_at,attachment_url,attachment_type").eq("case_id",adminSupportCase.id).order("created_at",{ascending:true});
     if(error){console.error("Admin support messages error:",error);if(!box.querySelector("[data-support-message-id]"))box.innerHTML='<div class="empty-state">Could not load messages.</div>';return;}
     if(!(data||[]).length){if(!box.querySelector("[data-support-message-id]"))box.innerHTML='<div class="empty-state">No messages yet.</div>';return;}
 
     const existingIds=new Set(Array.from(box.querySelectorAll("[data-support-message-id]")).map(el=>el.dataset.supportMessageId));
+    for(const m of (data||[])){
+      if(m.sender_type!=="admin") continue;
+      const row=box.querySelector(`[data-support-message-id="${CSS.escape(String(m.id))}"]`);
+      const receipt=row?.querySelector(".xoxo-support-msg-receipt");
+      if(receipt) receipt.textContent=m.read_at?"✓✓ Read":"✓ Sent";
+    }
     const newRows=(data||[]).filter(m=>!existingIds.has(String(m.id)));
     if(!newRows.length) return;
     const empty=box.querySelector(".empty-state"); if(empty) empty.remove();
@@ -14530,7 +14536,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
         const {data:signed}=await supabaseClient.storage.from("support-attachments").createSignedUrl(m.attachment_url,3600);
         if(signed?.signedUrl) img=`<img class="xoxo-support-msg-image" src="${aEsc(signed.signedUrl)}" alt="Support attachment" onclick="openProfilePhotoViewer(this.src)">`;
       }
-      box.insertAdjacentHTML("beforeend",`<div class="xoxo-support-msg ${m.sender_type==="admin"?"admin":"user"}" data-support-message-id="${aEsc(m.id)}">${aEsc(m.message)}${img}<span class="xoxo-support-msg-time">${aEsc(aTime(m.created_at))}</span></div>`);
+      const receipt=m.sender_type==="admin" ? `<span class="xoxo-support-msg-receipt" style="display:block;font-size:11px;opacity:.72;margin-top:2px;">${m.read_at?"✓✓ Read":"✓ Sent"}</span>` : "";
+      box.insertAdjacentHTML("beforeend",`<div class="xoxo-support-msg ${m.sender_type==="admin"?"admin":"user"}" data-support-message-id="${aEsc(m.id)}">${aEsc(m.message)}${img}<span class="xoxo-support-msg-time">${aEsc(aTime(m.created_at))}</span>${receipt}</div>`);
     }
     box.scrollTop=box.scrollHeight;
   };
@@ -14804,7 +14811,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 
     const { data, error } = await supabaseClient
       .from("support_messages")
-      .select("id,sender_type,message,created_at,attachment_url,attachment_type")
+      .select("id,sender_type,message,created_at,read_at,attachment_url,attachment_type")
       .eq("case_id", xoxoSupportCase.id)
       .order("created_at", { ascending: true });
 
@@ -14827,6 +14834,12 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       Array.from(box.querySelectorAll("[data-support-message-id]"))
         .map(el => el.dataset.supportMessageId)
     );
+    for (const row of data) {
+      if (row.sender_type !== "user") continue;
+      const el = box.querySelector(`[data-support-message-id="${CSS.escape(String(row.id))}"]`);
+      const receipt = el?.querySelector(".support-chat-receipt");
+      if (receipt) receipt.textContent = row.read_at ? "✓✓ Read" : "✓ Sent";
+    }
     const newRows = data.filter(row => !existingIds.has(String(row.id)));
     if (!newRows.length) return;
 
@@ -14847,10 +14860,14 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
           imageHtml = '<img class="support-chat-image" src="'+supportEsc(signed.signedUrl)+'" alt="Support attachment" onclick="openProfilePhotoViewer(this.src)">';
         }
       }
+      const receipt = row.sender_type === "user"
+        ? '<span class="support-chat-receipt" style="display:block;font-size:11px;opacity:.72;margin-top:2px;">'+(row.read_at ? "✓✓ Read" : "✓ Sent")+'</span>'
+        : "";
       box.insertAdjacentHTML("beforeend", '<div class="support-chat-message '+who+'" data-support-message-id="'+supportEsc(row.id)+'">'
         + supportEsc(row.message)
         + imageHtml
-        + '<span class="support-chat-time">'+supportEsc(time)+'</span></div>');
+        + '<span class="support-chat-time">'+supportEsc(time)+'</span>'
+        + receipt + '</div>');
     }
     box.scrollTop = box.scrollHeight;
   }
