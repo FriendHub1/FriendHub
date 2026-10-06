@@ -730,7 +730,7 @@ async function handleSupportEmail(request, env) {
   const result = await sendResendEmail(env, {
     from: "XOXO Avenue Support <support@xoxoavenue.com>",
     to: [recipient],
-    reply_to: "xoxoavenuesupport@gmail.com",
+    reply_to: `case-${caseNumber}@reply.xoxoavenue.com`,
     subject,
     text: textBody,
     html: htmlBody,
