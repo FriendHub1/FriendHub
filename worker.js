@@ -420,7 +420,7 @@ async function handleSupportEmail(request, env) {
     );
   }
 
-  if (emailType !== "confirmation") {
+  if (!["confirmation", "admin_reply"].includes(emailType)) {
     return jsonResponse(
       { ok: false, error: "Unsupported email type" },
       400
@@ -436,15 +436,25 @@ async function handleSupportEmail(request, env) {
     );
   }
 
-  /*
-   * For this first endpoint, only the owner of the case
-   * can request its confirmation email.
-   */
-  if (supportCase.user_id !== signedInUser.id) {
-    return jsonResponse(
-      { ok: false, error: "Forbidden" },
-      403
-    );
+  const XOXO_ADMIN_USER_ID =
+    "d9ea1914-fdba-465c-9700-5e640ff48763";
+
+  if (emailType === "confirmation") {
+    if (supportCase.user_id !== signedInUser.id) {
+      return jsonResponse(
+        { ok: false, error: "Forbidden" },
+        403
+      );
+    }
+  }
+
+  if (emailType === "admin_reply") {
+    if (signedInUser.id !== XOXO_ADMIN_USER_ID) {
+      return jsonResponse(
+        { ok: false, error: "Forbidden" },
+        403
+      );
+    }
   }
 
   const authUser = await getAuthUserById(
@@ -463,40 +473,88 @@ async function handleSupportEmail(request, env) {
 
   const caseNumber = String(supportCase.case_number);
 
-  const subject =
-    `[##${caseNumber}##] - Message received!`;
+  let subject;
+  let textBody;
+  let htmlBody;
 
-  const textBody = [
-    "# This is an automated message. Please do not reply #",
-    "",
-    "Hey there,",
-    "",
-    "Thanks for reaching out! 🙂",
-    "",
-    `This is to confirm we received your message. Your support case number is #${caseNumber}.`,
-    "",
-    "We'll get back to you as soon as possible.",
-    "",
-    "Warmly,",
-    "XOXO Avenue Support 💜",
-  ].join("\n");
+  if (emailType === "admin_reply") {
+    const message = String(body?.message || "").trim();
 
-  const htmlBody = `
-    <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
-      <p style="font-weight:700;"># This is an automated message. Please do not reply #</p>
-      <p>Hey there,</p>
-      <p>Thanks for reaching out! 🙂</p>
-      <p>
-        This is to confirm we received your message.
-        Your support case number is <strong>#${escapeHtml(caseNumber)}</strong>.
-      </p>
-      <p>We'll get back to you as soon as possible.</p>
-      <p>
-        Warmly,<br>
-        <strong>XOXO Avenue Support 💜</strong>
-      </p>
-    </div>
-  `;
+    if (!message) {
+      return jsonResponse(
+        { ok: false, error: "Missing message" },
+        400
+      );
+    }
+
+    if (message.length > 5000) {
+      return jsonResponse(
+        { ok: false, error: "Message is too long" },
+        400
+      );
+    }
+
+    subject =
+      `[##${caseNumber}##] - XOXO Avenue Support replied`;
+
+    textBody = [
+      `XOXO Avenue Support replied to your case #${caseNumber}:`,
+      "",
+      message,
+      "",
+      "Warmly,",
+      "XOXO Avenue Support 💜",
+    ].join("\n");
+
+    htmlBody = `
+      <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+        <p>
+          XOXO Avenue Support replied to your case
+          <strong>#${escapeHtml(caseNumber)}</strong>:
+        </p>
+        <div style="white-space:pre-wrap;margin:20px 0;padding:16px;background:#f6f4ff;border-radius:12px;">${escapeHtml(message)}</div>
+        <p>
+          Warmly,<br>
+          <strong>XOXO Avenue Support 💜</strong>
+        </p>
+      </div>
+    `;
+  } else {
+    subject =
+      `[##${caseNumber}##] - Message received!`;
+
+    textBody = [
+      "# This is an automated message. Please do not reply #",
+      "",
+      "Hey there,",
+      "",
+      "Thanks for reaching out! 🙂",
+      "",
+      `This is to confirm we received your message. Your support case number is #${caseNumber}.`,
+      "",
+      "We'll get back to you as soon as possible.",
+      "",
+      "Warmly,",
+      "XOXO Avenue Support 💜",
+    ].join("\n");
+
+    htmlBody = `
+      <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+        <p style="font-weight:700;"># This is an automated message. Please do not reply #</p>
+        <p>Hey there,</p>
+        <p>Thanks for reaching out! 🙂</p>
+        <p>
+          This is to confirm we received your message.
+          Your support case number is <strong>#${escapeHtml(caseNumber)}</strong>.
+        </p>
+        <p>We'll get back to you as soon as possible.</p>
+        <p>
+          Warmly,<br>
+          <strong>XOXO Avenue Support 💜</strong>
+        </p>
+      </div>
+    `;
+  }
 
   const result = await sendResendEmail(env, {
     from: "XOXO Avenue Support <support@xoxoavenue.com>",
