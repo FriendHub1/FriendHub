@@ -12,7 +12,6 @@
                                     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
                                     <meta name="apple-mobile-web-app-title" content="XOXO Avenue">
                                     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-                                    <script defer src="https://cloud.umami.is/script.js" data-website-id="0c5ac77c-4ac4-4a1d-b0c8-4a4df6071df5"></script>
                                     <style>
                                     * {
                                     box-sizing: border-box;
@@ -13410,7 +13409,68 @@ async function openPublicProfile(userId) {
                                     showResetMessage(authUrlError, "error");
                                     history.replaceState(null, "", window.location.pathname + window.location.search);
                                     }
-                                    checkSession();
+                                    /* XOXO AVENUE — PRIVACY-SAFE UMAMI STARTUP
+                                       Supabase gets first access to authentication callback data.
+                                       Only after auth/session initialization do we remove any remaining
+                                       auth-only URL parameters and load Umami. */
+                                    function xoxoCleanAuthUrlBeforeAnalytics() {
+                                    try {
+                                    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+                                    const searchParams = new URLSearchParams(window.location.search);
+                                    const authKeys = [
+                                    "access_token",
+                                    "refresh_token",
+                                    "expires_in",
+                                    "expires_at",
+                                    "token_type",
+                                    "provider_token",
+                                    "provider_refresh_token",
+                                    "error",
+                                    "error_code",
+                                    "error_description",
+                                    "code"
+                                    ];
+                                    const hasAuthHash = authKeys.some(key => hashParams.has(key));
+                                    const hasAuthSearch = authKeys.some(key => searchParams.has(key));
+
+                                    if (!hasAuthHash && !hasAuthSearch) return;
+
+                                    authKeys.forEach(key => {
+                                    hashParams.delete(key);
+                                    searchParams.delete(key);
+                                    });
+
+                                    const cleanSearch = searchParams.toString();
+                                    const cleanHash = hashParams.toString();
+                                    const cleanUrl =
+                                    window.location.pathname
+                                    + (cleanSearch ? "?" + cleanSearch : "")
+                                    + (cleanHash ? "#" + cleanHash : "");
+
+                                    history.replaceState(null, "", cleanUrl);
+                                    } catch (error) {
+                                    console.error("Auth URL cleanup failed:", error);
+                                    }
+                                    }
+
+                                    function xoxoLoadUmamiAfterAuth() {
+                                    if (document.querySelector('script[data-xoxo-umami="true"]')) return;
+                                    const script = document.createElement("script");
+                                    script.defer = true;
+                                    script.src = "https://cloud.umami.is/script.js";
+                                    script.setAttribute("data-website-id", "0c5ac77c-4ac4-4a1d-b0c8-4a4df6071df5");
+                                    script.setAttribute("data-xoxo-umami", "true");
+                                    document.head.appendChild(script);
+                                    }
+
+                                    (async function xoxoStartAppBeforeAnalytics() {
+                                    try {
+                                    await checkSession();
+                                    } finally {
+                                    xoxoCleanAuthUrlBeforeAnalytics();
+                                    xoxoLoadUmamiAfterAuth();
+                                    }
+                                    })();
                                     </script>
                                     <script>
                                     /* =========================================================
