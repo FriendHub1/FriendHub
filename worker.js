@@ -2236,6 +2236,165 @@ async function handleProfileReminders(env) {
   return { ok: true, checked: pending.length, sent };
 }
 
+
+/*
+ * ==========================================
+ * DELETE ACCOUNT
+ * ==========================================
+ */
+
+async function handleDeleteAccount(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
+  }
+
+  if (!env.SUPABASE_SECRET_KEY || !env.RESEND_API_KEY) {
+    console.error("XOXO delete account: required server secrets are missing");
+    return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
+  }
+
+  const signedInUser = await getAuthenticatedUser(request);
+
+  if (!signedInUser?.id) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  const userId = String(signedInUser.id).trim();
+  const recipient = String(signedInUser.email || "").trim();
+
+  /*
+   * Clean the member's XOXO Avenue data first.
+   * This RPC is executable only by service_role and also
+   * refuses to delete an administrator account.
+   */
+  const cleanupResponse = await fetch(
+    `${SUPABASE_URL}/rest/v1/rpc/xoxo_delete_account_data`,
+    {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        "Content-Type": "application/json",
+        "Accept-Profile": "public",
+        "Content-Profile": "public",
+      },
+      body: JSON.stringify({ p_user_id: userId }),
+    }
+  );
+
+  if (!cleanupResponse.ok) {
+    const cleanupError = await cleanupResponse.text();
+    console.error(
+      "XOXO delete account cleanup failed:",
+      cleanupResponse.status,
+      cleanupError
+    );
+
+    const adminProtected = cleanupError.includes(
+      "Administrator accounts cannot be deleted here"
+    );
+
+    return jsonResponse(
+      {
+        ok: false,
+        error: adminProtected
+          ? "Administrator accounts cannot be deleted here"
+          : "Account data cleanup failed",
+      },
+      adminProtected ? 403 : 500
+    );
+  }
+
+  /*
+   * Delete the Supabase Auth user only after data cleanup succeeds.
+   */
+  const deleteAuthResponse = await fetch(
+    `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
+    {
+      method: "DELETE",
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+      },
+    }
+  );
+
+  if (!deleteAuthResponse.ok) {
+    console.error(
+      "XOXO Auth user deletion failed:",
+      deleteAuthResponse.status,
+      await deleteAuthResponse.text()
+    );
+    return jsonResponse({ ok: false, error: "Account deletion failed" }, 500);
+  }
+
+  /*
+   * The account is already deleted at this point. The farewell email
+   * is best-effort and must never make a successful deletion look failed.
+   */
+  let farewellEmailSent = false;
+
+  if (recipient) {
+    const subject =
+      "Your XOXO Avenue account has been deleted 💜 | Tu cuenta ha sido eliminada";
+
+    const textBody = [
+      "Hi!",
+      "",
+      "Your XOXO Avenue account has been successfully deleted.",
+      "Thank you for being part of our community.",
+      "If you ever decide to come back, you'll always be welcome at XOXO Avenue. 💜",
+      "",
+      "Take care,",
+      "XOXO Avenue 💜",
+      "",
+      "----------------------------------------",
+      "",
+      "¡Hola!",
+      "",
+      "Tu cuenta de XOXO Avenue ha sido eliminada correctamente.",
+      "Gracias por haber formado parte de nuestra comunidad.",
+      "Si algún día decides regresar, siempre serás bienvenido/a a XOXO Avenue. 💜",
+      "",
+      "Cuídate,",
+      "XOXO Avenue 💜",
+    ].join("\n");
+
+    const htmlBody = `
+<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+  <div style="padding:24px;border:1px solid #ece8ff;border-radius:18px;">
+    <h2 style="margin-top:0;">Your XOXO Avenue account has been deleted 💜</h2>
+    <p>Your XOXO Avenue account has been successfully deleted.</p>
+    <p>Thank you for being part of our community.</p>
+    <p>If you ever decide to come back, you'll always be welcome at XOXO Avenue. 💜</p>
+    <p>Take care,<br><strong>XOXO Avenue 💜</strong></p>
+    <hr style="border:0;border-top:1px solid #ece8ff;margin:30px 0;">
+    <h2>Tu cuenta de XOXO Avenue ha sido eliminada 💜</h2>
+    <p>Tu cuenta de XOXO Avenue ha sido eliminada correctamente.</p>
+    <p>Gracias por haber formado parte de nuestra comunidad.</p>
+    <p>Si algún día decides regresar, siempre serás bienvenido/a a XOXO Avenue. 💜</p>
+    <p>Cuídate,<br><strong>XOXO Avenue 💜</strong></p>
+  </div>
+</div>`;
+
+    const emailResult = await sendResendEmail(env, {
+      from: "XOXO Avenue <support@xoxoavenue.com>",
+      to: [recipient],
+      subject,
+      text: textBody,
+      html: htmlBody,
+    });
+
+    farewellEmailSent = emailResult.ok;
+  }
+
+  return jsonResponse({
+    ok: true,
+    deleted: true,
+    farewell_email_sent: farewellEmailSent,
+  });
+}
+
 /*
  * ==========================================
  * MAIN WORKER
@@ -2280,6 +2439,21 @@ export default {
           "X-XOXO-Worker": "sitemap",
         },
       });
+    }
+
+
+    /*
+     * DELETE ACCOUNT
+     */
+
+    if (
+      url.pathname ===
+        "/api/delete-account"
+    ) {
+      return handleDeleteAccount(
+        request,
+        env
+      );
     }
 
     /*
