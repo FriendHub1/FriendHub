@@ -1922,6 +1922,88 @@ ${escapeHtml(message)}
 
 /*
  * ==========================================
+ * PRESENCE LOCATION
+ * ==========================================
+ */
+
+async function handlePresenceLocation(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
+  }
+
+  if (!env.SUPABASE_SECRET_KEY) {
+    console.error("XOXO presence location: SUPABASE_SECRET_KEY is missing");
+    return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
+  }
+
+  const signedInUser = await getAuthenticatedUser(request);
+
+  if (!signedInUser?.id) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  const countryCode = String(
+    request.cf?.country || request.headers.get("CF-IPCountry") || ""
+  ).trim().toUpperCase();
+
+  let countryName = "";
+
+  if (/^[A-Z]{2}$/.test(countryCode)) {
+    try {
+      countryName =
+        new Intl.DisplayNames(["en"], { type: "region" }).of(countryCode) || "";
+    } catch (error) {
+      console.error("XOXO country name lookup failed:", error);
+    }
+  }
+
+  const ipAddress = String(
+    request.headers.get("CF-Connecting-IP") || ""
+  ).trim();
+
+  const payload = {
+    user_id: signedInUser.id,
+    last_active_at: new Date().toISOString(),
+    country_code: countryCode || null,
+    country_name: countryName || null,
+    ip_address: ipAddress || null,
+  };
+
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/user_presence?on_conflict=user_id`,
+    {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        "Content-Type": "application/json",
+        "Content-Profile": "public",
+        "Accept-Profile": "public",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    console.error(
+      "XOXO presence location update failed:",
+      response.status,
+      await response.text()
+    );
+
+    return jsonResponse({ ok: false, error: "Presence update failed" }, 502);
+  }
+
+  return jsonResponse({
+    ok: true,
+    country_code: countryCode || null,
+    country_name: countryName || null,
+  });
+}
+
+/*
+ * ==========================================
  * NEW PROFILE EMAIL NOTIFICATION
  * ==========================================
  */
@@ -2016,6 +2098,20 @@ export default {
       new URL(
         request.url
       );
+
+    /*
+     * PRESENCE LOCATION
+     */
+
+    if (
+      url.pathname ===
+        "/api/presence-location"
+    ) {
+      return handlePresenceLocation(
+        request,
+        env
+      );
+    }
 
     /*
      * NEW PROFILE EMAIL NOTIFICATION
