@@ -4824,6 +4824,7 @@
 .xoxo-admin-shell{display:grid;gap:18px}
 .xoxo-admin-hero{padding:24px;border:1px solid var(--fh-border,#e3e7ef);border-radius:22px;background:var(--fh-surface,#fff);box-shadow:var(--fh-shadow,0 8px 25px rgba(16,24,40,.06))}
 .xoxo-admin-hero h1{margin:0 0 6px}.xoxo-admin-hero p{margin:0;color:var(--fh-muted,#667085)}
+.xoxo-admin-global-online{display:inline-flex;align-items:center;gap:7px;margin-top:12px;padding:8px 12px;border:1px solid #bbf7d0;border-radius:999px;background:#f0fdf4;color:#166534;font-size:13px;font-weight:900}
 .xoxo-admin-tabs{display:flex;gap:8px;flex-wrap:wrap}
 .xoxo-admin-tab{border:1px solid var(--fh-border,#dfe3eb);background:var(--fh-surface-strong,#fff);color:var(--fh-text,#172033);border-radius:999px;padding:9px 14px;font-weight:800;cursor:pointer}
 .xoxo-admin-tab.active{background:var(--fh-primary,#5865f2);border-color:var(--fh-primary,#5865f2);color:#fff}
@@ -6039,6 +6040,7 @@
     <div class="xoxo-admin-hero">
       <h1>👑 XOXO Avenue Admin</h1>
       <p>Private moderation dashboard for authorized administrators.</p>
+      <div id="xoxoAdminGlobalOnline" class="xoxo-admin-global-online">💚 Loading online users...</div>
     </div>
     <div id="xoxoAdminStatus" class="xoxo-admin-status"></div>
     <div class="xoxo-admin-tabs">
@@ -14377,17 +14379,25 @@ function switchXoxoAdminTab(tab, button) {
 async function loadXoxoAdminDashboard() {
   if (!xoxoIsAdmin) return;
   setXoxoAdminStatus("");
-  const [statsResult, usersResult, reportsResult, postsResult] = await Promise.all([
+  const [statsResult, usersResult, reportsResult, postsResult, onlineResult] = await Promise.all([
     supabaseClient.rpc("get_xoxo_admin_stats"),
     supabaseClient.rpc("get_xoxo_admin_users"),
     supabaseClient.rpc("get_xoxo_admin_reports"),
-    supabaseClient.rpc("get_xoxo_admin_posts")
+    supabaseClient.rpc("get_xoxo_admin_posts"),
+    supabaseClient.rpc("get_xoxo_admin_online_count")
   ]);
-  const failed=[statsResult,usersResult,reportsResult,postsResult].find(r=>r.error);
+  const failed=[statsResult,usersResult,reportsResult,postsResult,onlineResult].find(r=>r.error);
   if(failed){ console.error(failed.error); setXoxoAdminStatus(failed.error.message || "Could not load admin data.","error"); return; }
   renderXoxoAdminStats(statsResult.data || {});
+  renderXoxoAdminGlobalOnline(onlineResult.data);
   xoxoAdminUsers=usersResult.data || []; xoxoAdminReports=reportsResult.data || []; xoxoAdminPosts=postsResult.data || [];
   renderXoxoAdminUsers(); renderXoxoAdminReports(); renderXoxoAdminPosts();
+}
+
+function renderXoxoAdminGlobalOnline(value) {
+  const el=document.getElementById("xoxoAdminGlobalOnline"); if(!el)return;
+  const count=Number(value||0);
+  el.textContent=`💚 ${count.toLocaleString()} ${count===1 ? "user" : "users"} online now`;
 }
 
 function renderXoxoAdminStats(stats) {
@@ -14432,7 +14442,6 @@ function renderXoxoAdminUsers(){
 
   const summary=`<div class="xoxo-admin-users-summary">
     <span class="xoxo-admin-summary-pill">👥 ${total.toLocaleString()} Total Users</span>
-    <span class="xoxo-admin-summary-pill">💚 ${online.toLocaleString()} Online</span>
     <span class="xoxo-admin-summary-pill">✨ ${newToday.toLocaleString()} New Today</span>
     <span class="xoxo-admin-summary-pill">✅ ${complete.toLocaleString()} Complete</span>
     <span class="xoxo-admin-summary-pill">⚠️ ${incomplete.toLocaleString()} Incomplete</span>
