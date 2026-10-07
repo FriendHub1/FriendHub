@@ -14602,6 +14602,32 @@ async function xoxoAdminReactivateUser(userId){
   setXoxoAdminStatus("User reactivated.","success");
 }
 
+async function xoxoAdminDeleteComment(commentId){
+  const id=Number(commentId);
+  if(!Number.isSafeInteger(id)||id<1)return;
+  if(!confirm("Delete this comment permanently?"))return;
+
+  const status=document.getElementById("xoxoAdminStatus");
+  const {error}=await supabaseClient.rpc("xoxo_admin_delete_comment",{p_comment_id:id});
+  if(error){
+    if(status){
+      status.className="xoxo-admin-status error";
+      status.textContent=`Could not delete comment: ${error.message}`;
+    }
+    return;
+  }
+
+  xoxoAdminComments=xoxoAdminComments.filter(c=>Number(c.id)!==id);
+  renderXoxoAdminComments();
+  if(status){
+    status.className="xoxo-admin-status success";
+    status.textContent="Comment deleted successfully.";
+  }
+
+  const statsResult=await supabaseClient.rpc("get_xoxo_admin_stats");
+  if(!statsResult.error)renderXoxoAdminStats(statsResult.data||{});
+}
+
 function renderXoxoAdminReports(){
   const list=document.getElementById("xoxoAdminReportsList"); if(!list)return;
   if(!xoxoAdminReports.length){list.innerHTML='<div class="empty-state">No reports found.</div>';return;}
@@ -14649,7 +14675,7 @@ function renderXoxoAdminComments(){
         mediaHtml=`<div style="margin-top:12px;"><div class="xoxo-admin-meta" style="margin-bottom:6px;">🖼️ Media</div><img src="${mediaUrl}" alt="Comment media" loading="lazy" style="display:block;width:100%;max-width:480px;max-height:420px;border-radius:14px;object-fit:contain;background:rgba(255,255,255,.04);" onclick="openProfilePhotoViewer(this.src)"></div>`;
       }
     }
-    return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">@${escapeHtml(c.username||"Unknown user")}</div><div class="xoxo-admin-meta">Post: ${escapeHtml(c.post_id||"—")} · ${escapeHtml(xoxoAdminDate(c.created_at))}${c.parent_comment_id?" · ↩️ Reply":""}</div></div><span class="xoxo-admin-badge">Comment</span></div>${c.content?`<p style="margin-top:10px;white-space:pre-wrap;">${escapeHtml(c.content)}</p>`:""}${mediaHtml}</div>`;
+    return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">@${escapeHtml(c.username||"Unknown user")}</div><div class="xoxo-admin-meta">Post: ${escapeHtml(c.post_id||"—")} · ${escapeHtml(xoxoAdminDate(c.created_at))}${c.parent_comment_id?" · ↩️ Reply":""}</div></div><span class="xoxo-admin-badge">Comment</span></div>${c.content?`<p style="margin-top:10px;white-space:pre-wrap;">${escapeHtml(c.content)}</p>`:""}${mediaHtml}<div class="xoxo-admin-actions" style="margin-top:14px;"><button class="danger" type="button" onclick="xoxoAdminDeleteComment(${Number(c.id)})">🗑️ Delete Comment</button></div></div>`;
   }).join("");
 }
 
