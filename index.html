@@ -4831,6 +4831,13 @@
 .xoxo-admin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .xoxo-admin-stat{padding:18px;border:1px solid var(--fh-border,#e3e7ef);border-radius:18px;background:var(--fh-surface,#fff);text-align:center}
 .xoxo-admin-stat strong{display:block;font-size:30px}.xoxo-admin-stat span{color:var(--fh-muted,#667085);font-weight:700}
+.xoxo-admin-users-summary{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.xoxo-admin-summary-pill{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid var(--fh-border,#dfe3eb);border-radius:999px;background:var(--fh-surface,#fff);color:var(--fh-text,#172033);font-size:12px;font-weight:800}
+.xoxo-admin-profile-badge{display:inline-block;margin-top:7px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900}
+.xoxo-admin-profile-badge.complete{background:#dcfce7;color:#166534}
+.xoxo-admin-profile-badge.incomplete{background:#fef3c7;color:#92400e}
+.xoxo-admin-online{color:#16a34a;font-weight:900}
+.xoxo-admin-offline{color:var(--fh-muted,#667085);font-weight:700}
 .xoxo-admin-card{padding:18px;border:1px solid var(--fh-border,#e3e7ef);border-radius:18px;background:var(--fh-surface,#fff);margin-bottom:12px;overflow-wrap:anywhere}
 .xoxo-admin-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .xoxo-admin-card-title{font-weight:900;font-size:16px}.xoxo-admin-meta{font-size:12px;color:var(--fh-muted,#667085);margin-top:4px}
@@ -14393,18 +14400,109 @@ function xoxoAdminDate(value){ if(!value)return "—"; const d=new Date(value); 
 function renderXoxoAdminUsers(){
   const list=document.getElementById("xoxoAdminUsersList"); if(!list)return;
   const q=(document.getElementById("xoxoAdminUserSearch")?.value||"").trim().toLowerCase();
-  const rows=xoxoAdminUsers.filter(u=>!q||String(u.username||"").toLowerCase().includes(q)||String(u.email||"").toLowerCase().includes(q));
-  if(!rows.length){list.innerHTML='<div class="empty-state">No users found.</div>';return;}
-  list.innerHTML=rows.map(u=>{
+  const now=Date.now();
+  const onlineWindowMs=5*60*1000;
+
+  const isOnline=u=>{
+    if(!u.profile_complete || !u.last_active_at) return false;
+    const t=new Date(u.last_active_at).getTime();
+    return Number.isFinite(t) && (now-t)>=0 && (now-t)<=onlineWindowMs;
+  };
+
+  const isToday=value=>{
+    if(!value)return false;
+    const d=new Date(value);
+    if(Number.isNaN(d.getTime()))return false;
+    const today=new Date();
+    return d.getFullYear()===today.getFullYear() &&
+      d.getMonth()===today.getMonth() &&
+      d.getDate()===today.getDate();
+  };
+
+  const total=xoxoAdminUsers.length;
+  const online=xoxoAdminUsers.filter(isOnline).length;
+  const newToday=xoxoAdminUsers.filter(u=>isToday(u.created_at)).length;
+  const complete=xoxoAdminUsers.filter(u=>u.profile_complete===true).length;
+  const incomplete=total-complete;
+  const countries=new Set(
+    xoxoAdminUsers
+      .map(u=>String(u.country||"").trim().toLowerCase())
+      .filter(Boolean)
+  ).size;
+
+  const summary=`<div class="xoxo-admin-users-summary">
+    <span class="xoxo-admin-summary-pill">👥 ${total.toLocaleString()} Total Users</span>
+    <span class="xoxo-admin-summary-pill">💚 ${online.toLocaleString()} Online</span>
+    <span class="xoxo-admin-summary-pill">✨ ${newToday.toLocaleString()} New Today</span>
+    <span class="xoxo-admin-summary-pill">✅ ${complete.toLocaleString()} Complete</span>
+    <span class="xoxo-admin-summary-pill">⚠️ ${incomplete.toLocaleString()} Incomplete</span>
+    <span class="xoxo-admin-summary-pill">🌎 ${countries.toLocaleString()} Countries</span>
+  </div>`;
+
+  const rows=xoxoAdminUsers.filter(u=>!q||
+    String(u.username||"").toLowerCase().includes(q)||
+    String(u.email||"").toLowerCase().includes(q)||
+    String(u.country||"").toLowerCase().includes(q)
+  );
+
+  if(!rows.length){
+    list.innerHTML=summary+'<div class="empty-state">No users found.</div>';
+    return;
+  }
+
+  list.innerHTML=summary+rows.map(u=>{
     const id=escapeHtmlAttribute(String(u.user_id));
     const isAdmin=u.is_admin===true;
     const isSuspended=u.is_suspended===true;
+    const hasProfile=u.profile_complete===true;
+    const onlineNow=isOnline(u);
+
     const statusLabel=isAdmin?"👑 Admin":(isSuspended?"🔒 Suspended":"✅ Active");
     const statusStyle=isAdmin?"background:#fef3c7;color:#92400e;":(isSuspended?"background:#fee2e2;color:#b91c1c;":"background:#dcfce7;color:#166534;");
-    const reason=(!isAdmin&&isSuspended&&u.suspension_reason)?`<div class="xoxo-admin-meta" style="margin-top:8px;"><strong>Suspension reason:</strong> ${escapeHtml(u.suspension_reason)}</div>`:"";
-    const viewProfileButton=`<button onclick="openXoxoAdminUserProfile('${id}')">👤 View Profile</button>`;
-    const actions=isAdmin?`<div class="xoxo-admin-actions">${viewProfileButton}</div><div class="xoxo-admin-meta" style="margin-top:12px;">Administrator account protected.</div>`:(isSuspended?`<div class="xoxo-admin-actions">${viewProfileButton}<button class="success" onclick="xoxoAdminReactivateUser('${id}')">Reactivate</button></div>`:`<div class="xoxo-admin-actions">${viewProfileButton}<button class="danger" onclick="xoxoAdminSuspendUser('${id}')">Suspend</button></div>`);
-    return `<div class="xoxo-admin-card"><div class="xoxo-admin-card-head"><div><div class="xoxo-admin-card-title">${escapeHtml(u.username||"No username")}</div><div>${escapeHtml(u.email||"No email")}</div><div class="xoxo-admin-meta">Joined: ${escapeHtml(xoxoAdminDate(u.created_at))}<br>Confirmed: ${escapeHtml(xoxoAdminDate(u.email_confirmed_at))}<br>Last sign-in: ${escapeHtml(xoxoAdminDate(u.last_sign_in_at))}</div>${reason}</div><span class="xoxo-admin-badge" style="${statusStyle}">${statusLabel}</span></div>${actions}</div>`;
+
+    const profileBadge=hasProfile
+      ? '<span class="xoxo-admin-profile-badge complete">✅ Complete</span>'
+      : '<span class="xoxo-admin-profile-badge incomplete">⚠️ Incomplete</span>';
+
+    const activity=hasProfile
+      ? (onlineNow
+          ? '<span class="xoxo-admin-online">💚 Online</span>'
+          : `<span class="xoxo-admin-offline">⚪ Offline</span>${u.last_active_at?` · Last active: ${escapeHtml(xoxoAdminDate(u.last_active_at))}`:""}`)
+      : '<span class="xoxo-admin-offline">—</span>';
+
+    const reason=(!isAdmin&&isSuspended&&u.suspension_reason)
+      ? `<div class="xoxo-admin-meta" style="margin-top:8px;"><strong>Suspension reason:</strong> ${escapeHtml(u.suspension_reason)}</div>`
+      : "";
+
+    const viewProfileButton=hasProfile
+      ? `<button onclick="openXoxoAdminUserProfile('${id}')">👤 View Profile</button>`
+      : "";
+
+    const actions=isAdmin
+      ? `${viewProfileButton?`<div class="xoxo-admin-actions">${viewProfileButton}</div>`:""}<div class="xoxo-admin-meta" style="margin-top:12px;">Administrator account protected.</div>`
+      : (isSuspended
+          ? `<div class="xoxo-admin-actions">${viewProfileButton}<button class="success" onclick="xoxoAdminReactivateUser('${id}')">Reactivate</button></div>`
+          : `<div class="xoxo-admin-actions">${viewProfileButton}<button class="danger" onclick="xoxoAdminSuspendUser('${id}')">Suspend</button></div>`);
+
+    return `<div class="xoxo-admin-card">
+      <div class="xoxo-admin-card-head">
+        <div>
+          <div class="xoxo-admin-card-title">${escapeHtml(u.username||"No username")}</div>
+          <div>${escapeHtml(u.email||"No email")}</div>
+          ${profileBadge}
+          <div class="xoxo-admin-meta">
+            Country: ${escapeHtml(u.country||"—")}<br>
+            Joined: ${escapeHtml(xoxoAdminDate(u.created_at))}<br>
+            Confirmed: ${escapeHtml(xoxoAdminDate(u.email_confirmed_at))}<br>
+            Last sign-in: ${escapeHtml(xoxoAdminDate(u.last_sign_in_at))}<br>
+            Activity: ${activity}
+          </div>
+          ${reason}
+        </div>
+        <span class="xoxo-admin-badge" style="${statusStyle}">${statusLabel}</span>
+      </div>
+      ${actions}
+    </div>`;
   }).join("");
 }
 
