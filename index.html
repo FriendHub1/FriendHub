@@ -14474,7 +14474,9 @@ function renderXoxoAdminUsers(){
   const rows=xoxoAdminUsers.filter(u=>!q||
     String(u.username||"").toLowerCase().includes(q)||
     String(u.email||"").toLowerCase().includes(q)||
-    String(u.country||"").toLowerCase().includes(q)
+    String(u.country||"").toLowerCase().includes(q)||
+    String(u.approximate_country||"").toLowerCase().includes(q)||
+    String(u.ip_address||"").toLowerCase().includes(q)
   );
 
   if(!rows.length){
@@ -14523,7 +14525,9 @@ function renderXoxoAdminUsers(){
           <div>${escapeHtml(u.email||"No email")}</div>
           ${profileBadge}
           <div class="xoxo-admin-meta">
-            Country: ${escapeHtml(u.country||"—")}<br>
+            Registered country: ${escapeHtml(u.country||"—")}<br>
+            🌎 Approx. country: ${escapeHtml(u.approximate_country||"—")}<br>
+            🔐 IP address: ${escapeHtml(u.ip_address||"—")}<br>
             Joined: ${escapeHtml(xoxoAdminDate(u.created_at))}<br>
             Confirmed: ${escapeHtml(xoxoAdminDate(u.email_confirmed_at))}<br>
             Last sign-in: ${escapeHtml(xoxoAdminDate(u.last_sign_in_at))}<br>
