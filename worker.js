@@ -2257,6 +2257,32 @@ export default {
       );
 
     /*
+     * XML SITEMAP
+     * Public entry point for Google Search Console.
+     */
+
+    if (url.pathname === "/sitemap.xml") {
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://xoxoavenue.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`;
+
+      return new Response(sitemap, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/xml; charset=utf-8",
+          "Cache-Control": "public, max-age=3600",
+          "X-Content-Type-Options": "nosniff",
+          "X-XOXO-Worker": "sitemap",
+        },
+      });
+    }
+
+    /*
      * PRESENCE LOCATION
      */
 
