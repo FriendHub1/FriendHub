@@ -2083,6 +2083,159 @@ async function handleNewProfileNotification(request, env) {
   return jsonResponse({ ok: true, notification_sent: true });
 }
 
+
+/*
+ * ==========================================
+ * INCOMPLETE PROFILE REMINDER
+ * ==========================================
+ */
+
+async function handleProfileReminders(env) {
+  if (!env.RESEND_API_KEY || !env.SUPABASE_SECRET_KEY) {
+    console.error("XOXO profile reminder secrets are missing");
+    return { ok: false, error: "Server configuration error" };
+  }
+
+  const pendingResponse = await fetch(
+    `${SUPABASE_URL}/rest/v1/rpc/get_pending_profile_reminders`,
+    {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        "Content-Type": "application/json",
+        "Accept-Profile": "public",
+        "Content-Profile": "public",
+      },
+      body: "{}",
+    }
+  );
+
+  if (!pendingResponse.ok) {
+    console.error(
+      "XOXO pending profile reminders lookup failed:",
+      pendingResponse.status,
+      await pendingResponse.text()
+    );
+    return { ok: false, error: "Reminder lookup failed" };
+  }
+
+  const pending = await pendingResponse.json();
+
+  if (!Array.isArray(pending) || !pending.length) {
+    return { ok: true, checked: 0, sent: 0 };
+  }
+
+  let sent = 0;
+
+  for (const member of pending) {
+    const userId = String(member?.user_id || "").trim();
+    const recipient = String(member?.email || "").trim();
+
+    if (!userId || !recipient) continue;
+
+    const subject =
+      "Complete your XOXO Avenue profile 💜 | Completa tu perfil";
+
+    const textBody = [
+      "Hi! 👋",
+      "",
+      "Your XOXO Avenue account is ready, but your profile is still waiting for you.",
+      "",
+      "Complete your profile so you can start discovering people and communities on XOXO Avenue.",
+      "",
+      "💜 Complete My Profile:",
+      "https://xoxoavenue.com/",
+      "",
+      "See you there!",
+      "XOXO Avenue 💜",
+      "",
+      "----------------------------------------",
+      "",
+      "¡Hola! 👋",
+      "",
+      "Tu cuenta de XOXO Avenue está lista, pero todavía falta completar tu perfil.",
+      "",
+      "Completa tu perfil para que puedas comenzar a descubrir personas y comunidades en XOXO Avenue.",
+      "",
+      "💜 Completar mi perfil:",
+      "https://xoxoavenue.com/",
+      "",
+      "¡Nos vemos allí!",
+      "XOXO Avenue 💜",
+    ].join("\n");
+
+    const htmlBody = `
+<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
+  <div style="padding:24px;border:1px solid #ece8ff;border-radius:18px;">
+    <h2 style="margin-top:0;">Hi! 👋</h2>
+    <p>Your XOXO Avenue account is ready, but your profile is still waiting for you.</p>
+    <p>Complete your profile so you can start discovering people and communities on XOXO Avenue.</p>
+    <p style="margin:24px 0;">
+      <a href="https://xoxoavenue.com/" style="display:inline-block;padding:12px 18px;border-radius:12px;background:#6c5ce7;color:#ffffff;text-decoration:none;font-weight:700;">💜 Complete My Profile</a>
+    </p>
+    <p>See you there!<br><strong>XOXO Avenue 💜</strong></p>
+
+    <hr style="border:0;border-top:1px solid #ece8ff;margin:30px 0;">
+
+    <h2>¡Hola! 👋</h2>
+    <p>Tu cuenta de XOXO Avenue está lista, pero todavía falta completar tu perfil.</p>
+    <p>Completa tu perfil para que puedas comenzar a descubrir personas y comunidades en XOXO Avenue.</p>
+    <p style="margin:24px 0;">
+      <a href="https://xoxoavenue.com/" style="display:inline-block;padding:12px 18px;border-radius:12px;background:#6c5ce7;color:#ffffff;text-decoration:none;font-weight:700;">💜 Completar mi perfil</a>
+    </p>
+    <p>¡Nos vemos allí!<br><strong>XOXO Avenue 💜</strong></p>
+  </div>
+</div>`;
+
+    const emailResult = await sendResendEmail(env, {
+      from: "XOXO Avenue <support@xoxoavenue.com>",
+      to: [recipient],
+      subject,
+      text: textBody,
+      html: htmlBody,
+    });
+
+    if (!emailResult.ok) {
+      console.error("XOXO profile reminder email failed for user:", userId);
+      continue;
+    }
+
+    const markResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/profile_reminder_emails?on_conflict=user_id`,
+      {
+        method: "POST",
+        headers: {
+          apikey: env.SUPABASE_SECRET_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+          "Content-Type": "application/json",
+          "Content-Profile": "public",
+          "Accept-Profile": "public",
+          Prefer: "resolution=ignore-duplicates,return=minimal",
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          sent_at: new Date().toISOString(),
+        }),
+      }
+    );
+
+    if (!markResponse.ok) {
+      console.error(
+        "XOXO profile reminder sent but could not be recorded:",
+        userId,
+        markResponse.status,
+        await markResponse.text()
+      );
+      continue;
+    }
+
+    sent += 1;
+  }
+
+  return { ok: true, checked: pending.length, sent };
+}
+
 /*
  * ==========================================
  * MAIN WORKER
@@ -2090,6 +2243,10 @@ async function handleNewProfileNotification(request, env) {
  */
 
 export default {
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(handleProfileReminders(env));
+  },
+
   async fetch(
     request,
     env
