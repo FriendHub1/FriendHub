@@ -6420,6 +6420,7 @@
                                     let currentDmProfilePhoto = null;
                                     let dmUnreadRefreshTimer = null;
                                     let friendhubPresenceTimer = null;
+                                    let xoxoPresenceLocationSent = false;
                                     let dmPresenceRefreshTimer = null;
                                     let dmChatRefreshTimer = null;
                                     let dmChatLoadInProgress = false;
@@ -9906,6 +9907,28 @@ async function openPublicProfile(userId) {
                                     { onConflict: "user_id" }
                                     );
                                     if (error) console.error("Presence update error:", error);
+
+                                    if (!xoxoPresenceLocationSent) {
+                                    try {
+                                    const { data: sessionData } = await supabaseClient.auth.getSession();
+                                    const accessToken = sessionData?.session?.access_token || "";
+                                    if (accessToken) {
+                                    const response = await fetch("/api/presence-location", {
+                                    method: "POST",
+                                    headers: {
+                                    Authorization: `Bearer ${accessToken}`
+                                    }
+                                    });
+                                    if (response.ok) {
+                                    xoxoPresenceLocationSent = true;
+                                    } else {
+                                    console.error("Presence location update error:", response.status);
+                                    }
+                                    }
+                                    } catch (locationError) {
+                                    console.error("Presence location update error:", locationError);
+                                    }
+                                    }
                                     }
 
                                     function stopFriendHubPresence() {
