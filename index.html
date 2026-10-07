@@ -9808,6 +9808,10 @@ async function openPublicProfile(userId) {
                                     closeModal("followListModal");
                                     }
                                     function showPageWithoutReload(pageId) {
+                                    if (currentUser && xoxoProfileCheckComplete && xoxoProfileRequired && String(pageId) === "discover") {
+                                    showRequiredProfileWelcome();
+                                    return;
+                                    }
                                     document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
                                     const page = document.getElementById(pageId);
                                     if (page) page.classList.add("active");
