@@ -6551,6 +6551,7 @@
 
                 let xoxoProfileCheckComplete = false;
                 let xoxoProfileRequired = false;
+                let xoxoProfileSetupInProgress = false;
 
                 function showRequiredProfileWelcome() {
                   if (!currentUser || !xoxoProfileCheckComplete || !xoxoProfileRequired) return;
@@ -6559,13 +6560,16 @@
                 }
 
                 function openRequiredProfileSetup() {
+                  xoxoProfileSetupInProgress = true;
                   const modal = document.getElementById("completeProfileModal");
                   if (modal) modal.classList.remove("active");
                   showPage("profile");
                   setTimeout(() => {
+                    const profileCard = document.getElementById("profileCard");
+                    if (profileCard) profileCard.scrollIntoView({ behavior: "smooth", block: "start" });
                     const usernameInput = document.getElementById("username");
                     if (usernameInput) usernameInput.focus({ preventScroll: true });
-                  }, 80);
+                  }, 180);
                 }
 
                 function showPage(pageId) {
@@ -6954,6 +6958,7 @@
                                     currentProfile = null;
                                     xoxoProfileCheckComplete = false;
                                     xoxoProfileRequired = false;
+                                    xoxoProfileSetupInProgress = false;
                                     const completeProfileModal = document.getElementById("completeProfileModal");
                                     if (completeProfileModal) completeProfileModal.classList.remove("active");
                                     savedPostIds = new Set();
@@ -7057,6 +7062,7 @@
                                     currentProfile = null;
                                     xoxoProfileCheckComplete = false;
                                     xoxoProfileRequired = false;
+                                    xoxoProfileSetupInProgress = false;
                                     const completeProfileModal = document.getElementById("completeProfileModal");
                                     if (completeProfileModal) completeProfileModal.classList.remove("active");
                                     savedPostIds = new Set();
@@ -7221,7 +7227,7 @@
                                     xoxoProfileCheckComplete = true;
                                     xoxoProfileRequired = true;
                                     clearProfileForm();
-                                    setTimeout(showRequiredProfileWelcome, 0);
+                                    if (!xoxoProfileSetupInProgress) setTimeout(showRequiredProfileWelcome, 0);
                                     return;
                                     }
                                     currentProfile =
