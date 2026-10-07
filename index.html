@@ -4833,7 +4833,7 @@
 .xoxo-admin-stat{padding:18px;border:1px solid var(--fh-border,#e3e7ef);border-radius:18px;background:var(--fh-surface,#fff);text-align:center}.xoxo-admin-stat.clickable{cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.xoxo-admin-stat.clickable:hover{transform:translateY(-2px);border-color:var(--fh-primary,#5865f2);box-shadow:var(--fh-shadow,0 8px 25px rgba(16,24,40,.08))}.xoxo-admin-stat.clickable:focus-visible{outline:3px solid color-mix(in srgb,var(--fh-primary,#5865f2) 28%,transparent);outline-offset:2px}
 .xoxo-admin-stat strong{display:block;font-size:30px}.xoxo-admin-stat span{color:var(--fh-muted,#667085);font-weight:700}
 .xoxo-admin-users-summary{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
-.xoxo-admin-summary-pill{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid var(--fh-border,#dfe3eb);border-radius:999px;background:var(--fh-surface,#fff);color:var(--fh-text,#172033);font-size:12px;font-weight:800}
+.xoxo-admin-summary-pill{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid var(--fh-border,#dfe3eb);border-radius:999px;background:var(--fh-surface,#fff);color:var(--fh-text,#172033);font-size:12px;font-weight:800}.xoxo-admin-summary-pill.clickable{cursor:pointer;transition:.18s ease}.xoxo-admin-summary-pill.clickable:hover{border-color:var(--fh-primary,#5865f2);color:var(--fh-primary,#5865f2)}.xoxo-admin-summary-pill.active{background:var(--fh-primary,#5865f2);border-color:var(--fh-primary,#5865f2);color:#fff}
 .xoxo-admin-profile-badge{display:inline-block;margin-top:7px;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:900}
 .xoxo-admin-profile-badge.complete{background:#dcfce7;color:#166534}
 .xoxo-admin-profile-badge.incomplete{background:#fef3c7;color:#92400e}
@@ -14449,6 +14449,13 @@ function openXoxoAdminOverviewSection(tab) {
 }
 function xoxoAdminDate(value){ if(!value)return "—"; const d=new Date(value); return Number.isNaN(d.getTime())?"—":d.toLocaleString(); }
 
+let xoxoAdminUserFilter = "all";
+
+function setXoxoAdminUserFilter(filter){
+  xoxoAdminUserFilter=filter||"all";
+  renderXoxoAdminUsers();
+}
+
 function renderXoxoAdminUsers(){
   const list=document.getElementById("xoxoAdminUsersList"); if(!list)return;
   const q=(document.getElementById("xoxoAdminUserSearch")?.value||"").trim().toLowerCase();
@@ -14483,20 +14490,27 @@ function renderXoxoAdminUsers(){
   ).size;
 
   const summary=`<div class="xoxo-admin-users-summary">
-    <span class="xoxo-admin-summary-pill">👥 ${total.toLocaleString()} Total Users</span>
-    <span class="xoxo-admin-summary-pill">✨ ${newToday.toLocaleString()} New Today</span>
-    <span class="xoxo-admin-summary-pill">✅ ${complete.toLocaleString()} Complete</span>
-    <span class="xoxo-admin-summary-pill">⚠️ ${incomplete.toLocaleString()} Incomplete</span>
-    <span class="xoxo-admin-summary-pill">🌎 ${countries.toLocaleString()} Countries</span>
+    <button type="button" class="xoxo-admin-summary-pill clickable${xoxoAdminUserFilter==="all"?" active":""}" onclick="setXoxoAdminUserFilter('all')">👥 ${total.toLocaleString()} Total Users</button>
+    <button type="button" class="xoxo-admin-summary-pill clickable${xoxoAdminUserFilter==="today"?" active":""}" onclick="setXoxoAdminUserFilter('today')">✨ ${newToday.toLocaleString()} New Today</button>
+    <button type="button" class="xoxo-admin-summary-pill clickable${xoxoAdminUserFilter==="complete"?" active":""}" onclick="setXoxoAdminUserFilter('complete')">✅ ${complete.toLocaleString()} Complete</button>
+    <button type="button" class="xoxo-admin-summary-pill clickable${xoxoAdminUserFilter==="incomplete"?" active":""}" onclick="setXoxoAdminUserFilter('incomplete')">⚠️ ${incomplete.toLocaleString()} Incomplete</button>
+    <button type="button" class="xoxo-admin-summary-pill clickable${xoxoAdminUserFilter==="countries"?" active":""}" onclick="setXoxoAdminUserFilter('countries')">🌎 ${countries.toLocaleString()} Countries</button>
   </div>`;
 
-  const rows=xoxoAdminUsers.filter(u=>!q||
-    String(u.username||"").toLowerCase().includes(q)||
-    String(u.email||"").toLowerCase().includes(q)||
-    String(u.country||"").toLowerCase().includes(q)||
-    String(u.approximate_country||"").toLowerCase().includes(q)||
-    String(u.ip_address||"").toLowerCase().includes(q)
-  );
+  const rows=xoxoAdminUsers.filter(u=>{
+    const matchesSearch=!q||
+      String(u.username||"").toLowerCase().includes(q)||
+      String(u.email||"").toLowerCase().includes(q)||
+      String(u.country||"").toLowerCase().includes(q)||
+      String(u.approximate_country||"").toLowerCase().includes(q)||
+      String(u.ip_address||"").toLowerCase().includes(q);
+    if(!matchesSearch)return false;
+    if(xoxoAdminUserFilter==="today")return isToday(u.created_at);
+    if(xoxoAdminUserFilter==="complete")return u.profile_complete===true;
+    if(xoxoAdminUserFilter==="incomplete")return u.profile_complete!==true;
+    if(xoxoAdminUserFilter==="countries")return !!String(u.country||u.approximate_country||"").trim();
+    return true;
+  });
 
   if(!rows.length){
     list.innerHTML=summary+'<div class="empty-state">No users found.</div>';
