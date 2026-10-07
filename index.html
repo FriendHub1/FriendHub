@@ -682,6 +682,13 @@
                                     font-size: 13px;
                                     color: #94a3b8;
                                     }
+                                    /* XOXO AVENUE — COMPLETE PROFILE ONBOARDING */
+                                    .xoxo-profile-required-modal { text-align:center; }
+                                    .xoxo-profile-required-icon { font-size:46px; margin-bottom:10px; }
+                                    .xoxo-profile-required-modal h2 { margin-bottom:8px; }
+                                    .xoxo-profile-required-modal p { color:#667085; margin-bottom:18px; line-height:1.55; }
+                                    .xoxo-profile-required-step { display:inline-block; margin-bottom:12px; padding:6px 11px; border-radius:999px; background:#eef0ff; color:#5865f2; font-size:12px; font-weight:800; }
+
                                     /* XOXO AVENUE OFFICIAL SOCIAL LINKS */
                                     .xoxo-footer-socials { display:flex; align-items:center; justify-content:flex-end; gap:18px; margin:16px 0 10px; }
                                     .xoxo-footer-social { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; color:#fff; opacity:.92; transition:transform .18s ease,opacity .18s ease; }
@@ -6096,6 +6103,15 @@
                                     </div>
                                     </div>
                                     </footer>
+                                    <div id="completeProfileModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="completeProfileTitle">
+                                    <div class="modal xoxo-profile-required-modal">
+                                    <div class="xoxo-profile-required-icon">💜</div>
+                                    <div class="xoxo-profile-required-step">Step 2 of 2</div>
+                                    <h2 id="completeProfileTitle">Welcome to XOXO Avenue!</h2>
+                                    <p>Your account is ready. Complete your profile before you start connecting with people on XOXO Avenue.</p>
+                                    <button type="button" class="btn btn-primary" style="width:100%;" onclick="openRequiredProfileSetup()">Complete My Profile 💜</button>
+                                    </div>
+                                    </div>
                                     <div id="authModal" class="modal-overlay">
                                     <div class="modal">
                                     <button
@@ -6533,7 +6549,30 @@
                   }
                 });
 
+                let xoxoProfileCheckComplete = false;
+                let xoxoProfileRequired = false;
+
+                function showRequiredProfileWelcome() {
+                  if (!currentUser || !xoxoProfileCheckComplete || !xoxoProfileRequired) return;
+                  const modal = document.getElementById("completeProfileModal");
+                  if (modal) modal.classList.add("active");
+                }
+
+                function openRequiredProfileSetup() {
+                  const modal = document.getElementById("completeProfileModal");
+                  if (modal) modal.classList.remove("active");
+                  showPage("profile");
+                  setTimeout(() => {
+                    const usernameInput = document.getElementById("username");
+                    if (usernameInput) usernameInput.focus({ preventScroll: true });
+                  }, 80);
+                }
+
                 function showPage(pageId) {
+                                    if (currentUser && xoxoProfileCheckComplete && xoxoProfileRequired && String(pageId) !== "profile" && String(pageId) !== "admin") {
+                                    showRequiredProfileWelcome();
+                                    return;
+                                    }
                                     if (xoxoIsAdmin && ["discover", "profile", "saved", "messages", "publicProfile"].includes(String(pageId))) {
                                     pageId = "admin";
                                     }
@@ -6913,6 +6952,10 @@
                                     stopDmUnreadRefresh();
                                     clearNotifications();
                                     currentProfile = null;
+                                    xoxoProfileCheckComplete = false;
+                                    xoxoProfileRequired = false;
+                                    const completeProfileModal = document.getElementById("completeProfileModal");
+                                    if (completeProfileModal) completeProfileModal.classList.remove("active");
                                     savedPostIds = new Set();
                                     currentDmUserId = null;
                                     currentDmUsername = "";
@@ -7012,6 +7055,10 @@
                                     await supabaseClient.auth.signOut();
                                     currentUser = null;
                                     currentProfile = null;
+                                    xoxoProfileCheckComplete = false;
+                                    xoxoProfileRequired = false;
+                                    const completeProfileModal = document.getElementById("completeProfileModal");
+                                    if (completeProfileModal) completeProfileModal.classList.remove("active");
                                     savedPostIds = new Set();
                                     stopNotificationRefresh();
                                     clearNotifications();
@@ -7171,11 +7218,18 @@
                                     }
                                     if (!data) {
                                     currentProfile = null;
+                                    xoxoProfileCheckComplete = true;
+                                    xoxoProfileRequired = true;
                                     clearProfileForm();
+                                    setTimeout(showRequiredProfileWelcome, 0);
                                     return;
                                     }
                                     currentProfile =
                                     data;
+                                    xoxoProfileCheckComplete = true;
+                                    xoxoProfileRequired = false;
+                                    const completeProfileModal = document.getElementById("completeProfileModal");
+                                    if (completeProfileModal) completeProfileModal.classList.remove("active");
                                     document.getElementById("username").value =
                                     data.username || "";
                                     updateUsernameChangeUI();
@@ -7462,6 +7516,10 @@
                                     }
                                     currentProfile =
                                     result.data;
+                                    xoxoProfileCheckComplete = true;
+                                    xoxoProfileRequired = false;
+                                    const completeProfileModal = document.getElementById("completeProfileModal");
+                                    if (completeProfileModal) completeProfileModal.classList.remove("active");
                                     invalidatePublicProfileCache(currentUser.id);
                                     selectedProfilePhoto = result.data?.profile_photo || savedProfilePhoto || null;
                                     selectedProfilePhotoFile = null;
