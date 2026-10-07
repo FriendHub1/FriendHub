@@ -6569,7 +6569,7 @@
                 }
 
                 function showPage(pageId) {
-                                    if (currentUser && xoxoProfileCheckComplete && xoxoProfileRequired && String(pageId) !== "profile" && String(pageId) !== "admin") {
+                                    if (currentUser && xoxoProfileCheckComplete && xoxoProfileRequired && String(pageId) === "discover") {
                                     showRequiredProfileWelcome();
                                     return;
                                     }
