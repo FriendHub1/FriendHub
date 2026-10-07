@@ -5400,6 +5400,16 @@
                                     class="message"
                                     style="margin-top:15px;"
                                     ></div>
+
+                                    <div id="xoxoDeleteAccountZone" style="margin-top:28px;padding-top:22px;border-top:1px solid #fecaca;">
+                                    <h3 style="color:#b91c1c;margin-bottom:7px;">Danger Zone</h3>
+                                    <p style="color:#667085;margin-bottom:14px;">
+                                    Permanently delete your XOXO Avenue account and account data. This cannot be undone.
+                                    </p>
+                                    <button type="button" class="btn btn-danger" onclick="openXoxoDeleteAccountModal()">
+                                    Delete Account
+                                    </button>
+                                    </div>
                                     </div>
 
                                     <div id="profileVisitorsCard" class="profile-visitors-card">
@@ -7100,6 +7110,133 @@ async function enforceXoxoSuspension() {
                                     }
                                     }
                                     }
+                                    function openXoxoDeleteAccountModal() {
+                                    if (!currentUser) {
+                                    openAuth("login");
+                                    return;
+                                    }
+                                    const modal = document.getElementById("xoxoDeleteAccountModal");
+                                    const input = document.getElementById("xoxoDeleteAccountConfirm");
+                                    const message = document.getElementById("xoxoDeleteAccountMessage");
+                                    const button = document.getElementById("xoxoDeleteAccountButton");
+                                    if (input) input.value = "";
+                                    if (message) {
+                                    message.textContent = "";
+                                    message.className = "message";
+                                    }
+                                    if (button) {
+                                    button.disabled = false;
+                                    button.textContent = "Permanently Delete Account";
+                                    }
+                                    if (modal) modal.classList.add("active");
+                                    setTimeout(() => input?.focus(), 50);
+                                    }
+
+                                    function closeXoxoDeleteAccountModal() {
+                                    const modal = document.getElementById("xoxoDeleteAccountModal");
+                                    const button = document.getElementById("xoxoDeleteAccountButton");
+                                    if (button?.disabled) return;
+                                    if (modal) modal.classList.remove("active");
+                                    }
+
+                                    function showXoxoDeleteAccountMessage(text, type = "error") {
+                                    const message = document.getElementById("xoxoDeleteAccountMessage");
+                                    if (!message) return;
+                                    message.textContent = text;
+                                    message.className = `message show ${type}`;
+                                    }
+
+                                    async function confirmXoxoDeleteAccount() {
+                                    const input = document.getElementById("xoxoDeleteAccountConfirm");
+                                    const button = document.getElementById("xoxoDeleteAccountButton");
+                                    const confirmation = String(input?.value || "").trim();
+
+                                    if (confirmation !== "DELETE") {
+                                    showXoxoDeleteAccountMessage("Type DELETE exactly to confirm permanent account deletion.");
+                                    return;
+                                    }
+
+                                    const { data: sessionData, error: sessionError } =
+                                    await supabaseClient.auth.getSession();
+                                    const session = sessionData?.session;
+
+                                    if (sessionError || !session?.access_token) {
+                                    showXoxoDeleteAccountMessage("Your session has expired. Please log in again.");
+                                    return;
+                                    }
+
+                                    if (button) {
+                                    button.disabled = true;
+                                    button.textContent = "Deleting account...";
+                                    }
+
+                                    try {
+                                    const response = await fetch("/api/delete-account", {
+                                    method: "POST",
+                                    headers: {
+                                    Authorization: `Bearer ${session.access_token}`,
+                                    "Content-Type": "application/json"
+                                    },
+                                    body: JSON.stringify({ confirmation: "DELETE" })
+                                    });
+
+                                    let result = {};
+                                    try {
+                                    result = await response.json();
+                                    } catch {}
+
+                                    if (!response.ok || !result?.ok) {
+                                    throw new Error(result?.error || "Account deletion failed.");
+                                    }
+
+                                    /*
+                                     * The server has already deleted the Auth user.
+                                     * Clear local Supabase session data without making
+                                     * another server-side sign-out request.
+                                     */
+                                    try {
+                                    await supabaseClient.auth.signOut({ scope: "local" });
+                                    } catch (signOutError) {
+                                    console.warn("Local sign out after account deletion failed:", signOutError);
+                                    }
+
+                                    currentUser = null;
+                                    currentProfile = null;
+                                    xoxoProfileCheckComplete = false;
+                                    xoxoProfileRequired = false;
+                                    xoxoProfileSetupInProgress = false;
+                                    savedPostIds = new Set();
+
+                                    stopNotificationRefresh();
+                                    clearNotifications();
+                                    stopDmUnreadRefresh();
+                                    stopFriendHubPresence();
+                                    stopDmBuzzRealtime();
+                                    stopDmPresenceRefresh();
+                                    stopDmChatRefresh();
+
+                                    const modal = document.getElementById("xoxoDeleteAccountModal");
+                                    if (modal) modal.classList.remove("active");
+
+                                    updateAuthUI();
+                                    updateProfileVisibility();
+                                    posts = [...samplePosts];
+                                    renderPosts();
+                                    showPage("home");
+
+                                    alert("Your XOXO Avenue account has been permanently deleted. 💜");
+                                    } catch (error) {
+                                    console.error("XOXO account deletion failed:", error);
+                                    showXoxoDeleteAccountMessage(
+                                    error?.message || "We could not delete your account. Please try again."
+                                    );
+                                    if (button) {
+                                    button.disabled = false;
+                                    button.textContent = "Permanently Delete Account";
+                                    }
+                                    }
+                                    }
+
                                     async function logout() {
                                     await supabaseClient.auth.signOut();
                                     currentUser = null;
@@ -14372,6 +14509,29 @@ async function openPublicProfile(userId) {
                   if(button)button.setAttribute("aria-expanded","false");
                 });
                 </script>
+
+                <div id="xoxoDeleteAccountModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="xoxoDeleteAccountTitle">
+                  <div class="modal" style="max-width:500px;">
+                    <button type="button" class="modal-close" onclick="closeXoxoDeleteAccountModal()" aria-label="Close">&times;</button>
+                    <h2 id="xoxoDeleteAccountTitle" style="color:#b91c1c;">Delete Account</h2>
+                    <p class="modal-subtitle" style="line-height:1.55;">
+                      This permanently deletes your XOXO Avenue account and account data. This action cannot be undone.
+                    </p>
+                    <div style="padding:14px;border-radius:12px;background:#fff1f2;border:1px solid #fecdd3;margin-bottom:16px;color:#881337;">
+                      <strong>Are you absolutely sure?</strong><br>
+                      Type <strong>DELETE</strong> below to confirm.
+                    </div>
+                    <div class="form-group">
+                      <label for="xoxoDeleteAccountConfirm">Confirmation</label>
+                      <input id="xoxoDeleteAccountConfirm" type="text" autocomplete="off" placeholder="Type DELETE">
+                    </div>
+                    <div id="xoxoDeleteAccountMessage" class="message" style="margin-bottom:12px;"></div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+                      <button type="button" class="btn btn-secondary" onclick="closeXoxoDeleteAccountModal()">Cancel</button>
+                      <button type="button" class="btn btn-danger" id="xoxoDeleteAccountButton" onclick="confirmXoxoDeleteAccount()">Permanently Delete Account</button>
+                    </div>
+                  </div>
+                </div>
 
                 <div id="profilePhotoViewer" class="profile-photo-viewer" onclick="closeProfilePhotoViewer(event)" aria-hidden="true"><button type="button" class="profile-photo-viewer-close" onclick="closeProfilePhotoViewer(event,true)" aria-label="Close">&times;</button><img id="profilePhotoViewerImage" class="profile-photo-viewer-image" src="" alt="Profile photo" onclick="event.stopPropagation()"></div>
 
