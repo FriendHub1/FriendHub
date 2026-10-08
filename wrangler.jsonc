@@ -11,8 +11,6 @@
     "not_found_handling": "single-page-application"
   },
   "vars": {
-    "XOXO_ACTIVITY_EMAILS_ENABLED": "true",
-    "XOXO_ACTIVITY_TEST_EMAIL": "paredesarixon@gmail.com",
-    "XOXO_ACTIVITY_TEST_USER_ID": "b546d772-0063-4bb5-a490-087f9e1b5124"
+    "XOXO_ACTIVITY_EMAILS_ENABLED": "true"
   }
 }
