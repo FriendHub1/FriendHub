@@ -2388,6 +2388,118 @@ async function handleDeleteAccount(request, env) {
   return jsonResponse({ok:true,deleted:true,farewell_email_sent:farewellEmailSent});
 }
 
+
+/*
+ * ==========================================
+ * ACTIVITY EMAILS - SAFE STAGED DELIVERY
+ * ==========================================
+ * Sending stays OFF until presence heartbeats have been deployed
+ * and XOXO_ACTIVITY_EMAILS_ENABLED is explicitly set to "true".
+ */
+const XOXO_ACTIVITY_COOLDOWN_MS = 30 * 60 * 1000;
+const XOXO_OFFLINE_AFTER_MS = 3 * 60 * 1000;
+const XOXO_ACTIVITY_BATCH_SIZE = 30;
+
+async function xoxoRestGet(env, table, query) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+    headers: xoxoServiceHeaders(env),
+  });
+  if (!r.ok) throw new Error(`${table} lookup failed: ${r.status} ${await r.text()}`);
+  return r.json();
+}
+
+async function xoxoMarkActivityDone(env, id) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/xoxo_email_notification_queue?id=eq.${encodeURIComponent(id)}&processed_at=is.null`, {
+    method: 'PATCH',
+    headers: xoxoServiceHeaders(env, {Prefer: 'return=minimal'}),
+    body: JSON.stringify({processed_at: new Date().toISOString()}),
+  });
+  if (!r.ok) throw new Error(`Notification mark failed: ${r.status}`);
+}
+
+async function handleActivityPresenceHeartbeat(request, env) {
+  if (request.method !== 'POST') return jsonResponse({ok:false,error:'Method not allowed'},405);
+  if (!env.SUPABASE_SECRET_KEY) return jsonResponse({ok:false,error:'Server configuration error'},500);
+  const user = await getAuthenticatedUser(request);
+  if (!user?.id) return jsonResponse({ok:false,error:'Unauthorized'},401);
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/user_presence?on_conflict=user_id`, {
+    method:'POST',
+    headers:xoxoServiceHeaders(env, {Prefer:'resolution=merge-duplicates,return=minimal'}),
+    body:JSON.stringify({user_id:user.id,last_active_at:new Date().toISOString()}),
+  });
+  if (!r.ok) {
+    console.error('XOXO activity heartbeat failed',r.status,await r.text());
+    return jsonResponse({ok:false,error:'Presence update failed'},502);
+  }
+  return jsonResponse({ok:true});
+}
+
+function xoxoActivityEmailCopy(type) {
+  const copy = {
+    message: ['💬 New message on XOXO Avenue', 'You have a new private message.', 'Tienes un nuevo mensaje privado.'],
+    like: ['❤️ New like on XOXO Avenue', 'Someone liked your post.', 'Alguien dio Me gusta a tu publicación.'],
+    comment: ['💭 New comment on XOXO Avenue', 'Someone commented on your post.', 'Alguien comentó tu publicación.'],
+    follow: ['👥 New follower on XOXO Avenue', 'Someone started following you.', 'Alguien comenzó a seguirte.'],
+  };
+  return copy[type] || null;
+}
+
+async function handleActivityEmailQueue(env) {
+  // Explicit opt-in at deployment level. No emails until heartbeat support
+  // is installed on the site and this flag is enabled intentionally.
+  if (env.XOXO_ACTIVITY_EMAILS_ENABLED !== 'true') return {ok:true,disabled:true};
+  if (!env.SUPABASE_SECRET_KEY || !env.RESEND_API_KEY) return {ok:false,error:'Missing configuration'};
+
+  const rows = await xoxoRestGet(env,'xoxo_email_notification_queue',
+    `select=id,recipient_id,actor_id,notification_type,created_at&processed_at=is.null&order=created_at.asc&limit=${XOXO_ACTIVITY_BATCH_SIZE}`);
+  let sent=0, skipped=0;
+  for (const item of rows) {
+    try {
+      const typeCopy = xoxoActivityEmailCopy(item.notification_type);
+      if (!typeCopy || !item.recipient_id) {
+        await xoxoMarkActivityDone(env,item.id); skipped++; continue;
+      }
+      const userId = encodeURIComponent(item.recipient_id);
+      const [prefs,presence,recent] = await Promise.all([
+        xoxoRestGet(env,'xoxo_email_notification_preferences',`select=email_enabled&user_id=eq.${userId}&limit=1`),
+        xoxoRestGet(env,'user_presence',`select=last_active_at&user_id=eq.${userId}&limit=1`),
+        xoxoRestGet(env,'xoxo_email_notification_queue',`select=id&recipient_id=eq.${userId}&processed_at=gte.${encodeURIComponent(new Date(Date.now()-XOXO_ACTIVITY_COOLDOWN_MS).toISOString())}&limit=1`),
+      ]);
+      if (prefs[0]?.email_enabled === false || recent.length) {
+        await xoxoMarkActivityDone(env,item.id); skipped++; continue;
+      }
+      // Fail closed when presence is missing or invalid. Never guess offline.
+      const lastActive=Date.parse(presence[0]?.last_active_at || '');
+      if (!Number.isFinite(lastActive)) {
+        // Leave queued for later; do not send until a heartbeat exists.
+        continue;
+      }
+      if (Date.now()-lastActive < XOXO_OFFLINE_AFTER_MS) {
+        await xoxoMarkActivityDone(env,item.id); skipped++; continue;
+      }
+      const authUser = await getAuthUserById(item.recipient_id,env);
+      if (!authUser?.email || !authUser.email_confirmed_at) {
+        await xoxoMarkActivityDone(env,item.id); skipped++; continue;
+      }
+      const [subject,en,es]=typeCopy;
+      const textBody=`${en}\n\n${es}\n\nOpen XOXO Avenue / Abrir XOXO Avenue:\nhttps://xoxoavenue.com/\n\nXOXO Avenue 💜`;
+      const htmlBody=`<div style="font-family:Arial,sans-serif;line-height:1.6;max-width:560px;margin:auto"><h2>${escapeHtml(subject)}</h2><p>${escapeHtml(en)}</p><p>${escapeHtml(es)}</p><p><a href="https://xoxoavenue.com/">Open XOXO Avenue / Abrir XOXO Avenue</a></p><p>XOXO Avenue 💜</p></div>`;
+      const result=await sendResendEmail(env,{
+        from:'XOXO Avenue <support@xoxoavenue.com>',to:[authUser.email],subject,text:textBody,html:htmlBody,
+      });
+      if (!result.ok) {
+        console.error('XOXO activity email send failed',item.id);
+        continue;
+      }
+      await xoxoMarkActivityDone(env,item.id);
+      sent++;
+    } catch (err) {
+      console.error('XOXO activity email processing failed',item.id,String(err));
+    }
+  }
+  return {ok:true,checked:rows.length,sent,skipped};
+}
+
 /*
  * ==========================================
  * MAIN WORKER
@@ -2402,9 +2514,10 @@ export default {
       return;
     }
 
-    // The new five-minute schedule is reserved for email notifications.
-    // Do not process the queue until the delivery safeguards are implemented.
+    // Safe staged queue processing: disabled until presence heartbeat is live
+    // and XOXO_ACTIVITY_EMAILS_ENABLED is explicitly enabled.
     if (controller.cron === "*/5 * * * *") {
+      ctx.waitUntil(handleActivityEmailQueue(env));
       return;
     }
   },
@@ -2417,6 +2530,11 @@ export default {
       new URL(
         request.url
       );
+
+    if (url.pathname === "/api/activity-presence-heartbeat") {
+      return handleActivityPresenceHeartbeat(request, env);
+    }
+
 
     /*
      * XML SITEMAP
