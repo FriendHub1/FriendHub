@@ -7110,131 +7110,140 @@ async function enforceXoxoSuspension() {
                                     }
                                     }
                                     }
+                                    let xoxoDeletionEmailVerified = false;
+
                                     function openXoxoDeleteAccountModal() {
-                                    if (!currentUser) {
-                                    openAuth("login");
-                                    return;
-                                    }
-                                    const modal = document.getElementById("xoxoDeleteAccountModal");
-                                    const input = document.getElementById("xoxoDeleteAccountConfirm");
-                                    const message = document.getElementById("xoxoDeleteAccountMessage");
-                                    const button = document.getElementById("xoxoDeleteAccountButton");
-                                    if (input) input.value = "";
-                                    if (message) {
-                                    message.textContent = "";
-                                    message.className = "message";
-                                    }
-                                    if (button) {
-                                    button.disabled = false;
-                                    button.textContent = "Permanently Delete Account";
-                                    }
-                                    if (modal) modal.classList.add("active");
-                                    setTimeout(() => input?.focus(), 50);
+                                      if (!currentUser) { openAuth("login"); return; }
+                                      xoxoDeletionEmailVerified = false;
+                                      for (const id of ["xoxoDeleteAccountConfirm","xoxoDeleteAccountEmailCode"]) {
+                                        const field = document.getElementById(id);
+                                        if (field) field.value = "";
+                                      }
+                                      const button = document.getElementById("xoxoDeleteAccountButton");
+                                      if (button) { button.disabled = false; button.textContent = "Permanently Delete Account"; }
+                                      const requestButton = document.getElementById("xoxoDeleteRequestCodeButton");
+                                      if (requestButton) { requestButton.disabled = false; requestButton.textContent = "Send verification code"; }
+                                      const verifyButton = document.getElementById("xoxoDeleteVerifyCodeButton");
+                                      if (verifyButton) { verifyButton.disabled = false; verifyButton.textContent = "Verify code"; }
+                                      const msg = document.getElementById("xoxoDeleteAccountMessage");
+                                      if (msg) { msg.textContent = ""; msg.className = "message"; }
+                                      document.getElementById("xoxoDeleteAccountModal")?.classList.add("active");
                                     }
 
                                     function closeXoxoDeleteAccountModal() {
-                                    const modal = document.getElementById("xoxoDeleteAccountModal");
-                                    const button = document.getElementById("xoxoDeleteAccountButton");
-                                    if (button?.disabled) return;
-                                    if (modal) modal.classList.remove("active");
+                                      const button = document.getElementById("xoxoDeleteAccountButton");
+                                      const request = document.getElementById("xoxoDeleteRequestCodeButton");
+                                      const verify = document.getElementById("xoxoDeleteVerifyCodeButton");
+                                      if (button?.disabled || request?.disabled || verify?.disabled) return;
+                                      document.getElementById("xoxoDeleteAccountModal")?.classList.remove("active");
+                                      xoxoDeletionEmailVerified = false;
                                     }
 
                                     function showXoxoDeleteAccountMessage(text, type = "error") {
-                                    const message = document.getElementById("xoxoDeleteAccountMessage");
-                                    if (!message) return;
-                                    message.textContent = text;
-                                    message.className = `message show ${type}`;
+                                      const message = document.getElementById("xoxoDeleteAccountMessage");
+                                      if (!message) return;
+                                      message.textContent = text;
+                                      message.className = `message show ${type}`;
+                                    }
+
+                                    async function xoxoDeletionApi(path, body = {}) {
+                                      const {data, error} = await supabaseClient.auth.getSession();
+                                      if (error || !data?.session?.access_token) {
+                                        throw new Error("Your session has expired. Please log in again.");
+                                      }
+                                      const response = await fetch(path, {
+                                        method: "POST",
+                                        headers: {
+                                          Authorization: `Bearer ${data.session.access_token}`,
+                                          "Content-Type": "application/json"
+                                        },
+                                        body: JSON.stringify(body)
+                                      });
+                                      let result = {};
+                                      try { result = await response.json(); } catch {}
+                                      if (!response.ok || !result?.ok) {
+                                        throw new Error(result?.error || "Request failed. Please try again.");
+                                      }
+                                      return result;
+                                    }
+
+                                    async function xoxoRequestDeleteEmailCode() {
+                                      const button = document.getElementById("xoxoDeleteRequestCodeButton");
+                                      if (button) { button.disabled = true; button.textContent = "Sending..."; }
+                                      try {
+                                        await xoxoDeletionApi("/api/delete-account/request-code");
+                                        xoxoDeletionEmailVerified = false;
+                                        showXoxoDeleteAccountMessage("A 6-digit code was sent to your registered email. It expires in 10 minutes. / Enviamos un código de 6 dígitos a tu correo. Caduca en 10 minutos.", "success");
+                                      } catch (error) {
+                                        showXoxoDeleteAccountMessage(error?.message || "Could not send the code.");
+                                      } finally {
+                                        if (button) { button.disabled = false; button.textContent = "Send verification code"; }
+                                      }
+                                    }
+
+                                    async function xoxoVerifyDeleteEmailCode() {
+                                      const code = String(document.getElementById("xoxoDeleteAccountEmailCode")?.value || "").trim();
+                                      if (!/^\d{6}$/.test(code)) {
+                                        showXoxoDeleteAccountMessage("Enter the 6-digit email code. / Introduce el código de 6 dígitos.");
+                                        return;
+                                      }
+                                      const button = document.getElementById("xoxoDeleteVerifyCodeButton");
+                                      if (button) { button.disabled = true; button.textContent = "Verifying..."; }
+                                      try {
+                                        await xoxoDeletionApi("/api/delete-account/verify-code", {code});
+                                        xoxoDeletionEmailVerified = true;
+                                        showXoxoDeleteAccountMessage("Email verified. Type DELETE and confirm to permanently delete your account. / Correo verificado. Escribe DELETE y confirma para eliminar tu cuenta.", "success");
+                                      } catch (error) {
+                                        xoxoDeletionEmailVerified = false;
+                                        showXoxoDeleteAccountMessage(error?.message || "Code verification failed.");
+                                      } finally {
+                                        if (button) { button.disabled = false; button.textContent = "Verify code"; }
+                                      }
                                     }
 
                                     async function confirmXoxoDeleteAccount() {
-                                    const input = document.getElementById("xoxoDeleteAccountConfirm");
-                                    const button = document.getElementById("xoxoDeleteAccountButton");
-                                    const confirmation = String(input?.value || "").trim();
-
-                                    if (confirmation !== "DELETE") {
-                                    showXoxoDeleteAccountMessage("Type DELETE exactly to confirm permanent account deletion.");
-                                    return;
-                                    }
-
-                                    const { data: sessionData, error: sessionError } =
-                                    await supabaseClient.auth.getSession();
-                                    const session = sessionData?.session;
-
-                                    if (sessionError || !session?.access_token) {
-                                    showXoxoDeleteAccountMessage("Your session has expired. Please log in again.");
-                                    return;
-                                    }
-
-                                    if (button) {
-                                    button.disabled = true;
-                                    button.textContent = "Deleting account...";
-                                    }
-
-                                    try {
-                                    const response = await fetch("/api/delete-account", {
-                                    method: "POST",
-                                    headers: {
-                                    Authorization: `Bearer ${session.access_token}`,
-                                    "Content-Type": "application/json"
-                                    },
-                                    body: JSON.stringify({ confirmation: "DELETE" })
-                                    });
-
-                                    let result = {};
-                                    try {
-                                    result = await response.json();
-                                    } catch {}
-
-                                    if (!response.ok || !result?.ok) {
-                                    throw new Error(result?.error || "Account deletion failed.");
-                                    }
-
-                                    /*
-                                     * The server has already deleted the Auth user.
-                                     * Clear local Supabase session data without making
-                                     * another server-side sign-out request.
-                                     */
-                                    try {
-                                    await supabaseClient.auth.signOut({ scope: "local" });
-                                    } catch (signOutError) {
-                                    console.warn("Local sign out after account deletion failed:", signOutError);
-                                    }
-
-                                    currentUser = null;
-                                    currentProfile = null;
-                                    xoxoProfileCheckComplete = false;
-                                    xoxoProfileRequired = false;
-                                    xoxoProfileSetupInProgress = false;
-                                    savedPostIds = new Set();
-
-                                    stopNotificationRefresh();
-                                    clearNotifications();
-                                    stopDmUnreadRefresh();
-                                    stopFriendHubPresence();
-                                    stopDmBuzzRealtime();
-                                    stopDmPresenceRefresh();
-                                    stopDmChatRefresh();
-
-                                    const modal = document.getElementById("xoxoDeleteAccountModal");
-                                    if (modal) modal.classList.remove("active");
-
-                                    updateAuthUI();
-                                    updateProfileVisibility();
-                                    posts = [...samplePosts];
-                                    renderPosts();
-                                    showPage("home");
-
-                                    alert("Your XOXO Avenue account has been permanently deleted. 💜");
-                                    } catch (error) {
-                                    console.error("XOXO account deletion failed:", error);
-                                    showXoxoDeleteAccountMessage(
-                                    error?.message || "We could not delete your account. Please try again."
-                                    );
-                                    if (button) {
-                                    button.disabled = false;
-                                    button.textContent = "Permanently Delete Account";
-                                    }
-                                    }
+                                      const confirmation = String(document.getElementById("xoxoDeleteAccountConfirm")?.value || "").trim();
+                                      if (!xoxoDeletionEmailVerified) {
+                                        showXoxoDeleteAccountMessage("Verify your email code first. / Primero verifica el código de tu correo.");
+                                        return;
+                                      }
+                                      if (confirmation !== "DELETE") {
+                                        showXoxoDeleteAccountMessage("Type DELETE exactly to confirm permanent account deletion.");
+                                        return;
+                                      }
+                                      const button = document.getElementById("xoxoDeleteAccountButton");
+                                      if (button) { button.disabled = true; button.textContent = "Deleting account..."; }
+                                      try {
+                                        await xoxoDeletionApi("/api/delete-account", {confirmation:"DELETE"});
+                                        try { await supabaseClient.auth.signOut({scope:"local"}); }
+                                        catch (error) { console.warn("Local sign out failed:",error); }
+                                        currentUser = null;
+                                        currentProfile = null;
+                                        xoxoProfileCheckComplete = false;
+                                        xoxoProfileRequired = false;
+                                        xoxoProfileSetupInProgress = false;
+                                        savedPostIds = new Set();
+                                        stopNotificationRefresh();
+                                        clearNotifications();
+                                        stopDmUnreadRefresh();
+                                        stopFriendHubPresence();
+                                        stopDmBuzzRealtime();
+                                        stopDmPresenceRefresh();
+                                        stopDmChatRefresh();
+                                        document.getElementById("xoxoDeleteAccountModal")?.classList.remove("active");
+                                        xoxoDeletionEmailVerified = false;
+                                        updateAuthUI();
+                                        updateProfileVisibility();
+                                        posts = [...samplePosts];
+                                        renderPosts();
+                                        showPage("home");
+                                        alert("Your XOXO Avenue account has been permanently deleted. 💜");
+                                      } catch (error) {
+                                        console.error("XOXO account deletion failed:",error);
+                                        showXoxoDeleteAccountMessage(error?.message || "We could not delete your account.");
+                                      } finally {
+                                        if (button) { button.disabled = false; button.textContent = "Permanently Delete Account"; }
+                                      }
                                     }
 
                                     async function logout() {
@@ -14524,6 +14533,14 @@ async function openPublicProfile(userId) {
                     <div class="form-group">
                       <label for="xoxoDeleteAccountConfirm">Confirmation</label>
                       <input id="xoxoDeleteAccountConfirm" type="text" autocomplete="off" placeholder="Type DELETE">
+                    </div>
+                    <div class="form-group">
+                      <label for="xoxoDeleteAccountEmailCode">Email verification code / Código de verificación</label>
+                      <input id="xoxoDeleteAccountEmailCode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code / Código de 6 dígitos">
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+                      <button type="button" class="btn btn-secondary" id="xoxoDeleteRequestCodeButton" onclick="xoxoRequestDeleteEmailCode()">Send verification code</button>
+                      <button type="button" class="btn btn-secondary" id="xoxoDeleteVerifyCodeButton" onclick="xoxoVerifyDeleteEmailCode()">Verify code</button>
                     </div>
                     <div id="xoxoDeleteAccountMessage" class="message" style="margin-bottom:12px;"></div>
                     <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
