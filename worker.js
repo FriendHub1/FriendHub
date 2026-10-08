@@ -2448,12 +2448,21 @@ async function handleActivityEmailQueue(env) {
   // Explicit opt-in at deployment level. No emails until heartbeat support
   // is installed on the site and this flag is enabled intentionally.
   if (env.XOXO_ACTIVITY_EMAILS_ENABLED !== 'true') return {ok:true,disabled:true};
+  // Mandatory recipient allowlist: without both values, no activity emails.
+  const testUserId = String(env.XOXO_ACTIVITY_TEST_USER_ID || '').trim().toLowerCase();
+  const testEmail = String(env.XOXO_ACTIVITY_TEST_EMAIL || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{8}-[0-9a-f-]{27,36}$/.test(testUserId) || !testEmail || !testEmail.includes('@')) {
+    console.log('XOXO activity emails blocked: test recipient configuration missing');
+    return {ok:true,blocked:true,reason:'Test recipient not configured'};
+  }
   if (!env.SUPABASE_SECRET_KEY || !env.RESEND_API_KEY) return {ok:false,error:'Missing configuration'};
 
   const rows = await xoxoRestGet(env,'xoxo_email_notification_queue',
     `select=id,recipient_id,actor_id,notification_type,created_at&processed_at=is.null&order=created_at.asc&limit=${XOXO_ACTIVITY_BATCH_SIZE}`);
   let sent=0, skipped=0;
   for (const item of rows) {
+    // Leave all other users' queue items untouched during the test.
+    if (String(item.recipient_id || '').toLowerCase() !== testUserId) continue;
     try {
       const typeCopy = xoxoActivityEmailCopy(item.notification_type);
       if (!typeCopy || !item.recipient_id) {
@@ -2480,6 +2489,11 @@ async function handleActivityEmailQueue(env) {
       const authUser = await getAuthUserById(item.recipient_id,env);
       if (!authUser?.email || !authUser.email_confirmed_at) {
         await xoxoMarkActivityDone(env,item.id); skipped++; continue;
+      }
+      // Second independent guard immediately before calling Resend.
+      if (String(authUser.email).trim().toLowerCase() !== testEmail) {
+        console.error('XOXO activity test email mismatch; email blocked',item.id);
+        continue;
       }
       const [subject,en,es]=typeCopy;
       const textBody=`${en}\n\n${es}\n\nOpen XOXO Avenue / Abrir XOXO Avenue:\nhttps://xoxoavenue.com/\n\nXOXO Avenue 💜`;
