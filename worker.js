@@ -2408,11 +2408,11 @@ async function xoxoRestGet(env, table, query) {
   return r.json();
 }
 
-async function xoxoMarkActivityDone(env, id) {
+async function xoxoMarkActivityDone(env, id, emailSent = false) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/xoxo_email_notification_queue?id=eq.${encodeURIComponent(id)}&processed_at=is.null`, {
     method: 'PATCH',
     headers: xoxoServiceHeaders(env, {Prefer: 'return=minimal'}),
-    body: JSON.stringify({processed_at: new Date().toISOString()}),
+    body: JSON.stringify(emailSent ? {processed_at: new Date().toISOString(), sent_at: new Date().toISOString()} : {processed_at: new Date().toISOString()}),
   });
   if (!r.ok) throw new Error(`Notification mark failed: ${r.status}`);
 }
@@ -2472,7 +2472,7 @@ async function handleActivityEmailQueue(env) {
       const [prefs,presence,recent] = await Promise.all([
         xoxoRestGet(env,'xoxo_email_notification_preferences',`select=email_enabled&user_id=eq.${userId}&limit=1`),
         xoxoRestGet(env,'user_presence',`select=last_active_at&user_id=eq.${userId}&limit=1`),
-        xoxoRestGet(env,'xoxo_email_notification_queue',`select=id&recipient_id=eq.${userId}&processed_at=gte.${encodeURIComponent(new Date(Date.now()-XOXO_ACTIVITY_COOLDOWN_MS).toISOString())}&limit=1`),
+        xoxoRestGet(env,'xoxo_email_notification_queue',`select=id&recipient_id=eq.${userId}&sent_at=gte.${encodeURIComponent(new Date(Date.now()-XOXO_ACTIVITY_COOLDOWN_MS).toISOString())}&limit=1`),
       ]);
       if (prefs[0]?.email_enabled === false || recent.length) {
         await xoxoMarkActivityDone(env,item.id); skipped++; continue;
@@ -2505,7 +2505,7 @@ async function handleActivityEmailQueue(env) {
         console.error('XOXO activity email send failed',item.id);
         continue;
       }
-      await xoxoMarkActivityDone(env,item.id);
+      await xoxoMarkActivityDone(env,item.id,true);
       sent++;
     } catch (err) {
       console.error('XOXO activity email processing failed',item.id,String(err));
