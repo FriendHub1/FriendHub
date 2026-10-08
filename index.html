@@ -10181,6 +10181,25 @@ async function openPublicProfile(userId) {
                                     );
                                     if (error) console.error("Presence update error:", error);
 
+                                    // Keep the Worker informed while this signed-in tab is visible.
+                                    // Email activity notifications remain disabled server-side until approved.
+                                    try {
+                                    if (currentUser && document.visibilityState === "visible") {
+                                    const { data: heartbeatSession } = await supabaseClient.auth.getSession();
+                                    const heartbeatToken = heartbeatSession?.session?.access_token;
+                                    if (heartbeatToken) {
+                                    const heartbeatResponse = await fetch("/api/activity-presence-heartbeat", {
+                                    method: "POST",
+                                    headers: { Authorization: `Bearer ${heartbeatToken}` },
+                                    cache: "no-store"
+                                    });
+                                    if (!heartbeatResponse.ok) console.warn("Activity heartbeat:", heartbeatResponse.status);
+                                    }
+                                    }
+                                    } catch (heartbeatError) {
+                                    console.warn("Activity heartbeat unavailable:", heartbeatError);
+                                    }
+
                                     if (!xoxoPresenceLocationSent) {
                                     try {
                                     const { data: sessionData } = await supabaseClient.auth.getSession();
