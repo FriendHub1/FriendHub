@@ -2475,7 +2475,9 @@ async function handleActivityEmailQueue(env) {
         continue;
       }
       if (Date.now()-lastActive < XOXO_OFFLINE_AFTER_MS) {
-        await xoxoMarkActivityDone(env,item.id); skipped++; continue;
+        // Keep the notification pending while the recipient is online.
+        // A later scheduled run can send it after the offline threshold.
+        continue;
       }
       const authUser = await getAuthUserById(item.recipient_id,env);
       if (!authUser?.email || !authUser.email_confirmed_at) {
