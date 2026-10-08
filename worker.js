@@ -2396,7 +2396,17 @@ async function handleDeleteAccount(request, env) {
 
 export default {
   async scheduled(controller, env, ctx) {
-    ctx.waitUntil(handleProfileReminders(env));
+    // Keep existing profile reminders on the original hourly schedule only.
+    if (controller.cron === "0 * * * *") {
+      ctx.waitUntil(handleProfileReminders(env));
+      return;
+    }
+
+    // The new five-minute schedule is reserved for email notifications.
+    // Do not process the queue until the delivery safeguards are implemented.
+    if (controller.cron === "*/5 * * * *") {
+      return;
+    }
   },
 
   async fetch(
