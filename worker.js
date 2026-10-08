@@ -2243,156 +2243,149 @@ async function handleProfileReminders(env) {
  * ==========================================
  */
 
-async function handleDeleteAccount(request, env) {
-  if (request.method !== "POST") {
-    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
-  }
+const XOXO_DELETE_CODE_TTL_MINUTES = 10;
+const XOXO_DELETE_CODE_COOLDOWN_SECONDS = 90;
 
-  if (!env.SUPABASE_SECRET_KEY || !env.RESEND_API_KEY) {
-    console.error("XOXO delete account: required server secrets are missing");
-    return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
-  }
+function xoxoServiceHeaders(env, extra = {}) {
+  return {
+    apikey: env.SUPABASE_SECRET_KEY,
+    Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+    "Content-Type": "application/json",
+    "Accept-Profile": "public",
+    "Content-Profile": "public",
+    ...extra,
+  };
+}
 
-  const signedInUser = await getAuthenticatedUser(request);
-
-  if (!signedInUser?.id) {
-    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
-  }
-
-  const userId = String(signedInUser.id).trim();
-  const recipient = String(signedInUser.email || "").trim();
-
-  /*
-   * Clean the member's XOXO Avenue data first.
-   * This RPC is executable only by service_role and also
-   * refuses to delete an administrator account.
-   */
-  const cleanupResponse = await fetch(
-    `${SUPABASE_URL}/rest/v1/rpc/xoxo_delete_account_data`,
-    {
-      method: "POST",
-      headers: {
-        apikey: env.SUPABASE_SECRET_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
-        "Content-Type": "application/json",
-        "Accept-Profile": "public",
-        "Content-Profile": "public",
-      },
-      body: JSON.stringify({ p_user_id: userId }),
-    }
+async function xoxoDeletionCodeHash(userId, code, env) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(env.SUPABASE_SECRET_KEY),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
   );
+  const digest = new Uint8Array(await crypto.subtle.sign(
+    "HMAC", key, new TextEncoder().encode(`xoxo-delete-v1:${userId}:${code}`)
+  ));
+  return Array.from(digest, byte => byte.toString(16).padStart(2, "0")).join("");
+}
 
-  if (!cleanupResponse.ok) {
-    const cleanupError = await cleanupResponse.text();
-    console.error(
-      "XOXO delete account cleanup failed:",
-      cleanupResponse.status,
-      cleanupError
-    );
-
-    const adminProtected = cleanupError.includes(
-      "Administrator accounts cannot be deleted here"
-    );
-
-    return jsonResponse(
-      {
-        ok: false,
-        error: adminProtected
-          ? "Administrator accounts cannot be deleted here"
-          : "Account data cleanup failed",
-      },
-      adminProtected ? 403 : 500
-    );
-  }
-
-  /*
-   * Delete the Supabase Auth user only after data cleanup succeeds.
-   */
-  const deleteAuthResponse = await fetch(
-    `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
-    {
-      method: "DELETE",
-      headers: {
-        apikey: env.SUPABASE_SECRET_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
-      },
-    }
-  );
-
-  if (!deleteAuthResponse.ok) {
-    console.error(
-      "XOXO Auth user deletion failed:",
-      deleteAuthResponse.status,
-      await deleteAuthResponse.text()
-    );
-    return jsonResponse({ ok: false, error: "Account deletion failed" }, 500);
-  }
-
-  /*
-   * The account is already deleted at this point. The farewell email
-   * is best-effort and must never make a successful deletion look failed.
-   */
-  let farewellEmailSent = false;
-
-  if (recipient) {
-    const subject =
-      "Your XOXO Avenue account has been deleted 💜 | Tu cuenta ha sido eliminada";
-
-    const textBody = [
-      "Hi!",
-      "",
-      "Your XOXO Avenue account has been successfully deleted.",
-      "Thank you for being part of our community.",
-      "If you ever decide to come back, you'll always be welcome at XOXO Avenue. 💜",
-      "",
-      "Take care,",
-      "XOXO Avenue 💜",
-      "",
-      "----------------------------------------",
-      "",
-      "¡Hola!",
-      "",
-      "Tu cuenta de XOXO Avenue ha sido eliminada correctamente.",
-      "Gracias por haber formado parte de nuestra comunidad.",
-      "Si algún día decides regresar, siempre serás bienvenido/a a XOXO Avenue. 💜",
-      "",
-      "Cuídate,",
-      "XOXO Avenue 💜",
-    ].join("\n");
-
-    const htmlBody = `
-<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;">
-  <div style="padding:24px;border:1px solid #ece8ff;border-radius:18px;">
-    <h2 style="margin-top:0;">Your XOXO Avenue account has been deleted 💜</h2>
-    <p>Your XOXO Avenue account has been successfully deleted.</p>
-    <p>Thank you for being part of our community.</p>
-    <p>If you ever decide to come back, you'll always be welcome at XOXO Avenue. 💜</p>
-    <p>Take care,<br><strong>XOXO Avenue 💜</strong></p>
-    <hr style="border:0;border-top:1px solid #ece8ff;margin:30px 0;">
-    <h2>Tu cuenta de XOXO Avenue ha sido eliminada 💜</h2>
-    <p>Tu cuenta de XOXO Avenue ha sido eliminada correctamente.</p>
-    <p>Gracias por haber formado parte de nuestra comunidad.</p>
-    <p>Si algún día decides regresar, siempre serás bienvenido/a a XOXO Avenue. 💜</p>
-    <p>Cuídate,<br><strong>XOXO Avenue 💜</strong></p>
-  </div>
-</div>`;
-
-    const emailResult = await sendResendEmail(env, {
-      from: "XOXO Avenue <support@xoxoavenue.com>",
-      to: [recipient],
-      subject,
-      text: textBody,
-      html: htmlBody,
-    });
-
-    farewellEmailSent = emailResult.ok;
-  }
-
-  return jsonResponse({
-    ok: true,
-    deleted: true,
-    farewell_email_sent: farewellEmailSent,
+async function xoxoDeletionRpc(env, name, body) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: xoxoServiceHeaders(env),
+    body: JSON.stringify(body),
   });
+  if (!response.ok) {
+    console.error(`XOXO deletion RPC ${name} failed:`, response.status, await response.text());
+    return { ok: false, value: null };
+  }
+  return { ok: true, value: await response.json() };
+}
+
+async function handleRequestDeletionCode(request, env) {
+  if (request.method !== "POST") return jsonResponse({ok:false,error:"Method not allowed"},405);
+  if (!env.SUPABASE_SECRET_KEY || !env.RESEND_API_KEY) return jsonResponse({ok:false,error:"Server configuration error"},500);
+  const user = await getAuthenticatedUser(request);
+  if (!user?.id) return jsonResponse({ok:false,error:"Unauthorized"},401);
+  if (!user.email || !user.email_confirmed_at) return jsonResponse({ok:false,error:"Confirm your email before requesting account deletion"},403);
+
+  const query = new URLSearchParams({user_id:`eq.${user.id}`,select:"created_at"});
+  const priorResponse = await fetch(`${SUPABASE_URL}/rest/v1/xoxo_account_deletion_codes?${query}`, {
+    headers: xoxoServiceHeaders(env),
+  });
+  if (!priorResponse.ok) return jsonResponse({ok:false,error:"Could not check verification status"},502);
+  const priorRows = await priorResponse.json();
+  const lastRequest = Date.parse(priorRows?.[0]?.created_at || "");
+  if (Number.isFinite(lastRequest) && Date.now() - lastRequest < XOXO_DELETE_CODE_COOLDOWN_SECONDS * 1000) {
+    return jsonResponse({ok:false,error:"Please wait before requesting another code",retry_after_seconds:Math.ceil((XOXO_DELETE_CODE_COOLDOWN_SECONDS*1000-(Date.now()-lastRequest))/1000)},429);
+  }
+
+  const bytes = new Uint32Array(1);
+  crypto.getRandomValues(bytes);
+  const code = String(bytes[0] % 1000000).padStart(6,"0");
+  const codeHash = await xoxoDeletionCodeHash(user.id,code,env);
+  const now = new Date();
+  const expiresAt = new Date(now.getTime()+XOXO_DELETE_CODE_TTL_MINUTES*60000);
+  const store = await fetch(`${SUPABASE_URL}/rest/v1/xoxo_account_deletion_codes?on_conflict=user_id`, {
+    method:"POST",
+    headers:xoxoServiceHeaders(env,{Prefer:"resolution=merge-duplicates,return=minimal"}),
+    body:JSON.stringify({user_id:user.id,code_hash:codeHash,expires_at:expiresAt.toISOString(),attempts:0,verified_at:null,created_at:now.toISOString()}),
+  });
+  if (!store.ok) {
+    console.error("XOXO deletion code storage failed:",store.status,await store.text());
+    return jsonResponse({ok:false,error:"Could not prepare verification code"},502);
+  }
+
+  const subject="Confirm account deletion | Confirma la eliminación de tu cuenta 💜";
+  const plain=[
+    "XOXO Avenue account deletion verification", "", `Your verification code is: ${code}`,
+    "It expires in 10 minutes. If you did not request this, ignore this email.",
+    "", "XOXO Avenue 💜", "", "------------------------------", "",
+    "Verificación para eliminar tu cuenta de XOXO Avenue", "", `Tu código de verificación es: ${code}`,
+    "Caduca en 10 minutos. Si no solicitaste esto, ignora este correo.","", "XOXO Avenue 💜"
+  ].join("\n");
+  const html=`<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#20202a;line-height:1.6;padding:24px;border:1px solid #eee7ff;border-radius:16px"><h2>Confirm account deletion 💜</h2><p>Use this code to confirm your request to permanently delete your XOXO Avenue account:</p><p style="font-size:34px;letter-spacing:7px;font-weight:700;text-align:center;color:#6c5ce7">${code}</p><p>This code expires in 10 minutes. If you did not request this, ignore this email.</p><hr style="border:0;border-top:1px solid #eee7ff;margin:28px 0"><h2>Confirma la eliminación de tu cuenta 💜</h2><p>Utiliza este código para confirmar tu solicitud de eliminar permanentemente tu cuenta de XOXO Avenue:</p><p style="font-size:34px;letter-spacing:7px;font-weight:700;text-align:center;color:#6c5ce7">${code}</p><p>El código caduca en 10 minutos. Si no solicitaste esto, ignora este correo.</p><p><strong>XOXO Avenue 💜</strong></p></div>`;
+  const sent=await sendResendEmail(env,{from:"XOXO Avenue <support@xoxoavenue.com>",to:[user.email],subject,text:plain,html});
+  if (!sent.ok) return jsonResponse({ok:false,error:"Could not send verification email. Please try again later"},502);
+  return jsonResponse({ok:true,code_sent:true,expires_in_seconds:600});
+}
+
+async function handleVerifyDeletionCode(request,env) {
+  if (request.method!=="POST") return jsonResponse({ok:false,error:"Method not allowed"},405);
+  if (!env.SUPABASE_SECRET_KEY) return jsonResponse({ok:false,error:"Server configuration error"},500);
+  const user=await getAuthenticatedUser(request);
+  if (!user?.id) return jsonResponse({ok:false,error:"Unauthorized"},401);
+  let payload;
+  try { payload=await request.json(); } catch {return jsonResponse({ok:false,error:"Invalid JSON"},400);}
+  const code=String(payload?.code||"").trim();
+  if (!/^\d{6}$/.test(code)) return jsonResponse({ok:false,error:"Enter the 6-digit code"},400);
+  const hash=await xoxoDeletionCodeHash(user.id,code,env);
+  const verified=await xoxoDeletionRpc(env,"xoxo_verify_account_deletion_code",{p_user_id:user.id,p_code_hash:hash});
+  if (!verified.ok) return jsonResponse({ok:false,error:"Verification unavailable"},502);
+  if (verified.value!==true) return jsonResponse({ok:false,error:"Incorrect, expired or already used code"},400);
+  return jsonResponse({ok:true,verified:true});
+}
+
+async function handleDeleteAccount(request, env) {
+  if (request.method !== "POST") return jsonResponse({ok:false,error:"Method not allowed"},405);
+  if (!env.SUPABASE_SECRET_KEY || !env.RESEND_API_KEY) return jsonResponse({ok:false,error:"Server configuration error"},500);
+  const signedInUser=await getAuthenticatedUser(request);
+  if (!signedInUser?.id) return jsonResponse({ok:false,error:"Unauthorized"},401);
+  const userId=String(signedInUser.id).trim();
+  const recipient=String(signedInUser.email||"").trim();
+
+  // Fail closed: a verified, unexpired code is mandatory; consume once.
+  const claim=await xoxoDeletionRpc(env,"xoxo_consume_account_deletion_code",{p_user_id:userId});
+  if (!claim.ok) return jsonResponse({ok:false,error:"Could not validate email verification"},502);
+  if (claim.value!==true) return jsonResponse({ok:false,error:"Verify the email code before deleting your account"},403);
+
+  const cleanupResponse=await fetch(`${SUPABASE_URL}/rest/v1/rpc/xoxo_delete_account_data`,{
+    method:"POST",headers:xoxoServiceHeaders(env),body:JSON.stringify({p_user_id:userId})
+  });
+  if (!cleanupResponse.ok) {
+    const cleanupError=await cleanupResponse.text();
+    console.error("XOXO delete account cleanup failed:",cleanupResponse.status,cleanupError);
+    const adminProtected=cleanupError.includes("Administrator accounts cannot be deleted here");
+    return jsonResponse({ok:false,error:adminProtected?"Administrator accounts cannot be deleted here":"Account data cleanup failed"},adminProtected?403:500);
+  }
+  const deleteAuthResponse=await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`,{
+    method:"DELETE",headers:{apikey:env.SUPABASE_SECRET_KEY,Authorization:`Bearer ${env.SUPABASE_SECRET_KEY}`}
+  });
+  if (!deleteAuthResponse.ok) {
+    console.error("XOXO Auth user deletion failed:",deleteAuthResponse.status,await deleteAuthResponse.text());
+    return jsonResponse({ok:false,error:"Account deletion failed"},500);
+  }
+  let farewellEmailSent=false;
+  if (recipient) {
+    const subject="Your XOXO Avenue account has been deleted 💜 | Tu cuenta ha sido eliminada";
+    const textBody=["Hi!","","Your XOXO Avenue account has been successfully deleted.","Thank you for being part of our community.","If you ever decide to come back, you'll always be welcome at XOXO Avenue. 💜","","Take care,","XOXO Avenue 💜","","----------------------------------------","","¡Hola!","","Tu cuenta de XOXO Avenue ha sido eliminada correctamente.","Gracias por haber formado parte de nuestra comunidad.","Si algún día decides regresar, siempre serás bienvenido/a a XOXO Avenue. 💜","","Cuídate,","XOXO Avenue 💜"].join("\n");
+    const htmlBody=`<div style="font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#171717;max-width:600px;margin:0 auto;"><div style="padding:24px;border:1px solid #ece8ff;border-radius:18px;"><h2>Your XOXO Avenue account has been deleted 💜</h2><p>Your XOXO Avenue account has been successfully deleted.</p><p>Thank you for being part of our community.</p><p>If you ever decide to come back, you'll always be welcome at XOXO Avenue. 💜</p><p>Take care,<br><strong>XOXO Avenue 💜</strong></p><hr style="border:0;border-top:1px solid #ece8ff;margin:30px 0;"><h2>Tu cuenta de XOXO Avenue ha sido eliminada 💜</h2><p>Tu cuenta de XOXO Avenue ha sido eliminada correctamente.</p><p>Gracias por haber formado parte de nuestra comunidad.</p><p>Si algún día decides regresar, siempre serás bienvenido/a a XOXO Avenue. 💜</p><p>Cuídate,<br><strong>XOXO Avenue 💜</strong></p></div></div>`;
+    const emailResult=await sendResendEmail(env,{from:"XOXO Avenue <support@xoxoavenue.com>",to:[recipient],subject,text:textBody,html:htmlBody});
+    farewellEmailSent=emailResult.ok;
+  }
+  return jsonResponse({ok:true,deleted:true,farewell_email_sent:farewellEmailSent});
 }
 
 /*
@@ -2445,6 +2438,13 @@ export default {
     /*
      * DELETE ACCOUNT
      */
+
+    if (url.pathname === "/api/delete-account/request-code") {
+      return handleRequestDeletionCode(request, env);
+    }
+    if (url.pathname === "/api/delete-account/verify-code") {
+      return handleVerifyDeletionCode(request, env);
+    }
 
     if (
       url.pathname ===
