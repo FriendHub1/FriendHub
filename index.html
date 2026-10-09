@@ -6138,7 +6138,7 @@
       <button class="xoxo-admin-tab" data-admin-tab="reports" onclick="switchXoxoAdminTab('reports',this)">Reports</button>
       <button class="xoxo-admin-tab" data-admin-tab="posts" onclick="switchXoxoAdminTab('posts',this)">Posts</button>
       <button class="xoxo-admin-tab" data-admin-tab="support" onclick="switchXoxoAdminTab('support',this)">💬 Support Cases</button>
-      <button class="xoxo-admin-tab" data-admin-tab="email" onclick="switchXoxoAdminTab('email',this)">📧 Email Center</button>
+
     </div>
     <div id="xoxoAdminOverview" class="xoxo-admin-panel active"><div id="xoxoAdminStats" class="xoxo-admin-stats"><div class="empty-state">Loading statistics...</div></div></div>
     <div id="xoxoAdminUsers" class="xoxo-admin-panel"><input id="xoxoAdminUserSearch" class="xoxo-admin-search" type="search" placeholder="Search username or email..." oninput="renderXoxoAdminUsers()"><div id="xoxoAdminUsersList"></div></div>
@@ -6146,30 +6146,6 @@
     <div id="xoxoAdminComments" class="xoxo-admin-panel"><input id="xoxoAdminCommentSearch" class="xoxo-admin-search" type="search" placeholder="Search comments or usernames..." oninput="renderXoxoAdminComments()"><div id="xoxoAdminCommentsList"></div></div>
     <div id="xoxoAdminReports" class="xoxo-admin-panel"><div id="xoxoAdminReportsList"></div></div>
     <div id="xoxoAdminPosts" class="xoxo-admin-panel"><input id="xoxoAdminPostSearch" class="xoxo-admin-search" type="search" placeholder="Search posts or usernames..." oninput="renderXoxoAdminPosts()"><div id="xoxoAdminPostsList"></div></div>
-    <div id="xoxoAdminEmail" class="xoxo-admin-panel">
-      <div class="xoxo-admin-card" style="margin-bottom:16px;padding:20px;">
-        <h2>📧 Email Center</h2>
-        <p style="margin:8px 0 16px;color:var(--fh-muted,#667085)">Compose and preview emails. Sending is disabled until the secure backend and subscription controls are ready.</p>
-        <div class="xoxo-email-grid">
-          <label>Message type<select id="xoxoEmailType" onchange="xoxoEmailUpdatePreview()"><option value="announcement">General announcement</option><option value="individual">Individual email</option><option value="reminder">Profile reminder</option></select></label>
-          <label>Recipients<select id="xoxoEmailAudience" onchange="xoxoEmailUpdatePreview()"><option value="one">One verified user</option><option value="all">All eligible subscribed users</option><option value="incomplete">Incomplete profiles only</option></select></label>
-        </div>
-        <div class="xoxo-admin-card" style="padding:16px;margin:14px 0;border:1px solid var(--fh-border,#ddd);border-radius:14px">
-          <h3 style="margin-bottom:8px">👥 Verified members</h3>
-          <p style="color:var(--fh-muted,#667085);margin-bottom:10px">Only the administrator can view this list. Read-only: no emails will be sent.</p>
-          <input id="xoxoEmailUserSearch" type="search" placeholder="Search username or email..." oninput="xoxoEmailRenderRecipients()" style="width:100%;padding:11px;border:1px solid var(--fh-border,#ddd);border-radius:10px;background:var(--fh-surface,#fff);color:var(--fh-text,#172033);margin-bottom:10px">
-          <button type="button" class="btn btn-secondary" onclick="xoxoEmailLoadRecipients()">🔄 Load verified users</button>
-          <p id="xoxoEmailRecipientsStatus" role="status" style="margin:10px 0;color:var(--fh-muted,#667085)">Open this tab to load the verified recipients.</p>
-          <div id="xoxoEmailRecipientsList" style="display:grid;gap:8px;max-height:350px;overflow:auto"></div>
-        </div>
-        <label class="xoxo-email-field">Recipient email (individual draft)<input id="xoxoEmailRecipient" type="email" placeholder="name@example.com" oninput="xoxoEmailUpdatePreview()"></label>
-        <label class="xoxo-email-field">Subject<input id="xoxoEmailSubject" maxlength="180" placeholder="News from XOXO Avenue 💜" oninput="xoxoEmailUpdatePreview()"></label>
-        <label class="xoxo-email-field">Message<textarea id="xoxoEmailMessage" rows="7" maxlength="10000" placeholder="Write your message here..." oninput="xoxoEmailUpdatePreview()"></textarea></label>
-        <div class="xoxo-email-actions"><button type="button" class="btn btn-secondary" onclick="xoxoEmailSaveDraft()">💾 Save draft (this browser)</button><button type="button" class="btn btn-secondary" onclick="xoxoEmailUpdatePreview()">👁 Preview</button><button type="button" class="btn btn-primary" disabled title="Secure sending is not enabled yet">📨 Send — coming soon</button></div>
-        <p id="xoxoEmailDraftStatus" role="status" style="margin-top:12px;color:var(--fh-muted,#667085)"></p>
-      </div>
-      <div class="xoxo-admin-card" style="padding:20px;"><h3>👁 Email preview</h3><p style="margin:10px 0"><strong>To:</strong> <span id="xoxoEmailPreviewTo">—</span></p><p style="margin:10px 0"><strong>Subject:</strong> <span id="xoxoEmailPreviewSubject">—</span></p><div id="xoxoEmailPreviewMessage" style="white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;border:1px solid var(--fh-border,#ddd);border-radius:12px;min-height:80px">Your message preview will appear here.</div><p style="margin-top:12px;color:var(--fh-muted,#667085)">XOXO Avenue Support 💜 · This is a draft preview, not a sent email.</p></div>
-    </div>
     <div id="xoxoAdminSupport" class="xoxo-admin-panel">
       <div id="xoxoAdminSupportToggleCard" class="xoxo-admin-card" style="margin-bottom:16px;">
         <div class="xoxo-admin-card-head">
@@ -14837,11 +14813,10 @@ async function openXoxoAdminPanel() {
 function switchXoxoAdminTab(tab, button) {
   document.querySelectorAll(".xoxo-admin-panel").forEach(el=>el.classList.remove("active"));
   document.querySelectorAll(".xoxo-admin-tab").forEach(el=>el.classList.remove("active"));
-  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport",email:"xoxoAdminEmail"};
+  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport"};
   const panel=document.getElementById(map[tab]); if(panel) panel.classList.add("active");
   if(button) button.classList.add("active");
   if(tab === "support") loadXoxoAdminSupportCases();
-  if(tab === "email") xoxoEmailLoadRecipients();
 }
 
 async function loadXoxoAdminDashboard() {
@@ -16158,83 +16133,5 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 })();
 </script>
 
-<style id="xoxoEmailCenterStyles">.xoxo-email-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.xoxo-email-grid label,.xoxo-email-field{display:grid;gap:6px;margin:12px 0;font-weight:700}.xoxo-email-grid select,.xoxo-email-field input,.xoxo-email-field textarea{width:100%;padding:11px;border:1px solid var(--fh-border,#ddd);border-radius:10px;background:var(--fh-surface,#fff);color:var(--fh-text,#172033)}.xoxo-email-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.xoxo-email-actions button:disabled{opacity:.55;cursor:not-allowed}</style>
-<script id="xoxoEmailRecipientsScript">
-let xoxoEmailVerifiedRecipients = [];
-async function xoxoEmailLoadRecipients(){
- const status=document.getElementById('xoxoEmailRecipientsStatus');
- const list=document.getElementById('xoxoEmailRecipientsList');
- if(!status||!list)return;
- if(!window.xoxoIsAdmin && typeof xoxoIsAdmin!=='undefined' && !xoxoIsAdmin){
-   status.textContent='Administrator access required.';return;
- }
- status.textContent='Loading verified recipients...';
- list.replaceChildren();
- try{
-   const {data:{session},error}=await supabaseClient.auth.getSession();
-   if(error||!session?.access_token)throw new Error('Sign in as administrator first.');
-   const {data:recipients,error:rpcError}=await supabaseClient.rpc('xoxo_admin_email_recipients');
-   if(rpcError)throw new Error(rpcError.message||'Unable to load recipients.');
-   xoxoEmailVerifiedRecipients=Array.isArray(recipients)?recipients.filter(x=>x.email_verified):[];
-   status.textContent=xoxoEmailVerifiedRecipients.length+' verified member(s). No emails sent.';
-   xoxoEmailRenderRecipients();
- }catch(err){
-   xoxoEmailVerifiedRecipients=[];
-   status.textContent='Could not load recipients: '+(err?.message||'Unknown error');
- }
-}
-function xoxoEmailRenderRecipients(){
- const list=document.getElementById('xoxoEmailRecipientsList');
- if(!list)return;
- list.replaceChildren();
- const search=(document.getElementById('xoxoEmailUserSearch')?.value||'').trim().toLowerCase();
- const rows=xoxoEmailVerifiedRecipients.filter(u=>
-   String(u.username||'').toLowerCase().includes(search)||
-   String(u.email||'').toLowerCase().includes(search));
- if(!rows.length){
-   const p=document.createElement('p');
-   p.textContent='No matching verified members.';
-   list.appendChild(p);return;
- }
- for(const user of rows){
-   const row=document.createElement('button');
-   row.type='button';
-   row.className='btn btn-secondary';
-   row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;width:100%;white-space:normal';
-   const info=document.createElement('span');
-   info.style.cssText='display:grid;gap:3px;min-width:0;overflow-wrap:anywhere';
-   const name=document.createElement('strong');
-   name.textContent=user.username||'No profile';
-   const email=document.createElement('small');
-   email.textContent=user.email||'';
-   info.append(name,email);
-   const tag=document.createElement('small');
-   tag.textContent=user.profile_completed?'Profile created':'Incomplete profile';
-   row.append(info,tag);
-   row.addEventListener('click',()=>{
-     document.getElementById('xoxoEmailAudience').value='one';
-     document.getElementById('xoxoEmailRecipient').value=user.email||'';
-     xoxoEmailUpdatePreview();
-     document.getElementById('xoxoEmailDraftStatus').textContent='Selected '+(user.email||'')+'. Sending remains disabled.';
-   });
-   list.appendChild(row);
- }
-}
-</script>
-<script id="xoxoEmailCenterPreviewScript">
-function xoxoEmailUpdatePreview(){
- const val=id=>document.getElementById(id)?.value||'';
- const audience=val('xoxoEmailAudience');
- document.getElementById('xoxoEmailPreviewTo').textContent=audience==='one'?(val('xoxoEmailRecipient')||'Select a verified user'):audience==='all'?'Eligible subscribed users (not yet calculated)':'Eligible incomplete profiles (not yet calculated)';
- document.getElementById('xoxoEmailPreviewSubject').textContent=val('xoxoEmailSubject')||'—';
- document.getElementById('xoxoEmailPreviewMessage').textContent=val('xoxoEmailMessage')||'Your message preview will appear here.';
-}
-function xoxoEmailSaveDraft(){
- const ids=['xoxoEmailType','xoxoEmailAudience','xoxoEmailRecipient','xoxoEmailSubject','xoxoEmailMessage'];
- try{localStorage.setItem('xoxoEmailCenterDraft',JSON.stringify(Object.fromEntries(ids.map(id=>[id,document.getElementById(id).value]))));document.getElementById('xoxoEmailDraftStatus').textContent='Draft saved on this browser. No email was sent.';}
- catch(e){document.getElementById('xoxoEmailDraftStatus').textContent='Could not save the draft on this browser.';}
-}
-(function(){try{const draft=JSON.parse(localStorage.getItem('xoxoEmailCenterDraft')||'null');if(draft){for(const [id,value] of Object.entries(draft)){const el=document.getElementById(id);if(el&&typeof value==='string')el.value=value;}}}catch(e){}xoxoEmailUpdatePreview();})();
-</script>
 </body>
                                     </html>
