@@ -6276,6 +6276,11 @@
                                     >
                                     Log In
                                     </button>
+                                    <div id="xoxoResendConfirmationWrap" style="margin-top:13px;text-align:center;">
+                                    <button type="button" id="xoxoResendConfirmationBtn" class="forgot-btn" onclick="xoxoResendConfirmationEmail()" style="padding:9px 5px;">
+                                    Resend confirmation email / Reenviar correo de confirmación
+                                    </button>
+                                    </div>
                                     <div class="auth-switch">
                                     <span id="authSwitchText">
                                     Don't have an account?
@@ -6819,6 +6824,39 @@ async function enforceXoxoSuspension() {
                                     : "login";
                                     clearAuthMessage();
                                     updateAuthModal();
+                                    }
+                                    // XOXO Avenue: user-requested confirmation resend via Supabase Auth.
+                                    // Uses the existing email field; no service-role keys in the browser.
+                                    async function xoxoResendConfirmationEmail() {
+                                      const emailField = document.getElementById("authEmail");
+                                      const button = document.getElementById("xoxoResendConfirmationBtn");
+                                      const email = (emailField?.value || "").trim();
+                                      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                                        showAuthMessage("Enter your email first. / Primero escribe tu correo electrónico.", "error");
+                                        emailField?.focus();
+                                        return;
+                                      }
+                                      if (button.disabled) return;
+                                      button.disabled = true;
+                                      const oldLabel = button.textContent;
+                                      button.textContent = "Sending... / Enviando...";
+                                      try {
+                                        const { error } = await supabaseClient.auth.resend({
+                                          type: "signup",
+                                          email,
+                                          options: { emailRedirectTo: "https://xoxoavenue.com" }
+                                        });
+                                        if (error) {
+                                          showAuthMessage(error.message, "error");
+                                        } else {
+                                          showAuthMessage("If this address needs verification, check your inbox and spam folder. / Si esta dirección necesita verificación, revisa tu bandeja de entrada y correo no deseado.", "success");
+                                        }
+                                      } catch (error) {
+                                        showAuthMessage("Unable to request a confirmation email right now. / No se pudo solicitar el correo de confirmación por ahora.", "error");
+                                      } finally {
+                                        button.disabled = false;
+                                        button.textContent = oldLabel;
+                                      }
                                     }
                                     async function submitAuth() {
                                     const email =
