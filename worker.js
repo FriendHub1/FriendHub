@@ -2525,6 +2525,67 @@ async function handleActivityEmailQueue(env) {
   return {ok:true,checked:rows.length,sent,skipped};
 }
 
+
+/*
+ * ==========================================
+ * ADMIN EMAIL CENTER - VERIFIED RECIPIENTS
+ * Read-only. No email sending.
+ * ==========================================
+ */
+async function handleAdminEmailRecipients(request, env) {
+  if (request.method !== "GET") {
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
+  }
+
+  const adminId = "d9ea1914-fdba-465c-9700-5e640ff48763";
+  const user = await getAuthenticatedUser(request);
+  if (!user?.id) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+  if (user.id !== adminId) {
+    return jsonResponse({ ok: false, error: "Forbidden" }, 403);
+  }
+
+  // Forward the verified user's own JWT. Do NOT use the service-role
+  // secret here: the SQL function checks auth.uid() for admin identity.
+  const authorization = request.headers.get("Authorization") || "";
+  const response = await fetch(
+    `${SUPABASE_URL}/rest/v1/rpc/xoxo_admin_email_recipients`,
+    {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: authorization,
+        "Content-Type": "application/json",
+        "Accept-Profile": "public",
+        "Content-Profile": "public",
+      },
+      body: "{}",
+    }
+  );
+
+  if (!response.ok) {
+    console.error("XOXO Email Center recipient lookup failed", response.status);
+    return jsonResponse({ ok: false, error: "Could not load recipients" }, 502);
+  }
+
+  const rows = await response.json();
+  if (!Array.isArray(rows)) {
+    return jsonResponse({ ok: false, error: "Invalid recipient response" }, 502);
+  }
+
+  return jsonResponse({
+    ok: true,
+    recipients: rows.map(row => ({
+      user_id: row.user_id,
+      username: row.username,
+      email: row.email,
+      email_verified: row.email_verified === true,
+      profile_completed: row.profile_completed === true,
+    })),
+  });
+}
+
 /*
  * ==========================================
  * MAIN WORKER
@@ -2555,6 +2616,10 @@ export default {
       new URL(
         request.url
       );
+
+    if (url.pathname === "/api/admin-email-recipients") {
+      return handleAdminEmailRecipients(request, env);
+    }
 
     if (url.pathname === "/api/activity-presence-heartbeat") {
       return handleActivityPresenceHeartbeat(request, env);
