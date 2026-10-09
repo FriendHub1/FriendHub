@@ -2188,6 +2188,29 @@ async function handleProfileReminders(env) {
   </div>
 </div>`;
 
+    // Reserve this user's one-time reminder atomically before contacting Resend.
+    // Both automatic and manual reminders must use this same Supabase RPC.
+    const claimResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/claim_profile_reminder`,
+      {
+        method: "POST",
+        headers: {
+          apikey: env.SUPABASE_SECRET_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+          "Content-Type": "application/json",
+          "Accept-Profile": "public",
+          "Content-Profile": "public",
+        },
+        body: JSON.stringify({ p_user_id: userId, p_source: "automatic" }),
+      }
+    );
+    if (!claimResponse.ok) {
+      console.error("XOXO reminder claim failed:", userId, claimResponse.status);
+      continue; // Never send if the reservation could not be verified.
+    }
+    const claimed = await claimResponse.json();
+    if (claimed !== true) continue; // Already reserved or sent.
+
     const emailResult = await sendResendEmail(env, {
       from: "XOXO Avenue <support@xoxoavenue.com>",
       to: [recipient],
