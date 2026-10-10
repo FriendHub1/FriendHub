@@ -16771,17 +16771,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     toggle.firstChild.textContent=enabled?'🔊 ':'🔇 ';
   }
   toggle.addEventListener('click',()=>{enabled=!enabled;if(enabled)context();sync();});
-  document.querySelector('#bottleMessages .xb-bottle')?.addEventListener('click',()=>{
-    tone(360,135,.45,.11,'sine');tone(720,410,.32,.035,'sine',.1);
-  });
-  document.querySelectorAll('#bottleMessages .xb-controls .xb-btn').forEach(btn=>btn.addEventListener('click',()=>{
-    if(btn.getAttribute('onclick')?.includes('inbox')){tone(570,760,.38,.055);tone(880,1050,.45,.035,'sine',.14);}
-    else tone(320,180,.35,.055);
-  }));
-  document.querySelector('#xbWrite .xb-btn')?.addEventListener('click',()=>{
-    const letter=document.getElementById('xbLetter');if(!letter?.value.trim())return;
-    tone(523,659,.25,.055);tone(659,784,.35,.045,'sine',.16);
-  });
+  /* No UI beeps for Bottle Messages: preserve only the optional ocean ambience.
+     The cinematic animation handles its own gentle water sound. */
   document.addEventListener('visibilitychange',sync);
   const observer=new MutationObserver(sync);
   observer.observe(document.getElementById('bottleMessages'),{attributes:true,attributeFilter:['class']});
@@ -16826,20 +16817,25 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   try{
    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
    audio=audio||new AC();if(audio.state==='suspended')audio.resume().catch(()=>{});
-   const rate=audio.sampleRate,seconds=2.1,n=Math.floor(rate*seconds),buf=audio.createBuffer(1,n,rate),data=buf.getChannelData(0);
-   let low=0,prev=0;
+   const rate=audio.sampleRate,seconds=1.85,n=Math.floor(rate*seconds);
+   const buf=audio.createBuffer(1,n,rate),data=buf.getChannelData(0);
+   // Soft, filtered water wash. No oscillators, tonal chirps or percussive impulses.
+   let low=0,mid=0;
    for(let i=0;i<n;i++){
-    const t=i/rate,white=Math.random()*2-1;
-    low=low*.92+white*.08;
-    const wash=Math.exp(-1.7*t)*(0.45+0.55*Math.sin(Math.min(1,t/.45)*Math.PI/2));
-    const droplets=(t<.7?Math.pow(Math.max(0,Math.sin(2*Math.PI*37*t)),14)*Math.exp(-3*t):0);
-    prev=(white*.32+low*1.3+droplets*.23)*wash;
-    data[i]=Math.max(-1,Math.min(1,prev));
+    const t=i/rate,noise=Math.random()*2-1;
+    low=low*.965+noise*.035;
+    mid=mid*.75+noise*.25;
+    const swell=(1-Math.exp(-t*18))*Math.exp(-t*2.8);
+    const foam=Math.exp(-Math.pow((t-.38)/.25,2))*.22;
+    data[i]=Math.max(-.8,Math.min(.8,(low*.8+mid*.17)*(swell+foam)*.7));
    }
    const source=audio.createBufferSource(),filter=audio.createBiquadFilter(),gain=audio.createGain();
-   filter.type='lowpass';filter.frequency.value=2300;gain.gain.value=.55;
+   filter.type='lowpass';filter.frequency.value=1050;filter.Q.value=.5;
+   gain.gain.setValueAtTime(.0001,audio.currentTime);
+   gain.gain.linearRampToValueAtTime(.16,audio.currentTime+.12);
+   gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+seconds);
    source.buffer=buf;source.connect(filter).connect(gain).connect(audio.destination);source.start();
-  }catch(e){console.warn('Bottle splash audio unavailable',e);}
+  }catch(e){console.warn('Bottle water audio unavailable',e);}
  }
  function dismiss(){scene.classList.remove('xb-show');clearTimeout(timeout);document.removeEventListener('keydown',escape);}
  function escape(e){if(e.key==='Escape')dismiss();}
