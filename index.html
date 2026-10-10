@@ -4864,6 +4864,14 @@
 .xoxo-support-reply button{border:0;border-radius:12px;padding:12px 16px;background:var(--fh-primary,#5865f2);color:#fff;font-weight:900;cursor:pointer}
 .xoxo-support-back{border:1px solid var(--fh-border,#dfe3eb);border-radius:10px;padding:8px 11px;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#172033);font-weight:800;cursor:pointer}
 @media(max-width:700px){.xoxo-admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* XOXO MESSAGE MODERATION — DESIGN PREVIEW ONLY; NO PRIVATE MESSAGE ACCESS */
+#xoxoAdminModeration{color:#f5efff;font-family:Arial,Helvetica,sans-serif}
+.xmm-wrap{background:radial-gradient(circle at 80% 0%,#39205d 0%,transparent 38%),linear-gradient(135deg,#100e25,#1b1237 65%,#120d27);border:1px solid #49346c;border-radius:24px;padding:24px;box-shadow:0 16px 45px #08061666}
+.xmm-head{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap;margin-bottom:18px}.xmm-head h2{font-size:clamp(25px,3vw,34px);color:#fff;margin:0}.xmm-sub{color:#bcb0d6;font-size:13px}.xmm-tag{display:inline-flex;align-items:center;border:1px solid #9165d8;background:#392254;color:#e6ccff;padding:7px 12px;border-radius:999px;font-weight:800;font-size:12px}
+.xmm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.xmm-stat{border:1px solid #514075;background:#251a43;border-radius:18px;padding:17px}.xmm-stat .xmm-ico{font-size:21px}.xmm-stat strong{display:block;color:#fff;font-size:26px;margin:7px 0 3px}.xmm-stat span{color:#c7badc;font-size:12px}
+.xmm-main{display:grid;grid-template-columns:minmax(210px,1.05fr) minmax(300px,1.8fr) minmax(210px,.95fr);gap:13px;min-height:420px}.xmm-pane{border:1px solid #514075;background:#211738;border-radius:19px;padding:17px;min-width:0}.xmm-pane h3{color:#fff;font-size:17px;margin:0 0 13px}.xmm-search{width:100%;border:1px solid #5a447d!important;border-radius:11px!important;padding:11px!important;background:#160f2c!important;color:#f5efff!important;box-shadow:none!important}.xmm-empty{margin-top:18px;border:1px dashed #67518d;border-radius:14px;padding:23px 12px;text-align:center;color:#c3b5dd;font-size:13px;line-height:1.7}.xmm-empty .xmm-big{font-size:38px;display:block;margin-bottom:9px}.xmm-convtop{display:flex;align-items:center;gap:10px;border-bottom:1px solid #483560;padding-bottom:14px}.xmm-avatar{width:43px;height:43px;border-radius:50%;background:linear-gradient(135deg,#a764ff,#f07ec3);display:grid;place-items:center;font-size:24px;flex-shrink:0}.xmm-convtop strong{display:block;color:white}.xmm-bubble{border-radius:16px;background:#302349;padding:17px;color:#d6c6ec;font-size:14px;line-height:1.6;margin-top:24px;text-align:center}.xmm-action{width:100%;margin-top:11px;padding:11px 12px;border-radius:12px;border:1px solid #685184;background:#392451;color:#e7d9f9;font-weight:800;opacity:.65;cursor:not-allowed}.xmm-note{margin-top:15px;border:1px solid #5d457f;background:#2a1b45;border-radius:13px;padding:13px;color:#ddcaed;font-size:13px;line-height:1.55}.xmm-foot{color:#c2afd8;font-size:12px;margin-top:14px}
+@media(max-width:1050px){.xmm-main{grid-template-columns:minmax(200px,1fr) minmax(270px,1.4fr)}.xmm-details{grid-column:1/-1}.xmm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.xmm-wrap{padding:14px}.xmm-main{grid-template-columns:1fr}.xmm-details{grid-column:auto}.xmm-stats{gap:8px}.xmm-stat{padding:12px}}
 </style>
 
 </head>
@@ -6138,7 +6146,25 @@
       <button class="xoxo-admin-tab" data-admin-tab="reports" onclick="switchXoxoAdminTab('reports',this)">Reports</button>
       <button class="xoxo-admin-tab" data-admin-tab="posts" onclick="switchXoxoAdminTab('posts',this)">Posts</button>
       <button class="xoxo-admin-tab" data-admin-tab="support" onclick="switchXoxoAdminTab('support',this)">💬 Support Cases</button>
+      <button class="xoxo-admin-tab" data-admin-tab="moderation" onclick="switchXoxoAdminTab('moderation',this)">🛡️ Message Moderation</button>
 
+    </div>
+    <div id="xoxoAdminModeration" class="xoxo-admin-panel">
+      <div class="xmm-wrap">
+        <div class="xmm-head"><div><h2>🐰 Message Moderation 💜</h2><div class="xmm-sub">Private messaging oversight · XOXO Avenue</div></div><span class="xmm-tag">✦ Design preview · Not active</span></div>
+        <div class="xmm-stats">
+          <div class="xmm-stat"><div class="xmm-ico">💌</div><strong>—</strong><span>Total messages</span></div>
+          <div class="xmm-stat"><div class="xmm-ico">💬</div><strong>—</strong><span>Conversations</span></div>
+          <div class="xmm-stat"><div class="xmm-ico">📨</div><strong>—</strong><span>Unread messages</span></div>
+          <div class="xmm-stat"><div class="xmm-ico">🛡️</div><strong>—</strong><span>Reported conversations</span></div>
+        </div>
+        <div class="xmm-main">
+          <section class="xmm-pane" aria-label="Conversation list preview"><h3>💬 Conversations</h3><input class="xmm-search" type="search" placeholder="🔎 Search conversations..." disabled aria-label="Conversation search not yet active"><div class="xmm-empty"><span class="xmm-big">💌</span>Conversations will appear here once moderation access is configured.</div></section>
+          <section class="xmm-pane" aria-label="Message viewer preview"><div class="xmm-convtop"><span class="xmm-avatar">💜</span><div><strong>Select a conversation</strong><div class="xmm-sub">Secure message viewer</div></div></div><div class="xmm-bubble">✨ Choose a conversation to view its messages.<br>This is a visual preview: no private messages are loaded or displayed.</div></section>
+          <aside class="xmm-pane xmm-details" aria-label="Moderation tools preview"><h3>🛡️ Moderation Tools</h3><div class="xmm-sub">Conversation details and review actions will appear here.</div><button type="button" class="xmm-action" disabled>✓ Mark as reviewed</button><button type="button" class="xmm-action" disabled>⚑ Review report</button><button type="button" class="xmm-action" disabled>🚫 Take moderation action</button><div class="xmm-note">🔒 <strong>Privacy first</strong><br>Message access stays disabled until privacy notices, administrator permissions and review logging are ready.</div></aside>
+        </div>
+        <div class="xmm-foot">🎀 Preview only · No messages read · No Supabase permissions changed · Existing admin features preserved</div>
+      </div>
     </div>
     <div id="xoxoAdminOverview" class="xoxo-admin-panel active"><div id="xoxoAdminStats" class="xoxo-admin-stats"><div class="empty-state">Loading statistics...</div></div></div>
     <div id="xoxoAdminUsers" class="xoxo-admin-panel"><input id="xoxoAdminUserSearch" class="xoxo-admin-search" type="search" placeholder="Search username or email..." oninput="renderXoxoAdminUsers()"><div id="xoxoAdminUsersList"></div></div>
@@ -14813,7 +14839,7 @@ async function openXoxoAdminPanel() {
 function switchXoxoAdminTab(tab, button) {
   document.querySelectorAll(".xoxo-admin-panel").forEach(el=>el.classList.remove("active"));
   document.querySelectorAll(".xoxo-admin-tab").forEach(el=>el.classList.remove("active"));
-  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport"};
+  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport",moderation:"xoxoAdminModeration"};
   const panel=document.getElementById(map[tab]); if(panel) panel.classList.add("active");
   if(button) button.classList.add("active");
   if(tab === "support") loadXoxoAdminSupportCases();
