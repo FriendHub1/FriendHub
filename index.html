@@ -4690,6 +4690,40 @@
 @media(max-width:650px){.xmm-admin-message{max-width:94%}}
 
 
+
+/* XOXO BOTTLE MESSAGES — VISUAL PREVIEW, NO BACKEND WRITES */
+#bottleMessages .xb-wrap{max-width:1000px;margin:auto;color:#fff}
+#bottleMessages .xb-ocean{position:relative;min-height:370px;overflow:hidden;border-radius:26px;background:linear-gradient(180deg,#fb9bc6 0%,#b986e5 37%,#6c4db7 53%,#39216f 100%);box-shadow:0 18px 45px #6a409b35;text-align:center;isolation:isolate}
+#bottleMessages .xb-sun{position:absolute;left:50%;top:25%;transform:translateX(-50%);width:140px;height:140px;border-radius:50%;background:#ffe0bb;box-shadow:0 0 75px 28px #ffd0d580}
+#bottleMessages .xb-cloud{position:absolute;width:260px;height:50px;border-radius:50%;background:#ffd5e79c;filter:blur(22px);animation:xb-cloud 18s ease-in-out infinite alternate;top:18%;left:5%}
+#bottleMessages .xb-cloud.two{top:32%;left:60%;animation-duration:25s;opacity:.65}
+#bottleMessages .xb-water{position:absolute;left:-10%;width:120%;height:120px;border-radius:45% 55% 0 0/38% 40% 0 0;background:#6240a7b8;bottom:-55px;animation:xb-wave 5s ease-in-out infinite alternate}
+#bottleMessages .xb-water.back{bottom:-10px;background:#8558c47a;animation-delay:-2s}
+#bottleMessages .xb-bottle{position:absolute;left:50%;bottom:38px;width:110px;height:175px;transform:translateX(-50%);animation:xb-float 4s ease-in-out infinite;filter:drop-shadow(0 10px 16px #3c1b6c80);z-index:2;cursor:pointer;border:0;background:none;padding:0}
+#bottleMessages .xb-bottle svg{height:100%;width:100%}
+#bottleMessages .xb-title{position:relative;z-index:3;padding:28px 15px 0;text-shadow:0 2px 15px #56297590;pointer-events:none}
+#bottleMessages .xb-title h1{font-size:clamp(28px,5vw,42px);margin:0 0 5px;color:#fff}
+#bottleMessages .xb-title p{color:#fff5ff;font-size:15px}
+#bottleMessages .xb-controls{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:22px 0}
+#bottleMessages .xb-btn{border:0;border-radius:14px;padding:13px 20px;font-weight:800;background:#8549c7;color:white;cursor:pointer}
+#bottleMessages .xb-btn.alt{background:#f4e8ff;color:#593084}
+#bottleMessages .xb-panel{border:1px solid #e4c6f1;border-radius:20px;background:var(--fh-surface,#fff);padding:22px;color:var(--fh-text,#28183d);max-width:760px;margin:0 auto 20px;box-shadow:0 12px 30px #6b36971a}
+#bottleMessages .xb-panel h2{font-size:22px;margin:0 0 8px}
+#bottleMessages .xb-panel p{color:var(--fh-muted,#6b6280)}
+#bottleMessages .xb-panel textarea{width:100%;min-height:165px;margin-top:15px;border:1px solid #cfb5df;border-radius:12px;padding:14px;resize:vertical;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#28183d)}
+#bottleMessages .xb-count{text-align:right;font-size:13px;color:var(--fh-muted,#6b6280);margin:5px 0 12px}
+#bottleMessages .xb-notice{margin-top:12px;font-size:13px;color:var(--fh-muted,#6b6280)}
+#bottleMessages .xb-panel[hidden]{display:none!important}
+@keyframes xb-float{0%,100%{transform:translate(-50%,0) rotate(-8deg)}50%{transform:translate(-50%,-13px) rotate(7deg)}}
+@keyframes xb-wave{to{transform:translateX(-4%) translateY(12px)}}
+@keyframes xb-cloud{to{transform:translateX(55px)}}
+@media(prefers-reduced-motion:reduce){#bottleMessages .xb-ocean *{animation:none!important}}
+@media(max-width:550px){#bottleMessages .xb-ocean{min-height:330px}#bottleMessages .xb-panel{padding:16px}}
+
+/* Bottle audio controls — opt-in, no audio downloads */
+#bottleMessages .xb-sound{position:absolute;right:14px;top:14px;z-index:5;display:flex;align-items:center;gap:7px;border:1px solid #ffffff80;border-radius:999px;background:#42216f9c;color:white;padding:9px 13px;font-size:13px;font-weight:700;backdrop-filter:blur(8px);cursor:pointer}
+#bottleMessages .xb-sound:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
 </style>
                                     
                 <style>
@@ -4946,6 +4980,7 @@
                                     <button id="discoverNavBtn" onclick="showPage('discover')">Discover</button>
                                     <button id="profileNavBtn" onclick="showPage('profile')">Profile</button>
                                     <button id="savedNavBtn" onclick="showPage('saved')">Saved</button>
+<button id="bottleNavBtn" type="button" onclick="showPage('bottleMessages')">🍾 Bottle Messages</button>
                                     <button id="messagesNavBtn" onclick="openMessagesInbox()">Messages<span id="messagesUnreadBadge" class="messages-unread-badge" style="display:none;">0</span></button>
                                     <button id="adminNavBtn" type="button" onclick="openXoxoAdminPanel()">👑 Admin</button>
                                     <button onclick="showPage('about')">About</button>
@@ -5678,7 +5713,33 @@
                                     </div>
                                     </div>
                                     </section>
-                                    <section id="saved" class="page">
+                                    
+<section id="bottleMessages" class="page">
+ <div class="container xb-wrap">
+  <button type="button" class="safe-back-home" onclick="showPage('home')">&#8592; <span data-xb-en="Back" data-xb-es="Volver">Back</span></button>
+  <div class="xb-ocean" aria-label="Animated sunset ocean with a floating message bottle">
+   <button id="xbSoundToggle" class="xb-sound" type="button" aria-pressed="false" aria-label="Enable ocean sounds">🔇 <span id="xbSoundLabel">Sound off</span></button>
+   <div class="xb-sun"></div><div class="xb-cloud"></div><div class="xb-cloud two"></div>
+   <div class="xb-title"><h1>🍾 Bottle Messages</h1><p data-xb-en="Unexpected friendships begin with a message." data-xb-es="Las amistades inesperadas comienzan con un mensaje.">Unexpected friendships begin with a message.</p></div>
+   <div class="xb-water back"></div>
+   <button class="xb-bottle" type="button" onclick="xoxoBottleTab('write')" aria-label="Write a bottle message">
+    <svg viewBox="0 0 110 175" aria-hidden="true"><g transform="rotate(-13 55 90)"><rect x="42" y="6" width="26" height="28" rx="5" fill="#f2d7b0" stroke="#956e76" stroke-width="3"/><path d="M40 29 L70 29 L72 50 Q92 58 92 85 L92 147 Q92 162 76 165 L34 165 Q18 162 18 147 L18 85 Q18 58 38 50 Z" fill="#e9faff90" stroke="#ffffff" stroke-width="5"/><rect x="31" y="81" width="48" height="58" rx="6" fill="#fff0d5" stroke="#d7bca6" stroke-width="2"/><path d="M39 94H71 M39 104H69 M39 114H66 M39 124H70" stroke="#bd91ad" stroke-width="2"/><path d="M30 57 Q23 68 24 93" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g></svg>
+   </button>
+   <div class="xb-water"></div>
+  </div>
+  <div class="xb-controls"><button type="button" class="xb-btn" onclick="xoxoBottleTab('write')" data-xb-en="💌 Throw a Bottle" data-xb-es="💌 Lanzar una botella">💌 Throw a Bottle</button><button type="button" class="xb-btn alt" onclick="xoxoBottleTab('inbox')" data-xb-en="🍾 My Bottles" data-xb-es="🍾 Mis botellas">🍾 My Bottles</button></div>
+  <div id="xbWrite" class="xb-panel">
+   <h2 data-xb-en="Write your letter 💌" data-xb-es="Escribe tu carta 💌">Write your letter 💌</h2>
+   <p data-xb-en="Tell a stranger something kind, ask a question, or introduce yourself." data-xb-es="Cuéntale algo bonito a alguien, haz una pregunta o preséntate.">Tell a stranger something kind, ask a question, or introduce yourself.</p>
+   <textarea id="xbLetter" maxlength="5000" placeholder="Write your message here..."></textarea><div id="xbCount" class="xb-count">0 / 5,000</div>
+   <button type="button" class="xb-btn" onclick="xoxoBottlePreview()" data-xb-en="Preview my letter" data-xb-es="Vista previa de mi carta">Preview my letter</button>
+   <p id="xbFeedback" class="xb-notice" role="status"></p>
+   <p class="xb-notice" data-xb-en="Design preview only. No bottles are sent or stored yet." data-xb-es="Solo vista previa del diseño. Todavía no se envían ni guardan botellas.">Design preview only. No bottles are sent or stored yet.</p>
+  </div>
+  <div id="xbInbox" class="xb-panel" hidden><h2 data-xb-en="My Bottles 🍾" data-xb-es="Mis botellas 🍾">My Bottles 🍾</h2><p data-xb-en="Your mysterious bottles will appear here when we connect the feature to Supabase." data-xb-es="Tus botellas misteriosas aparecerán aquí cuando conectemos la función con Supabase.">Your mysterious bottles will appear here when we connect the feature to Supabase.</p></div>
+ </div>
+</section>
+<section id="saved" class="page">
                                     <div class="container">
                                     <button type="button" class="safe-back-home" onclick="showPage('home')" aria-label="Back to Home">&#8592; Back</button>
                                     <div class="page-header saved-posts-header">
@@ -16624,6 +16685,95 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   document.querySelectorAll('[data-en][data-es]').forEach(el => {
     el.textContent = el.getAttribute('data-' + lang);
   });
+})();
+</script>
+
+<script>
+/* Bottle Messages visual preview: no network calls, no writes, no notification emails. */
+(function(){
+ const es=()=>localStorage.getItem('friendhub_language')==='es';
+ document.querySelectorAll('[data-xb-en]').forEach(el=>{el.textContent=el.getAttribute(es()?'data-xb-es':'data-xb-en');});
+ const t=document.getElementById('xbLetter'),count=document.getElementById('xbCount');
+ if(t){t.placeholder=es()?'Escribe tu mensaje aquí...':'Write your message here...';t.addEventListener('input',()=>{count.textContent=t.value.length.toLocaleString()+' / 5,000';});}
+ window.xoxoBottleTab=function(which){document.getElementById('xbWrite').hidden=which!=='write';document.getElementById('xbInbox').hidden=which!=='inbox';};
+ window.xoxoBottlePreview=function(){
+  const value=t.value.trim(),msg=document.getElementById('xbFeedback');
+  if(!value){msg.textContent=es()?'Escribe primero una carta.':'Write a letter first.';return;}
+  msg.textContent=es()?'💌 ¡Tu carta está lista! Esta es una vista previa; todavía no se ha enviado.':'💌 Your letter is ready! This is a preview; it has not been sent.';
+ };
+})();
+</script>
+<script>
+/* XOXO Bottle Messages — optional synthesized ocean sound effects.
+   No external audio files, no autoplay, and no network requests. */
+(function(){
+  let ctx=null, enabled=false, waves=null, waveGain=null;
+  const toggle=document.getElementById('xbSoundToggle');
+  const label=document.getElementById('xbSoundLabel');
+  if(!toggle)return;
+  const isEs=()=>localStorage.getItem('friendhub_language')==='es';
+  const active=()=>document.getElementById('bottleMessages')?.classList.contains('active') && !document.hidden;
+  function context(){
+    const AudioContext=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContext)return null;
+    if(!ctx)ctx=new AudioContext();
+    if(ctx.state==='suspended')ctx.resume().catch(()=>{});
+    return ctx;
+  }
+  function tone(f1,f2,duration,volume,type='sine',delay=0){
+    if(!enabled||!active())return;
+    const c=context();if(!c)return;
+    const now=c.currentTime+delay,osc=c.createOscillator(),gain=c.createGain();
+    osc.type=type;osc.frequency.setValueAtTime(f1,now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(1,f2),now+duration);
+    gain.gain.setValueAtTime(.0001,now);
+    gain.gain.exponentialRampToValueAtTime(volume,now+.025);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+    osc.connect(gain).connect(c.destination);osc.start(now);osc.stop(now+duration+.02);
+  }
+  function startWaves(){
+    if(waves||!enabled||!active())return;
+    const c=context();if(!c)return;
+    const seconds=4,buf=c.createBuffer(1,c.sampleRate*seconds,c.sampleRate),arr=buf.getChannelData(0);
+    let filtered=0;
+    for(let i=0;i<arr.length;i++){
+      filtered=(filtered*.985)+((Math.random()*2-1)*.015);
+      arr[i]=filtered*(.52+.48*Math.sin(2*Math.PI*i/arr.length));
+    }
+    waves=c.createBufferSource();waves.buffer=buf;waves.loop=true;
+    const filter=c.createBiquadFilter();filter.type='lowpass';filter.frequency.value=650;
+    waveGain=c.createGain();waveGain.gain.value=.0001;
+    waves.connect(filter).connect(waveGain).connect(c.destination);
+    waves.start();waveGain.gain.setTargetAtTime(.12,c.currentTime,.6);
+  }
+  function stopWaves(){
+    if(!waves)return;
+    const old=waves,g=waveGain;waves=null;waveGain=null;
+    try{g.gain.setTargetAtTime(.0001,ctx.currentTime,.12);old.stop(ctx.currentTime+.6);}catch(e){try{old.stop()}catch(_){}}
+  }
+  function sync(){
+    if(enabled&&active())startWaves();else stopWaves();
+    toggle.setAttribute('aria-pressed',String(enabled));
+    toggle.setAttribute('aria-label',enabled?(isEs()?'Desactivar sonidos del océano':'Disable ocean sounds'):(isEs()?'Activar sonidos del océano':'Enable ocean sounds'));
+    label.textContent=enabled?(isEs()?'Sonido activado':'Sound on'):(isEs()?'Sonido apagado':'Sound off');
+    toggle.firstChild.textContent=enabled?'🔊 ':'🔇 ';
+  }
+  toggle.addEventListener('click',()=>{enabled=!enabled;if(enabled)context();sync();});
+  document.querySelector('#bottleMessages .xb-bottle')?.addEventListener('click',()=>{
+    tone(360,135,.45,.11,'sine');tone(720,410,.32,.035,'sine',.1);
+  });
+  document.querySelectorAll('#bottleMessages .xb-controls .xb-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.getAttribute('onclick')?.includes('inbox')){tone(570,760,.38,.055);tone(880,1050,.45,.035,'sine',.14);}
+    else tone(320,180,.35,.055);
+  }));
+  document.querySelector('#xbWrite .xb-btn')?.addEventListener('click',()=>{
+    const letter=document.getElementById('xbLetter');if(!letter?.value.trim())return;
+    tone(523,659,.25,.055);tone(659,784,.35,.045,'sine',.16);
+  });
+  document.addEventListener('visibilitychange',sync);
+  const observer=new MutationObserver(sync);
+  observer.observe(document.getElementById('bottleMessages'),{attributes:true,attributeFilter:['class']});
+  sync();
 })();
 </script>
 </body>
