@@ -16827,11 +16827,11 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 #xbThrowScene.xb-show{display:flex}
 #xbThrowStage{position:relative;width:min(850px,96vw);height:min(510px,78vh);overflow:hidden;border-radius:24px;background:linear-gradient(180deg,rgba(26,9,47,.1),rgba(12,4,42,.28)),url('/xoxo-bottle-sunset.png') center/cover;box-shadow:0 25px 85px #0009;border:1px solid #f5b5f0}
 #xbThrowStage:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 35%,rgba(23,6,60,.25) 65%,rgba(10,4,40,.65));pointer-events:none}
-#xbThrowBottle{position:absolute;left:12%;top:55%;width:clamp(145px,28vw,240px);height:auto;z-index:4;filter:drop-shadow(0 0 24px #fff2c5) drop-shadow(0 0 18px #f4a4ec);transform:rotate(-35deg);opacity:0;pointer-events:none}
-.xb-show #xbThrowBottle{animation:xbFlight 4.2s ease-in-out both}
-@keyframes xbFlight{0%{left:8%;top:58%;transform:rotate(-38deg) scale(1.18);opacity:0}6%{opacity:1}22%{left:26%;top:30%;transform:rotate(-17deg) scale(1.03);opacity:1}46%{left:45%;top:15%;transform:rotate(8deg) scale(.78);opacity:1}70%{left:62%;top:30%;transform:rotate(48deg) scale(.52);opacity:1}84%{left:70%;top:56%;transform:rotate(85deg) scale(.37);opacity:1}91%{left:71%;top:61%;transform:rotate(108deg) scale(.3);opacity:0}100%{left:71%;top:61%;transform:rotate(108deg) scale(.3);opacity:0}}
+#xbThrowBottle{position:absolute;left:50%;top:77%;width:clamp(145px,28vw,240px);height:auto;z-index:4;filter:drop-shadow(0 0 24px #fff2c5) drop-shadow(0 0 18px #f4a4ec);transform:rotate(-35deg);opacity:0;pointer-events:none}
+.xb-show #xbThrowBottle{animation:xbFlight 7s ease-in-out both}
+@keyframes xbFlight{0%{left:50%;top:77%;transform:translate(-50%,-50%) rotate(-27deg) scale(1);opacity:1}20%{left:54%;top:73%;transform:translate(-50%,-50%) rotate(-21deg) scale(.82);opacity:1}43%{left:47%;top:68%;transform:translate(-50%,-50%) rotate(-28deg) scale(.6);opacity:1}70%{left:53%;top:63%;transform:translate(-50%,-50%) rotate(-20deg) scale(.36);opacity:1}100%{left:50%;top:57%;transform:translate(-50%,-50%) rotate(-25deg) scale(.07);opacity:0}}
 #xbThrowBottle svg{display:block;width:100%;height:auto}#xbThrowSplash{position:absolute;left:70%;top:60%;transform:translate(-50%,-50%) scale(.2);opacity:0;font-size:clamp(54px,10vw,95px);filter:drop-shadow(0 0 15px #fff);z-index:5}
-.xb-show #xbThrowSplash{animation:xbSplash 1.45s ease-out 3.55s both}
+.xb-show #xbThrowSplash{display:none !important}
 @keyframes xbSplash{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
 #xbThrowCaption{position:absolute;left:12px;right:12px;bottom:38px;text-align:center;font-size:clamp(16px,2.8vw,23px);font-weight:800;color:#fff;text-shadow:0 2px 12px #18042e}
 #xbThrowClose{position:absolute;top:15px;right:15px;z-index:2;padding:9px 15px;border-radius:20px;border:1px solid #fff8;background:#37154ecc;color:white;cursor:pointer;font-weight:700}
@@ -16839,7 +16839,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 </style>
 
 <script>
-/* XOXO Bottle throw: enhanced glass flight and layered ocean splash sound.
+/* XOXO Bottle Messages: gentle transparent glass bottle sailing preview.
    Preview only: does not save, deliver, or send messages. */
 (function(){
  const button=document.querySelector('#xbWrite .xb-btn');
@@ -16906,11 +16906,11 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   if(!letter.value.trim()||!section.classList.contains('active'))return;
   scene.classList.remove('xb-show');void scene.offsetWidth;
   close.textContent=es()?'✕ Cerrar':'✕ Close';
-  caption.textContent=es()?'🍾 ¡Tu botella está lista! Solo es una demostración; todavía no se envía.':'🍾 Your bottle is ready! This is a preview; nothing has been sent.';
-  glassLaunch();
+  caption.textContent=es()?'💌 Tu mensaje navega hacia alguien especial… (solo demostración, no se envía)':'💌 Your message is sailing toward someone special… (preview only, not sent)';
+  // Keep the existing optional ocean ambience; no launch or splash effects.
   scene.classList.add('xb-show');close.focus();document.addEventListener('keydown',escape);
   clearTimeout(timeout);
-  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)timeout=setTimeout(()=>{if(scene.classList.contains('xb-show'))splash();},3550);
+  // No splash: the bottle drifts gently toward the horizon.
  });
  close.addEventListener('click',dismiss);
  scene.addEventListener('click',e=>{if(e.target===scene)dismiss();});
