@@ -4865,6 +4865,18 @@
 .xoxo-support-back{border:1px solid var(--fh-border,#dfe3eb);border-radius:10px;padding:8px 11px;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#172033);font-weight:800;cursor:pointer}
 @media(max-width:700px){.xoxo-admin-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* XOXO ADMIN AVATAR POLISH — VISUAL ONLY */
+.xmm-title-row{display:flex;align-items:center;gap:14px}
+.xmm-admin-bunny{width:66px;height:66px;flex:0 0 66px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(145deg,#482777,#8c48c7);border:2px solid #c982f6;box-shadow:0 0 0 4px #8b48cb26,0 0 26px #ce69ff55;font-size:39px;transform:rotate(-3deg)}
+.xmm-admin-bunny span{transform:rotate(3deg)}
+.xmm-avatar{border:2px solid #d18afa;box-shadow:0 0 16px #d579fc55;overflow:hidden}
+.xmm-avatar img,.xmm-person-avatar img{width:100%;height:100%;object-fit:cover}
+.xmm-avatar-pair{display:flex;align-items:center;margin-bottom:14px;padding-left:4px}
+.xmm-person-avatar{width:39px;height:39px;display:grid;place-items:center;flex:0 0 39px;border-radius:50%;border:2px solid #b36cf2;background:linear-gradient(135deg,#6835a2,#dd78b4);color:#fff;font-size:18px;font-weight:800;box-shadow:0 0 15px #b36cf244;overflow:hidden}
+.xmm-person-avatar+ .xmm-person-avatar{margin-left:-9px;border-color:#ee91c9;background:linear-gradient(135deg,#d05f9e,#7948c1)}
+.xmm-avatar-explainer{font-size:12px;color:#c3b5dd;line-height:1.6;margin:9px 0 0}
+@media(max-width:650px){.xmm-admin-bunny{width:54px;height:54px;flex-basis:54px;font-size:32px}.xmm-title-row{gap:10px}}
+
 /* XOXO MESSAGE MODERATION — DESIGN PREVIEW ONLY; NO PRIVATE MESSAGE ACCESS */
 #xoxoAdminModeration{color:#f5efff;font-family:Arial,Helvetica,sans-serif}
 .xmm-wrap{background:radial-gradient(circle at 80% 0%,#39205d 0%,transparent 38%),linear-gradient(135deg,#100e25,#1b1237 65%,#120d27);border:1px solid #49346c;border-radius:24px;padding:24px;box-shadow:0 16px 45px #08061666}
@@ -6151,7 +6163,7 @@
     </div>
     <div id="xoxoAdminModeration" class="xoxo-admin-panel">
       <div class="xmm-wrap">
-        <div class="xmm-head"><div><h2>🐰 Message Moderation 💜</h2><div class="xmm-sub">Private messaging oversight · XOXO Avenue</div></div><span class="xmm-tag">✦ Design preview · Not active</span></div>
+        <div class="xmm-head"><div class="xmm-title-row"><div class="xmm-admin-bunny" role="img" aria-label="XOXO Avenue admin bunny"><span>🐰</span></div><div><h2>Message Moderation 💜</h2><div class="xmm-sub">Private messaging oversight · XOXO Avenue</div></div></div><span class="xmm-tag">✦ Design preview · Not active</span></div>
         <div class="xmm-stats">
           <div class="xmm-stat"><div class="xmm-ico">💌</div><strong>—</strong><span>Total messages</span></div>
           <div class="xmm-stat"><div class="xmm-ico">💬</div><strong>—</strong><span>Conversations</span></div>
@@ -6159,7 +6171,7 @@
           <div class="xmm-stat"><div class="xmm-ico">🛡️</div><strong>—</strong><span>Reported conversations</span></div>
         </div>
         <div class="xmm-main">
-          <section class="xmm-pane" aria-label="Conversation list preview"><h3>💬 Conversations</h3><input class="xmm-search" type="search" placeholder="🔎 Search conversations..." disabled aria-label="Conversation search not yet active"><div class="xmm-empty"><span class="xmm-big">💌</span>Conversations will appear here once moderation access is configured.</div></section>
+          <section class="xmm-pane" aria-label="Conversation list preview"><h3>💬 Conversations</h3><input class="xmm-search" type="search" placeholder="🔎 Search conversations..." disabled aria-label="Conversation search not yet active"><div class="xmm-empty"><div class="xmm-avatar-pair" aria-hidden="true" style="justify-content:center"><span class="xmm-person-avatar">A</span><span class="xmm-person-avatar">B</span></div>Conversations will appear here once moderation access is configured.<div class="xmm-avatar-explainer">Real user profile photos will appear when secure moderation is activated. Initials are shown when a photo is unavailable.</div></div></section>
           <section class="xmm-pane" aria-label="Message viewer preview"><div class="xmm-convtop"><span class="xmm-avatar">💜</span><div><strong>Select a conversation</strong><div class="xmm-sub">Secure message viewer</div></div></div><div class="xmm-bubble">✨ Choose a conversation to view its messages.<br>This is a visual preview: no private messages are loaded or displayed.</div></section>
           <aside class="xmm-pane xmm-details" aria-label="Moderation tools preview"><h3>🛡️ Moderation Tools</h3><div class="xmm-sub">Conversation details and review actions will appear here.</div><button type="button" class="xmm-action" disabled>✓ Mark as reviewed</button><button type="button" class="xmm-action" disabled>⚑ Review report</button><button type="button" class="xmm-action" disabled>🚫 Take moderation action</button><div class="xmm-note">🔒 <strong>Privacy first</strong><br>Message access stays disabled until privacy notices, administrator permissions and review logging are ready.</div></aside>
         </div>
