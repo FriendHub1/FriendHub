@@ -15032,6 +15032,62 @@ function renderXoxoDmConversations(){
     btn.append(avatars,info);btn.addEventListener("click",()=>openXoxoDmConversation(c));list.append(btn);
   }
 }
+// Paginated, audited administrator history. Every request is authorized server-side.
+let xoxoDmHistoryState=null;
+let xoxoDmHistoryToken=0;
+function xoxoDmMakeMessage(m,c){
+  const bubble=document.createElement("article");
+  bubble.className="xmm-admin-message "+(String(m.sender_id)===String(c.user_1)?"xmm-chat-left":"xmm-chat-right");
+  const head=document.createElement("div");head.className="xmm-chat-author";
+  head.append(xoxoDmAvatar(m.sender_id),xoxoDmProfileButton(m.sender_id));bubble.append(head);
+  bubble.append(xoxoDmReportText("div",m.content||"","xmm-admin-message-content"));
+  if(m.attachment_name||m.attachment_type){
+    bubble.append(xoxoDmReportText("div","🔒 "+(m.attachment_name||m.attachment_type||"Private media")+" · Secure media viewer requires a protected server endpoint.","xmm-chat-attachment"));
+  }
+  bubble.append(xoxoDmReportText("small",xoxoAdminDate(m.created_at)+(m.edited_at?" · edited":"")));
+  return bubble;
+}
+function xoxoDmRenderHistory(viewer,state){
+  const oldHeight=viewer.scrollHeight,oldTop=viewer.scrollTop;
+  const frag=document.createDocumentFragment();let previousDate="";
+  for(const m of state.messages){
+    const date=m.created_at?new Date(m.created_at).toLocaleDateString():"";
+    if(date&&date!==previousDate){frag.append(xoxoDmReportText("div",date,"xmm-chat-date"));previousDate=date;}
+    frag.append(xoxoDmMakeMessage(m,state.conversation));
+  }
+  viewer.replaceChildren(frag);
+  if(state.messages.length===0)viewer.append(xoxoDmReportText("div","No messages found.","xmm-bubble"));
+  if(state.loading){viewer.prepend(xoxoDmReportText("div","Loading older messages…","xmm-chat-date"));}
+  else if(state.error){viewer.prepend(xoxoDmReportText("div","⚠️ Could not load older messages: "+state.error,"xmm-chat-date"));}
+  else if(!state.hasMore&&state.messages.length>0){viewer.prepend(xoxoDmReportText("div","Beginning of conversation","xmm-chat-date"));}
+  if(state.initial){viewer.scrollTop=viewer.scrollHeight;state.initial=false;}
+  else viewer.scrollTop=oldTop+(viewer.scrollHeight-oldHeight);
+}
+async function xoxoDmLoadOlderHistory(state){
+  if(!state||state.loading||!state.hasMore||!xoxoIsAdmin||xoxoDmHistoryState!==state)return;
+  const viewer=document.getElementById("xmmMessages");if(!viewer)return;
+  state.loading=true;state.error="";
+  xoxoDmRenderHistory(viewer,state);
+  try{
+    const oldest=state.messages[0];
+    const {data,error}=await supabaseClient.rpc("xoxo_admin_read_dm_page",{
+      p_user_1:state.conversation.user_1,p_user_2:state.conversation.user_2,
+      p_reason:state.reason,p_before_at:oldest?.created_at||null,p_before_id:oldest?.id||null
+    });
+    if(error)throw error;
+    if(xoxoDmHistoryState!==state||!xoxoIsAdmin)return;
+    const page=Array.isArray(data)?data:[];
+    const seen=new Set(state.messages.map(m=>String(m.id)));
+    state.messages=[...page.filter(m=>!seen.has(String(m.id))),...state.messages];
+    state.hasMore=page.length===100;
+  }catch(error){
+    if(xoxoDmHistoryState!==state)return;
+    console.error("Older message history unavailable:",error);
+    state.error=error?.message||"Unknown error";
+  }finally{
+    if(xoxoDmHistoryState===state){state.loading=false;xoxoDmRenderHistory(viewer,state);}
+  }
+}
 async function openXoxoDmConversation(c){
   if(!xoxoIsAdmin)return;
   const es=getFriendHubLanguage()==="es";
@@ -15044,42 +15100,33 @@ async function openXoxoDmConversation(c){
   const title=document.getElementById("xmmSelectedTitle");
   const subtitle=document.getElementById("xmmSelectedSubtitle");
   const details=document.getElementById("xmmSelectedDetails");
+  const token=++xoxoDmHistoryToken;
+  xoxoDmHistoryState=null;
   viewer.replaceChildren(xoxoDmReportText("div","🔒 Checking permission and recording access…","xmm-bubble"));
   try{
-    const {data,error}=await supabaseClient.rpc("xoxo_admin_read_dm_conversation",{
-      p_user_1:c.user_1,p_user_2:c.user_2,p_reason:reason.trim()
+    const {data,error}=await supabaseClient.rpc("xoxo_admin_read_dm_page",{
+      p_user_1:c.user_1,p_user_2:c.user_2,p_reason:reason.trim(),p_before_at:null,p_before_id:null
     });
     if(error)throw error;
-    if(!xoxoIsAdmin)return;
+    if(!xoxoIsAdmin||token!==xoxoDmHistoryToken)return;
     xoxoDmSelectedKey=String(c.user_1)+":"+String(c.user_2);
     renderXoxoDmConversations();
     title.replaceChildren(xoxoDmProfileButton(c.user_1),document.createTextNode(" ↔ "),xoxoDmProfileButton(c.user_2));
-    subtitle.textContent="🔒 Read-only · Access logged · Latest 100 messages";
-    details.replaceChildren(document.createTextNode("Participants: "),xoxoDmProfileButton(c.user_1),
-      document.createTextNode(" and "),xoxoDmProfileButton(c.user_2),
-      document.createTextNode(". Moderation reason recorded. Total messages: "+String(c.message_count||0)+"."));
-    viewer.replaceChildren();
-    const messages=Array.isArray(data)?data:[];
-    if(!messages.length){viewer.append(xoxoDmReportText("div","No messages found.","xmm-bubble"));return;}
-    let previousDate="";
-    for(const m of messages){
-      const date=m.created_at?new Date(m.created_at).toLocaleDateString():"";
-      if(date&&date!==previousDate){viewer.append(xoxoDmReportText("div",date,"xmm-chat-date"));previousDate=date;}
-      const bubble=document.createElement("article");
-      bubble.className="xmm-admin-message "+(String(m.sender_id)===String(c.user_1)?"xmm-chat-left":"xmm-chat-right");
-      const head=document.createElement("div");head.className="xmm-chat-author";
-      head.append(xoxoDmAvatar(m.sender_id),xoxoDmProfileButton(m.sender_id));
-      bubble.append(head);
-      bubble.append(xoxoDmReportText("div",m.content||"","xmm-admin-message-content"));
-      if(m.attachment_path){
-        const attachment=xoxoDmReportText("div","🔒 "+(m.attachment_name||m.attachment_type||"Private media")+" · Secure media viewer requires a protected server endpoint.","xmm-chat-attachment");
-        bubble.append(attachment);
-      }
-      bubble.append(xoxoDmReportText("small",xoxoAdminDate(m.created_at)+(m.edited_at?" · edited":"")));
-      viewer.append(bubble);
-    }
-    viewer.scrollTop=viewer.scrollHeight;
+    subtitle.textContent=es?"🔒 Solo lectura · Acceso registrado · Historial completo al desplazarte hacia arriba":"🔒 Read-only · Access logged · Scroll up for full history";
+    details.replaceChildren(document.createTextNode(es?"Participantes: ":"Participants: "),xoxoDmProfileButton(c.user_1),
+      document.createTextNode(es?" y ":" and "),xoxoDmProfileButton(c.user_2),
+      document.createTextNode((es?". Motivo registrado. Mensajes totales: ":". Moderation reason recorded. Total messages: ")+String(c.message_count||0)+"."));
+    const page=Array.isArray(data)?data:[];
+    const state={conversation:c,reason:reason.trim(),messages:page,hasMore:page.length===100,loading:false,error:"",initial:true};
+    xoxoDmHistoryState=state;
+    viewer.style.scrollBehavior="auto";
+    xoxoDmRenderHistory(viewer,state);
+    viewer.onscroll=()=>{
+      if(xoxoDmHistoryState!==state||state.loading||!state.hasMore)return;
+      if(viewer.scrollTop<=100)xoxoDmLoadOlderHistory(state);
+    };
   }catch(error){
+    if(token!==xoxoDmHistoryToken)return;
     console.error("Audited message access failed:",error);
     viewer.replaceChildren(xoxoDmReportText("div","⚠️ Access denied or unavailable: "+(error?.message||"Unknown error"),"xmm-bubble"));
   }
