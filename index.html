@@ -4658,6 +4658,23 @@
 .xmm-report-actions button:disabled{opacity:.5;cursor:wait}
 .xmm-report-feedback{font-size:13px;color:#e2d0f6;margin-top:10px}
 
+
+/* Privacy notice: follows the existing light/dark theme. */
+.xoxo-dm-privacy-notice{margin:0 0 18px;padding:13px 16px;border:1px solid var(--fh-border,#dcd8f5);border-radius:14px;background:var(--fh-surface,#fff);color:var(--fh-text,#263043);font-size:13px;line-height:1.55}
+.xoxo-dm-privacy-notice strong{display:block;margin-bottom:5px}
+.xoxo-dm-privacy-notice p{margin:0;color:var(--fh-muted,#667085)}
+
+/* XOXO Avenue — audited Message Moderation viewer */
+.xmm-conversation-list{display:grid;gap:8px;margin-top:13px;max-height:540px;overflow:auto}
+.xmm-conversation-row{width:100%;display:flex;gap:10px;align-items:center;text-align:left;padding:11px;border:1px solid #5b467b;border-radius:13px;background:#2b2044;color:#fff;cursor:pointer}
+.xmm-conversation-row:hover,.xmm-conversation-row.selected{border-color:#dc8bea;background:#3b285a}
+.xmm-conversation-info{display:grid;gap:4px;min-width:0}.xmm-conversation-info strong{font-size:12px;overflow-wrap:anywhere}.xmm-conversation-info small{font-size:11px;color:#c9b9df}
+.xmm-avatar-pair{display:flex;align-items:center;flex-shrink:0}
+.xmm-message-list{display:grid;align-content:start;gap:10px;max-height:530px;overflow-y:auto;padding:12px 2px}
+.xmm-admin-message{border:1px solid #584378;background:#312349;border-radius:14px;padding:12px;color:#f8f1ff;display:grid;gap:4px}
+.xmm-admin-message strong{font-size:13px;color:#f5b9e5}.xmm-admin-message small{font-size:11px;color:#c6b4dc}
+.xmm-admin-message-content{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.55}
+
 </style>
                                     
                 <style>
@@ -5521,6 +5538,7 @@
                                     <h1 id="messagesPageTitle">Messages</h1>
                                     <p id="messagesPageSubtitle">Private conversations on XOXO Avenue.</p>
                                     </div>
+                                    <div class="xoxo-dm-privacy-notice" id="xoxoDmPrivacyNotice" role="note"><strong data-en="🔒 Private message moderation" data-es="🔒 Moderación de mensajes privados">🔒 Private message moderation</strong><p data-en="Authorized administrators may review private conversations when necessary for safety, abuse prevention, investigations, or enforcing community rules. Access is restricted and logged. You can report inappropriate messages." data-es="Los administradores autorizados pueden revisar conversaciones privadas cuando sea necesario por seguridad, prevención de abusos, investigaciones o cumplimiento de las normas comunitarias. El acceso está restringido y se registra. Puedes denunciar mensajes inapropiados.">Authorized administrators may review private conversations when necessary for safety, abuse prevention, investigations, or enforcing community rules. Access is restricted and logged. You can report inappropriate messages.</p></div>
                                     <div id="dmEmptyState" class="dm-inbox-wrap">
                                     <div id="dmInbox" class="dm-inbox">
                                     <div class="content-card dm-empty-state">
@@ -5896,6 +5914,8 @@
                                     <h2>14. Advertising and Google AdSense</h2>
                                     <p>XOXO Avenue may introduce advertising in the future to support the service while keeping its core features free. Google AdSense is being considered, but this notice does not mean Google ads are currently active.</p>
                                     <p>If advertising is introduced, Google and its partners may use cookies or similar technologies to deliver and measure ads, subject to applicable privacy requirements. Advertising may be personalized or non-personalized depending on consent, age-related protections and other applicable restrictions. This policy will be updated to describe advertising services actually implemented.</p>
+                                    <h2 data-en="15. Private message moderation" data-es="15. Moderación de mensajes privados">15. Private message moderation</h2>
+<p data-en="To help maintain a safe community, authorized XOXO Avenue administrators may access private conversations when necessary for safety, abuse prevention, investigations, or enforcement of community guidelines. Administrative access is restricted, logged, and intended only for legitimate moderation purposes. Private messages are not publicly visible. Users may report inappropriate messages through the reporting feature." data-es="Para mantener una comunidad segura, los administradores autorizados de XOXO Avenue pueden acceder a conversaciones privadas cuando sea necesario por seguridad, prevención de abusos, investigaciones o cumplimiento de las normas comunitarias. El acceso administrativo está restringido, se registra y se utiliza únicamente para fines legítimos de moderación. Los mensajes privados no son públicos. Los usuarios pueden denunciar mensajes inapropiados mediante la función de reportes.">To help maintain a safe community, authorized XOXO Avenue administrators may access private conversations when necessary for safety, abuse prevention, investigations, or enforcement of community guidelines. Administrative access is restricted, logged, and intended only for legitimate moderation purposes. Private messages are not publicly visible. Users may report inappropriate messages through the reporting feature.</p>
 
                                     <h2>15. Cookies and Similar Technologies</h2>
                                     <p>XOXO Avenue and its service providers may use cookies, browser storage and similar technologies to support sign-in sessions, security, preferences and website functionality.</p>
@@ -6178,7 +6198,7 @@
     </div>
     <div id="xoxoAdminModeration" class="xoxo-admin-panel">
       <div class="xmm-wrap">
-        <div class="xmm-head"><div class="xmm-title-row"><div class="xmm-admin-bunny" role="img" aria-label="XOXO Avenue admin bunny"><span>🐰</span></div><div><h2>Message Moderation 💜</h2><div class="xmm-sub">Private messaging oversight · XOXO Avenue</div></div></div><span class="xmm-tag">✦ Design preview · Not active</span></div>
+        <div class="xmm-head"><div class="xmm-title-row"><div class="xmm-admin-bunny" role="img" aria-label="XOXO Avenue admin bunny"><span>🐰</span></div><div><h2>Message Moderation 💜</h2><div class="xmm-sub">Private messaging oversight · XOXO Avenue</div></div></div><span class="xmm-tag">🔒 Audited admin access</span></div>
         <div class="xmm-stats">
           <div class="xmm-stat"><div class="xmm-ico">💌</div><strong id="xmmTotalMessages">—</strong><span>Total messages</span></div>
           <div class="xmm-stat"><div class="xmm-ico">💬</div><strong id="xmmConversations">—</strong><span>Conversations</span></div>
@@ -6186,9 +6206,9 @@
           <div class="xmm-stat"><div class="xmm-ico">🛡️</div><strong id="xmmReportedConversations">—</strong><span>Reported conversations</span></div>
         </div>
         <div class="xmm-main">
-          <section class="xmm-pane" aria-label="Conversation list preview"><h3>💬 Conversations</h3><input class="xmm-search" type="search" placeholder="🔎 Search conversations..." disabled aria-label="Conversation search not yet active"><div class="xmm-empty"><div class="xmm-avatar-pair" aria-hidden="true" style="justify-content:center"><span class="xmm-person-avatar">A</span><span class="xmm-person-avatar">B</span></div>Conversations will appear here once moderation access is configured.<div class="xmm-avatar-explainer">Real user profile photos will appear when secure moderation is activated. Initials are shown when a photo is unavailable.</div></div></section>
-          <section class="xmm-pane" aria-label="Message viewer preview"><div class="xmm-convtop"><span class="xmm-avatar">💜</span><div><strong>Select a conversation</strong><div class="xmm-sub">Secure message viewer</div></div></div><div class="xmm-bubble">✨ Choose a conversation to view its messages.<br>This is a visual preview: no private messages are loaded or displayed.</div></section>
-          <aside class="xmm-pane xmm-details" aria-label="Moderation tools preview"><h3>🛡️ Moderation Tools</h3><div class="xmm-sub">Conversation details and review actions will appear here.</div><button type="button" class="xmm-action" disabled>✓ Mark as reviewed</button><button type="button" class="xmm-action" disabled>⚑ Review report</button><button type="button" class="xmm-action" disabled>🚫 Take moderation action</button><div class="xmm-note">🔒 <strong>Privacy first</strong><br>Message access stays disabled until privacy notices, administrator permissions and review logging are ready.</div></aside>
+          <section class="xmm-pane" aria-label="Conversation list"><h3>💬 Conversations</h3><input id="xmmConversationSearch" class="xmm-search" type="search" placeholder="🔎 Search conversations..." oninput="renderXoxoDmConversations()"><div id="xmmConversationList" aria-live="polite" class="xmm-conversation-list"><div class="xmm-empty">Loading conversations…</div></div></section>
+          <section class="xmm-pane" aria-label="Private message viewer"><div class="xmm-convtop"><span class="xmm-avatar">💜</span><div><strong id="xmmSelectedTitle">Select a conversation</strong><div class="xmm-sub" id="xmmSelectedSubtitle">Audited, read-only moderation</div></div></div><div id="xmmMessages" class="xmm-message-list" aria-live="polite"><div class="xmm-bubble">✨ Choose a conversation to view its messages. You will need to provide a moderation reason.</div></div></section>
+          <aside class="xmm-pane xmm-details" aria-label="Moderation tools"><h3>🛡️ Moderation Tools</h3><div class="xmm-sub">Authorized, read-only access. Every conversation opening is logged.</div><div id="xmmSelectedDetails" class="xmm-note">🔒 Select a conversation. You will be asked to explain the moderation purpose before any message content is retrieved.</div><button type="button" class="xmm-reload" style="margin-top:12px" onclick="loadXoxoDmConversations()">↻ Refresh conversations</button><div class="xmm-note">💜 Do not share private message contents outside legitimate moderation. Viewing does not mark messages as read.</div></aside>
         </div>
         <section class="xmm-reports" aria-label="Reported direct messages">
           <div class="xmm-reports-head"><div><h3>🚩 Message Reports</h3><div class="xmm-sub">Review reported messages without opening private conversations.</div></div><button class="xmm-reload" type="button" onclick="loadXoxoDmReports()">↻ Refresh reports</button></div>
@@ -14875,7 +14895,7 @@ function switchXoxoAdminTab(tab, button) {
   const panel=document.getElementById(map[tab]); if(panel) panel.classList.add("active");
   if(button) button.classList.add("active");
   if(tab === "support") loadXoxoAdminSupportCases();
-  if(tab === "moderation") { loadXoxoAdminMessageStats(); loadXoxoDmReports(); }
+  if(tab === "moderation") { loadXoxoAdminMessageStats(); loadXoxoDmReports(); loadXoxoDmConversations(); }
 }
 
 // XOXO Avenue: admin-only aggregate DM statistics. No private message content is requested.
@@ -14915,12 +14935,106 @@ async function loadXoxoAdminMessageStats() {
       console.error("Reported conversations count unavailable:", reportError);
       if (reportedEl) reportedEl.textContent = "—";
     }
-    if (status) status.textContent = "🔒 Live aggregate statistics · No message contents accessed · Private message viewer inactive";
+    if (status) status.textContent = "🔒 Live statistics · Conversation access requires an audited moderation reason";
   } catch (error) {
     console.error("Message moderation statistics unavailable:", error);
     if (reportedEl) reportedEl.textContent = "—";
     setValues(["—", "—", "—"]);
     if (status) status.textContent = "⚠️ Could not load message statistics. Verify admin login and RPC permissions. Private messages remain inaccessible.";
+  }
+}
+
+// XOXO Avenue — auditable, read-only administrator DM viewer.
+let xoxoDmConversations = [];
+let xoxoDmSelectedKey = "";
+function xoxoDmDisplayUser(id) {
+  const user = xoxoAdminUsers.find(u => String(u.user_id) === String(id));
+  return user?.username ? "@" + user.username : "User " + String(id || "").slice(0,8);
+}
+function xoxoDmInitial(id) { return xoxoDmDisplayUser(id).replace(/^@/, "").charAt(0).toUpperCase() || "?"; }
+function xoxoDmAvatar(id) {
+  const el = document.createElement("span"); el.className="xmm-person-avatar";
+  const user = xoxoAdminUsers.find(u => String(u.user_id) === String(id));
+  const url = user?.avatar_url || user?.profile_photo_url || user?.photo_url;
+  if (url && /^https:\/\//i.test(url)) {
+    const img=document.createElement("img"); img.src=url; img.alt="";
+    img.onerror=()=>{img.remove();el.textContent=xoxoDmInitial(id);}; el.append(img);
+  } else el.textContent=xoxoDmInitial(id);
+  return el;
+}
+async function loadXoxoDmConversations() {
+  const list=document.getElementById("xmmConversationList");
+  if(!list || !xoxoIsAdmin) return;
+  list.replaceChildren(xoxoDmReportText("div", "Loading conversations…", "xmm-empty"));
+  try {
+    const {data,error}=await supabaseClient.rpc("xoxo_admin_list_dm_conversations");
+    if(error) throw error;
+    if(!xoxoIsAdmin) return;
+    xoxoDmConversations=Array.isArray(data)?data:[];
+    renderXoxoDmConversations();
+  } catch(error) {
+    console.error("Conversation list unavailable:",error);
+    list.replaceChildren(xoxoDmReportText("div", "Could not load conversations: "+(error?.message||"Unknown error"), "xmm-empty"));
+  }
+}
+function renderXoxoDmConversations() {
+  const list=document.getElementById("xmmConversationList"); if(!list) return;
+  list.replaceChildren();
+  const q=(document.getElementById("xmmConversationSearch")?.value||"").trim().toLowerCase();
+  const rows=xoxoDmConversations.filter(c => (xoxoDmDisplayUser(c.user_1)+" "+xoxoDmDisplayUser(c.user_2)).toLowerCase().includes(q));
+  if(!rows.length) {list.append(xoxoDmReportText("div", q?"No matching conversations.":"💜 No conversations yet.", "xmm-empty"));return;}
+  for(const c of rows) {
+    const key=String(c.user_1)+":"+String(c.user_2);
+    const btn=document.createElement("button");btn.type="button";
+    btn.className="xmm-conversation-row"+(key===xoxoDmSelectedKey?" selected":"");
+    const avatars=document.createElement("span");avatars.className="xmm-avatar-pair";
+    avatars.append(xoxoDmAvatar(c.user_1),xoxoDmAvatar(c.user_2));
+    const info=document.createElement("span");info.className="xmm-conversation-info";
+    info.append(xoxoDmReportText("strong",xoxoDmDisplayUser(c.user_1)+" · "+xoxoDmDisplayUser(c.user_2)));
+    info.append(xoxoDmReportText("small",String(c.message_count||0)+" messages · "+xoxoAdminDate(c.last_at)));
+    btn.append(avatars,info);
+    btn.addEventListener("click",()=>openXoxoDmConversation(c));
+    list.append(btn);
+  }
+}
+async function openXoxoDmConversation(c) {
+  if(!xoxoIsAdmin) return;
+  const es=getFriendHubLanguage()==="es";
+  const reason=window.prompt(es?"Motivo de moderación (10–300 caracteres). El acceso quedará registrado:":"Moderation reason (10–300 characters). This access will be logged:");
+  if(reason===null) return;
+  if(reason.trim().length<10 || reason.trim().length>300) {
+    window.alert(es?"Escribe un motivo de 10 a 300 caracteres.":"Enter a reason of 10 to 300 characters.");return;
+  }
+  const viewer=document.getElementById("xmmMessages");
+  const title=document.getElementById("xmmSelectedTitle");
+  const subtitle=document.getElementById("xmmSelectedSubtitle");
+  const details=document.getElementById("xmmSelectedDetails");
+  viewer.replaceChildren(xoxoDmReportText("div", "🔒 Checking permission and recording access…", "xmm-bubble"));
+  try {
+    const {data,error}=await supabaseClient.rpc("xoxo_admin_read_dm_conversation",{
+      p_user_1:c.user_1,p_user_2:c.user_2,p_reason:reason.trim()
+    });
+    if(error) throw error;
+    if(!xoxoIsAdmin) return;
+    xoxoDmSelectedKey=String(c.user_1)+":"+String(c.user_2);
+    renderXoxoDmConversations();
+    title.textContent=xoxoDmDisplayUser(c.user_1)+" ↔ "+xoxoDmDisplayUser(c.user_2);
+    subtitle.textContent="🔒 Read-only · Access logged · Latest 100 messages";
+    details.textContent="Participants: "+xoxoDmDisplayUser(c.user_1)+" and "+xoxoDmDisplayUser(c.user_2)+". Moderation reason recorded. Total messages: "+String(c.message_count||0)+".";
+    viewer.replaceChildren();
+    const messages=Array.isArray(data)?data:[];
+    if(!messages.length) {viewer.append(xoxoDmReportText("div","No messages found.","xmm-bubble"));return;}
+    for(const m of messages) {
+      const bubble=document.createElement("article");bubble.className="xmm-admin-message";
+      bubble.append(xoxoDmReportText("strong",xoxoDmDisplayUser(m.sender_id)));
+      bubble.append(xoxoDmReportText("small",xoxoAdminDate(m.created_at)+(m.edited_at?" · edited":"")));
+      bubble.append(xoxoDmReportText("div",m.content||"", "xmm-admin-message-content"));
+      if(m.attachment_name || m.attachment_type) bubble.append(xoxoDmReportText("small","📎 Attachment: "+(m.attachment_name||m.attachment_type)+" (not opened)") );
+      viewer.append(bubble);
+    }
+  } catch(error) {
+    console.error("Audited message access failed:",error);
+    viewer.replaceChildren(xoxoDmReportText("div","⚠️ Access denied or unavailable: "+(error?.message||"Unknown error"),"xmm-bubble"));
   }
 }
 
@@ -16409,5 +16523,14 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 })();
 </script>
 
+<script>
+/* XOXO: notices follow the existing English/Español selector. */
+(function(){
+  const lang = localStorage.getItem('friendhub_language') === 'es' ? 'es' : 'en';
+  document.querySelectorAll('[data-en][data-es]').forEach(el => {
+    el.textContent = el.getAttribute('data-' + lang);
+  });
+})();
+</script>
 </body>
                                     </html>
