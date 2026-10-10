@@ -5051,6 +5051,18 @@
 @media(max-width:600px){#bottleMessages .sl3-mascots img{width:75px;height:65px}#bottleMessages .sl3-mascots{gap:9px}#bottleMessages .sl3-avatar{width:33px;height:33px}#bottleMessages .sl2-bubble.sl2-theirs{margin-left:40px}#bottleMessages .sl2-bubble.sl2-mine{margin-right:40px}#bottleMessages .sl3-avatar-theirs{left:-39px}#bottleMessages .sl3-avatar-mine{right:-39px}#bottleMessages .sl3-match-mascots{width:92px;height:70px;margin-right:10px}}
 @media(prefers-reduced-motion:no-preference){#bottleMessages .sl3-mascots img{animation:sl3Float 4s ease-in-out infinite alternate}#bottleMessages .sl3-mascots img:last-child{animation-delay:1.2s}@keyframes sl3Float{to{transform:translateY(-6px)}}}
 </style>
+<style id="xoxo-sl4-letter-menus">
+#bottleMessages .sl4-letter-card{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:12px 0;padding:18px;border:1px solid #ecd0f0;border-radius:20px;background:linear-gradient(130deg,#fffaf0,#fff3fc);color:#5b306e;text-align:left}
+#bottleMessages .sl4-letter-info{min-width:0;flex:1}
+#bottleMessages .sl4-letter-info p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5;margin:8px 0 0;max-height:7.5em;overflow:auto}
+#bottleMessages .sl4-letter-status{font-size:.82rem;font-weight:700;color:#97459a}
+#bottleMessages .sl4-letter-menu{position:relative;flex-shrink:0}
+#bottleMessages .sl4-letter-menu summary{cursor:pointer;list-style:none;background:white;border:1px solid #e8c3ed;border-radius:12px;padding:7px 13px;font-size:1.1rem;font-weight:800;color:#7c368d}
+#bottleMessages .sl4-letter-menu summary::-webkit-details-marker{display:none}
+#bottleMessages .sl4-letter-actions{position:absolute;z-index:15;right:0;top:40px;min-width:170px;background:white;border:1px solid #e8c3ed;border-radius:14px;padding:7px;box-shadow:0 8px 25px #59316a30}
+#bottleMessages .sl4-letter-actions button{display:block;width:100%;border:0;background:transparent;color:#6b317f;padding:10px;border-radius:9px;text-align:left;cursor:pointer;font-weight:600}
+#bottleMessages .sl4-letter-actions button:hover{background:#f8e7fa}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -16946,15 +16958,77 @@ const root=document.getElementById('bottleMessages');if(!root)return;
 const panels={create:'sl2Create',letters:'sl2Letters',discover:'sl2Discover',conversations:'sl2Conversations',how:'sl2How'};
 const $=id=>document.getElementById(id);
 const allowed=()=>Boolean(typeof currentUser!=='undefined'&&currentUser&&typeof xoxoIsAdmin!=='undefined'&&xoxoIsAdmin);
-let lang='en',demoDraft='',opened=0;
+let lang='en',demoDraft='',opened=0; let slDemoLetters=[],slDemoNext=1,slEditingId=null;
 const sample={en:['Sometimes the best connections begin with a simple hello. I hope this little letter makes you smile. 💜','I believe two strangers can find something beautiful in an unexpected conversation. 🌷','Somewhere in this big world, I hope you are having a wonderful day. 💌'],es:['A veces las conexiones más bonitas comienzan con un simple hola. Espero que esta cartita te haga sonreír. 💜','Creo que dos desconocidos pueden encontrar algo hermoso en una conversación inesperada. 🌷','En algún lugar de este gran mundo, espero que estés teniendo un día maravilloso. 💌']};
-function syncLang(){const v=$('languageSelect')?.value||'en';lang=/^es/i.test(v)?'es':'en';root.querySelectorAll('[data-sl-en]').forEach(el=>{el.textContent=el.getAttribute('data-sl-'+lang)});root.querySelectorAll('[data-sl-placeholder-en]').forEach(el=>el.placeholder=el.getAttribute('data-sl-placeholder-'+lang));$('sl2LetterText').textContent=sample[lang][opened];$('sl2Greeting').textContent=lang==='es'?'A veces un pequeño hola puede cambiarlo todo. 💕':'Sometimes a little hello can change everything. 💕';$('sl2Reply').textContent=lang==='es'?'Me alegra que nuestros caminos se cruzaran. 💛':"I'm glad our paths crossed. 💛";if(!demoDraft)$('sl2LetterList').textContent=lang==='es'?'🐻 Todavía no hay borradores en esta demostración.':'🐻 No drafts in this demo yet.';}
+function syncLang(){const v=$('languageSelect')?.value||'en';lang=/^es/i.test(v)?'es':'en';root.querySelectorAll('[data-sl-en]').forEach(el=>{el.textContent=el.getAttribute('data-sl-'+lang)});root.querySelectorAll('[data-sl-placeholder-en]').forEach(el=>el.placeholder=el.getAttribute('data-sl-placeholder-'+lang));$('sl2LetterText').textContent=sample[lang][opened];$('sl2Greeting').textContent=lang==='es'?'A veces un pequeño hola puede cambiarlo todo. 💕':'Sometimes a little hello can change everything. 💕';$('sl2Reply').textContent=lang==='es'?'Me alegra que nuestros caminos se cruzaran. 💛':"I'm glad our paths crossed. 💛";renderDemoLetters();}
 function tab(name){if(!allowed())return;Object.entries(panels).forEach(([key,id])=>{$(id).hidden=key!==name});root.querySelectorAll('[data-sl-tab]').forEach(el=>{el.classList.toggle('sl2-selected',el.dataset.slTab===name);el.setAttribute('aria-pressed',String(el.dataset.slTab===name))});syncLang();}
 root.querySelectorAll('[data-sl-tab]').forEach(el=>el.addEventListener('click',()=>tab(el.dataset.slTab)));
 root.querySelectorAll('[data-sl-letter]').forEach(el=>el.addEventListener('click',()=>{if(!allowed())return;opened=Number(el.dataset.slLetter);$('sl2Opened').hidden=false;syncLang()}));
 $('sl2Start').addEventListener('click',()=>tab('conversations'));
-$('sl2Save').addEventListener('click',()=>{if(!allowed())return;demoDraft=$('sl2Draft').value.trim();$('sl2CreateNotice').textContent=demoDraft?(lang==='es'?'Borrador guardado solo en esta vista temporal.':'Draft saved in this temporary preview only.'):(lang==='es'?'Escribe algo primero.':'Write something first.');$('sl2LetterList').textContent=demoDraft?'💌 '+demoDraft.slice(0,200):''});
-$('sl2Preview').addEventListener('click',()=>{if(!allowed())return;const body=$('sl2Draft').value.trim();if(!body){$('sl2CreateNotice').textContent=lang==='es'?'Escribe algo primero.':'Write something first.';return}demoDraft=body;$('sl2LetterList').textContent='💌 '+body.slice(0,200);tab('letters')});
+
+function slDemoMessage(en,es){$('sl2CreateNotice').textContent=lang==='es'?es:en}
+function renderDemoLetters(){
+ const list=$('sl2LetterList');list.replaceChildren();
+ if(!slDemoLetters.length){list.textContent=lang==='es'?'🐻 Todavía no hay cartitas en esta demostración.':'🐻 No letters in this demo yet.';return;}
+ slDemoLetters.forEach(letter=>{
+  const card=document.createElement('div');card.className='sl4-letter-card';
+  const info=document.createElement('div');info.className='sl4-letter-info';
+  const status=document.createElement('span');status.className='sl4-letter-status';
+  status.textContent=letter.status==='draft'?(lang==='es'?'📝 Borrador':'📝 Draft'):letter.status==='published'?(lang==='es'?'💌 Publicada':'💌 Published'):(lang==='es'?'📪 Retirada':'📪 Withdrawn');
+  const excerpt=document.createElement('p');excerpt.textContent=letter.body;
+  info.append(status,excerpt);
+  const menu=document.createElement('details');menu.className='sl4-letter-menu';
+  const summary=document.createElement('summary');summary.textContent='•••';
+  summary.setAttribute('aria-label',lang==='es'?'Opciones de la carta':'Letter options');
+  menu.append(summary);
+  const actions=document.createElement('div');actions.className='sl4-letter-actions';
+  function action(en,es,fn){
+   const b=document.createElement('button');b.type='button';b.textContent=lang==='es'?es:en;
+   b.addEventListener('click',()=>{menu.open=false;fn()});actions.append(b);
+  }
+  action('👀 View letter','👀 Ver carta',()=>alert(letter.body));
+  if(letter.status==='draft'){
+   action('✏️ Edit','✏️ Editar',()=>{
+    slEditingId=letter.id;$('sl2Draft').value=letter.body;tab('create');
+    slDemoMessage('Editing your draft (demo).','Editando tu borrador (demostración).');
+   });
+   action('💌 Publish','💌 Publicar',()=>{
+    letter.status='published';renderDemoLetters();
+   });
+  }
+  if(letter.status==='published'){
+   action('📪 Withdraw','📪 Retirar',()=>{
+    if(!confirm(lang==='es'?'¿Retirar esta carta? Ya no aparecerá para descubrirla.':'Withdraw this letter? It will no longer appear for discovery.'))return;
+    letter.status='withdrawn';renderDemoLetters();
+   });
+  }
+  if(letter.status==='draft'||letter.status==='withdrawn'){
+   action('🗑️ Delete','🗑️ Eliminar',()=>{
+    if(!confirm(lang==='es'?'🐻💌 ¿Seguro que quieres eliminar esta cartita? No se puede deshacer.':'🐻💌 Delete this letter? This cannot be undone.'))return;
+    slDemoLetters=slDemoLetters.filter(x=>x.id!==letter.id);
+    if(slEditingId===letter.id){slEditingId=null;$('sl2Draft').value='';}
+    renderDemoLetters();
+   });
+  }
+  menu.append(actions);card.append(info,menu);list.append(card);
+ });
+}
+function saveDemoDraft(){
+ const body=$('sl2Draft').value.trim();
+ if(!body){slDemoMessage('Write something first.','Escribe algo primero.');return false;}
+ if(slEditingId){
+  const existing=slDemoLetters.find(x=>x.id===slEditingId&&x.status==='draft');
+  if(existing)existing.body=body;
+  else slDemoLetters.unshift({id:slDemoNext++,body,status:'draft'});
+ }else{
+  const item={id:slDemoNext++,body,status:'draft'};slDemoLetters.unshift(item);slEditingId=item.id;
+ }
+ demoDraft=body;renderDemoLetters();
+ slDemoMessage('Draft saved in this temporary preview only.','Borrador guardado solo en esta vista temporal.');
+ return true;
+}
+$('sl2Save').addEventListener('click',()=>{if(!allowed())return;saveDemoDraft()});
+$('sl2Preview').addEventListener('click',()=>{if(!allowed())return;if(saveDemoDraft())tab('letters')});
 $('sl2ChatForm').addEventListener('submit',e=>{e.preventDefault();if(!allowed())return;const input=$('sl2ChatInput'),msg=input.value.trim();if(!msg)return;const b=document.createElement('div');b.className='sl2-bubble sl2-mine';const avatar=document.createElement('img');avatar.className='sl3-avatar sl3-avatar-mine';avatar.alt='';avatar.src='data:image/webp;base64,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';b.append(avatar);const who=document.createElement('small');who.textContent='🦊 DreamyFox';const content=document.createElement('span');content.textContent=msg;b.append(who,content);$('sl2Bubbles').append(b);$('sl2Bubbles').scrollTop=$('sl2Bubbles').scrollHeight;input.value=''});
 $('sl2Decision').addEventListener('click',()=>{$('sl2Choice').hidden=false});
 $('sl2Continue').addEventListener('click',()=>{$('sl2ChoiceResult').textContent=lang==='es'?'Elegiste Continuar 💕. Esperando la decisión de la otra persona (demostración).':'You chose Continue 💕. Waiting for the other person (demo).'});
