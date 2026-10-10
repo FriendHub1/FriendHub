@@ -4643,7 +4643,22 @@
                   }
                 }
 
-                </style>
+                
+/* XOXO DM report management — no message content access */
+.xmm-reports{margin-top:17px;border:1px solid #594177;background:#211738;border-radius:19px;padding:19px;color:#f8f1ff}
+.xmm-reports-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.xmm-reports-head h3{margin:0;color:#fff;font-size:19px}
+.xmm-report-card{background:#2b1d49;border:1px solid #624882;border-radius:15px;padding:16px;margin:12px 0;overflow-wrap:anywhere}
+.xmm-report-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.xmm-report-status{font-size:12px;border-radius:30px;padding:5px 10px;background:#654088;color:#fff;font-weight:700}
+.xmm-report-meta{font-size:13px;color:#d4c4e8;margin:8px 0;line-height:1.6}
+.xmm-report-details{background:#201533;border:1px solid #4f386c;border-radius:10px;padding:11px;margin:9px 0;white-space:pre-wrap;color:#f4e9ff;font-size:14px}
+.xmm-report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.xmm-report-actions button,.xmm-reload{border:1px solid #9b6cd2;background:#513078;color:white;padding:9px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+.xmm-report-actions button:disabled{opacity:.5;cursor:wait}
+.xmm-report-feedback{font-size:13px;color:#e2d0f6;margin-top:10px}
+
+</style>
                                     
                 <style>
                 /* XOXO DM PLUS MENU — floating tray layout fix
@@ -6175,6 +6190,10 @@
           <section class="xmm-pane" aria-label="Message viewer preview"><div class="xmm-convtop"><span class="xmm-avatar">💜</span><div><strong>Select a conversation</strong><div class="xmm-sub">Secure message viewer</div></div></div><div class="xmm-bubble">✨ Choose a conversation to view its messages.<br>This is a visual preview: no private messages are loaded or displayed.</div></section>
           <aside class="xmm-pane xmm-details" aria-label="Moderation tools preview"><h3>🛡️ Moderation Tools</h3><div class="xmm-sub">Conversation details and review actions will appear here.</div><button type="button" class="xmm-action" disabled>✓ Mark as reviewed</button><button type="button" class="xmm-action" disabled>⚑ Review report</button><button type="button" class="xmm-action" disabled>🚫 Take moderation action</button><div class="xmm-note">🔒 <strong>Privacy first</strong><br>Message access stays disabled until privacy notices, administrator permissions and review logging are ready.</div></aside>
         </div>
+        <section class="xmm-reports" aria-label="Reported direct messages">
+          <div class="xmm-reports-head"><div><h3>🚩 Message Reports</h3><div class="xmm-sub">Review reported messages without opening private conversations.</div></div><button class="xmm-reload" type="button" onclick="loadXoxoDmReports()">↻ Refresh reports</button></div>
+          <div id="xmmReportsList" aria-live="polite">Open this tab to load reports.</div>
+        </section>
         <div id="xmmStatsStatus" class="xmm-foot" role="status" aria-live="polite">🎀 Message viewer inactive · Statistics load only for authorized admins · No private messages displayed</div>
       </div>
     </div>
@@ -14856,7 +14875,7 @@ function switchXoxoAdminTab(tab, button) {
   const panel=document.getElementById(map[tab]); if(panel) panel.classList.add("active");
   if(button) button.classList.add("active");
   if(tab === "support") loadXoxoAdminSupportCases();
-  if(tab === "moderation") loadXoxoAdminMessageStats();
+  if(tab === "moderation") { loadXoxoAdminMessageStats(); loadXoxoDmReports(); }
 }
 
 // XOXO Avenue: admin-only aggregate DM statistics. No private message content is requested.
@@ -14905,6 +14924,79 @@ async function loadXoxoAdminMessageStats() {
   }
 }
 
+// Report-only administration. The RPC deliberately excludes direct_messages.content.
+let xoxoDmReports = [];
+const xoxoDmReasonNames = {harassment:"Harassment or bullying",spam:"Spam or scam",inappropriate:"Inappropriate content",threats:"Threats or violence",other:"Other"};
+function xoxoDmAdminName(id) {
+  const user = xoxoAdminUsers.find(u => String(u.user_id) === String(id));
+  return user?.username ? "@" + user.username : (id ? String(id) : "Unknown user");
+}
+function xoxoDmReportText(tag, value, className) {
+  const el = document.createElement(tag);
+  if(className) el.className = className;
+  el.textContent = value == null ? "" : String(value);
+  return el;
+}
+async function loadXoxoDmReports() {
+  const list = document.getElementById("xmmReportsList");
+  if(!list || !xoxoIsAdmin) return;
+  list.replaceChildren(xoxoDmReportText("div", "Loading reports…", "xmm-report-feedback"));
+  try {
+    const {data,error} = await supabaseClient.rpc("get_xoxo_dm_reports");
+    if(error) throw error;
+    if(!xoxoIsAdmin) return;
+    xoxoDmReports = Array.isArray(data) ? data : [];
+    renderXoxoDmReports();
+  } catch(error) {
+    console.error("DM reports unavailable:", error);
+    list.replaceChildren(xoxoDmReportText("div", "Could not load reports: " + (error?.message || "Unknown error"), "xmm-report-feedback"));
+  }
+}
+function renderXoxoDmReports() {
+  const list = document.getElementById("xmmReportsList");
+  if(!list) return;
+  list.replaceChildren();
+  if(!xoxoDmReports.length) {
+    list.append(xoxoDmReportText("div", "💜 No private-message reports yet.", "xmm-report-feedback"));
+    return;
+  }
+  for(const r of xoxoDmReports) {
+    const card = xoxoDmReportText("article", "", "xmm-report-card");
+    const top = xoxoDmReportText("div", "", "xmm-report-top");
+    top.append(xoxoDmReportText("strong", "🚩 Report · " + String(r.id).slice(0,8)));
+    top.append(xoxoDmReportText("span", (r.status || "pending").toUpperCase(), "xmm-report-status"));
+    card.append(top);
+    card.append(xoxoDmReportText("div", "Reported by: " + xoxoDmAdminName(r.reporter_id) + "  ·  Reported user: " + xoxoDmAdminName(r.reported_user_id), "xmm-report-meta"));
+    card.append(xoxoDmReportText("div", "Reason: " + (xoxoDmReasonNames[r.reason] || r.reason || "—") + "  ·  " + xoxoAdminDate(r.created_at), "xmm-report-meta"));
+    card.append(xoxoDmReportText("div", "Additional details: " + (r.details?.trim() || "None provided"), "xmm-report-details"));
+    const actions = xoxoDmReportText("div", "", "xmm-report-actions");
+    const feedback = xoxoDmReportText("div", "", "xmm-report-feedback");
+    for(const [value,label] of [["reviewed","✓ Mark reviewed"],["resolved","✓ Resolve"],["dismissed","× Dismiss"],["pending","↺ Reopen"]]) {
+      if(r.status === value) continue;
+      const btn = xoxoDmReportText("button",label);
+      btn.type = "button";
+      btn.addEventListener("click", async () => {
+        if(!xoxoIsAdmin || !window.confirm("Change this report to " + value + "?")) return;
+        [...actions.querySelectorAll("button")].forEach(b => b.disabled = true);
+        feedback.textContent = "Saving…";
+        try {
+          const {data,error} = await supabaseClient.rpc("update_xoxo_dm_report_status", {p_report_id:r.id,p_status:value});
+          if(error) throw error;
+          if(data !== true) throw new Error("Report not found or not updated");
+          await loadXoxoDmReports();
+          await loadXoxoAdminMessageStats();
+        } catch(error) {
+          feedback.textContent = "Could not update report: " + (error?.message || "Unknown error");
+          [...actions.querySelectorAll("button")].forEach(b => b.disabled = false);
+        }
+      });
+      actions.append(btn);
+    }
+    card.append(actions,feedback);
+    list.append(card);
+  }
+}
+
 async function loadXoxoAdminDashboard() {
   if (!xoxoIsAdmin) return;
   setXoxoAdminStatus("");
@@ -14922,6 +15014,7 @@ async function loadXoxoAdminDashboard() {
   renderXoxoAdminGlobalOnline(onlineResult.data);
   xoxoAdminUsers=usersResult.data || []; xoxoAdminReports=reportsResult.data || []; xoxoAdminPosts=postsResult.data || []; xoxoAdminComments=commentsResult.data || [];
   renderXoxoAdminUsers(); renderXoxoAdminProfiles(); renderXoxoAdminComments(); renderXoxoAdminReports(); renderXoxoAdminPosts();
+  if(document.getElementById("xoxoAdminModeration")?.classList.contains("active")) renderXoxoDmReports();
 }
 
 function renderXoxoAdminGlobalOnline(value) {
