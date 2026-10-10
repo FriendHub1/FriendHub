@@ -5021,6 +5021,9 @@
   body.xoxo-bottle-admin-preview #bottleNavBtn { display: inline-block !important; }
   body.xoxo-bottle-admin-preview #bottleMessages.page.active { display: block !important; }
 </style>
+<style id="xoxo-secret-letters-style">
+#bottleMessages .sl-wrap{max-width:820px;margin:auto}#bottleMessages .sl-hero{text-align:center;border-radius:24px 24px 0 0;padding:32px 18px 25px;color:#fff;background:radial-gradient(circle at 80% 0%,#7e397f 0%,transparent 46%),linear-gradient(130deg,#1c123a,#45245f 70%,#25143d)}#bottleMessages .sl-hero h1{font-size:clamp(32px,6vw,48px);color:#ffe2f5;margin:6px 0}#bottleMessages .sl-hero p{color:#ebd5f3}#bottleMessages .sl-icon{font-size:45px}#bottleMessages .sl-private{display:inline-block;margin-top:17px;border:1px solid #ac83bc;border-radius:20px;padding:7px 12px;font-size:12px;color:#edd3ef}#bottleMessages .sl-card{background:#211735;border:1px solid #6c477c;border-radius:0 0 24px 24px;color:#fff;padding:clamp(16px,4vw,30px);box-shadow:0 18px 42px #0b05264d}#bottleMessages .sl-progress{display:flex;gap:7px;margin-bottom:25px}#bottleMessages .sl-progress span{height:5px;flex:1;background:#614578;border-radius:8px}#bottleMessages .sl-progress span.on{background:#f7a9dc}#bottleMessages .sl-view{text-align:center}#bottleMessages .sl-view[hidden]{display:none!important}#bottleMessages .sl-emoji{font-size:50px;margin-bottom:10px}#bottleMessages .sl-view h2{font-size:clamp(24px,4vw,31px);color:#ffe7f6;margin-bottom:9px}#bottleMessages .sl-view>p{color:#dfc6e9;margin:0 auto 18px;max-width:550px}#bottleMessages .sl-view>small{display:block;color:#cbb1dc;margin-top:12px}#bottleMessages .sl-paper{background:#fff1e7;border:1px solid #e8c8b9;border-radius:16px;padding:22px;color:#58455d;text-align:left;line-height:1.7;margin:18px auto;max-width:540px;box-shadow:0 6px 16px #0002}#bottleMessages .sl-paper small{color:#a66d8b;font-style:italic}#bottleMessages .sl-paper p{margin:12px 0;color:#594459}#bottleMessages .sl-button,#bottleMessages .sl-outline{border-radius:13px;padding:12px 19px;font-weight:800;cursor:pointer;min-height:45px}#bottleMessages .sl-button{background:linear-gradient(115deg,#ed78ba,#ae52ce);color:white;border:1px solid #f5b7e6}#bottleMessages .sl-outline{background:#37284d;color:#f9e5ff;border:1px solid #aa80c2}#bottleMessages .sl-chathead{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;border-bottom:1px solid #614679;padding-bottom:14px}#bottleMessages .sl-chathead small{display:block;color:#cbb1dc;font-size:12px}#bottleMessages #slClock{border-radius:10px;background:#51335e;padding:10px;white-space:nowrap}#bottleMessages .sl-bubbles{display:flex;flex-direction:column;gap:9px;min-height:165px;max-height:280px;overflow:auto;padding:16px 0}#bottleMessages .sl-bubble{align-self:flex-start;max-width:83%;background:#46325c;border-radius:15px;padding:12px;text-align:left;font-size:14px;overflow-wrap:anywhere}#bottleMessages .sl-bubble.mine{align-self:flex-end;background:#854f91}#bottleMessages .sl-compose{display:flex;gap:8px}#bottleMessages .sl-compose input{flex:1;min-width:0;border:1px solid #735489;border-radius:12px;background:#1b132b;color:white;padding:12px}#bottleMessages .sl-hint{font-size:12px;color:#cbb1dc;margin:12px 0}#bottleMessages .sl-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}#bottleMessages .sl-result{margin-top:16px;color:#f4d4eb}#bottleMessages .sl-result button{margin-top:12px}#bottleMessages .sl-result:empty{display:none}@media(max-width:520px){#bottleMessages .sl-compose .sl-button{padding:10px}#bottleMessages .sl-chathead{font-size:13px}}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -5034,7 +5037,7 @@
                                     <button id="discoverNavBtn" onclick="showPage('discover')">Discover</button>
                                     <button id="profileNavBtn" onclick="showPage('profile')">Profile</button>
                                     <button id="savedNavBtn" onclick="showPage('saved')">Saved</button>
-<button id="bottleNavBtn" type="button" onclick="showPage('bottleMessages')">🍾 Bottle Messages</button>
+<button id="bottleNavBtn" type="button" onclick="showPage('bottleMessages')">💌 Secret Letters</button>
                                     <button id="messagesNavBtn" onclick="openMessagesInbox()">Messages<span id="messagesUnreadBadge" class="messages-unread-badge" style="display:none;">0</span></button>
                                     <button id="adminNavBtn" type="button" onclick="openXoxoAdminPanel()">👑 Admin</button>
                                     <button onclick="showPage('about')">About</button>
@@ -5768,22 +5771,16 @@
                                     </section>
                                     
 <section id="bottleMessages" class="page">
- <div class="container xb-wrap">
-  <button type="button" class="safe-back-home" onclick="showPage('home')">&#8592; <span data-xb-en="Back" data-xb-es="Volver">Back</span></button>
-  <div class="xb-ocean" aria-label="Animated sunset ocean with a floating message bottle">
-   <button id="xbSoundToggle" class="xb-sound" type="button" aria-pressed="false" aria-label="Enable ocean sounds">🔇 <span id="xbSoundLabel">Sound off</span></button>
-   <div class="xb-title"><h1>🍾 Bottle Messages</h1><p data-xb-en="Unexpected friendships begin with a message." data-xb-es="Las amistades inesperadas comienzan con un mensaje.">Unexpected friendships begin with a message.</p></div>
+ <div class="container sl-wrap">
+  <button type="button" class="safe-back-home" onclick="showPage('home')">← Back</button>
+  <div class="sl-hero"><span class="sl-icon">💌</span><h1>Secret Letters</h1><p>A little mystery. A new connection.</p><span class="sl-private">🔒 Administrator design preview · Nothing is sent</span></div>
+  <div class="sl-card">
+   <div class="sl-progress"><span></span><span></span><span></span><span></span></div>
+   <div id="slDiscover" class="sl-view"><div class="sl-emoji">💌</div><h2>A Letter Awaits You</h2><p>Somewhere in the world, someone has written a letter waiting to be discovered.</p><div class="sl-paper"><small>To a stranger,</small><p>Sometimes the best friendships begin with a simple hello. 💜</p><small>From someone across the sea</small></div><button class="sl-button" type="button" id="slOpen">Open Letter &amp; Start Chat</button><small>The 15-minute timer starts only when both people are online.</small></div>
+   <div id="slChat" class="sl-view" hidden><div class="sl-chathead"><div><strong>Anonymous Stranger 💌</strong><small>Private conversation · Design preview</small></div><strong id="slClock">⏱ 15:00</strong></div><div id="slBubbles" class="sl-bubbles"><div class="sl-bubble">Sometimes the best friendships begin with a simple hello. 💜</div></div><form id="slForm" class="sl-compose"><input id="slInput" maxlength="500" placeholder="Write a message…" aria-label="Write a message"><button class="sl-button" type="submit">Send</button></form><p class="sl-hint">Demo timer: paused at 15:00. Real sessions will require both users online.</p><button type="button" class="sl-outline" id="slToDecision">Preview final-minute decision →</button></div>
+   <div id="slDecision" class="sl-view" hidden><div class="sl-emoji">💞</div><h2>Keep the Connection?</h2><p>Your 15-minute conversation is almost over. Would you like to continue talking?</p><div class="sl-actions"><button type="button" class="sl-button" id="slContinue">❤️ Continue</button><button type="button" class="sl-outline" id="slPass">Pass →</button></div><div id="slDecisionResult" class="sl-result" aria-live="polite"></div></div>
+   <div id="slConnected" class="sl-view" hidden><div class="sl-emoji">💜</div><h2>It's a Match!</h2><p>You both chose to continue. Your conversation can now move to XOXO Avenue private messages.</p><div class="sl-paper">💬 Private Messages · Unlimited conversation</div><button type="button" class="sl-button" id="slRestart">Restart Preview</button></div>
   </div>
-  <div class="xb-controls"><button type="button" class="xb-btn" onclick="xoxoBottleTab('write')" data-xb-en="💌 Throw a Bottle" data-xb-es="💌 Lanzar una botella">💌 Throw a Bottle</button><button type="button" class="xb-btn alt" onclick="xoxoBottleTab('inbox')" data-xb-en="🍾 My Bottles" data-xb-es="🍾 Mis botellas">🍾 My Bottles</button></div>
-  <div id="xbWrite" class="xb-panel">
-   <h2 data-xb-en="Write your letter 💌" data-xb-es="Escribe tu carta 💌">Write your letter 💌</h2>
-   <p data-xb-en="Tell a stranger something kind, ask a question, or introduce yourself." data-xb-es="Cuéntale algo bonito a alguien, haz una pregunta o preséntate.">Tell a stranger something kind, ask a question, or introduce yourself.</p>
-   <textarea id="xbLetter" maxlength="5000" placeholder="Write your message here..."></textarea><div id="xbCount" class="xb-count">0 / 5,000</div>
-   <button type="button" class="xb-btn" onclick="xoxoBottlePreview()" data-xb-en="Preview my letter" data-xb-es="Vista previa de mi carta">Preview my letter</button>
-   <p id="xbFeedback" class="xb-notice" role="status"></p>
-   <p class="xb-notice" data-xb-en="Design preview only. No bottles are sent or stored yet." data-xb-es="Solo vista previa del diseño. Todavía no se envían ni guardan botellas.">Design preview only. No bottles are sent or stored yet.</p>
-  </div>
-  <div id="xbInbox" class="xb-panel" hidden><h2 data-xb-en="My Bottles 🍾" data-xb-es="Mis botellas 🍾">My Bottles 🍾</h2><p data-xb-en="Your mysterious bottles will appear here when we connect the feature to Supabase." data-xb-es="Tus botellas misteriosas aparecerán aquí cuando conectemos la función con Supabase.">Your mysterious bottles will appear here when we connect the feature to Supabase.</p></div>
  </div>
 </section>
 <section id="saved" class="page">
@@ -16914,6 +16911,22 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
  });
  close.addEventListener('click',dismiss);
  scene.addEventListener('click',e=>{if(e.target===scene)dismiss();});
+})();
+</script>
+<script id="xoxo-secret-letters-demo">
+/* Admin-only, local UI demonstration. No network requests or persistence. */
+(function(){
+ const root=document.getElementById('bottleMessages');if(!root)return;
+ const views=['slDiscover','slChat','slDecision','slConnected'];
+ function allowed(){return Boolean(typeof currentUser!=='undefined'&&currentUser&&typeof xoxoIsAdmin!=='undefined'&&xoxoIsAdmin);}
+ function show(id){if(!allowed())return;views.forEach((name,i)=>{document.getElementById(name).hidden=name!==id;root.querySelectorAll('.sl-progress span')[i].classList.toggle('on',i<=views.indexOf(id));});}
+ const click=(id,fn)=>document.getElementById(id).addEventListener('click',fn);
+ click('slOpen',()=>show('slChat'));
+ click('slToDecision',()=>show('slDecision'));
+ click('slContinue',()=>{const r=document.getElementById('slDecisionResult');r.replaceChildren();const p=document.createElement('p');p.textContent='You chose to continue! Waiting for the other person…';const b=document.createElement('button');b.type='button';b.className='sl-outline';b.textContent='Simulate mutual acceptance';b.addEventListener('click',()=>show('slConnected'));r.append(p,b);});
+ click('slPass',()=>{const r=document.getElementById('slDecisionResult');r.replaceChildren();const p=document.createElement('p');p.textContent='Conversation ended. You can discover another letter.';const b=document.createElement('button');b.type='button';b.className='sl-outline';b.textContent='Discover Another Letter';b.addEventListener('click',()=>show('slDiscover'));r.append(p,b);});
+ click('slRestart',()=>{document.getElementById('slDecisionResult').replaceChildren();document.getElementById('slBubbles').replaceChildren();const b=document.createElement('div');b.className='sl-bubble';b.textContent='Sometimes the best friendships begin with a simple hello. 💜';document.getElementById('slBubbles').append(b);show('slDiscover');});
+ document.getElementById('slForm').addEventListener('submit',e=>{e.preventDefault();if(!allowed())return;const input=document.getElementById('slInput'),value=input.value.trim();if(!value)return;const bubble=document.createElement('div');bubble.className='sl-bubble mine';bubble.textContent=value;document.getElementById('slBubbles').append(bubble);input.value='';bubble.scrollIntoView({block:'nearest'});});
 })();
 </script>
 </body>
