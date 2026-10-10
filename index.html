@@ -4675,6 +4675,21 @@
 .xmm-admin-message strong{font-size:13px;color:#f5b9e5}.xmm-admin-message small{font-size:11px;color:#c6b4dc}
 .xmm-admin-message-content{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.55}
 
+/* XOXO Avenue — conversation-style moderation, read-only */
+.xmm-profile-link{border:0;background:transparent;color:#f6d0ff;font:inherit;font-weight:800;cursor:pointer;padding:0 2px;overflow-wrap:anywhere}
+.xmm-profile-link:hover{text-decoration:underline;color:#fff}
+.xmm-message-list{display:flex;flex-direction:column;align-items:stretch;gap:10px;scroll-behavior:smooth}
+.xmm-chat-date{align-self:center;border:1px solid #5a4379;background:#241836;color:#cbb8e0;padding:5px 12px;border-radius:999px;font-size:11px;margin:8px 0}
+.xmm-admin-message{max-width:86%;width:fit-content;min-width:120px;gap:7px;box-shadow:0 4px 12px #0a07132b}
+.xmm-chat-left{align-self:flex-start;border-bottom-left-radius:4px}
+.xmm-chat-right{align-self:flex-end;border-bottom-right-radius:4px;background:#5c2f87;border-color:#9563c0}
+.xmm-chat-author{display:flex;align-items:center;gap:7px}
+.xmm-chat-author .xmm-person-avatar{width:25px;height:25px;flex-basis:25px;font-size:12px}
+.xmm-chat-author .xmm-profile-link{font-size:12px}
+.xmm-chat-attachment{font-size:12px;color:#e7d1ff;border:1px solid #70518c;background:#251b3c;padding:10px;border-radius:10px;overflow-wrap:anywhere}
+@media(max-width:650px){.xmm-admin-message{max-width:94%}}
+
+
 </style>
                                     
                 <style>
@@ -14947,43 +14962,63 @@ async function loadXoxoAdminMessageStats() {
 // XOXO Avenue — auditable, read-only administrator DM viewer.
 let xoxoDmConversations = [];
 let xoxoDmSelectedKey = "";
+let xoxoDmProfiles = new Map();
 function xoxoDmDisplayUser(id) {
-  const user = xoxoAdminUsers.find(u => String(u.user_id) === String(id));
-  return user?.username ? "@" + user.username : "User " + String(id || "").slice(0,8);
+  const user=xoxoDmProfiles.get(String(id)) || xoxoAdminUsers.find(u=>String(u.user_id)===String(id));
+  const name=String(user?.username||"").replace(/^@+/,"");
+  return name ? "@"+name : "User "+String(id||"").slice(0,8);
 }
-function xoxoDmInitial(id) { return xoxoDmDisplayUser(id).replace(/^@/, "").charAt(0).toUpperCase() || "?"; }
+function xoxoDmInitial(id) {return xoxoDmDisplayUser(id).replace(/^@/,"").charAt(0).toUpperCase()||"?";}
 function xoxoDmAvatar(id) {
-  const el = document.createElement("span"); el.className="xmm-person-avatar";
-  const user = xoxoAdminUsers.find(u => String(u.user_id) === String(id));
-  const url = user?.avatar_url || user?.profile_photo_url || user?.photo_url;
-  if (url && /^https:\/\//i.test(url)) {
-    const img=document.createElement("img"); img.src=url; img.alt="";
-    img.onerror=()=>{img.remove();el.textContent=xoxoDmInitial(id);}; el.append(img);
-  } else el.textContent=xoxoDmInitial(id);
+  const el=document.createElement("span");el.className="xmm-person-avatar";
+  const user=xoxoDmProfiles.get(String(id)) || xoxoAdminUsers.find(u=>String(u.user_id)===String(id));
+  const url=user?.profile_photo || user?.avatar_url || user?.profile_photo_url || user?.photo_url;
+  if(url && /^https:\/\//i.test(url)){
+    const img=document.createElement("img");img.src=url;img.alt="";
+    img.referrerPolicy="no-referrer";img.onerror=()=>{img.remove();el.textContent=xoxoDmInitial(id);};
+    el.append(img);
+  }else el.textContent=xoxoDmInitial(id);
   return el;
+}
+function xoxoDmProfileButton(id) {
+  const btn=document.createElement("button");btn.type="button";btn.className="xmm-profile-link";
+  btn.textContent=xoxoDmDisplayUser(id);btn.title="View profile";
+  btn.addEventListener("click",e=>{e.stopPropagation();if(typeof openPublicProfile==="function")openPublicProfile(String(id));});
+  return btn;
+}
+async function xoxoDmLoadProfiles(conversations){
+  const ids=[...new Set(conversations.flatMap(c=>[c.user_1,c.user_2]).filter(Boolean).map(String))];
+  xoxoDmProfiles=new Map();
+  for(let i=0;i<ids.length;i+=100){
+    const {data,error}=await supabaseClient.from("profiles")
+      .select("user_id,username,profile_photo").in("user_id",ids.slice(i,i+100));
+    if(error){console.warn("DM profile photos unavailable",error);break;}
+    for(const profile of data||[])xoxoDmProfiles.set(String(profile.user_id),profile);
+  }
 }
 async function loadXoxoDmConversations() {
   const list=document.getElementById("xmmConversationList");
-  if(!list || !xoxoIsAdmin) return;
-  list.replaceChildren(xoxoDmReportText("div", "Loading conversations…", "xmm-empty"));
-  try {
+  if(!list||!xoxoIsAdmin)return;
+  list.replaceChildren(xoxoDmReportText("div","Loading conversations…","xmm-empty"));
+  try{
     const {data,error}=await supabaseClient.rpc("xoxo_admin_list_dm_conversations");
-    if(error) throw error;
-    if(!xoxoIsAdmin) return;
+    if(error)throw error;
+    if(!xoxoIsAdmin)return;
     xoxoDmConversations=Array.isArray(data)?data:[];
+    await xoxoDmLoadProfiles(xoxoDmConversations);
     renderXoxoDmConversations();
-  } catch(error) {
+  }catch(error){
     console.error("Conversation list unavailable:",error);
-    list.replaceChildren(xoxoDmReportText("div", "Could not load conversations: "+(error?.message||"Unknown error"), "xmm-empty"));
+    list.replaceChildren(xoxoDmReportText("div","Could not load conversations: "+(error?.message||"Unknown error"),"xmm-empty"));
   }
 }
-function renderXoxoDmConversations() {
-  const list=document.getElementById("xmmConversationList"); if(!list) return;
+function renderXoxoDmConversations(){
+  const list=document.getElementById("xmmConversationList");if(!list)return;
   list.replaceChildren();
   const q=(document.getElementById("xmmConversationSearch")?.value||"").trim().toLowerCase();
-  const rows=xoxoDmConversations.filter(c => (xoxoDmDisplayUser(c.user_1)+" "+xoxoDmDisplayUser(c.user_2)).toLowerCase().includes(q));
-  if(!rows.length) {list.append(xoxoDmReportText("div", q?"No matching conversations.":"💜 No conversations yet.", "xmm-empty"));return;}
-  for(const c of rows) {
+  const rows=xoxoDmConversations.filter(c=>(xoxoDmDisplayUser(c.user_1)+" "+xoxoDmDisplayUser(c.user_2)).toLowerCase().includes(q));
+  if(!rows.length){list.append(xoxoDmReportText("div",q?"No matching conversations.":"💜 No conversations yet.","xmm-empty"));return;}
+  for(const c of rows){
     const key=String(c.user_1)+":"+String(c.user_2);
     const btn=document.createElement("button");btn.type="button";
     btn.className="xmm-conversation-row"+(key===xoxoDmSelectedKey?" selected":"");
@@ -14992,47 +15027,57 @@ function renderXoxoDmConversations() {
     const info=document.createElement("span");info.className="xmm-conversation-info";
     info.append(xoxoDmReportText("strong",xoxoDmDisplayUser(c.user_1)+" · "+xoxoDmDisplayUser(c.user_2)));
     info.append(xoxoDmReportText("small",String(c.message_count||0)+" messages · "+xoxoAdminDate(c.last_at)));
-    btn.append(avatars,info);
-    btn.addEventListener("click",()=>openXoxoDmConversation(c));
-    list.append(btn);
+    btn.append(avatars,info);btn.addEventListener("click",()=>openXoxoDmConversation(c));list.append(btn);
   }
 }
-async function openXoxoDmConversation(c) {
-  if(!xoxoIsAdmin) return;
+async function openXoxoDmConversation(c){
+  if(!xoxoIsAdmin)return;
   const es=getFriendHubLanguage()==="es";
   const reason=window.prompt(es?"Motivo de moderación (10–300 caracteres). El acceso quedará registrado:":"Moderation reason (10–300 characters). This access will be logged:");
-  if(reason===null) return;
-  if(reason.trim().length<10 || reason.trim().length>300) {
+  if(reason===null)return;
+  if(reason.trim().length<10||reason.trim().length>300){
     window.alert(es?"Escribe un motivo de 10 a 300 caracteres.":"Enter a reason of 10 to 300 characters.");return;
   }
   const viewer=document.getElementById("xmmMessages");
   const title=document.getElementById("xmmSelectedTitle");
   const subtitle=document.getElementById("xmmSelectedSubtitle");
   const details=document.getElementById("xmmSelectedDetails");
-  viewer.replaceChildren(xoxoDmReportText("div", "🔒 Checking permission and recording access…", "xmm-bubble"));
-  try {
+  viewer.replaceChildren(xoxoDmReportText("div","🔒 Checking permission and recording access…","xmm-bubble"));
+  try{
     const {data,error}=await supabaseClient.rpc("xoxo_admin_read_dm_conversation",{
       p_user_1:c.user_1,p_user_2:c.user_2,p_reason:reason.trim()
     });
-    if(error) throw error;
-    if(!xoxoIsAdmin) return;
+    if(error)throw error;
+    if(!xoxoIsAdmin)return;
     xoxoDmSelectedKey=String(c.user_1)+":"+String(c.user_2);
     renderXoxoDmConversations();
-    title.textContent=xoxoDmDisplayUser(c.user_1)+" ↔ "+xoxoDmDisplayUser(c.user_2);
+    title.replaceChildren(xoxoDmProfileButton(c.user_1),document.createTextNode(" ↔ "),xoxoDmProfileButton(c.user_2));
     subtitle.textContent="🔒 Read-only · Access logged · Latest 100 messages";
-    details.textContent="Participants: "+xoxoDmDisplayUser(c.user_1)+" and "+xoxoDmDisplayUser(c.user_2)+". Moderation reason recorded. Total messages: "+String(c.message_count||0)+".";
+    details.replaceChildren(document.createTextNode("Participants: "),xoxoDmProfileButton(c.user_1),
+      document.createTextNode(" and "),xoxoDmProfileButton(c.user_2),
+      document.createTextNode(". Moderation reason recorded. Total messages: "+String(c.message_count||0)+"."));
     viewer.replaceChildren();
     const messages=Array.isArray(data)?data:[];
-    if(!messages.length) {viewer.append(xoxoDmReportText("div","No messages found.","xmm-bubble"));return;}
-    for(const m of messages) {
-      const bubble=document.createElement("article");bubble.className="xmm-admin-message";
-      bubble.append(xoxoDmReportText("strong",xoxoDmDisplayUser(m.sender_id)));
+    if(!messages.length){viewer.append(xoxoDmReportText("div","No messages found.","xmm-bubble"));return;}
+    let previousDate="";
+    for(const m of messages){
+      const date=m.created_at?new Date(m.created_at).toLocaleDateString():"";
+      if(date&&date!==previousDate){viewer.append(xoxoDmReportText("div",date,"xmm-chat-date"));previousDate=date;}
+      const bubble=document.createElement("article");
+      bubble.className="xmm-admin-message "+(String(m.sender_id)===String(c.user_1)?"xmm-chat-left":"xmm-chat-right");
+      const head=document.createElement("div");head.className="xmm-chat-author";
+      head.append(xoxoDmAvatar(m.sender_id),xoxoDmProfileButton(m.sender_id));
+      bubble.append(head);
+      bubble.append(xoxoDmReportText("div",m.content||"","xmm-admin-message-content"));
+      if(m.attachment_path){
+        const attachment=xoxoDmReportText("div","🔒 "+(m.attachment_name||m.attachment_type||"Private media")+" · Secure media viewer requires a protected server endpoint.","xmm-chat-attachment");
+        bubble.append(attachment);
+      }
       bubble.append(xoxoDmReportText("small",xoxoAdminDate(m.created_at)+(m.edited_at?" · edited":"")));
-      bubble.append(xoxoDmReportText("div",m.content||"", "xmm-admin-message-content"));
-      if(m.attachment_name || m.attachment_type) bubble.append(xoxoDmReportText("small","📎 Attachment: "+(m.attachment_name||m.attachment_type)+" (not opened)") );
       viewer.append(bubble);
     }
-  } catch(error) {
+    viewer.scrollTop=viewer.scrollHeight;
+  }catch(error){
     console.error("Audited message access failed:",error);
     viewer.replaceChildren(xoxoDmReportText("div","⚠️ Access denied or unavailable: "+(error?.message||"Unknown error"),"xmm-bubble"));
   }
