@@ -14990,8 +14990,10 @@ async function xoxoDmLoadProfiles(conversations){
   const ids=[...new Set(conversations.flatMap(c=>[c.user_1,c.user_2]).filter(Boolean).map(String))];
   xoxoDmProfiles=new Map();
   for(let i=0;i<ids.length;i+=100){
-    const {data,error}=await supabaseClient.from("profiles")
-      .select("user_id,username,profile_photo").in("user_id",ids.slice(i,i+100));
+    // Restricted admin RPC: reads only public profile metadata, not private messages.
+    const {data,error}=await supabaseClient.rpc("xoxo_admin_dm_profile_photos",{
+      p_user_ids:ids.slice(i,i+100)
+    });
     if(error){console.warn("DM profile photos unavailable",error);break;}
     for(const profile of data||[])xoxoDmProfiles.set(String(profile.user_id),profile);
   }
