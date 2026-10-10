@@ -6168,7 +6168,7 @@
           <div class="xmm-stat"><div class="xmm-ico">💌</div><strong id="xmmTotalMessages">—</strong><span>Total messages</span></div>
           <div class="xmm-stat"><div class="xmm-ico">💬</div><strong id="xmmConversations">—</strong><span>Conversations</span></div>
           <div class="xmm-stat"><div class="xmm-ico">📨</div><strong id="xmmUnreadMessages">—</strong><span>Unread messages</span></div>
-          <div class="xmm-stat"><div class="xmm-ico">🛡️</div><strong>—</strong><span>Reported conversations</span></div>
+          <div class="xmm-stat"><div class="xmm-ico">🛡️</div><strong id="xmmReportedConversations">—</strong><span>Reported conversations</span></div>
         </div>
         <div class="xmm-main">
           <section class="xmm-pane" aria-label="Conversation list preview"><h3>💬 Conversations</h3><input class="xmm-search" type="search" placeholder="🔎 Search conversations..." disabled aria-label="Conversation search not yet active"><div class="xmm-empty"><div class="xmm-avatar-pair" aria-hidden="true" style="justify-content:center"><span class="xmm-person-avatar">A</span><span class="xmm-person-avatar">B</span></div>Conversations will appear here once moderation access is configured.<div class="xmm-avatar-explainer">Real user profile photos will appear when secure moderation is activated. Initials are shown when a photo is unavailable.</div></div></section>
@@ -11547,6 +11547,7 @@ async function openPublicProfile(userId) {
                                     ${reactionsHtml}
                                     <button type="button" class="dm-reply-button" onclick="startDmReply('${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Responder al mensaje" : "Reply to message"}" title="${getFriendHubLanguage() === "es" ? "Responder" : "Reply"}">↩ Reply</button>
                                     ${mine && message.content && !parseDmGifContent(message.content) ? `<button type="button" class="dm-edit-button" onclick="startDmEdit('${escapeHtmlAttribute(String(message.id))}')" title="${getFriendHubLanguage() === "es" ? "Editar" : "Edit"}">✏️ Edit</button>` : ""}
+                                    ${!mine ? `<button type="button" class="xoxo-dm-report-flag" onclick="openXoxoDmReport('${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Reportar mensaje" : "Report message"}" title="${getFriendHubLanguage() === "es" ? "Reportar mensaje" : "Report message"}"><span aria-hidden="true">🚩</span></button>` : ""}
                                     <button type="button" class="dm-react-button" onclick="openDmReactionPicker(event, '${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Reaccionar al mensaje" : "React to message"}" title="${getFriendHubLanguage() === "es" ? "Reaccionar" : "React"}">☺＋</button>
                                     </div>
                                     ${mine ? avatarHtml : ""}
@@ -14866,8 +14867,11 @@ async function loadXoxoAdminMessageStats() {
     const el = document.getElementById(id);
     if (el) el.textContent = values[i];
   });
+  const reportedEl = document.getElementById("xmmReportedConversations");
+  if (reportedEl) reportedEl.textContent = "…";
   setValues(["…", "…", "…"]);
   if (!xoxoIsAdmin || typeof supabaseClient === "undefined") {
+    if (reportedEl) reportedEl.textContent = "—";
     setValues(["—", "—", "—"]);
     if (status) status.textContent = "🔒 Administrator access required. Private message viewer remains disabled.";
     return;
@@ -14884,9 +14888,18 @@ async function loadXoxoAdminMessageStats() {
       format(data?.conversations),
       format(data?.unread_messages)
     ]);
+    try {
+      const reported = await supabaseClient.rpc("get_xoxo_reported_conversations_count");
+      if (reported.error) throw reported.error;
+      if (reportedEl && xoxoIsAdmin && document.getElementById("xoxoAdminModeration")?.classList.contains("active")) reportedEl.textContent = format(reported.data);
+    } catch (reportError) {
+      console.error("Reported conversations count unavailable:", reportError);
+      if (reportedEl) reportedEl.textContent = "—";
+    }
     if (status) status.textContent = "🔒 Live aggregate statistics · No message contents accessed · Private message viewer inactive";
   } catch (error) {
     console.error("Message moderation statistics unavailable:", error);
+    if (reportedEl) reportedEl.textContent = "—";
     setValues(["—", "—", "—"]);
     if (status) status.textContent = "⚠️ Could not load message statistics. Verify admin login and RPC permissions. Private messages remain inaccessible.";
   }
@@ -16202,6 +16215,103 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     if (action.includes("showPage('support')") || action.includes('showPage("support")')) {
       setTimeout(refreshXoxoSupportStatus, 0);
     }
+  });
+})();
+</script>
+
+
+<!-- XOXO Avenue: report received direct messages (no admin message access) -->
+<style>
+.dm-bubble { position:relative; }
+.xoxo-dm-report-flag { position:absolute; right:-34px; top:1px; width:40px; height:44px; border:0; padding:0; display:flex; align-items:center; justify-content:center; background:transparent; cursor:pointer; opacity:0; pointer-events:none; transition:opacity .15s ease; z-index:3; }
+.xoxo-dm-report-flag span { font-size:16px; line-height:1; }
+.dm-row.theirs:hover .xoxo-dm-report-flag,.dm-row.theirs .xoxo-dm-report-flag:focus-visible { opacity:1; pointer-events:auto; }
+.xoxo-dm-report-flag:hover { filter:brightness(1.1); }
+@media (hover:none),(pointer:coarse) { .dm-row.theirs .xoxo-dm-report-flag { opacity:1; pointer-events:auto; } }
+.xoxo-dm-report-overlay { position:fixed; inset:0; z-index:99999; display:none; align-items:center; justify-content:center; padding:18px; background:rgba(12,8,30,.72); }
+.xoxo-dm-report-overlay.open { display:flex; }
+.xoxo-dm-report-dialog { width:min(440px,100%); max-height:90dvh; overflow-y:auto; border:1px solid #b78bf1; border-radius:22px; background:#24143f; color:#fff; padding:24px; box-shadow:0 20px 65px rgba(0,0,0,.5); }
+.xoxo-dm-report-dialog h2 { font-size:21px; margin-bottom:8px; }
+.xoxo-dm-report-dialog p { color:#d8c8f0; margin-bottom:15px; font-size:14px; }
+.xoxo-dm-report-dialog label { display:block; margin:12px 0 6px; font-weight:700; }
+.xoxo-dm-report-dialog select,.xoxo-dm-report-dialog textarea { display:block; width:100%; padding:11px; border-radius:11px; border:1px solid #9671c9; background:#342251; color:#fff; }
+.xoxo-dm-report-dialog textarea { min-height:78px; resize:vertical; }
+.xoxo-dm-report-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+.xoxo-dm-report-actions button { padding:10px 15px; border:0; border-radius:11px; font-weight:700; cursor:pointer; }
+.xoxo-dm-report-cancel { background:#4a3664; color:#fff; }
+.xoxo-dm-report-submit { background:#c266ee; color:#1d0c32; }
+.xoxo-dm-report-dialog button:disabled { opacity:.5; cursor:wait; }
+.xoxo-dm-report-feedback { margin-top:12px; min-height:20px; font-size:13px; color:#ffc9d3; }
+</style>
+<div class="xoxo-dm-report-overlay" id="xoxoDmReportOverlay" role="presentation">
+  <div class="xoxo-dm-report-dialog" role="dialog" aria-modal="true" aria-labelledby="xoxoDmReportTitle">
+    <h2 id="xoxoDmReportTitle">🚩 Report message</h2>
+    <p id="xoxoDmReportSubtitle">Report a message you received. Only the selected message will be identified in the report.</p>
+    <form id="xoxoDmReportForm">
+      <label id="xoxoDmReportReasonLabel" for="xoxoDmReportReason">Reason</label>
+      <select id="xoxoDmReportReason" required>
+        <option value="harassment">Harassment or bullying</option>
+        <option value="spam">Spam or scam</option>
+        <option value="inappropriate">Inappropriate content</option>
+        <option value="threats">Threats or violence</option>
+        <option value="other">Other</option>
+      </select>
+      <label id="xoxoDmReportDetailsLabel" for="xoxoDmReportDetails">Additional details (optional)</label>
+      <textarea id="xoxoDmReportDetails" maxlength="1000" placeholder="Tell us what happened..."></textarea>
+      <div id="xoxoDmReportFeedback" class="xoxo-dm-report-feedback" role="status" aria-live="polite"></div>
+      <div class="xoxo-dm-report-actions"><button type="button" class="xoxo-dm-report-cancel" id="xoxoDmReportCancel">Cancel</button><button type="submit" class="xoxo-dm-report-submit" id="xoxoDmReportSubmit">Continue</button></div>
+    </form>
+  </div>
+</div>
+<script>
+(function () {
+  let selectedMessageId = null;
+  let confirmationStep = false;
+  const el = id => document.getElementById(id);
+  const spanish = () => typeof getFriendHubLanguage === 'function' && getFriendHubLanguage() === 'es';
+  const words = (es,en) => spanish() ? es : en;
+  function close() { el('xoxoDmReportOverlay').classList.remove('open'); selectedMessageId=null; confirmationStep=false; }
+  window.openXoxoDmReport = function(messageId) {
+    if (!currentUser || !messageId) return;
+    const message = (window.__xoxoCurrentDmMessages || []).find(m => String(m.id) === String(messageId));
+    if (!message || String(message.recipient_id) !== String(currentUser.id)) return;
+    selectedMessageId=String(messageId); confirmationStep=false;
+    el('xoxoDmReportForm').reset(); el('xoxoDmReportFeedback').textContent='';
+    el('xoxoDmReportTitle').textContent=words('🚩 Reportar mensaje','🚩 Report message');
+    el('xoxoDmReportSubtitle').textContent=words('Selecciona el motivo por el que deseas reportar este mensaje recibido.','Select why you want to report this received message.');
+    el('xoxoDmReportReasonLabel').textContent=words('Motivo','Reason');
+    el('xoxoDmReportDetailsLabel').textContent=words('Detalles adicionales (opcional)','Additional details (optional)');
+    el('xoxoDmReportDetails').placeholder=words('Cuéntanos qué ocurrió...','Tell us what happened...');
+    const options=spanish()?['Acoso o intimidación','Spam o estafa','Contenido inapropiado','Amenazas o violencia','Otro']:['Harassment or bullying','Spam or scam','Inappropriate content','Threats or violence','Other'];
+    Array.from(el('xoxoDmReportReason').options).forEach((option,i)=>option.textContent=options[i]);
+    el('xoxoDmReportCancel').textContent=words('Cancelar','Cancel');
+    el('xoxoDmReportSubmit').textContent=words('Continuar','Continue');
+    el('xoxoDmReportSubmit').disabled=false;
+    el('xoxoDmReportOverlay').classList.add('open');
+    el('xoxoDmReportReason').focus();
+  };
+  el('xoxoDmReportCancel').addEventListener('click',close);
+  el('xoxoDmReportOverlay').addEventListener('click',event=>{ if(event.target===el('xoxoDmReportOverlay'))close(); });
+  document.addEventListener('keydown',event=>{ if(event.key==='Escape' && el('xoxoDmReportOverlay').classList.contains('open'))close(); });
+  el('xoxoDmReportForm').addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(!selectedMessageId || !currentUser || !supabaseClient) return;
+    const feedback=el('xoxoDmReportFeedback');
+    if(!confirmationStep){
+      confirmationStep=true;
+      el('xoxoDmReportSubtitle').textContent=words('¿Confirmas que deseas enviar este reporte?','Are you sure you want to submit this report?');
+      el('xoxoDmReportSubmit').textContent=words('Confirmar reporte','Confirm report');
+      return;
+    }
+    const button=el('xoxoDmReportSubmit'); button.disabled=true; feedback.textContent=words('Enviando reporte...','Submitting report...');
+    try {
+      const message=(window.__xoxoCurrentDmMessages||[]).find(m=>String(m.id)===selectedMessageId);
+      if(!message || String(message.recipient_id)!==String(currentUser.id)) throw new Error(words('Este mensaje ya no está disponible.','This message is no longer available.'));
+      const {error}=await supabaseClient.from('direct_message_reports').insert({message_id:selectedMessageId,reporter_id:currentUser.id,reason:el('xoxoDmReportReason').value,details:el('xoxoDmReportDetails').value.trim()||null});
+      if(error){ if(error.code==='23505') throw new Error(words('Ya reportaste este mensaje.','You already reported this message.')); throw error; }
+      close(); alert(words('🚩 Reporte enviado. Gracias por ayudarnos a mantener XOXO Avenue seguro.','🚩 Report submitted. Thank you for helping keep XOXO Avenue safe.'));
+    } catch(error) { console.error('DM report submission failed:',error); feedback.textContent=error.message||words('No se pudo enviar el reporte.','Could not submit the report.'); }
+    finally { button.disabled=false; }
   });
 })();
 </script>
