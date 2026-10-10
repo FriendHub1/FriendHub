@@ -5017,6 +5017,9 @@
 <!-- XOXO Avenue: Bottle Messages temporarily hidden; feature code preserved. -->
 <style id="xoxo-temporary-hide-bottle-messages">
   #bottleNavBtn, #bottleMessages { display: none !important; }
+  /* Private visual/audio preview, only after the existing admin RPC confirms access. */
+  body.xoxo-bottle-admin-preview #bottleNavBtn { display: inline-block !important; }
+  body.xoxo-bottle-admin-preview #bottleMessages.page.active { display: block !important; }
 </style>
 </head>
                                     <body>
@@ -6905,6 +6908,7 @@ async function enforceXoxoSuspension() {
                 }
 
                 function showPage(pageId) {
+                                    if (String(pageId) === "bottleMessages" && !(currentUser && xoxoIsAdmin)) return;
                                     if (currentUser && xoxoProfileCheckComplete && xoxoProfileRequired && String(pageId) === "discover") {
                                     showRequiredProfileWelcome();
                                     return;
@@ -14941,6 +14945,11 @@ let xoxoAdminPosts = [];
 let xoxoAdminComments = [];
 
 function applyXoxoAdminModeUI() {
+  // Admin-only Bottle Messages preview. Non-admin users never see this entry.
+  document.body.classList.toggle("xoxo-bottle-admin-preview", Boolean(currentUser && xoxoIsAdmin));
+  if (!(currentUser && xoxoIsAdmin) && document.getElementById("bottleMessages")?.classList.contains("active")) {
+    showPage("home");
+  }
   const adminButton = document.getElementById("adminNavBtn");
   const socialNavIds = ["discoverNavBtn", "profileNavBtn", "savedNavBtn", "messagesNavBtn"];
   const notificationWrap = document.getElementById("notificationWrap");
@@ -16844,38 +16853,61 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
  const close=scene.querySelector('#xbThrowClose'),caption=scene.querySelector('#xbThrowCaption');
  let timeout=null, audio=null;
  const es=()=>localStorage.getItem('friendhub_language')==='es';
- function splash(){
-  if(document.getElementById('xbSoundToggle')?.getAttribute('aria-pressed')!=='true')return;
+ function soundContext(){
+  if(document.getElementById('xbSoundToggle')?.getAttribute('aria-pressed')!=='true')return null;
   try{
-   const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-   audio=audio||new AC();if(audio.state==='suspended')audio.resume().catch(()=>{});
-   const rate=audio.sampleRate,seconds=1.85,n=Math.floor(rate*seconds);
-   const buf=audio.createBuffer(1,n,rate),data=buf.getChannelData(0);
-   // Soft, filtered water wash. No oscillators, tonal chirps or percussive impulses.
-   let low=0,mid=0;
+   const AC=window.AudioContext||window.webkitAudioContext;
+   if(!AC)return null;
+   audio=audio||new AC();
+   if(audio.state==='suspended')audio.resume().catch(()=>{});
+   return audio;
+  }catch(e){console.warn('Bottle sound unavailable',e);return null;}
+ }
+ // A delicate glass clink at the moment the bottle leaves the hand.
+ function glassLaunch(){
+  const c=soundContext();if(!c)return;
+  const t=c.currentTime+.025;
+  [[1047,.075,.018],[1568,.11,.011],[2093,.14,.006]].forEach(([hz,dur,vol])=>{
+   const o=c.createOscillator(),g=c.createGain();
+   o.type='sine';o.frequency.setValueAtTime(hz,t);
+   o.frequency.exponentialRampToValueAtTime(hz*.985,t+dur);
+   g.gain.setValueAtTime(.0001,t);
+   g.gain.exponentialRampToValueAtTime(vol,t+.008);
+   g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+   o.connect(g).connect(c.destination);o.start(t);o.stop(t+dur+.02);
+  });
+ }
+ // Small bottle entering water: short, quiet, low-pass water sound.
+ function splash(){
+  const c=soundContext();if(!c)return;
+  try{
+   const rate=c.sampleRate,seconds=.7,n=Math.floor(rate*seconds);
+   const buf=c.createBuffer(1,n,rate),data=buf.getChannelData(0);
+   let low=0;
    for(let i=0;i<n;i++){
-    const t=i/rate,noise=Math.random()*2-1;
-    low=low*.965+noise*.035;
-    mid=mid*.75+noise*.25;
-    const swell=(1-Math.exp(-t*18))*Math.exp(-t*2.8);
-    const foam=Math.exp(-Math.pow((t-.38)/.25,2))*.22;
-    data[i]=Math.max(-.8,Math.min(.8,(low*.8+mid*.17)*(swell+foam)*.7));
+    const t=i/rate;
+    low=low*.91+(Math.random()*2-1)*.09;
+    const envelope=(1-Math.exp(-t*38))*Math.exp(-t*9);
+    data[i]=low*envelope*.5;
    }
-   const source=audio.createBufferSource(),filter=audio.createBiquadFilter(),gain=audio.createGain();
-   filter.type='lowpass';filter.frequency.value=1050;filter.Q.value=.5;
-   gain.gain.setValueAtTime(.0001,audio.currentTime);
-   gain.gain.linearRampToValueAtTime(.16,audio.currentTime+.12);
-   gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+seconds);
-   source.buffer=buf;source.connect(filter).connect(gain).connect(audio.destination);source.start();
-  }catch(e){console.warn('Bottle water audio unavailable',e);}
+   const source=c.createBufferSource(),filter=c.createBiquadFilter(),gain=c.createGain();
+   filter.type='lowpass';filter.frequency.value=580;filter.Q.value=.4;
+   const now=c.currentTime;
+   gain.gain.setValueAtTime(.0001,now);
+   gain.gain.linearRampToValueAtTime(.085,now+.035);
+   gain.gain.exponentialRampToValueAtTime(.0001,now+seconds);
+   source.buffer=buf;source.connect(filter).connect(gain).connect(c.destination);source.start(now);
+  }catch(e){console.warn('Bottle splash unavailable',e);}
  }
  function dismiss(){scene.classList.remove('xb-show');clearTimeout(timeout);document.removeEventListener('keydown',escape);}
  function escape(e){if(e.key==='Escape')dismiss();}
  button.addEventListener('click',()=>{
+  if(!(window.xoxoIsAdminPreviewAllowed?.() ?? (typeof xoxoIsAdmin !== 'undefined' && xoxoIsAdmin && currentUser)))return;
   if(!letter.value.trim()||!section.classList.contains('active'))return;
   scene.classList.remove('xb-show');void scene.offsetWidth;
   close.textContent=es()?'✕ Cerrar':'✕ Close';
   caption.textContent=es()?'🍾 ¡Tu botella está lista! Solo es una demostración; todavía no se envía.':'🍾 Your bottle is ready! This is a preview; nothing has been sent.';
+  glassLaunch();
   scene.classList.add('xb-show');close.focus();document.addEventListener('keydown',escape);
   clearTimeout(timeout);
   if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches)timeout=setTimeout(()=>{if(scene.classList.contains('xb-show'))splash();},3550);
