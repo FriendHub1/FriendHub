@@ -17023,10 +17023,14 @@ function renderDemoLetters(){
     try{await slRequest('withdraw',{id:letter.id});await slLoadLetters();}catch(e){alert(e.message)}
    });
   }
-  if(false && (letter.status==='draft'||letter.status==='withdrawn')){
-   action('🗑️ Delete','🗑️ Eliminar',()=>{
-    if(!confirm(lang==='es'?'🐻💌 ¿Seguro que quieres eliminar esta cartita? No se puede deshacer.':'🐻💌 Delete this letter? This cannot be undone.'))return;
-    alert(lang==='es'?'La eliminación real estará disponible después de verificar su seguridad.':'Real deletion will be enabled after its security checks.');
+  if(letter.status==='draft'||letter.status==='withdrawn'){
+   action('🗑️ Delete','🗑️ Eliminar',async()=>{
+    if(!confirm(lang==='es'?'🐻💌 ¿Seguro que quieres eliminar esta cartita de Mis cartas? No podrás recuperarla desde la página.':'🐻💌 Remove this letter from My Letters? You cannot restore it from the website.'))return;
+    try{
+     await slRequest('delete',{id:letter.id});
+     if(slEditingId===letter.id){slEditingId=null;$('sl2Draft').value='';}
+     await slLoadLetters();
+    }catch(error){alert((lang==='es'?'No se pudo eliminar: ':'Could not delete: ')+error.message)}
    });
   }
   menu.append(actions);card.append(info,menu);list.append(card);
