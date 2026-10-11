@@ -1,7 +1,7 @@
 
 {
   "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
-  "name": "friendhub",
+  "name": "xoxo-secret-letters-test",
   "main": "./worker.js",
   "compatibility_date": "2026-10-02",
   "assets": {
