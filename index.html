@@ -16952,7 +16952,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 })();
 </script>
 <script id="xoxo-secret-letters-demo">
-/* Admin-only UI prototype. No network calls; no persistent data. */
+/* Admin-only Secret Letters: real drafts and status via authenticated Edge Function; conversation remains demo. */
 (function(){
 const root=document.getElementById('bottleMessages');if(!root)return;
 const panels={create:'sl2Create',letters:'sl2Letters',discover:'sl2Discover',conversations:'sl2Conversations',how:'sl2How'};
@@ -16961,12 +16961,33 @@ const allowed=()=>Boolean(typeof currentUser!=='undefined'&&currentUser&&typeof 
 let lang='en',demoDraft='',opened=0; let slDemoLetters=[],slDemoNext=1,slEditingId=null;
 const sample={en:['Sometimes the best connections begin with a simple hello. I hope this little letter makes you smile. 💜','I believe two strangers can find something beautiful in an unexpected conversation. 🌷','Somewhere in this big world, I hope you are having a wonderful day. 💌'],es:['A veces las conexiones más bonitas comienzan con un simple hola. Espero que esta cartita te haga sonreír. 💜','Creo que dos desconocidos pueden encontrar algo hermoso en una conversación inesperada. 🌷','En algún lugar de este gran mundo, espero que estés teniendo un día maravilloso. 💌']};
 function syncLang(){const v=$('languageSelect')?.value||'en';lang=/^es/i.test(v)?'es':'en';root.querySelectorAll('[data-sl-en]').forEach(el=>{el.textContent=el.getAttribute('data-sl-'+lang)});root.querySelectorAll('[data-sl-placeholder-en]').forEach(el=>el.placeholder=el.getAttribute('data-sl-placeholder-'+lang));$('sl2LetterText').textContent=sample[lang][opened];$('sl2Greeting').textContent=lang==='es'?'A veces un pequeño hola puede cambiarlo todo. 💕':'Sometimes a little hello can change everything. 💕';$('sl2Reply').textContent=lang==='es'?'Me alegra que nuestros caminos se cruzaran. 💛':"I'm glad our paths crossed. 💛";renderDemoLetters();}
-function tab(name){if(!allowed())return;Object.entries(panels).forEach(([key,id])=>{$(id).hidden=key!==name});root.querySelectorAll('[data-sl-tab]').forEach(el=>{el.classList.toggle('sl2-selected',el.dataset.slTab===name);el.setAttribute('aria-pressed',String(el.dataset.slTab===name))});syncLang();}
+function tab(name){if(!allowed())return;if(name==='letters')void slLoadLetters();Object.entries(panels).forEach(([key,id])=>{$(id).hidden=key!==name});root.querySelectorAll('[data-sl-tab]').forEach(el=>{el.classList.toggle('sl2-selected',el.dataset.slTab===name);el.setAttribute('aria-pressed',String(el.dataset.slTab===name))});syncLang();}
 root.querySelectorAll('[data-sl-tab]').forEach(el=>el.addEventListener('click',()=>tab(el.dataset.slTab)));
 root.querySelectorAll('[data-sl-letter]').forEach(el=>el.addEventListener('click',()=>{if(!allowed())return;opened=Number(el.dataset.slLetter);$('sl2Opened').hidden=false;syncLang()}));
 $('sl2Start').addEventListener('click',()=>tab('conversations'));
 
 function slDemoMessage(en,es){$('sl2CreateNotice').textContent=lang==='es'?es:en}
+async function slRequest(action,payload={}){
+ const {data:{session},error:sessionError}=await supabaseClient.auth.getSession();
+ if(sessionError||!session?.access_token)throw new Error(lang==='es'?'Inicia sesión nuevamente.':'Please sign in again.');
+ const response=await fetch('https://cxosofpxfmjkrhfabrqc.supabase.co/functions/v1/secret-letters-admin',{
+  method:'POST',
+  headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SUPABASE_KEY},
+  body:JSON.stringify({action,...payload})
+ });
+ const data=await response.json();
+ if(!response.ok)throw new Error(data.error||'Request failed');
+ return data;
+}
+async function slLoadLetters(){
+ if(!allowed())return;
+ try{
+  const result=await slRequest('list');
+  slDemoLetters=result.letters||[];
+  renderDemoLetters();
+ }catch(error){$('sl2LetterList').textContent=(lang==='es'?'No se pudieron cargar las cartas: ':'Could not load letters: ')+error.message;}
+}
+
 function renderDemoLetters(){
  const list=$('sl2LetterList');list.replaceChildren();
  if(!slDemoLetters.length){list.textContent=lang==='es'?'🐻 Todavía no hay cartitas en esta demostración.':'🐻 No letters in this demo yet.';return;}
@@ -16992,49 +17013,47 @@ function renderDemoLetters(){
     slEditingId=letter.id;$('sl2Draft').value=letter.body;tab('create');
     slDemoMessage('Editing your draft (demo).','Editando tu borrador (demostración).');
    });
-   action('💌 Publish','💌 Publicar',()=>{
-    letter.status='published';renderDemoLetters();
+   action('💌 Publish','💌 Publicar',async()=>{
+    try{await slRequest('publish',{id:letter.id});await slLoadLetters();}catch(e){alert(e.message)}
    });
   }
   if(letter.status==='published'){
-   action('📪 Withdraw','📪 Retirar',()=>{
+   action('📪 Withdraw','📪 Retirar',async()=>{
     if(!confirm(lang==='es'?'¿Retirar esta carta? Ya no aparecerá para descubrirla.':'Withdraw this letter? It will no longer appear for discovery.'))return;
-    letter.status='withdrawn';renderDemoLetters();
+    try{await slRequest('withdraw',{id:letter.id});await slLoadLetters();}catch(e){alert(e.message)}
    });
   }
-  if(letter.status==='draft'||letter.status==='withdrawn'){
+  if(false && (letter.status==='draft'||letter.status==='withdrawn')){
    action('🗑️ Delete','🗑️ Eliminar',()=>{
     if(!confirm(lang==='es'?'🐻💌 ¿Seguro que quieres eliminar esta cartita? No se puede deshacer.':'🐻💌 Delete this letter? This cannot be undone.'))return;
-    slDemoLetters=slDemoLetters.filter(x=>x.id!==letter.id);
-    if(slEditingId===letter.id){slEditingId=null;$('sl2Draft').value='';}
-    renderDemoLetters();
+    alert(lang==='es'?'La eliminación real estará disponible después de verificar su seguridad.':'Real deletion will be enabled after its security checks.');
    });
   }
   menu.append(actions);card.append(info,menu);list.append(card);
  });
 }
-function saveDemoDraft(){
+async function saveRealDraft(){
  const body=$('sl2Draft').value.trim();
  if(!body){slDemoMessage('Write something first.','Escribe algo primero.');return false;}
- if(slEditingId){
-  const existing=slDemoLetters.find(x=>x.id===slEditingId&&x.status==='draft');
-  if(existing)existing.body=body;
-  else slDemoLetters.unshift({id:slDemoNext++,body,status:'draft'});
- }else{
-  const item={id:slDemoNext++,body,status:'draft'};slDemoLetters.unshift(item);slEditingId=item.id;
+ try{
+  const result=await slRequest('save',{body,id:slEditingId});
+  slEditingId=result.id;
+  slDemoMessage('💌 Draft saved securely in Supabase.','💌 Borrador guardado de forma segura en Supabase.');
+  await slLoadLetters();
+  return true;
+ }catch(error){
+  slDemoMessage('Save failed: '+error.message,'Error al guardar: '+error.message);
+  return false;
  }
- demoDraft=body;renderDemoLetters();
- slDemoMessage('Draft saved in this temporary preview only.','Borrador guardado solo en esta vista temporal.');
- return true;
 }
-$('sl2Save').addEventListener('click',()=>{if(!allowed())return;saveDemoDraft()});
-$('sl2Preview').addEventListener('click',()=>{if(!allowed())return;if(saveDemoDraft())tab('letters')});
+$('sl2Save').addEventListener('click',async()=>{if(!allowed())return;await saveRealDraft()});
+$('sl2Preview').addEventListener('click',async()=>{if(!allowed())return;if(await saveRealDraft())tab('letters')});
 $('sl2ChatForm').addEventListener('submit',e=>{e.preventDefault();if(!allowed())return;const input=$('sl2ChatInput'),msg=input.value.trim();if(!msg)return;const b=document.createElement('div');b.className='sl2-bubble sl2-mine';const avatar=document.createElement('img');avatar.className='sl3-avatar sl3-avatar-mine';avatar.alt='';avatar.src='data:image/webp;base64,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';b.append(avatar);const who=document.createElement('small');who.textContent='🦊 DreamyFox';const content=document.createElement('span');content.textContent=msg;b.append(who,content);$('sl2Bubbles').append(b);$('sl2Bubbles').scrollTop=$('sl2Bubbles').scrollHeight;input.value=''});
 $('sl2Decision').addEventListener('click',()=>{$('sl2Choice').hidden=false});
 $('sl2Continue').addEventListener('click',()=>{$('sl2ChoiceResult').textContent=lang==='es'?'Elegiste Continuar 💕. Esperando la decisión de la otra persona (demostración).':'You chose Continue 💕. Waiting for the other person (demo).'});
 $('sl2Pass').addEventListener('click',()=>{$('sl2ChoiceResult').textContent=lang==='es'?'Elegiste Pasar 💔. Esta es solo una demostración.':'You chose Pass 💔. This is only a demo.'});
-$('languageSelect')?.addEventListener('change',syncLang);
-const observer=new MutationObserver(()=>{if(root.classList.contains('active')&&allowed())syncLang()});observer.observe(root,{attributes:true,attributeFilter:['class']});
+$('languageSelect')?.addEventListener('change',()=>{syncLang();if(!$('sl2Letters').hidden)renderDemoLetters()});
+const observer=new MutationObserver(()=>{if(root.classList.contains('active')&&allowed()){syncLang();if(!$('sl2Letters').hidden)void slLoadLetters()}});observer.observe(root,{attributes:true,attributeFilter:['class']});
 Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySelector('[data-sl-tab="create"]').classList.add('sl2-selected');syncLang();
 })();
 </script>
