@@ -16978,8 +16978,8 @@ const $=id=>document.getElementById(id);
 const allowed=()=>Boolean(typeof currentUser!=='undefined'&&currentUser&&window.xoxoSlBetaAllowed);
 let lang='en',demoDraft='',opened=0; let slDemoLetters=[],slDemoNext=1,slEditingId=null,sl5DiscoverLetters=[],sl5OpenedLetter=null;
 const sample={en:['Sometimes the best connections begin with a simple hello. I hope this little letter makes you smile. 💜','I believe two strangers can find something beautiful in an unexpected conversation. 🌷','Somewhere in this big world, I hope you are having a wonderful day. 💌'],es:['A veces las conexiones más bonitas comienzan con un simple hola. Espero que esta cartita te haga sonreír. 💜','Creo que dos desconocidos pueden encontrar algo hermoso en una conversación inesperada. 🌷','En algún lugar de este gran mundo, espero que estés teniendo un día maravilloso. 💌']};
-function syncLang(){const v=$('languageSelect')?.value||'en';lang=/^es/i.test(v)?'es':'en';root.querySelectorAll('[data-sl-en]').forEach(el=>{el.textContent=el.getAttribute('data-sl-'+lang)});root.querySelectorAll('[data-sl-placeholder-en]').forEach(el=>el.placeholder=el.getAttribute('data-sl-placeholder-'+lang));$('sl2LetterText').textContent=sl5OpenedLetter?.body||'';$('sl2Greeting').textContent=lang==='es'?'A veces un pequeño hola puede cambiarlo todo. 💕':'Sometimes a little hello can change everything. 💕';$('sl2Reply').textContent=lang==='es'?'Me alegra que nuestros caminos se cruzaran. 💛':"I'm glad our paths crossed. 💛";renderDemoLetters();}
-function tab(name){if(!allowed())return;if(name==='letters')void slLoadLetters();if(name==='discover')void sl5LoadDiscover();if(name==='conversations')void slChatList();Object.entries(panels).forEach(([key,id])=>{$(id).hidden=key!==name});root.querySelectorAll('[data-sl-tab]').forEach(el=>{el.classList.toggle('sl2-selected',el.dataset.slTab===name);el.setAttribute('aria-pressed',String(el.dataset.slTab===name))});syncLang();}
+function syncLang(){const v=$('languageSelect')?.value||'en';lang=/^es/i.test(v)?'es':'en';root.querySelectorAll('[data-sl-en]').forEach(el=>{el.textContent=el.getAttribute('data-sl-'+lang)});root.querySelectorAll('[data-sl-placeholder-en]').forEach(el=>el.placeholder=el.getAttribute('data-sl-placeholder-'+lang));$('sl2LetterText').textContent=sl5OpenedLetter?.body||'';if($('sl2Greeting'))$('sl2Greeting').textContent=lang==='es'?'A veces un pequeño hola puede cambiarlo todo. 💕':'Sometimes a little hello can change everything. 💕';if($('sl2Reply'))$('sl2Reply').textContent=lang==='es'?'Me alegra que nuestros caminos se cruzaran. 💛':"I'm glad our paths crossed. 💛";renderDemoLetters();}
+function tab(name,skipConversationLoad=false){if(!allowed())return;if(name==='letters')void slLoadLetters();if(name==='discover')void sl5LoadDiscover();if(name==='conversations'&&!skipConversationLoad)void slChatList();Object.entries(panels).forEach(([key,id])=>{$(id).hidden=key!==name});root.querySelectorAll('[data-sl-tab]').forEach(el=>{el.classList.toggle('sl2-selected',el.dataset.slTab===name);el.setAttribute('aria-pressed',String(el.dataset.slTab===name))});syncLang();}
 root.querySelectorAll('[data-sl-tab]').forEach(el=>el.addEventListener('click',()=>tab(el.dataset.slTab)));
 async function sl5LoadDiscover(){
  if(!allowed())return;
@@ -17019,7 +17019,7 @@ async function slChatRefresh(){
  }catch(e){$('sl2Presence').textContent=e.message;}
 }
 async function slChatOpen(id){
- slChatId=id;tab('conversations');
+ slChatId=id;tab('conversations',true);
  $('sl2Conversations').querySelector('.sl2-chathead').style.display='flex';
  $('sl2ChatForm').style.display='flex';
  $('sl2Conversations').querySelector('.sl2-time').style.display='none';
