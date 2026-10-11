@@ -16995,7 +16995,7 @@ const allowed=()=>Boolean(typeof currentUser!=='undefined'&&currentUser&&window.
 let lang='en',demoDraft='',opened=0; let slDemoLetters=[],slDemoNext=1,slEditingId=null,sl5DiscoverLetters=[],sl5OpenedLetter=null;
 const sample={en:['Sometimes the best connections begin with a simple hello. I hope this little letter makes you smile. 💜','I believe two strangers can find something beautiful in an unexpected conversation. 🌷','Somewhere in this big world, I hope you are having a wonderful day. 💌'],es:['A veces las conexiones más bonitas comienzan con un simple hola. Espero que esta cartita te haga sonreír. 💜','Creo que dos desconocidos pueden encontrar algo hermoso en una conversación inesperada. 🌷','En algún lugar de este gran mundo, espero que estés teniendo un día maravilloso. 💌']};
 function syncLang(){const v=$('languageSelect')?.value||'en';lang=/^es/i.test(v)?'es':'en';root.querySelectorAll('[data-sl-en]').forEach(el=>{el.textContent=el.getAttribute('data-sl-'+lang)});root.querySelectorAll('[data-sl-placeholder-en]').forEach(el=>el.placeholder=el.getAttribute('data-sl-placeholder-'+lang));$('sl2LetterText').textContent=sl5OpenedLetter?.body||'';if($('sl2Greeting'))$('sl2Greeting').textContent=lang==='es'?'A veces un pequeño hola puede cambiarlo todo. 💕':'Sometimes a little hello can change everything. 💕';if($('sl2Reply'))$('sl2Reply').textContent=lang==='es'?'Me alegra que nuestros caminos se cruzaran. 💛':"I'm glad our paths crossed. 💛";renderDemoLetters();}
-function tab(name,skipConversationLoad=false){if(!allowed())return;if(name==='letters')void slLoadLetters();if(name==='discover')void sl5LoadDiscover();if(name==='conversations'&&!skipConversationLoad)void slChatList();Object.entries(panels).forEach(([key,id])=>{$(id).hidden=key!==name});root.querySelectorAll('[data-sl-tab]').forEach(el=>{el.classList.toggle('sl2-selected',el.dataset.slTab===name);el.setAttribute('aria-pressed',String(el.dataset.slTab===name))});syncLang();}
+function tab(name,skipConversationLoad=false){if(!allowed())return;if(name!=='conversations'&&slChatId)slLeaveChat();if(name==='letters')void slLoadLetters();if(name==='discover')void sl5LoadDiscover();if(name==='conversations'&&!skipConversationLoad)void slChatList();Object.entries(panels).forEach(([key,id])=>{$(id).hidden=key!==name});root.querySelectorAll('[data-sl-tab]').forEach(el=>{el.classList.toggle('sl2-selected',el.dataset.slTab===name);el.setAttribute('aria-pressed',String(el.dataset.slTab===name))});syncLang();}
 root.querySelectorAll('[data-sl-tab]').forEach(el=>el.addEventListener('click',()=>tab(el.dataset.slTab)));
 async function sl5LoadDiscover(){
  if(!allowed())return;
@@ -17024,7 +17024,57 @@ async function sl5LoadDiscover(){
   });
  }catch(e){notice.textContent=(lang==='es'?'Error al buscar cartas: ':'Could not discover letters: ')+e.message;}
 }
-let slChatId=null,slChatPoll=null;
+let slChatId=null,slChatPoll=null,slClock=null,slClockState=null,slClockReceivedAt=0,slClockBusy=false;
+const slChatVisible=()=>!!(slChatId&&allowed()&&root.classList.contains('active')&&!$('sl2Conversations').hidden&&!document.hidden);
+const slClockNode=$('sl2Conversations').querySelector('.sl2-time');
+slClockNode.style.display='block';
+function slFormatClock(seconds){const n=Math.max(0,Math.ceil(seconds));return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
+function slRenderClock(){
+ if(!slClockState){slClockNode.textContent='⏳ 30:00';return;}
+ const d=slClockState,es=lang==='es';
+ let remaining=Number(d.remaining_seconds||0);
+ if(d.status==='active'&&d.both_present&&slChatVisible())remaining=Math.max(0,remaining-(Date.now()-slClockReceivedAt)/1000);
+ const phase=d.second_chance_used?'45':'30';
+ const status=d.status==='active'&&d.both_present?(es?'Ambos presentes · reloj activo':'Both here · timer running'):(es?'En pausa · esperando a ambos':'Paused · waiting for both');
+ slClockNode.replaceChildren(document.createTextNode('⏳ '+slFormatClock(remaining)));
+ const small=document.createElement('small');small.textContent=phase+' min · '+status;slClockNode.append(small);
+ const closed=['second_chance','decision','expired','passed','blocked','matched'].includes(d.status);
+ $('sl2ChatInput').disabled=closed;$('sl2ChatForm').querySelector('button[type=submit]').disabled=closed;
+ let extra=$('slSecondChancePanel');
+ if(!extra){extra=document.createElement('div');extra.id='slSecondChancePanel';extra.className='sl4-letter-card';extra.style.margin='12px 0';$('sl2ChatForm').before(extra)}
+ extra.replaceChildren();extra.hidden=d.status!=='second_chance';
+ if(d.status==='second_chance'){
+  const info=document.createElement('p');info.textContent=es?'💕 Se cumplieron 30 minutos. Ambos deben aceptar 15 minutos adicionales.':'💕 30 minutes completed. Both must approve 15 more minutes.';
+  const btn=document.createElement('button');btn.type='button';btn.className='sl2-primary';btn.textContent=es?'💜 Aceptar 15 minutos más':'💜 Approve 15 more minutes';
+  btn.addEventListener('click',async()=>{btn.disabled=true;try{const r=await slChatRpc('sl_chat_second_chance',{p_conversation:slChatId});info.textContent=r?.approved?(es?'¡Aprobado! Vuelvan a abrir el chat.':'Approved! Both can return to the chat.'):(es?'Esperando la aprobación de la otra persona.':'Waiting for the other person to approve.');await slClockTick()}catch(e){info.textContent=e.message}finally{btn.disabled=false}});
+  extra.append(info,btn);
+ }
+ $('sl2Decision').style.display=d.status==='decision'?'inline-block':'none';
+ if(d.status==='decision')$('sl2Choice').hidden=false;
+}
+async function slClockTick(){
+ if(!slChatVisible()||slClockBusy)return;
+ const id=slChatId;slClockBusy=true;
+ try{const result=await slChatRpc('sl_chat_heartbeat',{p_conversation:id});if(id===slChatId){slClockState=result;slClockReceivedAt=Date.now();slRenderClock()}}
+ catch(e){if(id===slChatId)$('sl2Presence').textContent=e.message}
+ finally{slClockBusy=false}
+}
+function slLeaveChat(){
+ const id=slChatId;if(!id)return;
+ slChatId=null;slClockState=null;
+ if(slChatPoll){clearInterval(slChatPoll);slChatPoll=null}
+ if(slClock){clearInterval(slClock);slClock=null}
+ // Best effort: pagehide/navigation may interrupt requests. The server's 15-second cutoff is the fallback.
+ void slChatRpc('sl_chat_leave',{p_conversation_id:id}).catch(()=>{});
+}
+function slStartClock(){
+ if(slClock)clearInterval(slClock);
+ slClock=setInterval(()=>{if(slChatVisible())void slClockTick();else if(slChatId)slLeaveChat()},5000);
+ void slClockTick();
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden){slLeaveChat()}else if(slChatId&&slChatVisible()){void slClockTick()}});
+window.addEventListener('pagehide',slLeaveChat);
+
 async function slChatRpc(name,args={}){
  const {data,error}=await supabaseClient.rpc(name,args);
  if(error)throw error;
@@ -17050,21 +17100,21 @@ async function slChatRefresh(){
    const span=document.createElement('span');span.textContent=m.body;b.append(label,span);bubbles.append(b);
   }
   bubbles.scrollTop=bubbles.scrollHeight;
-  $('sl2Presence').textContent=lang==='es'?'💌 Conversación privada':'💌 Private conversation';
+  $('sl2Presence').textContent=lang==='es'?'💌 Conversación privada':'💌 Private conversation';slRenderClock();
  }catch(e){$('sl2Presence').textContent=e.message;}
 }
 async function slChatOpen(id){
- slChatId=id;tab('conversations',true);
+ if(slChatId&&slChatId!==id)slLeaveChat();slChatId=id;slClockState=null;tab('conversations',true);
  $('sl2Conversations').querySelector('.sl2-chathead').style.display='flex';
  $('sl2ChatForm').style.display='flex';
- $('sl2Conversations').querySelector('.sl2-time').style.display='none';
+ $('sl2Conversations').querySelector('.sl2-time').style.display='block';
  $('sl2ChatTitle').textContent=lang==='es'?'🐰 Tú · 🦊 Persona misteriosa':'🐰 You · 🦊 Mystery stranger';
  $('sl2Bubbles').replaceChildren();
  $('sl2Decision').style.display='none';$('sl2Choice').hidden=true;
- const note=$('sl2ChatForm').nextElementSibling;if(note)note.textContent=lang==='es'?'💌 Mensajes reales y privados. Las decisiones y el temporizador se activarán más adelante.':'💌 Real private messages. Decisions and timer are coming later.';
- await slChatRefresh();
+ const note=$('sl2ChatForm').nextElementSibling;if(note)note.textContent=lang==='es'?'💌 Mensajes reales y privados. El reloj funciona cuando ambos están presentes. La decisión final sigue pendiente.':'💌 Real private messages. Decisions and timer are coming later.';
+ await slChatRefresh();slStartClock();
  if(slChatPoll)clearInterval(slChatPoll);
- slChatPoll=setInterval(()=>{if(!$('sl2Conversations').hidden)void slChatRefresh()},5000);
+ slChatPoll=setInterval(()=>{if(slChatVisible()){void slChatRefresh();void slClockTick()}},5000);
 }
 async function slChatList(){
  if(!allowed())return;
@@ -17180,10 +17230,10 @@ $('sl2ChatForm').addEventListener('submit',async e=>{
  catch(error){alert(error.message)}finally{button.disabled=false}
 });
 $('sl2Decision').addEventListener('click',()=>{$('sl2Choice').hidden=false});
-$('sl2Continue').addEventListener('click',()=>{$('sl2ChoiceResult').textContent=lang==='es'?'Elegiste Continuar 💕. Esperando la decisión de la otra persona (demostración).':'You chose Continue 💕. Waiting for the other person (demo).'});
-$('sl2Pass').addEventListener('click',()=>{$('sl2ChoiceResult').textContent=lang==='es'?'Elegiste Pasar 💔. Esta es solo una demostración.':'You chose Pass 💔. This is only a demo.'});
-$('languageSelect')?.addEventListener('change',()=>{syncLang();if(!$('sl2Letters').hidden)renderDemoLetters()});
-const observer=new MutationObserver(()=>{if(root.classList.contains('active')&&allowed()){syncLang();if(!$('sl2Letters').hidden)void slLoadLetters()}});observer.observe(root,{attributes:true,attributeFilter:['class']});
+$('sl2Continue').addEventListener('click',()=>{$('sl2ChoiceResult').textContent=lang==='es'?'Decisión final pendiente de conexión al servidor.':'Final decision awaiting server integration.'});
+$('sl2Pass').addEventListener('click',()=>{$('sl2ChoiceResult').textContent=lang==='es'?'Decisión final pendiente de conexión al servidor.':'Final decision awaiting server integration.'});
+$('languageSelect')?.addEventListener('change',()=>{syncLang();slRenderClock();if(!$('sl2Letters').hidden)renderDemoLetters()});
+const observer=new MutationObserver(()=>{if(!root.classList.contains('active')&&slChatId)slLeaveChat();if(root.classList.contains('active')&&allowed()){syncLang();if(!$('sl2Letters').hidden)void slLoadLetters()}});observer.observe(root,{attributes:true,attributeFilter:['class']});
 Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySelector('[data-sl-tab="create"]').classList.add('sl2-selected');syncLang();
 })();
 </script>
