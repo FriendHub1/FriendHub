@@ -17587,6 +17587,95 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
 #profile #profileCard.xoxo-design[data-xoxo-theme="pink"] .btn-primary,#profile #profileCard.xoxo-design[data-xoxo-theme="sunset"] .btn-primary{color:#fff!important}
 #profile #profileCard.xoxo-design[data-xoxo-effects="on"]::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;opacity:.22;background-image:radial-gradient(circle,#fff 1px,transparent 2px);background-size:45px 53px;animation:xoxoStudioTwinkle 5s linear infinite}
 @media(prefers-reduced-motion:reduce){#profile #profileCard.xoxo-design::after{animation:none!important}}
+
+/* XOXO Profile Studio — theme-aware contrast, scoped to decorated profile cards only.
+   Keeps private messages, navigation, Secret Letters and all other features untouched. */
+#profile #profileCard.xoxo-design{
+  --xd-inner:var(--xd-panel);
+  --xd-control-bg:var(--xd-bg);
+  --xd-control-fg:var(--xd-fg);
+  --xd-button-fg:#ffffff;
+}
+#profile #profileCard.xoxo-design[data-xoxo-theme="pink"]{
+  --xd-panel:#fff0f6;--xd-inner:#fff0f6;--xd-control-bg:#ffffff;--xd-control-fg:#712347;
+}
+#profile #profileCard.xoxo-design[data-xoxo-theme="sunset"]{
+  --xd-panel:#fff7e9;--xd-inner:#fff7e9;--xd-control-bg:#ffffff;--xd-control-fg:#703415;
+}
+#profile #profileCard.xoxo-design[data-xoxo-theme="neon"],
+#profile #profileCard.xoxo-design[data-xoxo-theme="ocean"],
+#profile #profileCard.xoxo-design[data-xoxo-theme="galaxy"],
+#profile #profileCard.xoxo-design[data-xoxo-theme="midnight"]{
+  --xd-control-bg:var(--xd-panel);--xd-control-fg:#ffffff;
+}
+#profile #profileCard.xoxo-design .profile-photo-section,
+#profile #profileCard.xoxo-design .form-group,
+#profile #profileCard.xoxo-design .profile-actions{
+  background:var(--xd-inner)!important;
+  color:var(--xd-fg)!important;
+  border-color:color-mix(in srgb,var(--xd-accent) 42%,transparent)!important;
+}
+#profile #profileCard.xoxo-design .profile-photo-label,
+#profile #profileCard.xoxo-design .form-group > label,
+#profile #profileCard.xoxo-design .form-group label,
+#profile #profileCard.xoxo-design .form-group strong,
+#profile #profileCard.xoxo-design .profile-photo-section label{
+  color:var(--xd-fg)!important;
+  text-shadow:none!important;
+}
+#profile #profileCard.xoxo-design .help-text,
+#profile #profileCard.xoxo-design .xoxo-studio-launch p,
+#profile #profileCard.xoxo-design .form-group small{
+  color:var(--xd-muted)!important;
+  text-shadow:none!important;
+}
+#profile #profileCard.xoxo-design .form-group input:not([type="checkbox"]),
+#profile #profileCard.xoxo-design .form-group textarea,
+#profile #profileCard.xoxo-design .form-group select{
+  background:var(--xd-control-bg)!important;
+  color:var(--xd-control-fg)!important;
+  border-color:var(--xd-accent)!important;
+  -webkit-text-fill-color:var(--xd-control-fg);
+}
+#profile #profileCard.xoxo-design .form-group input::placeholder,
+#profile #profileCard.xoxo-design .form-group textarea::placeholder{
+  color:var(--xd-muted)!important;
+  opacity:1;
+}
+#profile #profileCard.xoxo-design .option-btn,
+#profile #profileCard.xoxo-design .btn-secondary{
+  background:var(--xd-control-bg)!important;
+  color:var(--xd-control-fg)!important;
+  border-color:var(--xd-accent)!important;
+  text-shadow:none!important;
+}
+#profile #profileCard.xoxo-design .option-btn.selected{
+  background:var(--xd-accent)!important;
+  color:#fff!important;
+}
+#profile #profileCard.xoxo-design .profile-actions .btn-primary,
+#profile #profileCard.xoxo-design .btn-primary{
+  background:var(--xd-accent)!important;
+  color:#fff!important;
+}
+#profile #profileCard.xoxo-design .profile-photo-label:focus-visible,
+#profile #profileCard.xoxo-design button:focus-visible{
+  outline:3px solid var(--xd-accent);outline-offset:3px;
+}
+/* Public card: readable labels, statistics and follow controls on all six themes. */
+#publicProfile .public-profile-card.xoxo-design .public-profile-stat,
+#publicProfile .public-profile-card.xoxo-design .public-profile-stat strong,
+#publicProfile .public-profile-card.xoxo-design .public-profile-detail strong{
+  color:var(--xd-fg)!important;
+}
+#publicProfile .public-profile-card.xoxo-design .public-profile-detail span,
+#publicProfile .public-profile-card.xoxo-design .public-profile-country,
+#publicProfile .public-profile-card.xoxo-design .public-profile-bio{
+  color:var(--xd-muted)!important;
+}
+#publicProfile .public-profile-card.xoxo-design .public-profile-follow.following{
+  background:var(--xd-panel)!important;color:var(--xd-fg)!important;border-color:var(--xd-accent)!important;
+}
 </style>
 <script id="xoxo-studio-supabase-save">
 (function(){
