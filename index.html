@@ -5566,6 +5566,7 @@
                                     ></textarea>
                                     <div class="help-text">
                                     <span id="bioCount">0</span> / 160
+                                    <span id="xoxoBioRequirement" style="display:block;margin-top:5px;" aria-live="polite"></span>
                                     </div>
                                     </div>
                                     <div class="form-group">
@@ -7915,10 +7916,27 @@ async function enforceXoxoSuspension() {
                                     data.profile_photo
                                     );
                                     }
+                                    // Only accounts registered after activation need a 20-character bio.
+                                    // Supabase enforces the same cutoff on profile inserts and updates.
+                                    const XOXO_BIO_REQUIRED_FROM = Date.parse("2026-10-13T10:03:45.085009Z");
+                                    function xoxoBioRequiredForCurrentUser() {
+                                      const registeredAt = currentUser?.created_at;
+                                      const timestamp = registeredAt ? Date.parse(registeredAt) : NaN;
+                                      return Number.isFinite(timestamp) && timestamp >= XOXO_BIO_REQUIRED_FROM;
+                                    }
                                     function updateBioCount() {
                                     const bioInput = document.getElementById("bio");
                                     const bioCount = document.getElementById("bioCount");
+                                    const requirement = document.getElementById("xoxoBioRequirement");
+                                    const length = Array.from((bioInput?.value || "").trim()).length;
                                     if (bioCount) bioCount.textContent = String((bioInput?.value || "").length);
+                                    if (requirement) {
+                                      const required = xoxoBioRequiredForCurrentUser();
+                                      requirement.textContent = required
+                                        ? (length < 20 ? `Required for new members: ${length}/20 characters minimum 💜` : "✓ Bio requirement met 💜")
+                                        : "Optional for existing members 💜";
+                                      requirement.style.color = required && length < 20 ? "#a52a52" : "";
+                                    }
                                     }
                                     function clearProfileForm() {
                                     const usernameInput = document.getElementById("username");
@@ -8041,6 +8059,14 @@ async function enforceXoxoSuspension() {
                                     const genderIdentity = (document.getElementById("genderIdentity")?.value || "").trim();
                                     const sexualOrientation = (document.getElementById("sexualOrientation")?.value || "").trim();
                                     const bio = (document.getElementById("bio")?.value || "").trim();
+                                    if (xoxoBioRequiredForCurrentUser() && Array.from(bio).length < 20) {
+                                    showProfileMessage(
+                                    "Tell us a little about yourself! 💜 Your bio must contain at least 20 characters to complete your profile.",
+                                    "error"
+                                    );
+                                    document.getElementById("bio")?.focus();
+                                    return;
+                                    }
                                     if (bio.length > 160) {
                                     showProfileMessage(
                                     "Bio must be 160 characters or fewer.",
