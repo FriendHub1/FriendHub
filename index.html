@@ -1865,6 +1865,13 @@
                                     .dm-gif-button:hover { background:rgba(255,47,168,.16); }
                                     .dm-gif-overlay { position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;padding:18px 18px calc(18px + env(safe-area-inset-bottom)); }
                                     .dm-gif-panel { width:min(100%,560px);max-height:min(76dvh,680px);display:flex;flex-direction:column;border:1px solid var(--border);border-radius:22px;background:var(--card);box-shadow:0 20px 70px rgba(0,0,0,.42);overflow:hidden; }
+                                    /* GIF-only private chat picker: iPhone safe-area and viewport sizing. */
+                                    @media (max-width: 600px) {
+                                      .dm-gif-overlay { padding: 10px 10px max(10px, env(safe-area-inset-bottom)); align-items:center; }
+                                      .dm-gif-panel { width:100%; max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height:0; }
+                                      .dm-gif-grid { min-height:0; flex:1 1 auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; }
+                                      .dm-gif-search { font-size:16px; }
+                                    }
                                     .dm-gif-head { display:flex;align-items:center;gap:10px;padding:14px;border-bottom:1px solid var(--border); }
                                     .dm-gif-title { font-weight:900;white-space:nowrap; }
                                     .dm-gif-search { flex:1;min-width:0;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:transparent;color:inherit;font:inherit; }
@@ -5808,9 +5815,7 @@
                                     <div id="dmGifOverlay" class="dm-gif-overlay" onclick="if(event.target===this) closeDmGifPicker()" style="display:none;">
                                     <div class="dm-gif-panel" role="dialog" aria-modal="true" aria-label="GIF picker">
                                     <div class="dm-gif-head"><strong id="dmGifPickerTitle" class="dm-gif-title">GIFs</strong><input id="dmGifSearch" class="dm-gif-search" type="search" maxlength="100" placeholder="Search GIFs" oninput="scheduleDmGifSearch()"><button type="button" class="dm-gif-close" onclick="closeDmGifPicker()" aria-label="Close">×</button></div>
-                                    <div class="dm-media-tabs" role="tablist" aria-label="GIFs and Stickers"><button id="dmMediaGifTab" type="button" class="dm-media-tab active" role="tab" aria-selected="true" onclick="switchDmMediaTab('gifs')">🎬 GIFs</button><button id="dmMediaStickerTab" type="button" class="dm-media-tab" role="tab" aria-selected="false" onclick="switchDmMediaTab('stickers')">💛 Stickers</button></div>
-                                    <div id="dmStickerCategories" class="dm-sticker-categories" style="display:none" aria-label="Sticker categories"></div>
-                                    <div id="dmGifGrid" class="dm-gif-grid" onscroll="onDmStickerScroll(this)"></div>
+                                    <div id="dmGifGrid" class="dm-gif-grid"></div>
                                     <div class="dm-gif-powered">Powered by GIPHY</div>
                                     </div></div>
                                     <div id="dmCameraChoiceOverlay" class="dm-camera-choice-overlay" onclick="if(event.target===this) closeDmCameraChoice()" style="display:none;">
@@ -11305,20 +11310,6 @@ async function openPublicProfile(userId) {
                                     const XOXO_GIPHY_ENDPOINT = "https://xoxo-giphy-app.paredesarixon.workers.dev/gifs";
                                     let dmGifSearchTimer = null;
                                     let dmGifRequestId = 0;
-                                    let dmMediaType = "gifs";
-                                    let dmStickerQuery = "";
-                                    let dmStickerOffset = 0;
-                                    let dmStickerHasMore = false;
-                                    let dmStickerLoading = false;
-                                    const DM_STICKER_CATEGORIES = [
-                                      ["trending", "🔥 Trending", ""],
-                                      ["love", "💛 Love", "love"],
-                                      ["cute", "🥰 Cute", "cute"],
-                                      ["funny", "😂 Funny", "funny"],
-                                      ["anime", "🌸 Anime", "anime"],
-                                      ["reactions", "✨ Reactions", "reaction"]
-                                    ];
-
                                     function parseDmGifContent(content) {
                                     const text = String(content || "").trim();
                                     const match = text.match(/^\[\[XOXO_(?:GIF|STICKER):(https:\/\/media[0-9]*\.giphy\.com\/[^\]]+)\]\]$/i);
@@ -11375,8 +11366,6 @@ async function openPublicProfile(userId) {
                                     const search = document.getElementById("dmGifSearch");
                                     if (overlay) overlay.style.display = "flex";
                                     if (search) { search.value = ""; search.placeholder = getFriendHubLanguage() === "es" ? "Buscar GIFs" : "Search GIFs"; }
-                                    dmMediaType = "gifs";
-                                    updateDmMediaTabs();
                                     await loadDmGifs("");
                                     }
 
@@ -11386,37 +11375,6 @@ async function openPublicProfile(userId) {
                                     if (dmGifSearchTimer) clearTimeout(dmGifSearchTimer);
                                     dmGifSearchTimer = null;
                                     ++dmGifRequestId;
-                                    dmStickerHasMore = false;
-                                    dmStickerLoading = false;
-                                    }
-
-                                    function updateDmMediaTabs() {
-                                      const sticker = dmMediaType === "stickers";
-                                      document.getElementById("dmMediaGifTab")?.classList.toggle("active", !sticker);
-                                      document.getElementById("dmMediaStickerTab")?.classList.toggle("active", sticker);
-                                      document.getElementById("dmMediaGifTab")?.setAttribute("aria-selected", String(!sticker));
-                                      document.getElementById("dmMediaStickerTab")?.setAttribute("aria-selected", String(sticker));
-                                      const title = document.getElementById("dmGifPickerTitle");
-                                      if (title) title.textContent = sticker ? "💛 Stickers" : "GIFs";
-                                      const search = document.getElementById("dmGifSearch");
-                                      if (search) search.placeholder = sticker ? (getFriendHubLanguage() === "es" ? "Buscar stickers" : "Search stickers") : (getFriendHubLanguage() === "es" ? "Buscar GIFs" : "Search GIFs");
-                                      document.getElementById("dmGifGrid")?.classList.toggle("is-stickers", sticker);
-                                      const categories = document.getElementById("dmStickerCategories");
-                                      if (categories) {
-                                        categories.style.display = sticker ? "flex" : "none";
-                                        if (sticker) renderDmStickerCategories();
-                                      }
-                                    }
-
-                                    function switchDmMediaTab(type) {
-                                      if (type !== "gifs" && type !== "stickers") return;
-                                      if (dmGifSearchTimer) clearTimeout(dmGifSearchTimer);
-                                      dmGifSearchTimer = null;
-                                      dmMediaType = type;
-                                      const search = document.getElementById("dmGifSearch");
-                                      if (search) search.value = "";
-                                      updateDmMediaTabs();
-                                      loadDmGifs("");
                                     }
 
                                     function scheduleDmGifSearch() {
@@ -11427,31 +11385,12 @@ async function openPublicProfile(userId) {
                                     }, 350);
                                     }
 
-                                    function renderDmStickerCategories() {
-                                      const bar = document.getElementById("dmStickerCategories");
-                                      if (!bar) return;
-                                      bar.innerHTML = DM_STICKER_CATEGORIES.map(([key, label, query]) =>
-                                        `<button type="button" class="dm-sticker-category${dmStickerQuery === query ? " active" : ""}" onclick="chooseDmStickerCategory('${key}')">${label}</button>`
-                                      ).join("");
-                                    }
-
-                                    function chooseDmStickerCategory(key) {
-                                      if (dmMediaType !== "stickers") return;
-                                      const category = DM_STICKER_CATEGORIES.find(c => c[0] === key);
-                                      if (!category) return;
-                                      const search = document.getElementById("dmGifSearch");
-                                      if (search) search.value = "";
-                                      if (dmGifSearchTimer) clearTimeout(dmGifSearchTimer);
-                                      dmGifSearchTimer = null;
-                                      loadDmGifs(category[2]);
-                                    }
-
-                                    function renderDmMediaItems(gifs, mediaType) {
+                                    function renderDmMediaItems(gifs) {
                                       return gifs.map(g => {
                                         const original = escapeHtmlAttribute(String(g.original || ""));
                                         const preview = escapeHtmlAttribute(String(g.preview || g.url || g.original || ""));
                                         const title = escapeHtmlAttribute(String(g.title || "GIF"));
-                                        return `<button type="button" class="dm-gif-item" onclick="sendDmGif('${original}', '${mediaType}')" title="${title}"><img src="${preview}" alt="${title}" loading="lazy"></button>`;
+                                        return `<button type="button" class="dm-gif-item" onclick="sendDmGif('${original}')" title="${title}"><img src="${preview}" alt="${title}" loading="lazy"></button>`;
                                       }).join("");
                                     }
 
@@ -11459,92 +11398,31 @@ async function openPublicProfile(userId) {
                                       const grid = document.getElementById("dmGifGrid");
                                       if (!grid) return;
                                       const requestId = ++dmGifRequestId;
-                                      const mediaType = dmMediaType;
-                                      const isSticker = mediaType === "stickers";
-                                      dmStickerQuery = String(query || "").trim();
-                                      dmStickerOffset = 0;
-                                      dmStickerHasMore = false;
-                                      dmStickerLoading = false;
                                       grid.scrollTop = 0;
-                                      if (isSticker) renderDmStickerCategories();
-                                      grid.innerHTML = `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? (isSticker ? "Cargando stickers..." : "Cargando GIFs...") : (isSticker ? "Loading stickers..." : "Loading GIFs...")}</div>`;
+                                      grid.innerHTML = `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? "Cargando GIFs..." : "Loading GIFs..."}</div>`;
                                       try {
-                                        const url = new URL(isSticker ? XOXO_GIPHY_ENDPOINT.replace(/\/gifs$/, "/stickers") : XOXO_GIPHY_ENDPOINT);
+                                        const url = new URL(XOXO_GIPHY_ENDPOINT);
                                         if (query) url.searchParams.set("q", query);
-                                        if (isSticker) url.searchParams.set("offset", "0");
-                                        const response = await fetch(url.toString(), { headers:{ Accept:"application/json" } });
+                                        const response = await fetch(url.toString(), { headers: { Accept: "application/json" }, cache: "no-store" });
                                         if (!response.ok) throw new Error(`GIF API ${response.status}`);
                                         const result = await response.json();
-                                        if (requestId !== dmGifRequestId || mediaType !== dmMediaType) return;
+                                        if (requestId !== dmGifRequestId) return;
+                                        if (result.ok !== true) throw new Error("Invalid GIF API response");
                                         const gifs = Array.isArray(result.gifs) ? result.gifs.filter(g => g && g.original) : [];
-                                        if (!gifs.length) {
-                                          grid.innerHTML = `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? (isSticker ? "No se encontraron stickers." : "No se encontraron GIFs.") : (isSticker ? "No stickers found." : "No GIFs found.")}</div>`;
-                                          return;
-                                        }
-                                        grid.innerHTML = renderDmMediaItems(gifs, mediaType);
-                                        if (isSticker) {
-                                          dmStickerOffset = gifs.length;
-                                          dmStickerHasMore = result.hasMore === true && dmStickerOffset < 500;
-                                          // Fill a tall screen when 24 stickers do not create a scrollbar.
-                                          if (dmStickerHasMore && grid.scrollHeight <= grid.clientHeight + 15) loadMoreDmStickers();
-                                        }
+                                        grid.innerHTML = gifs.length ? renderDmMediaItems(gifs) : `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? "No se encontraron GIFs." : "No GIFs found."}</div>`;
                                       } catch (error) {
                                         console.error("GIPHY picker error:", error);
-                                        if (requestId === dmGifRequestId && mediaType === dmMediaType) grid.innerHTML = `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? (isSticker ? "No se pudieron cargar los stickers." : "No se pudieron cargar los GIFs.") : (isSticker ? "Could not load stickers." : "Could not load GIFs.")}</div>`;
+                                        if (requestId === dmGifRequestId) grid.innerHTML = `<div class="dm-gif-empty">${getFriendHubLanguage() === "es" ? "No se pudieron cargar los GIFs." : "Could not load GIFs."}</div>`;
                                       }
                                     }
 
-                                    function onDmStickerScroll(grid) {
-                                      if (dmMediaType !== "stickers" || !dmStickerHasMore || dmStickerLoading) return;
-                                      if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 240) loadMoreDmStickers();
-                                    }
-
-                                    async function loadMoreDmStickers() {
-                                      if (dmMediaType !== "stickers" || !dmStickerHasMore || dmStickerLoading) return;
-                                      const grid = document.getElementById("dmGifGrid");
-                                      if (!grid) return;
-                                      dmStickerLoading = true;
-                                      const requestId = dmGifRequestId;
-                                      const offset = dmStickerOffset;
-                                      const query = dmStickerQuery;
-                                      const loading = document.createElement("div");
-                                      loading.className = "dm-sticker-loading";
-                                      loading.textContent = getFriendHubLanguage() === "es" ? "Cargando más stickers..." : "Loading more stickers...";
-                                      grid.appendChild(loading);
-                                      try {
-                                        const url = new URL(XOXO_GIPHY_ENDPOINT.replace(/\/gifs$/, "/stickers"));
-                                        if (query) url.searchParams.set("q", query);
-                                        url.searchParams.set("offset", String(offset));
-                                        const response = await fetch(url.toString(), { headers:{ Accept:"application/json" } });
-                                        if (!response.ok) throw new Error(`Sticker API ${response.status}`);
-                                        const result = await response.json();
-                                        if (requestId !== dmGifRequestId || dmMediaType !== "stickers") return;
-                                        const gifs = Array.isArray(result.gifs) ? result.gifs.filter(g => g && g.original) : [];
-                                        loading.remove();
-                                        if (gifs.length) grid.insertAdjacentHTML("beforeend", renderDmMediaItems(gifs, "stickers"));
-                                        dmStickerOffset = offset + gifs.length;
-                                        dmStickerHasMore = result.hasMore === true && gifs.length > 0 && dmStickerOffset < 500;
-                                      } catch (error) {
-                                        console.error("Sticker pagination error:", error);
-                                        if (requestId === dmGifRequestId) {
-                                          loading.textContent = getFriendHubLanguage() === "es" ? "Error al cargar más. Desliza para reintentar." : "Could not load more. Scroll to retry.";
-                                        }
-                                      } finally {
-                                        if (requestId === dmGifRequestId) {
-                                          dmStickerLoading = false;
-                                          if (dmStickerHasMore && grid.scrollHeight <= grid.clientHeight + 15) loadMoreDmStickers();
-                                        } else loading.remove();
-                                      }
-                                    }
-
-                                    async function sendDmGif(gifUrl, mediaType = "gifs") {
+                                    async function sendDmGif(gifUrl) {
                                     if (!currentUser || !currentDmUserId || !/^https:\/\/media[0-9]*\.giphy\.com\//i.test(String(gifUrl || ""))) return;
-                                    const isSticker = mediaType === "stickers";
                                     const gifButton = document.getElementById("dmGifButton");
                                     if (gifButton) gifButton.disabled = true;
                                     prepareDmSendSound();
                                     try {
-                                      const payload = { sender_id:currentUser.id, recipient_id:currentDmUserId, content:`[[XOXO_${isSticker ? "STICKER" : "GIF"}:${gifUrl}]]` };
+                                      const payload = { sender_id:currentUser.id, recipient_id:currentDmUserId, content:`[[XOXO_GIF:${gifUrl}]]` };
                                       if (dmReplyTarget?.id) payload.reply_to_message_id = dmReplyTarget.id;
                                       const { error } = await supabaseClient.from("direct_messages").insert(payload);
                                       if (error) throw error;
@@ -11556,12 +11434,12 @@ async function openPublicProfile(userId) {
                                       try {
                                         const actorUsername = currentProfile?.username || "@User";
                                         const language = getFriendHubLanguage();
-                                        await supabaseClient.from("notifications").insert({ user_id:currentDmUserId, actor_id:currentUser.id, post_id:null, type:"dm", message:language === "es" ? `${actorUsername} te envió ${isSticker ? "un sticker" : "un GIF"}.` : `${actorUsername} sent you ${isSticker ? "a sticker" : "a GIF"}.` });
+                                        await supabaseClient.from("notifications").insert({ user_id:currentDmUserId, actor_id:currentUser.id, post_id:null, type:"dm", message:language === "es" ? `${actorUsername} te envió un GIF.` : `${actorUsername} sent you a GIF.` });
                                       } catch (notificationError) { console.error("GIF notification error:", notificationError); }
                                       await loadDirectMessages();
                                     } catch (error) {
                                       console.error("Send GIF error:", error);
-                                      setDmStatus(getFriendHubLanguage() === "es" ? (isSticker ? "No se pudo enviar el sticker." : "No se pudo enviar el GIF.") : (isSticker ? "Could not send sticker." : "Could not send GIF."), true);
+                                      setDmStatus(getFriendHubLanguage() === "es" ? "No se pudo enviar el GIF." : "Could not send GIF.", true);
                                     } finally {
                                       if (gifButton) gifButton.disabled = false;
                                     }
