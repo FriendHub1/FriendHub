@@ -17676,6 +17676,39 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
 #publicProfile .public-profile-card.xoxo-design .public-profile-follow.following{
   background:var(--xd-panel)!important;color:var(--xd-fg)!important;border-color:var(--xd-accent)!important;
 }
+
+/* XOXO Profile Studio: accessible Block and Message buttons on saved public themes.
+   Scoped to the public profile card; no changes to button behavior. */
+#publicProfile .public-profile-card.xoxo-design .public-profile-block:not(.blocked) {
+  background: #fff0f1 !important;
+  color: #962437 !important;
+  border: 2px solid #c9415a !important;
+  text-shadow: none !important;
+}
+#publicProfile .public-profile-card.xoxo-design .public-profile-block:not(.blocked):hover {
+  background: #ffe0e5 !important;
+}
+#publicProfile .public-profile-card.xoxo-design .public-profile-block.blocked {
+  background: #e5f5fc !important;
+  color: #075a79 !important;
+  border: 2px solid #1785a8 !important;
+  text-shadow: none !important;
+}
+#publicProfile .public-profile-card.xoxo-design .public-profile-message {
+  background: #f0e8ff !important;
+  color: #48216d !important;
+  border: 2px solid #8952bc !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+#publicProfile .public-profile-card.xoxo-design .public-profile-message:hover {
+  background: #e6d6ff !important;
+}
+#publicProfile .public-profile-card.xoxo-design .public-profile-block:focus-visible,
+#publicProfile .public-profile-card.xoxo-design .public-profile-message:focus-visible {
+  outline: 3px solid var(--xd-accent);
+  outline-offset: 3px;
+}
 </style>
 <script id="xoxo-studio-supabase-save">
 (function(){
