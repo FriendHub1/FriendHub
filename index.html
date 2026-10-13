@@ -6992,6 +6992,7 @@ async function enforceXoxoSuspension() {
                                     if (page) {
                                     page.classList.add("active");
                                     }
+                                    if (pageId === "profile" && currentUser) window.xoxoStudioApplyOwn?.(currentUser.id);
                                     window.scrollTo({
                                     top: 0,
                                     behavior: "smooth"
@@ -10438,6 +10439,7 @@ async function openPublicProfile(userId) {
                                     document.querySelectorAll(".page").forEach(page => page.classList.remove("active"));
                                     const page = document.getElementById(pageId);
                                     if (page) page.classList.add("active");
+                                    if (pageId === "profile" && currentUser) window.xoxoStudioApplyOwn?.(currentUser.id);
                                     window.scrollTo({ top:0, behavior:"smooth" });
                                     }
 
@@ -17564,6 +17566,27 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
 #publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="ocean"] .public-profile-follow:not(.following),#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="galaxy"] .public-profile-follow:not(.following),#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="midnight"] .public-profile-follow:not(.following){color:#101525!important}
 #publicProfile .public-profile-card.xoxo-design[data-xoxo-effects="on"]::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;opacity:.32;background-image:radial-gradient(circle,#fff 1px,transparent 2px);background-size:45px 53px;animation:xoxoStudioTwinkle 5s linear infinite}
 @media(prefers-reduced-motion:reduce){#publicProfile .public-profile-card.xoxo-design::after{animation:none!important}}
+
+/* XOXO Profile Studio — saved theme on the owner's editable profile. */
+#profile #profileCard.xoxo-design{--xd-bg:#251044;--xd-fg:#ffffff;--xd-muted:#e5cbff;--xd-accent:#b968ff;--xd-panel:#382052;background:radial-gradient(circle at 88% 0%,color-mix(in srgb,var(--xd-accent) 25%,transparent),transparent 58%),var(--xd-bg)!important;color:var(--xd-fg)!important;border-color:var(--xd-accent)!important;isolation:isolate}
+#profile #profileCard.xoxo-design[data-xoxo-theme="pink"]{--xd-bg:#ffe0ec;--xd-fg:#712347;--xd-muted:#994d6c;--xd-accent:#bc326e;--xd-panel:#fff0f5}
+#profile #profileCard.xoxo-design[data-xoxo-theme="ocean"]{--xd-bg:#082d49;--xd-fg:#ffffff;--xd-muted:#c1eafa;--xd-accent:#37d5ef;--xd-panel:#17435b}
+#profile #profileCard.xoxo-design[data-xoxo-theme="galaxy"]{--xd-bg:#20143f;--xd-fg:#ffffff;--xd-muted:#d8cbfa;--xd-accent:#ba91ff;--xd-panel:#322351}
+#profile #profileCard.xoxo-design[data-xoxo-theme="sunset"]{--xd-bg:#fff0d9;--xd-fg:#703415;--xd-muted:#98552f;--xd-accent:#bf4d25;--xd-panel:#fff7ea}
+#profile #profileCard.xoxo-design[data-xoxo-theme="midnight"]{--xd-bg:#101623;--xd-fg:#ffffff;--xd-muted:#cbd8ec;--xd-accent:#85aaff;--xd-panel:#202d45}
+#profile #profileCard.xoxo-design .form-group>label,#profile #profileCard.xoxo-design .profile-photo-label{color:var(--xd-fg)!important}
+#profile #profileCard.xoxo-design .help-text,#profile #profileCard.xoxo-design .xoxo-studio-launch p{color:var(--xd-muted)!important}
+#profile #profileCard.xoxo-design .profile-avatar{border:3px solid var(--xd-accent)!important;color:var(--xd-fg)!important;background:var(--xd-panel)!important;box-shadow:0 0 22px var(--xd-accent)!important}
+#profile #profileCard.xoxo-design[data-xoxo-frame="double"] .profile-avatar{outline:3px solid var(--xd-fg);outline-offset:5px}
+#profile #profileCard.xoxo-design[data-xoxo-frame="simple"] .profile-avatar{box-shadow:none!important;border-width:2px!important}
+#profile #profileCard.xoxo-design .form-group input:not([type="checkbox"]),#profile #profileCard.xoxo-design .form-group select,#profile #profileCard.xoxo-design .form-group textarea{background:var(--xd-panel)!important;color:var(--xd-fg)!important;border-color:var(--xd-accent)!important}
+#profile #profileCard.xoxo-design .form-group input::placeholder,#profile #profileCard.xoxo-design .form-group textarea::placeholder{color:var(--xd-muted)!important}
+#profile #profileCard.xoxo-design .option-btn{background:var(--xd-panel)!important;color:var(--xd-fg)!important;border-color:var(--xd-accent)!important}
+#profile #profileCard.xoxo-design .btn-secondary{background:var(--xd-panel)!important;color:var(--xd-fg)!important;border-color:var(--xd-accent)!important}
+#profile #profileCard.xoxo-design .btn-primary{background:var(--xd-accent)!important;color:#fff!important;border-color:var(--xd-accent)!important}
+#profile #profileCard.xoxo-design[data-xoxo-theme="pink"] .btn-primary,#profile #profileCard.xoxo-design[data-xoxo-theme="sunset"] .btn-primary{color:#fff!important}
+#profile #profileCard.xoxo-design[data-xoxo-effects="on"]::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;opacity:.22;background-image:radial-gradient(circle,#fff 1px,transparent 2px);background-size:45px 53px;animation:xoxoStudioTwinkle 5s linear infinite}
+@media(prefers-reduced-motion:reduce){#profile #profileCard.xoxo-design::after{animation:none!important}}
 </style>
 <script id="xoxo-studio-supabase-save">
 (function(){
@@ -17600,8 +17623,19 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
      note('💜 Design saved! Your public profile will now show your selected theme.');
      button.textContent='Saved ✓';
      if(typeof currentPublicProfileUserId!=='undefined'&&String(currentPublicProfileUserId)===String(user.id))window.xoxoStudioApplyPublic(user.id,document.getElementById('publicProfileContent'));
+     window.xoxoStudioApplyOwn?.(user.id);
    }catch(e){console.error('XOXO design save:',e);note('⚠️ Could not save design: '+(e.message||'Please try again.'));button.textContent='Try again 💜';}
    finally{button.disabled=false;setTimeout(()=>{if(button.textContent==='Saved ✓'||button.textContent==='Try again 💜')button.textContent='Save Design 💜';},2000)}
+ };
+ window.xoxoStudioApplyOwn=async function(userId){
+   const c=client();const card=document.getElementById('profileCard');if(!c||!card||!userId)return;
+   try{
+     const {data,error}=await c.from('xoxo_profile_designs').select('theme,frame,effects').eq('user_id',String(userId)).maybeSingle();
+     if(error)throw error;
+     if(!card.isConnected)return;
+     if(!data){card.classList.remove('xoxo-design');delete card.dataset.xoxoTheme;return;}
+     const d=safe(data);card.dataset.xoxoTheme=d.theme;card.dataset.xoxoFrame=d.frame;card.dataset.xoxoEffects=d.effects?'on':'off';card.classList.add('xoxo-design');
+   }catch(e){console.warn('XOXO own profile design could not load:',e)}
  };
  window.xoxoStudioApplyPublic=async function(userId,container){
    const c=client();const card=container?.querySelector('.public-profile-card');if(!c||!card||!userId)return;
