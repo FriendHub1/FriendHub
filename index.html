@@ -17890,41 +17890,45 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
 </script>
 
 <script id="xoxo-jewel-email-deeplink">
-/* Jewel Collection email deep link. Does not change existing jewel rewards. */
+/* XOXO Avenue: open Jewel Box from a congratulation email, including after sign-in. */
 (function () {
   const destination = '#jewel-collection';
-  if (window.location.hash !== destination) return;
-
-  let opened = false;
-  let attempts = 0;
-  const maxAttempts = 240; // Allow time for sign-in and profile loading.
+  let timer = null;
+  let busy = false;
 
   function tryOpen() {
-    if (opened || window.location.hash !== destination) return true;
-    if (typeof currentUser === 'undefined' || !currentUser?.id) return false;
-    if (typeof xoxoIsAdmin !== 'undefined' && xoxoIsAdmin) return false;
-    if (typeof showPage !== 'function' || typeof window.xoxoOpenJewelPreview !== 'function') return false;
+    if (busy || window.location.hash !== destination) return;
+    if (typeof currentUser === 'undefined' || !currentUser?.id) return;
+    if (typeof xoxoIsAdmin !== 'undefined' && xoxoIsAdmin) return;
+    if (typeof showPage !== 'function' || typeof window.xoxoOpenJewelPreview !== 'function') return;
 
-    showPage('profile');
-    const ownBox = document.getElementById('xjOwnShowcase');
-    const button = ownBox?.querySelector('button[onclick*="xoxoOpenJewelPreview"]');
-    if (!button) return false;
-
-    window.xoxoOpenJewelPreview(button);
-    opened = true;
-    history.replaceState(history.state, '', location.pathname + location.search);
-    return true;
+    busy = true;
+    try {
+      showPage('profile');
+      const button = document.querySelector('#xjOwnShowcase button[onclick*="xoxoOpenJewelPreview"]');
+      if (!button) return;
+      window.xoxoOpenJewelPreview(button);
+      if (!document.getElementById('xjPreviewOverlay')?.classList.contains('open')) return;
+      window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
+      stop();
+    } finally {
+      busy = false;
+    }
   }
 
-  const timer = setInterval(function () {
-    attempts++;
-    if (tryOpen() || attempts >= maxAttempts) clearInterval(timer);
-  }, 500);
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', tryOpen, {once:true});
-  } else {
+  function stop() {
+    if (timer !== null) { clearInterval(timer); timer = null; }
+  }
+  function start() {
+    if (window.location.hash !== destination) { stop(); return; }
     tryOpen();
+    if (timer === null && window.location.hash === destination) timer = setInterval(tryOpen, 750);
   }
+  window.addEventListener('hashchange', start);
+  window.addEventListener('pageshow', start);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) start(); });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once:true });
+  else start();
 })();
 </script>
 </body>
