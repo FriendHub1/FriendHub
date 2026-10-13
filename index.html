@@ -17888,5 +17888,44 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
+
+<script id="xoxo-jewel-email-deeplink">
+/* Jewel Collection email deep link. Does not change existing jewel rewards. */
+(function () {
+  const destination = '#jewel-collection';
+  if (window.location.hash !== destination) return;
+
+  let opened = false;
+  let attempts = 0;
+  const maxAttempts = 240; // Allow time for sign-in and profile loading.
+
+  function tryOpen() {
+    if (opened || window.location.hash !== destination) return true;
+    if (typeof currentUser === 'undefined' || !currentUser?.id) return false;
+    if (typeof xoxoIsAdmin !== 'undefined' && xoxoIsAdmin) return false;
+    if (typeof showPage !== 'function' || typeof window.xoxoOpenJewelPreview !== 'function') return false;
+
+    showPage('profile');
+    const ownBox = document.getElementById('xjOwnShowcase');
+    const button = ownBox?.querySelector('button[onclick*="xoxoOpenJewelPreview"]');
+    if (!button) return false;
+
+    window.xoxoOpenJewelPreview(button);
+    opened = true;
+    history.replaceState(history.state, '', location.pathname + location.search);
+    return true;
+  }
+
+  const timer = setInterval(function () {
+    attempts++;
+    if (tryOpen() || attempts >= maxAttempts) clearInterval(timer);
+  }, 500);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', tryOpen, {once:true});
+  } else {
+    tryOpen();
+  }
+})();
+</script>
 </body>
                                     </html>
