@@ -5100,6 +5100,10 @@
 #bottleMessages .sl4-letter-actions button{display:block;width:100%;border:0;background:transparent;color:#6b317f;padding:10px;border-radius:9px;text-align:left;cursor:pointer;font-weight:600}
 #bottleMessages .sl4-letter-actions button:hover{background:#f8e7fa}
 </style>
+<style id="xoxo-jewel-preview-style">
+.xj-showcase{max-width:750px;margin:22px auto;padding:22px;border:1px solid rgba(223,150,255,.55);border-radius:24px;background:radial-gradient(circle at 75% 0%,rgba(198,86,255,.22),transparent 55%),linear-gradient(145deg,#23103f,#0c0920);color:#fff;box-shadow:0 16px 45px rgba(20,4,43,.24)}
+.xj-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.xj-head h2{margin:0;font-size:22px;color:#fff}.xj-sub{color:#d9c4ec;font-size:13px;margin:6px 0 16px}.xj-featured{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.xj-mini{border:1px solid rgba(206,143,255,.32);border-radius:16px;padding:12px 6px;text-align:center;background:rgba(255,255,255,.045);color:#f7e8ff;min-width:0}.xj-mini svg{width:74px;height:74px;max-width:100%;display:block;margin:auto;filter:drop-shadow(0 0 11px rgba(214,115,255,.6))}.xj-mini span{display:block;font-size:12px;margin-top:7px;overflow-wrap:anywhere}.xj-btn{margin-top:16px;border:1px solid #d68aff;border-radius:14px;background:linear-gradient(115deg,#7631b9,#b441b9);color:#fff;padding:12px 17px;font-weight:800;cursor:pointer}.xj-tag{font-size:11px;color:#f1cfff;border:1px solid rgba(238,177,255,.45);padding:5px 9px;border-radius:999px}.xj-overlay{position:fixed;inset:0;z-index:7000;display:none;align-items:center;justify-content:center;padding:15px;background:rgba(5,2,18,.84)}.xj-overlay.open{display:flex}.xj-dialog{width:min(720px,100%);max-height:90dvh;overflow:auto;background:radial-gradient(circle at top right,#452066,#160b2e 65%);color:#fff;border:1px solid #bd7ae5;border-radius:24px;padding:20px;box-shadow:0 20px 70px #0009}.xj-dialog-top{display:flex;align-items:center;justify-content:space-between;gap:12px}.xj-close{border:1px solid #a778c5;border-radius:50%;width:40px;height:40px;background:#271239;color:#fff;font-size:25px;cursor:pointer}.xj-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}.xj-tile{border:1px solid rgba(203,151,255,.3);border-radius:15px;text-align:center;padding:12px 5px;background:#180c2d;min-width:0}.xj-tile svg{display:block;margin:auto;width:86px;height:86px;max-width:100%;filter:grayscale(.65) brightness(.78)}.xj-tile strong{display:block;font-size:12px;margin-top:7px}.xj-tile small{display:block;font-size:11px;color:#d6bce9;margin-top:4px}.xj-note{color:#d7c1eb;font-size:12px;margin-top:15px}.xj-showcase button:focus-visible,.xj-dialog button:focus-visible{outline:3px solid #fff;outline-offset:3px}@media(max-width:520px){.xj-showcase{padding:15px}.xj-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.xj-tile{padding:8px 3px}.xj-tile svg{width:66px;height:66px}.xj-mini svg{width:58px;height:58px}}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -17748,5 +17752,43 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
 })();
 </script>
 
+<script id="xoxo-jewel-preview-script">
+/* XOXO Jewel Box visual prototype only. No achievements are awarded or stored. */
+(()=>{
+ const gems=[
+ ['Rose Quartz','#ff5db8','Complete your profile','heart'],
+ ['Amethyst Wings','#b66cff','Make 5 friends','butterfly'],
+ ['Sapphire Star','#439cff','Receive 25 likes','star'],
+ ['Moon Crystal','#cab6f8','Post 10 updates','heart'],
+ ['Golden Sun','#ffd36a','Be active for 30 days','star'],
+ ['Silver Moon','#d6d3ff','Send 50 messages','moon'],
+ ['Cherry Blossom','#f48acb','Receive 100 likes','flower'],
+ ['Lucky Clover','#58dcb8','Join special events','flower'],
+ ['Royal Diamond','#e8a8ff','Complete 6 jewels','crown'],
+ ['Angel Wings','#f9c7ec','Help other members','butterfly'],
+ ['Galaxy Orb','#8c9cff','Be active for 6 months','star'],
+ ['Infinity Love','#f78fff','A special achievement','heart']
+ ];
+ // Pure SVG artwork, not emoji. Decorative jewels are deliberately marked as previews.
+ function jewel(i){const [name,color,,shape]=gems[i];const id='xj'+i;const shapes={
+ heart:'M50 85 C18 64 8 42 23 26 C37 12 48 24 50 32 C58 16 74 13 86 27 C103 48 75 69 50 85Z',
+ butterfly:'M50 51 C37 16 8 9 14 38 C18 54 35 58 45 56 C18 60 17 87 35 85 C47 82 49 64 50 54 C51 64 53 82 65 85 C83 87 82 60 55 56 C65 58 82 54 86 38 C92 9 63 16 50 51Z',
+ star:'M50 7 L61 36 L92 37 L68 57 L76 88 L50 71 L24 88 L32 57 L8 37 L39 36Z',
+ moon:'M68 11 C36 14 23 36 32 62 C40 83 61 90 85 77 C62 81 44 62 47 43 C49 29 56 18 68 11Z',
+ flower:'M50 44 C27 2 13 27 36 49 C-1 30 4 67 39 60 C12 83 43 98 50 66 C57 98 88 83 61 60 C96 67 101 30 64 49 C87 27 73 2 50 44Z',
+ crown:'M12 31 L32 49 L50 17 L68 49 L88 31 L80 81 L20 81Z'
+ };return `<svg viewBox="0 0 100 100" role="img" aria-label="${name}"><defs><radialGradient id="${id}" cx="30%" cy="22%"><stop stop-color="#fff"/><stop offset=".23" stop-color="${color}"/><stop offset=".73" stop-color="${color}"/><stop offset="1" stop-color="#30104b"/></radialGradient></defs><path d="${shapes[shape]}" fill="url(#${id})" stroke="#f8d6ff" stroke-width="2.4"/><path d="M50 28 L61 49 L50 72 L39 49Z" fill="#fff" opacity=".3"/><path d="M24 30 L29 20 M77 21 L83 14 M83 67 L91 72" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>`}
+ const featured=[0,1,2].map(i=>`<div class="xj-mini">${jewel(i)}<span>${gems[i][0]}</span></div>`).join('');
+ function showcase(){return `<section class="xj-showcase" aria-label="XOXO Jewel Collection preview"><div class="xj-head"><h2>💎 My Jewel Collection</h2><span class="xj-tag">COMING SOON · PREVIEW</span></div><p class="xj-sub">A sparkling collection of future achievements. All jewels are currently previews, not earned rewards.</p><div class="xj-featured">${featured}</div><button type="button" class="xj-btn" onclick="window.xoxoOpenJewelPreview()">◇ My Jewel Box →</button></section>`}
+ const overlay=document.createElement('div');overlay.className='xj-overlay';overlay.id='xjPreviewOverlay';overlay.setAttribute('aria-hidden','true');overlay.innerHTML=`<div class="xj-dialog" role="dialog" aria-modal="true" aria-label="My Jewel Box preview"><div class="xj-dialog-top"><div><h2>💎 My Jewel Box</h2><p class="xj-sub">12 collectible jewels · Preview</p></div><button type="button" class="xj-close" aria-label="Close" onclick="window.xoxoCloseJewelPreview()">×</button></div><div class="xj-grid">${gems.map((g,i)=>`<div class="xj-tile">${jewel(i)}<strong>${g[0]}</strong><small>${g[2]}</small></div>`).join('')}</div><p class="xj-note">✨ Concept preview only. No jewels are unlocked or saved yet. Founder's Diamond for the first 100 members will be added when the secure rewards system is ready.</p></div>`;
+ function ensure(){if(!document.body.contains(overlay))document.body.appendChild(overlay);const card=document.getElementById('profileCard');if(card&&!document.getElementById('xjOwnShowcase')){const holder=document.createElement('div');holder.id='xjOwnShowcase';holder.innerHTML=showcase();card.insertAdjacentElement('afterend',holder)}}
+ function updatePublic(){const content=document.getElementById('publicProfileContent');if(!content)return;const card=content.querySelector('.public-profile-card');if(!card)return;if(content.querySelector('#xjPublicShowcase'))return;const holder=document.createElement('div');holder.id='xjPublicShowcase';holder.innerHTML=showcase();card.insertAdjacentElement('afterend',holder)}
+ window.xoxoOpenJewelPreview=()=>{ensure();overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');overlay.querySelector('.xj-close')?.focus()};
+ window.xoxoCloseJewelPreview=()=>{overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true')};
+ overlay.addEventListener('click',e=>{if(e.target===overlay)window.xoxoCloseJewelPreview()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))window.xoxoCloseJewelPreview()});
+ function init(){ensure();updatePublic();const content=document.getElementById('publicProfileContent');if(content){new MutationObserver(()=>{if(content.querySelector('.public-profile-card')&&!content.querySelector('#xjPublicShowcase'))updatePublic()}).observe(content,{childList:true,subtree:false})}}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
 </body>
                                     </html>
