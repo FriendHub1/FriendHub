@@ -9999,6 +9999,7 @@ async function openPublicProfile(userId) {
                                     <div class="public-profile-detail"><strong>Looking for</strong><span>${escapeHtml(formatPublicProfileList(profile.looking_for))}</span></div>
                                     </div>
                                     </div>`;
+                                    window.xoxoStudioApplyPublic?.(String(userId), content);
                                     await loadPosts();
                                     showPageWithoutReload("publicProfile");
                                     if (!currentUser) {
@@ -17510,7 +17511,7 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
 </style>
 
 
-<!-- XOXO PROFILE STUDIO — STAGE 1: LOCAL PREVIEW ONLY. NO DATABASE WRITES. -->
+<!-- XOXO PROFILE STUDIO — STAGE 2: SAVED DESIGNS VIA SUPABASE. -->
 <style>
 .xoxo-studio-launch{text-align:center;margin:-8px 0 25px}.xoxo-studio-open{border:1px solid #f3b9ff;border-radius:16px;padding:13px 23px;color:white;font-weight:800;background:linear-gradient(110deg,#8537d4,#e04cba);box-shadow:0 0 24px #b445dd55}.xoxo-studio-launch p{margin:9px 0 0;font-size:12px;color:#d7b8e8}
 #xoxoStudioOverlay{display:none;position:fixed;inset:0;z-index:99000;background:#090617df;backdrop-filter:blur(10px);padding:20px;overflow:auto;align-items:flex-start;justify-content:center}#xoxoStudioOverlay.xoxo-open{display:flex}.xoxo-studio-dialog{width:min(760px,100%);margin:auto;background:#160d2a;color:#f9efff;border:1px solid #8f4cbd;border-radius:24px;padding:23px;box-shadow:0 22px 70px #0009}.xoxo-studio-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.xoxo-studio-top h2{margin:0;font-size:25px;color:white}.xoxo-studio-top p{font-size:13px;color:#dac3e9;margin:5px 0 0}.xoxo-studio-close{background:#321c4b;border:1px solid #7e50a0;border-radius:50%;width:39px;height:39px;color:white;font-size:22px}.xoxo-studio-label{display:block;font-weight:800;margin:20px 0 10px}.xoxo-studio-themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.xoxo-studio-theme{padding:13px 8px;min-height:52px;border:2px solid #79538c;border-radius:13px;font-weight:800;cursor:pointer}.xoxo-studio-theme[aria-pressed="true"]{outline:2px solid #f6c5ff;outline-offset:2px}.xoxo-studio-preview{--xp-bg:#281343;--xp-fg:#fff;--xp-muted:#e9cbf8;--xp-accent:#aa58ef;--xp-card:#3b205c;position:relative;isolation:isolate;overflow:hidden;margin-top:15px;padding:30px 18px;border-radius:22px;border:1px solid var(--xp-accent);background:var(--xp-bg);color:var(--xp-fg);text-align:center;min-height:285px}.xoxo-studio-preview[data-theme="neon"]{--xp-bg:#281343;--xp-fg:#fff;--xp-muted:#e9cbf8;--xp-accent:#a957ee;--xp-card:#3c205f;background:radial-gradient(circle at 20% 0%,#7b2bbf55,transparent 60%),var(--xp-bg)}.xoxo-studio-preview[data-theme="pink"]{--xp-bg:#ffe2ed;--xp-fg:#68203e;--xp-muted:#843c59;--xp-accent:#a52b62;--xp-card:#ffcade;background:radial-gradient(circle at 85% 5%,#ff9ec555,transparent 60%),var(--xp-bg)}.xoxo-studio-preview[data-theme="ocean"]{--xp-bg:#092f47;--xp-fg:#fff;--xp-muted:#c4edf7;--xp-accent:#35d0e7;--xp-card:#124963;background:radial-gradient(circle at 85% 5%,#12b5d444,transparent 60%),var(--xp-bg)}.xoxo-studio-preview[data-theme="galaxy"]{--xp-bg:#100b2e;--xp-fg:#fff;--xp-muted:#d7c7ff;--xp-accent:#ad8bff;--xp-card:#29204e;background:radial-gradient(circle at 15% 20%,#6c3dc766,transparent 55%),radial-gradient(circle at 90% 90%,#dc4ca333,transparent 50%),var(--xp-bg)}.xoxo-studio-preview[data-theme="sunset"]{--xp-bg:#fff0d8;--xp-fg:#653012;--xp-muted:#854923;--xp-accent:#a94420;--xp-card:#ffe0b7;background:radial-gradient(circle at 90% 0%,#ffad8155,transparent 65%),var(--xp-bg)}.xoxo-studio-preview[data-theme="midnight"]{--xp-bg:#101623;--xp-fg:#fff;--xp-muted:#cbd8ec;--xp-accent:#85aaff;--xp-card:#202d45;background:radial-gradient(circle at 90% 10%,#4967a333,transparent 60%),var(--xp-bg)}.xoxo-studio-avatar{width:94px;height:94px;border-radius:50%;margin:0 auto 10px;display:grid;place-items:center;overflow:hidden;background:var(--xp-card);color:var(--xp-fg);font-size:34px;font-weight:800;border:4px solid var(--xp-accent);box-shadow:0 0 22px var(--xp-accent)}.xoxo-studio-avatar img{width:100%;height:100%;object-fit:cover}.xoxo-studio-preview[data-frame="double"] .xoxo-studio-avatar{outline:3px solid var(--xp-fg);outline-offset:5px}.xoxo-studio-preview[data-frame="simple"] .xoxo-studio-avatar{box-shadow:none;border-width:2px}.xoxo-studio-preview h3{color:var(--xp-fg);font-size:23px;margin:9px 0 4px}.xoxo-studio-preview p{color:var(--xp-muted);font-size:14px;margin:5px 0 13px}.xoxo-studio-fauxbutton{display:inline-block;background:var(--xp-accent);color:#fff;border-radius:12px;padding:10px 28px;font-weight:800}.xoxo-studio-preview[data-theme="ocean"] .xoxo-studio-fauxbutton,.xoxo-studio-preview[data-theme="galaxy"] .xoxo-studio-fauxbutton,.xoxo-studio-preview[data-theme="midnight"] .xoxo-studio-fauxbutton{color:#101525}.xoxo-studio-sparkle{position:absolute;inset:0;pointer-events:none;opacity:0;background-image:radial-gradient(circle,#fff 1px,transparent 2px);background-size:42px 51px;animation:xoxoStudioTwinkle 5s linear infinite}.xoxo-studio-preview[data-effects="on"] .xoxo-studio-sparkle{opacity:.5}@keyframes xoxoStudioTwinkle{50%{transform:translateY(-12px);opacity:.15}}.xoxo-studio-controls{display:flex;gap:12px;flex-wrap:wrap;margin-top:17px;align-items:end}.xoxo-studio-controls label{flex:1;min-width:155px;color:#e8d5f5;font-size:13px;font-weight:700}.xoxo-studio-controls select{display:block;width:100%;margin-top:6px;padding:10px;border-radius:11px;border:1px solid #8c56aa;background:#27153e;color:white}.xoxo-studio-check{display:flex;align-items:center;gap:9px;min-height:42px}.xoxo-studio-check input{accent-color:#b869f6}.xoxo-studio-foot{margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.xoxo-studio-foot p{color:#dbc5ed;font-size:12px;max-width:430px}.xoxo-studio-foot button{padding:11px 19px;border-radius:12px;border:1px solid #ae74d3;background:#3c2058;color:white;font-weight:800}@media(max-width:520px){.xoxo-studio-themes{grid-template-columns:repeat(2,minmax(0,1fr))}.xoxo-studio-dialog{padding:17px}.xoxo-studio-top h2{font-size:21px}}@media(prefers-reduced-motion:reduce){.xoxo-studio-sparkle{animation:none!important}}
@@ -17529,7 +17530,7 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
     </div>
     <div class="xoxo-studio-preview" id="xoxoStudioPreview" data-theme="neon" data-frame="glow" data-effects="on"><div class="xoxo-studio-sparkle"></div><div class="xoxo-studio-avatar" id="xoxoStudioAvatar">♡</div><h3 id="xoxoStudioUsername">@username</h3><p>Welcome to my little world ✨</p><span class="xoxo-studio-fauxbutton">Follow ♡</span></div>
     <div class="xoxo-studio-controls"><label>💎 Avatar frame<select id="xoxoStudioFrame" onchange="xoxoStudioOptions()"><option value="glow">Neon Glow</option><option value="double">Double Ring</option><option value="simple">Minimal</option></select></label><label class="xoxo-studio-check"><input type="checkbox" id="xoxoStudioEffects" checked onchange="xoxoStudioOptions()"> ✨ Sparkle effects</label></div>
-    <div class="xoxo-studio-foot"><p>👀 Preview only — nothing is saved or changed on your public profile yet.</p><button type="button" onclick="xoxoStudioClose()">Done preview 💜</button></div>
+    <div class="xoxo-studio-foot"><p>💾 Save your design to display it on your public profile.</p><button type="button" id="xoxoStudioSave" onclick="xoxoStudioSave()">Save Design 💜</button></div>
   </section>
 </div>
 <script>
@@ -17537,9 +17538,81 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
   const themes=['neon','pink','ocean','galaxy','sunset','midnight'];
   window.xoxoStudioTheme=function(theme){if(!themes.includes(theme))return;const p=document.getElementById('xoxoStudioPreview');if(!p)return;p.dataset.theme=theme;document.querySelectorAll('#xoxoStudioThemes [data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.theme===theme)));};
   window.xoxoStudioOptions=function(){const p=document.getElementById('xoxoStudioPreview');if(!p)return;p.dataset.frame=document.getElementById('xoxoStudioFrame').value;p.dataset.effects=document.getElementById('xoxoStudioEffects').checked?'on':'off';};
-  window.xoxoStudioOpen=function(){const overlay=document.getElementById('xoxoStudioOverlay');if(!overlay)return;const input=document.getElementById('username');document.getElementById('xoxoStudioUsername').textContent=(input&&input.value.trim())||'@username';const avatar=document.getElementById('profileAvatar'),preview=document.getElementById('xoxoStudioAvatar');preview.replaceChildren();const img=avatar&&avatar.querySelector('img');if(img){const copy=document.createElement('img');copy.src=img.src;copy.alt='Profile photo';preview.appendChild(copy);}else{preview.textContent=((input&&input.value.trim())||'♡').replace('@','').slice(0,1).toUpperCase();}overlay.classList.add('xoxo-open');document.body.dataset.xoxoStudioOpen='true';xoxoStudioTheme(document.getElementById('xoxoStudioPreview').dataset.theme);xoxoStudioOptions();overlay.querySelector('.xoxo-studio-close').focus();};
+  window.xoxoStudioOpen=async function(){const overlay=document.getElementById('xoxoStudioOverlay');if(!overlay)return;const input=document.getElementById('username');document.getElementById('xoxoStudioUsername').textContent=(input&&input.value.trim())||'@username';const avatar=document.getElementById('profileAvatar'),preview=document.getElementById('xoxoStudioAvatar');preview.replaceChildren();const img=avatar&&avatar.querySelector('img');if(img){const copy=document.createElement('img');copy.src=img.src;copy.alt='Profile photo';preview.appendChild(copy);}else{preview.textContent=((input&&input.value.trim())||'♡').replace('@','').slice(0,1).toUpperCase();}overlay.classList.add('xoxo-open');document.body.dataset.xoxoStudioOpen='true';xoxoStudioTheme(document.getElementById('xoxoStudioPreview').dataset.theme);xoxoStudioOptions();overlay.querySelector('.xoxo-studio-close').focus();await window.xoxoStudioLoadOwn();};
   window.xoxoStudioClose=function(){document.getElementById('xoxoStudioOverlay')?.classList.remove('xoxo-open');delete document.body.dataset.xoxoStudioOpen;document.querySelector('.xoxo-studio-open')?.focus();};
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('xoxoStudioOverlay')?.classList.contains('xoxo-open'))xoxoStudioClose();});
+})();
+</script>
+
+
+<style id="xoxo-studio-saved-design-css">
+/* Only decorate the viewed public profile card, never global navigation or private messages. */
+#publicProfile .public-profile-card.xoxo-design{--xd-bg:#251044;--xd-fg:#ffffff;--xd-muted:#e5cbff;--xd-accent:#b968ff;--xd-panel:#382052;background:radial-gradient(circle at 88% 0%,color-mix(in srgb,var(--xd-accent) 25%,transparent),transparent 58%),var(--xd-bg)!important;color:var(--xd-fg)!important;border-color:var(--xd-accent)!important;isolation:isolate;overflow:hidden}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="pink"]{--xd-bg:#ffe0ec;--xd-fg:#712347;--xd-muted:#994d6c;--xd-accent:#bc326e;--xd-panel:#fff0f5}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="ocean"]{--xd-bg:#082d49;--xd-fg:#ffffff;--xd-muted:#c1eafa;--xd-accent:#37d5ef;--xd-panel:#17435b}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="galaxy"]{--xd-bg:#20143f;--xd-fg:#ffffff;--xd-muted:#d8cbfa;--xd-accent:#ba91ff;--xd-panel:#322351}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="sunset"]{--xd-bg:#fff0d9;--xd-fg:#703415;--xd-muted:#98552f;--xd-accent:#bf4d25;--xd-panel:#fff7ea}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="midnight"]{--xd-bg:#101623;--xd-fg:#ffffff;--xd-muted:#cbd8ec;--xd-accent:#85aaff;--xd-panel:#202d45}
+#publicProfile .public-profile-card.xoxo-design .public-profile-username,#publicProfile .public-profile-card.xoxo-design .public-profile-detail strong,#publicProfile .public-profile-card.xoxo-design .public-profile-stat strong{color:var(--xd-fg)!important;text-shadow:none!important}
+#publicProfile .public-profile-card.xoxo-design .public-profile-country,#publicProfile .public-profile-card.xoxo-design .public-profile-bio,#publicProfile .public-profile-card.xoxo-design .public-profile-detail span{color:var(--xd-muted)!important}
+#publicProfile .public-profile-card.xoxo-design .public-profile-detail,#publicProfile .public-profile-card.xoxo-design .public-profile-stat,#publicProfile .public-profile-card.xoxo-design .public-profile-country,#publicProfile .public-profile-card.xoxo-design .public-profile-bio{background:var(--xd-panel)!important;color:var(--xd-fg)!important;border-color:var(--xd-accent)!important}
+#publicProfile .public-profile-card.xoxo-design .public-profile-bio,#publicProfile .public-profile-card.xoxo-design .public-profile-country{color:var(--xd-muted)!important}
+#publicProfile .public-profile-card.xoxo-design .public-profile-avatar{border:3px solid var(--xd-accent)!important;color:var(--xd-fg)!important;background:var(--xd-panel)!important;box-shadow:0 0 22px var(--xd-accent)!important}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-frame="double"] .public-profile-avatar{outline:3px solid var(--xd-fg);outline-offset:5px}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-frame="simple"] .public-profile-avatar{box-shadow:none!important;border-width:2px!important}
+#publicProfile .public-profile-card.xoxo-design .public-profile-follow:not(.following){background:var(--xd-accent)!important;color:#fff!important;border-color:var(--xd-accent)!important}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="ocean"] .public-profile-follow:not(.following),#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="galaxy"] .public-profile-follow:not(.following),#publicProfile .public-profile-card.xoxo-design[data-xoxo-theme="midnight"] .public-profile-follow:not(.following){color:#101525!important}
+#publicProfile .public-profile-card.xoxo-design[data-xoxo-effects="on"]::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;opacity:.32;background-image:radial-gradient(circle,#fff 1px,transparent 2px);background-size:45px 53px;animation:xoxoStudioTwinkle 5s linear infinite}
+@media(prefers-reduced-motion:reduce){#publicProfile .public-profile-card.xoxo-design::after{animation:none!important}}
+</style>
+<script id="xoxo-studio-supabase-save">
+(function(){
+ const validThemes=['neon','pink','ocean','galaxy','sunset','midnight'];
+ const validFrames=['glow','double','simple'];
+ const safe=(d)=>({theme:validThemes.includes(d?.theme)?d.theme:'neon',frame:validFrames.includes(d?.frame)?d.frame:'glow',effects:d?.effects===true});
+ const client=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
+ const note=(message)=>{const p=document.querySelector('.xoxo-studio-foot p');if(p)p.textContent=message;};
+ window.xoxoStudioLoadOwn=async function(){
+   const c=client();if(!c)return;
+   try{
+     const {data:{user},error:authError}=await c.auth.getUser();if(authError||!user)return;
+     const {data,error}=await c.from('xoxo_profile_designs').select('theme,frame,effects').eq('user_id',user.id).maybeSingle();
+     if(error)throw error;
+     const d=data?safe(data):{theme:'neon',frame:'glow',effects:true};
+     window.xoxoStudioTheme(d.theme);
+     document.getElementById('xoxoStudioFrame').value=d.frame;
+     document.getElementById('xoxoStudioEffects').checked=d.effects;
+     window.xoxoStudioOptions();
+     note(data?'🎨 Your saved design is loaded. Make changes and save again.':'💾 Choose your design and save it to your public profile.');
+   }catch(e){console.error('XOXO design load:',e);note('Could not load saved design. Please try again.');}
+ };
+ window.xoxoStudioSave=async function(){
+   const c=client();const button=document.getElementById('xoxoStudioSave');
+   if(!c||!button)return;
+   button.disabled=true;button.textContent='Saving…';
+   try{
+     const {data:{user},error:authError}=await c.auth.getUser();
+     if(authError||!user)throw new Error('Please log in to save your design.');
+     const preview=document.getElementById('xoxoStudioPreview');
+     const design=safe({theme:preview?.dataset.theme,frame:document.getElementById('xoxoStudioFrame')?.value,effects:document.getElementById('xoxoStudioEffects')?.checked});
+     const {error}=await c.from('xoxo_profile_designs').upsert({user_id:user.id,...design,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+     if(error)throw error;
+     note('💜 Design saved! Your public profile will now show your selected theme.');
+     button.textContent='Saved ✓';
+     if(typeof currentPublicProfileUserId!=='undefined'&&String(currentPublicProfileUserId)===String(user.id))window.xoxoStudioApplyPublic(user.id,document.getElementById('publicProfileContent'));
+   }catch(e){console.error('XOXO design save:',e);note('⚠️ Could not save design: '+(e.message||'Please try again.'));button.textContent='Try again 💜';}
+   finally{button.disabled=false;setTimeout(()=>{if(button.textContent==='Saved ✓'||button.textContent==='Try again 💜')button.textContent='Save Design 💜';},2000)}
+ };
+ window.xoxoStudioApplyPublic=async function(userId,container){
+   const c=client();const card=container?.querySelector('.public-profile-card');if(!c||!card||!userId)return;
+   try{
+     const {data,error}=await c.from('xoxo_profile_designs').select('theme,frame,effects').eq('user_id',String(userId)).maybeSingle();
+     if(error)throw error;
+     if(!card.isConnected||typeof currentPublicProfileUserId!=='undefined'&&String(currentPublicProfileUserId)!==String(userId))return;
+     if(!data){card.classList.remove('xoxo-design');return;}
+     const d=safe(data);card.dataset.xoxoTheme=d.theme;card.dataset.xoxoFrame=d.frame;card.dataset.xoxoEffects=d.effects?'on':'off';card.classList.add('xoxo-design');
+   }catch(e){console.warn('XOXO public design could not load:',e)}
+ };
 })();
 </script>
 
