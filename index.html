@@ -17776,6 +17776,10 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
 </script>
 
 <style id="xoxo-jewel-awards-style">.xj-earned .xj-jewel-art img{filter:none!important;opacity:1!important}.xj-earned-check{position:absolute;top:9px;right:9px;z-index:2;background:#e02d9d;border:1px solid #ffd1f5;border-radius:9px;padding:2px 7px;color:white;font-size:14px}.xj-mini{position:relative}.xj-mini.xj-preview-locked .xj-jewel-art img{filter:saturate(.7) brightness(.68)}.xj-mini .xj-lock{top:6px;right:6px}</style>
+<style id="xoxo-jewel-earned-showcase-style">
+.xj-featured:has(.xj-no-earned){grid-template-columns:1fr}
+.xj-no-earned{grid-column:1/-1;padding:23px 14px;border:1px dashed rgba(225,163,255,.55);border-radius:16px;text-align:center;color:#ebd7fa;font-size:14px}
+</style>
 <script id="xoxo-jewel-preview-script">
 /* XOXO Jewel Box: Supabase-backed achievements and Founder’s Diamond. */
 (()=>{
@@ -17815,17 +17819,27 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
  ['THE JEWEL OF THE FOUNDERS','You were here when our story began.','Founder’s Diamond honors the first 100 registered members of XOXO Avenue, forever.']
  ];
  const jewelCache=new Map();
+ const jewelOrderCache=new Map();
  let activeBoxUser=null;
- function featuredMarkup(earned){return [0,1,2].map(i=>`<div role="button" tabindex="0" aria-label="Learn about ${gems[i][0]}" data-xj-index="${i}" class="xj-mini ${earned.has(keys[i])?'xj-earned':'xj-preview-locked'}">${earned.has(keys[i])?'<span class="xj-earned-check" aria-label="Earned">✓</span>':'<span class="xj-lock" aria-label="Locked">♢</span>'}${jewel(i)}<span>${gems[i][0]}</span></div>`).join('')}
+ function featuredMarkup(earned,order=[]){
+   const unlocked=order.filter(k=>earned.has(k)&&keys.includes(k));
+   const remaining=keys.filter(k=>earned.has(k)&&!unlocked.includes(k));
+   const chosen=[...unlocked,...remaining].slice(0,3);
+   if(!chosen.length)return '<div class="xj-no-earned">✨ No jewels unlocked yet. Your first jewel is waiting for you!</div>';
+   return chosen.map(k=>{
+     const i=keys.indexOf(k);
+     return `<div role="button" tabindex="0" aria-label="Learn about ${gems[i][0]}" data-xj-index="${i}" class="xj-mini xj-earned"><span class="xj-earned-check" aria-label="Earned">✓</span>${jewel(i)}<span>${gems[i][0]}</span></div>`;
+   }).join('');
+ }
  function showcase(){return `<section class="xj-showcase" aria-label="XOXO Jewel Collection"><div class="xj-head"><h2>💎 My Jewel Collection</h2><span class="xj-tag">JEWEL REWARDS</span></div><p class="xj-sub">Earn beautiful jewels by reaching milestones. Discover your earned jewels and the milestones waiting to be unlocked.</p><div class="xj-featured">${featuredMarkup(new Set())}</div><button type="button" class="xj-btn" onclick="window.xoxoOpenJewelPreview(this)">◇ My Jewel Box →</button></section>`}
  async function refresh(holder,userId){
    if(!holder||!userId)return;
    holder.dataset.xjUser=userId;
    try{
      let earned=jewelCache.get(userId);
-     if(!earned){const {data,error}=await supabaseClient.from('xoxo_user_jewels').select('jewel_key').eq('user_id',userId);if(error)throw error;earned=new Set((data||[]).map(x=>x.jewel_key));jewelCache.set(userId,earned)}
+     if(!earned){const {data,error}=await supabaseClient.from('xoxo_user_jewels').select('jewel_key,awarded_at').eq('user_id',userId).order('awarded_at',{ascending:false});if(error)throw error;earned=new Set((data||[]).map(x=>x.jewel_key));jewelCache.set(userId,earned);jewelOrderCache.set(userId,(data||[]).map(x=>x.jewel_key))}
      if(holder.dataset.xjUser!==userId)return;
-     const row=holder.querySelector('.xj-featured');if(row)row.innerHTML=featuredMarkup(earned);
+     const row=holder.querySelector('.xj-featured');if(row)row.innerHTML=featuredMarkup(earned,jewelOrderCache.get(userId)||[]);
      if(overlay.classList.contains('open')&&activeBoxUser===userId)renderBox(earned);
    }catch(err){console.warn('Jewel rewards could not load:',err)}
  }
@@ -17855,7 +17869,7 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
  window.xoxoOpenJewelPreview=(button)=>{ensure();const holder=button?.closest('#xjOwnShowcase,#xjPublicShowcase');activeBoxUser=holder?.dataset.xjUser||((holder?.id==='xjOwnShowcase'&&typeof currentUser!=='undefined')?currentUser?.id:null);renderBox(jewelCache.get(activeBoxUser)||new Set());overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');overlay.querySelector('.xj-close')?.focus()};
  window.xoxoCloseJewelPreview=()=>{hideStory();overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true')};
  overlay.addEventListener('click',e=>{if(e.target===overlay)window.xoxoCloseJewelPreview()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))window.xoxoCloseJewelPreview()});
- function init(){ensure();updatePublic();document.addEventListener('click',()=>{setTimeout(()=>{jewelCache.clear();ensure();updatePublic()},500)},true);const content=document.getElementById('publicProfileContent');if(content){new MutationObserver(()=>{if(content.querySelector('.public-profile-card'))updatePublic()}).observe(content,{childList:true,subtree:false})}}
+ function init(){ensure();updatePublic();document.addEventListener('click',()=>{setTimeout(()=>{jewelCache.clear();jewelOrderCache.clear();ensure();updatePublic()},500)},true);const content=document.getElementById('publicProfileContent');if(content){new MutationObserver(()=>{if(content.querySelector('.public-profile-card'))updatePublic()}).observe(content,{childList:true,subtree:false})}}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
