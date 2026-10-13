@@ -17840,9 +17840,9 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
   storyPop.innerHTML=`<button class="xj-story-close" type="button" aria-label="Close jewel details">×</button><div class="xj-story-label">${st[0]}</div><h3>${gems[i][0]}</h3><span class="xj-story-status">${earned?'✓ UNLOCKED':i===0?'◇ LOCKED':'◇ COMING SOON'}</span><p><em>“${st[1]}”</em></p><p>${st[2]}</p><p><strong>How to unlock:</strong> ${gems[i][2]}${i>0?' (not yet available)':''}.</p>`;
   storyBackdrop.hidden=false;storyPop.hidden=false;
  }
- document.addEventListener('pointerover',e=>{if(!matchMedia('(hover:hover) and (pointer:fine)').matches||storyPinned)return;const el=e.target.closest?.('.xj-mini[data-xj-index],.xj-tile[data-xj-index]');if(el&&el!==storyTarget)showStory(el,false)});
- document.addEventListener('pointerout',e=>{if(storyPinned||storyPop.hidden)return;const el=e.target.closest?.('.xj-mini[data-xj-index],.xj-tile[data-xj-index]');if(el&&!el.contains(e.relatedTarget)&&!storyPop.contains(e.relatedTarget))hideStory()});
- storyPop.addEventListener('pointerleave',()=>{if(!storyPinned)hideStory()});
+
+
+
  storyBackdrop.addEventListener('click',hideStory);
  document.addEventListener('click',e=>{if(e.target.closest?.('.xj-story-close')){hideStory();return}const el=e.target.closest?.('.xj-mini[data-xj-index],.xj-tile[data-xj-index]');if(el){e.preventDefault();e.stopPropagation();if(storyPinned&&storyTarget===el)hideStory();else showStory(el,true);return}if(!storyPop.contains(e.target))hideStory()},true);
  document.addEventListener('keydown',e=>{const el=e.target.closest?.('.xj-mini[data-xj-index],.xj-tile[data-xj-index]');if(el&&(e.key==='Enter'||e.key===' ')){e.preventDefault();showStory(el,true)}if(e.key==='Escape')hideStory()});
