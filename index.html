@@ -4791,6 +4791,34 @@
 #sl2Bubbles .sl2-letter-intro span { display:block; font-family:Georgia,'Times New Roman',serif; font-size:clamp(17px,2.6vw,20px); font-style:italic; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
 #sl5Envelopes .sl2-envelope:disabled { opacity:.7; cursor:wait; }
 
+
+/* XOXO Discover tabs — additive, no existing post/feed behavior removed */
+.xoxo-discover-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 22px;padding:7px;border:1px solid var(--fh-border,#d9dcea);border-radius:19px;background:var(--fh-surface,#fff)}
+.xoxo-discover-tab{flex:1 1 145px;min-height:48px;border:1px solid transparent;border-radius:13px;background:transparent;color:var(--fh-text,#18223a);font-weight:800;padding:11px 15px}
+.xoxo-discover-tab.active{background:linear-gradient(110deg,#00aeea,#11cf8d);color:#092037;box-shadow:0 5px 16px rgba(0,180,185,.2)}
+.xoxo-discover-panel[hidden]{display:none!important}
+.xoxo-explore-heading{padding:20px 22px;margin-bottom:16px;border:1px solid var(--fh-border,#d9dcea);border-radius:19px;background:var(--fh-surface,#fff);color:var(--fh-text,#18223a)}
+.xoxo-explore-heading h2{font-size:clamp(24px,4vw,34px);margin-bottom:5px}
+.xoxo-explore-heading p{color:var(--fh-muted,#667085)}
+.xoxo-explore-pills{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:14px}
+.xoxo-explore-pills span{padding:9px 13px;border:1px solid var(--fh-border,#d9dcea);border-radius:999px;background:var(--fh-surface,#fff);color:var(--fh-text,#18223a);font-weight:700;font-size:13px}
+#xoxoDiscoverPeople .discover-filter-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+#xoxoDiscoverPeople #discoverPeopleResults>.friend-suggestions-list,.xoxo-people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+#xoxoDiscoverPeople .friend-suggestion-card,.xoxo-people-grid .friend-suggestion-card{min-width:0;border-radius:18px;background:var(--fh-surface,#fff);color:var(--fh-text,#18223a);border:1px solid var(--fh-border,#d9dcea)}
+#xoxoDiscoverPeople .friend-suggestion-avatar,.xoxo-people-grid .friend-suggestion-avatar{width:70px;height:70px;border-radius:50%;margin:0 auto 10px}
+#xoxoDiscoverPeople .friend-suggestion-info,.xoxo-people-grid .friend-suggestion-info{display:grid;gap:3px;text-align:center;overflow-wrap:anywhere}
+#xoxoDiscoverPeople .friend-suggestion-info span,.xoxo-people-grid .friend-suggestion-info span{font-size:13px;color:var(--fh-muted,#667085)}
+#xoxoDiscoverPeople .friend-suggestion-actions,.xoxo-people-grid .friend-suggestion-actions{flex-wrap:wrap}
+.xoxo-favorite-btn{width:100%;margin-top:9px;padding:8px;border:1px solid var(--fh-border,#d9dcea);border-radius:10px;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#18223a);font-weight:700}
+@media(max-width:540px){.xoxo-discover-tabs{gap:5px}.xoxo-discover-tab{flex-basis:95px;font-size:12px;padding:10px 5px}#xoxoDiscoverPeople #discoverPeopleResults>.friend-suggestions-list,.xoxo-people-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#xoxoDiscoverPeople .friend-suggestion-card,.xoxo-people-grid .friend-suggestion-card{padding:10px}#xoxoDiscoverPeople .friend-suggestion-actions .btn,.xoxo-people-grid .friend-suggestion-actions .btn{font-size:12px;padding:9px 5px}}
+
+/* XOXO RTs — first release */
+.feed[hidden]{display:none!important}
+.xoxo-rt-tabs{display:flex;gap:10px;margin:22px 0 16px;flex-wrap:wrap}
+.xoxo-rt-tab{padding:11px 19px;border:1px solid var(--fh-border,#dfe3eb);border-radius:12px;background:var(--fh-surface,#fff);color:var(--fh-text,#172033);font-weight:800}
+.xoxo-rt-tab.active{background:#653bb4;color:white}
+.xoxo-rt-label{color:var(--fh-muted,#667085);font-size:13px;font-weight:700;margin-bottom:9px}
+.xoxo-repost-active{color:#17a57a!important;font-weight:800!important}
 </style>
                                     
                 <style>
@@ -5259,6 +5287,12 @@
                                     <h1>Discover</h1>
                                     <p>Find people and communities that match what you're looking for.</p>
                                     </div>
+                                    <div class="xoxo-discover-tabs" role="tablist" aria-label="Discover sections">
+                                      <button type="button" class="xoxo-discover-tab active" id="xoxoTabPosts" role="tab" aria-selected="true" onclick="xoxoSwitchDiscover('posts')">📝 Posts</button>
+                                      <button type="button" class="xoxo-discover-tab" id="xoxoTabPeople" role="tab" aria-selected="false" onclick="xoxoSwitchDiscover('people')">🌎 Explore People</button>
+                                      <button type="button" class="xoxo-discover-tab" id="xoxoTabFavorites" role="tab" aria-selected="false" onclick="xoxoSwitchDiscover('favorites')">💜 Favorites</button>
+                                    </div>
+                                    <div id="xoxoDiscoverPosts" class="xoxo-discover-panel">
                                     <div id="friendSuggestionsSection" class="friend-suggestions-section" style="display:none;">
                                     <div class="friend-suggestions-heading">
                                     <div>
@@ -5300,89 +5334,6 @@
                                     <button class="filter-btn" data-filter="discord" onclick="setFilter('discord', this)">
                                     &#128998; Discord
                                     </button>
-                                    </div>
-                                    <div class="discover-advanced-filters">
-                                    <div class="discover-filter-grid">
-                                    <input id="discoverCountryFilter" type="text" maxlength="80" placeholder="🌎 Country">
-                                    <select id="discoverLanguageFilter">
-                                    <option value="">🗣️ Any language</option>
-                                    <option value="English">🇺🇸 English</option>
-                                    <option value="Spanish">🇪🇸 Spanish</option>
-                                    <option value="Portuguese">🇵🇹 Portuguese</option>
-                                    <option value="French">🇫🇷 French</option>
-                                    <option value="German">🇩🇪 German</option>
-                                    <option value="Italian">🇮🇹 Italian</option>
-                                    <option value="Japanese">🇯🇵 Japanese</option>
-                                    <option value="Korean">🇰🇷 Korean</option>
-                                    <option value="Chinese">🇨🇳 Chinese</option>
-                                    <option value="Other">🌐 Other</option>
-                                    </select>
-                                    <select id="discoverInterestFilter">
-                                    <option value="">✨ Any interest</option>
-                                    <option value="Gaming">🎮 Gaming</option>
-                                    <option value="Music">🎵 Music</option>
-                                    <option value="Movies & TV">🎬 Movies & TV</option>
-                                    <option value="Books">📚 Books</option>
-                                    <option value="Sports">⚽ Sports</option>
-                                    <option value="Technology">💻 Technology</option>
-                                    <option value="Art">🎨 Art</option>
-                                    <option value="Travel">✈️ Travel</option>
-                                    <option value="Food">🍕 Food</option>
-                                    <option value="Photography">📸 Photography</option>
-                                    <option value="Psychology">🧠 Psychology</option>
-                                    <option value="Fitness">💪 Fitness</option>
-                                    <option value="Nature">🌿 Nature</option>
-                                    <option value="Entertainment">🎭 Entertainment</option>
-                                    <option value="Languages">🗣️ Languages</option>
-                                    <option value="Culture">🌎 Culture</option>
-                                    <option value="Other">✨ Other</option>
-                                    </select>
-                                    <select id="discoverGenderFilter">
-                                    <option value="">⚧ Any gender</option>
-                                    <option value="Man">Man</option>
-                                    <option value="Woman">Woman</option>
-                                    <option value="Non-binary">Non-binary</option>
-                                    <option value="Trans man">Trans man</option>
-                                    <option value="Trans woman">Trans woman</option>
-                                    <option value="Other">Other</option>
-                                    </select>
-                                    <select id="discoverOrientationFilter">
-                                    <option value="">🌈 Any orientation</option>
-                                    <option value="Straight">Straight</option>
-                                    <option value="Gay">Gay</option>
-                                    <option value="Lesbian">Lesbian</option>
-                                    <option value="Bisexual">Bisexual</option>
-                                    <option value="Pansexual">Pansexual</option>
-                                    <option value="Asexual">Asexual</option>
-                                    <option value="Other">Other</option>
-                                    </select>
-                                    <select id="discoverLookingForFilter">
-                                    <option value="">🔎 Looking for anything</option>
-                                    <option value="New friends">👋 New friends</option>
-                                    <option value="Someone to talk to">💬 Someone to talk to</option>
-                                    <option value="Gaming partners">🎮 Gaming partners</option>
-                                    <option value="People with similar music taste">🎵 Similar music taste</option>
-                                    <option value="Movie & TV friends">🎬 Movie & TV friends</option>
-                                    <option value="Study partners">📚 Study partners</option>
-                                    <option value="Language exchange">🗣️ Language exchange</option>
-                                    <option value="Friends from other countries">🌎 Friends from other countries</option>
-                                    <option value="Communities & groups">👥 Communities & groups</option>
-                                    <option value="WhatsApp groups">💚 WhatsApp groups</option>
-                                    <option value="Telegram groups">✈️ Telegram groups</option>
-                                    <option value="Snapchat friends">👻 Snapchat friends</option>
-                                    <option value="People with similar interests">✨ Similar interests</option>
-                                    <option value="Sports partners">⚽ Sports partners</option>
-                                    <option value="Travel friends">🧳 Travel friends</option>
-                                    <option value="Networking">🤝 Networking</option>
-                                    <option value="Meet new people">🌟 Meet new people</option>
-                                    <option value="Other">🔎 Other</option>
-                                    </select>
-                                    </div>
-                                    <div class="discover-filter-actions">
-                                    <button class="btn btn-primary" type="button" onclick="applyDiscoverPeopleFilters()">🔎 Find people</button>
-                                    <button class="btn btn-secondary" type="button" onclick="clearDiscoverPeopleFilters()">Clear filters</button>
-                                    </div>
-                                    <div id="discoverPeopleResults"></div>
                                     </div>
                                     <div class="composer" id="postComposer" style="display:none;">
                                     <h3>Create a post</h3>
@@ -5475,6 +5426,98 @@
                                     </div>
                                     </div>
                                     <div id="feed" class="feed"></div>
+                                    </div>
+                                    <div id="xoxoDiscoverPeople" class="xoxo-discover-panel" hidden>
+                                      <div class="xoxo-explore-heading"><h2>🌎 Explore People</h2><p>Discover members from around the world — free for everyone.</p></div>
+                                      <div class="xoxo-explore-pills"><span>🌍 Travel the World</span><span>👤 Open a profile to connect</span></div>
+                                    <div class="discover-advanced-filters">
+                                    <div class="discover-filter-grid">
+                                    <input id="discoverCountryFilter" type="text" maxlength="80" placeholder="🌎 Country">
+                                    <select id="discoverLanguageFilter">
+                                    <option value="">🗣️ Any language</option>
+                                    <option value="English">🇺🇸 English</option>
+                                    <option value="Spanish">🇪🇸 Spanish</option>
+                                    <option value="Portuguese">🇵🇹 Portuguese</option>
+                                    <option value="French">🇫🇷 French</option>
+                                    <option value="German">🇩🇪 German</option>
+                                    <option value="Italian">🇮🇹 Italian</option>
+                                    <option value="Japanese">🇯🇵 Japanese</option>
+                                    <option value="Korean">🇰🇷 Korean</option>
+                                    <option value="Chinese">🇨🇳 Chinese</option>
+                                    <option value="Other">🌐 Other</option>
+                                    </select>
+                                    <select id="discoverInterestFilter" style="display:none" aria-hidden="true">
+                                    <option value="">✨ Any interest</option>
+                                    <option value="Gaming">🎮 Gaming</option>
+                                    <option value="Music">🎵 Music</option>
+                                    <option value="Movies & TV">🎬 Movies & TV</option>
+                                    <option value="Books">📚 Books</option>
+                                    <option value="Sports">⚽ Sports</option>
+                                    <option value="Technology">💻 Technology</option>
+                                    <option value="Art">🎨 Art</option>
+                                    <option value="Travel">✈️ Travel</option>
+                                    <option value="Food">🍕 Food</option>
+                                    <option value="Photography">📸 Photography</option>
+                                    <option value="Psychology">🧠 Psychology</option>
+                                    <option value="Fitness">💪 Fitness</option>
+                                    <option value="Nature">🌿 Nature</option>
+                                    <option value="Entertainment">🎭 Entertainment</option>
+                                    <option value="Languages">🗣️ Languages</option>
+                                    <option value="Culture">🌎 Culture</option>
+                                    <option value="Other">✨ Other</option>
+                                    </select>
+                                    <select id="discoverGenderFilter">
+                                    <option value="">⚧ Any gender</option>
+                                    <option value="Man">Man</option>
+                                    <option value="Woman">Woman</option>
+                                    <option value="Non-binary">Non-binary</option>
+                                    <option value="Trans man">Trans man</option>
+                                    <option value="Trans woman">Trans woman</option>
+                                    <option value="Other">Other</option>
+                                    </select>
+                                    <select id="discoverOrientationFilter">
+                                    <option value="">🌈 Any orientation</option>
+                                    <option value="Straight">Straight</option>
+                                    <option value="Gay">Gay</option>
+                                    <option value="Lesbian">Lesbian</option>
+                                    <option value="Bisexual">Bisexual</option>
+                                    <option value="Pansexual">Pansexual</option>
+                                    <option value="Asexual">Asexual</option>
+                                    <option value="Other">Other</option>
+                                    </select>
+                                    <select id="discoverLookingForFilter" style="display:none" aria-hidden="true">
+                                    <option value="">🔎 Looking for anything</option>
+                                    <option value="New friends">👋 New friends</option>
+                                    <option value="Someone to talk to">💬 Someone to talk to</option>
+                                    <option value="Gaming partners">🎮 Gaming partners</option>
+                                    <option value="People with similar music taste">🎵 Similar music taste</option>
+                                    <option value="Movie & TV friends">🎬 Movie & TV friends</option>
+                                    <option value="Study partners">📚 Study partners</option>
+                                    <option value="Language exchange">🗣️ Language exchange</option>
+                                    <option value="Friends from other countries">🌎 Friends from other countries</option>
+                                    <option value="Communities & groups">👥 Communities & groups</option>
+                                    <option value="WhatsApp groups">💚 WhatsApp groups</option>
+                                    <option value="Telegram groups">✈️ Telegram groups</option>
+                                    <option value="Snapchat friends">👻 Snapchat friends</option>
+                                    <option value="People with similar interests">✨ Similar interests</option>
+                                    <option value="Sports partners">⚽ Sports partners</option>
+                                    <option value="Travel friends">🧳 Travel friends</option>
+                                    <option value="Networking">🤝 Networking</option>
+                                    <option value="Meet new people">🌟 Meet new people</option>
+                                    <option value="Other">🔎 Other</option>
+                                    </select>
+                                    </div>
+                                    <div class="discover-filter-actions">
+                                    <button class="btn btn-primary" type="button" onclick="applyDiscoverPeopleFilters()">🔎 Find people</button>
+                                    <button class="btn btn-secondary" type="button" onclick="clearDiscoverPeopleFilters()">Clear filters</button>
+                                    </div>
+                                    <div id="discoverPeopleResults"></div>
+                                    </div>
+                                    </div>
+                                    <div id="xoxoDiscoverFavorites" class="xoxo-discover-panel" hidden>
+                                      <div class="xoxo-explore-heading"><h2>💜 Favorites</h2><p>Keep your favorite profiles handy on this device.</p></div>
+                                      <div id="xoxoFavoriteProfiles" class="xoxo-people-grid"></div>
+                                    </div>
                                     </div>
                                     </section>
                                     <section id="profile" class="page">
@@ -5751,8 +5794,12 @@
                                     <section id="publicProfile" class="page">
                                     <div class="container">
                                     <div id="publicProfileContent"><div class="empty-state">Loading profile...</div></div>
-                                    <h2 class="public-profile-posts-title">Posts</h2>
-                                    <div id="publicProfilePosts" class="feed"></div>
+                                    <div class="xoxo-rt-tabs" role="tablist" aria-label="Profile posts and reposts">
+<button class="xoxo-rt-tab active" id="xoxoProfilePostsTab" type="button" onclick="xoxoSetProfileTab('posts')">📝 Posts</button>
+<button class="xoxo-rt-tab" id="xoxoProfileRTsTab" type="button" onclick="xoxoSetProfileTab('rts')">🔁 RTs</button>
+</div>
+<div id="publicProfilePosts" class="feed"></div>
+<div id="xoxoProfileReposts" class="feed" hidden></div>
                                     </div>
                                     </section>
                                     <section id="messages" class="page">
@@ -7044,6 +7091,7 @@ async function enforceXoxoSuspension() {
                                     behavior: "smooth"
                                     });
                                     if (pageId === "discover") {
+                                    xoxoSwitchDiscover('posts');
                                     activeGlobalHashtag = "";
                                     hashtagOffset = 0;
                                     hashtagHasMore = false;
@@ -9012,6 +9060,52 @@ async function enforceXoxoSuspension() {
                                     getOptionTextWithoutEmoji(item).toLowerCase() === String(wanted).toLowerCase()
                                     );
                                     }
+
+// XOXO Explore People tabs and device-local favorite profiles.
+let xoxoDiscoverCurrentTab='posts';
+let xoxoDiscoverLastProfiles=[];
+function xoxoSwitchDiscover(tab){
+  if(!['posts','people','favorites'].includes(tab))tab='posts';
+  xoxoDiscoverCurrentTab=tab;
+  const ids={posts:'xoxoDiscoverPosts',people:'xoxoDiscoverPeople',favorites:'xoxoDiscoverFavorites'};
+  const buttons={posts:'xoxoTabPosts',people:'xoxoTabPeople',favorites:'xoxoTabFavorites'};
+  for(const key of Object.keys(ids)){
+    const panel=document.getElementById(ids[key]);if(panel)panel.hidden=key!==tab;
+    const button=document.getElementById(buttons[key]);if(button){button.classList.toggle('active',key===tab);button.setAttribute('aria-selected',String(key===tab));}
+  }
+  if(tab==='people')applyDiscoverPeopleFilters();
+  if(tab==='favorites')xoxoRenderFavorites();
+}
+function xoxoFavoritesKey(){return 'xoxo_explore_favorites_'+(currentUser?.id||'guest');}
+function xoxoGetFavorites(){try{const a=JSON.parse(localStorage.getItem(xoxoFavoritesKey())||'[]');return Array.isArray(a)?a.slice(0,100):[];}catch{return [];}}
+function xoxoToggleFavorite(userId){
+  const profile=xoxoDiscoverLastProfiles.find(p=>String(p.user_id)===String(userId));
+  if(!profile)return;
+  const list=xoxoGetFavorites(), index=list.findIndex(p=>String(p.user_id)===String(userId));
+  if(index>=0)list.splice(index,1);else list.unshift({user_id:profile.user_id,username:profile.username,profile_photo:profile.profile_photo,country:profile.country});
+  try{localStorage.setItem(xoxoFavoritesKey(),JSON.stringify(list.slice(0,100)));}catch{}
+  xoxoRefreshFavoriteButtons();
+}
+function xoxoRefreshFavoriteButtons(){
+  const saved=new Set(xoxoGetFavorites().map(p=>String(p.user_id)));
+  document.querySelectorAll('[data-xoxo-favorite]').forEach(button=>{
+    const yes=saved.has(button.dataset.xoxoFavorite);
+    button.textContent=yes?'💜 Favorited':'🤍 Add to Favorites';
+    button.setAttribute('aria-pressed',String(yes));
+  });
+}
+function xoxoRenderFavorites(){
+  const box=document.getElementById('xoxoFavoriteProfiles');if(!box)return;
+  const list=xoxoGetFavorites();
+  if(!list.length){box.innerHTML='<div class="empty-state">No favorite profiles yet. Explore People and tap the heart to save someone.</div>';return;}
+  box.innerHTML=list.map(p=>{
+    const id=escapeHtmlAttribute(String(p.user_id));
+    const name=escapeHtml(p.username||'@User');
+    const avatar=p.profile_photo?`<img src="${escapeHtmlAttribute(p.profile_photo)}" alt="">`:escapeHtml((p.username||'U').replace('@','').charAt(0).toUpperCase());
+    return `<div class="friend-suggestion-card"><div class="friend-suggestion-avatar">${avatar}</div><div class="friend-suggestion-info"><strong>${name}</strong><span>${escapeHtml(p.country||'XOXO Avenue member')}</span></div><div class="friend-suggestion-actions"><button type="button" class="btn btn-primary" onclick="openPublicProfile('${id}')">Profile</button><button type="button" class="btn btn-secondary" onclick="xoxoRemoveFavorite('${id}')">Remove 💜</button></div></div>`;
+  }).join('');
+}
+function xoxoRemoveFavorite(id){try{localStorage.setItem(xoxoFavoritesKey(),JSON.stringify(xoxoGetFavorites().filter(p=>String(p.user_id)!==String(id))));}catch{}xoxoRenderFavorites();xoxoRefreshFavoriteButtons();}
                                     async function applyDiscoverPeopleFilters() {
                                     const results = document.getElementById("discoverPeopleResults");
                                     if (!results) return;
@@ -9079,8 +9173,11 @@ async function enforceXoxoSuspension() {
                                     <button class="btn btn-secondary" type="button" onclick="openPublicProfile('${escapeHtmlAttribute(String(profile.user_id))}')">Profile</button>
                                     <button class="btn btn-primary" type="button" onclick="followFriendSuggestion('${escapeHtmlAttribute(String(profile.user_id))}', this)">${followed.has(String(profile.user_id)) ? "Following" : "Follow"}</button>
                                     </div>
+                                    <button type="button" class="xoxo-favorite-btn" data-xoxo-favorite="${escapeHtmlAttribute(String(profile.user_id))}" onclick="xoxoToggleFavorite('${escapeHtmlAttribute(String(profile.user_id))}')">🤍 Add to Favorites</button>
                                     </div>`;
                                     }).join("")}</div>`;
+                                    xoxoDiscoverLastProfiles=matches;
+                                    xoxoRefreshFavoriteButtons();
                                     }
                                     function clearDiscoverPeopleFilters() {
                                     ["discoverCountryFilter","discoverLanguageFilter","discoverInterestFilter","discoverGenderFilter","discoverOrientationFilter","discoverLookingForFilter"]
@@ -9350,6 +9447,7 @@ async function enforceXoxoSuspension() {
                                     renderPosts();
                                     }
                                     function renderPosts() {
+                                    if(currentUser) xoxoLoadMyReposts().catch(console.error);
                                     const feed =
                                     document.getElementById(
                                     "feed"
@@ -9659,6 +9757,71 @@ async function enforceXoxoSuspension() {
                                     }
                                     }
 
+
+/* XOXO Reposts — uses post_reposts with existing auth/RLS */
+let xoxoRepostIds = new Set();
+let xoxoRepostProfileToken = 0;
+async function xoxoLoadMyReposts(){
+  xoxoRepostIds = new Set();
+  if(!currentUser) return;
+  const {data,error}=await supabaseClient.from('post_reposts').select('post_id').eq('user_id',currentUser.id).limit(1000);
+  if(error){console.error('Reposts load:',error);return;}
+  xoxoRepostIds=new Set((data||[]).map(r=>String(r.post_id)));
+  document.querySelectorAll('.xoxo-repost-btn').forEach(b=>{
+    const id=b.closest('[data-post-id]')?.getAttribute('data-post-id');
+    if(!id)return; const active=xoxoRepostIds.has(id);b.classList.toggle('xoxo-repost-active',active);b.textContent=active?'🔁 Reposted':'🔁 Repost';
+  });
+}
+async function xoxoToggleRepost(postId){
+  if(!currentUser){if(typeof openAuthModal==='function')openAuthModal('login');else alert('Please log in to repost.');return;}
+  const post=posts.find(p=>String(p.id)===String(postId));
+  if(!post){alert('Please reload this post to repost it.');return;}
+  if(blockedUserIds?.has(String(post.userId))){alert('This post is unavailable.');return;}
+  if(String(post.userId)===String(currentUser.id)){alert('You cannot repost your own post.');return;}
+  const existing=xoxoRepostIds.has(String(postId));
+  const result=existing
+    ?await supabaseClient.from('post_reposts').delete().eq('post_id',postId).eq('user_id',currentUser.id)
+    :await supabaseClient.from('post_reposts').insert({post_id:postId,user_id:currentUser.id});
+  if(result.error){console.error('Repost error:',result.error);alert('Could not update repost. Please try again.');return;}
+  if(existing)xoxoRepostIds.delete(String(postId));else xoxoRepostIds.add(String(postId));
+  document.querySelectorAll('.xoxo-repost-btn').forEach(b=>{
+    if(b.closest('[data-post-id]')?.getAttribute('data-post-id')!==String(postId))return;
+    b.classList.toggle('xoxo-repost-active',!existing);b.textContent=existing?'🔁 Repost':'🔁 Reposted';
+  });
+  if(!existing && post.userId){
+    const actor=currentProfile?.username||'@User';
+    const {error}=await supabaseClient.from('notifications').insert({
+      user_id:String(post.userId),actor_id:currentUser.id,post_id:String(postId),type:'repost',
+      message:`${actor} reposted your post! 🔁💜`
+    });
+    if(error)console.error('Repost notification:',error);
+  }
+  if(currentPublicProfileUserId && String(currentPublicProfileUserId)===String(currentUser.id))
+    xoxoLoadProfileReposts(currentPublicProfileUserId);
+}
+function xoxoSetProfileTab(tab){
+  const rts=tab==='rts';
+  const postsEl=document.getElementById('publicProfilePosts');
+  const rtEl=document.getElementById('xoxoProfileReposts');
+  if(postsEl)postsEl.hidden=rts;
+  if(rtEl)rtEl.hidden=!rts;
+  document.getElementById('xoxoProfilePostsTab')?.classList.toggle('active',!rts);
+  document.getElementById('xoxoProfileRTsTab')?.classList.toggle('active',rts);
+  if(rts && currentPublicProfileUserId)xoxoLoadProfileReposts(currentPublicProfileUserId);
+}
+async function xoxoLoadProfileReposts(userId){
+  const box=document.getElementById('xoxoProfileReposts');if(!box||!userId)return;
+  const token=++xoxoRepostProfileToken;box.innerHTML='<div class="empty-state">Loading reposts...</div>';
+  const {data,error}=await supabaseClient.from('post_reposts').select('post_id,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(50);
+  if(token!==xoxoRepostProfileToken||String(currentPublicProfileUserId)!==String(userId))return;
+  if(error){console.error('Profile reposts:',error);box.innerHTML='<div class="empty-state">Could not load reposts.</div>';return;}
+  const ids=(data||[]).map(r=>String(r.post_id));
+  if(!ids.length){box.innerHTML='<div class="empty-state">No reposts yet. 🔁</div>';return;}
+  const missing=ids.filter(id=>!posts.some(p=>String(p.id)===id));
+  // Only show posts already loaded into the authorized feed; no unsafe raw post rendering.
+  const visible=ids.map(id=>posts.find(p=>String(p.id)===id)).filter(Boolean).filter(p=>!blockedUserIds?.has(String(p.userId)));
+  box.innerHTML=visible.length?visible.map(p=>`<div class="xoxo-rt-label">🔁 Reposted</div>`+renderPost(p)).join(''):'<div class="empty-state">Reposted posts are not in your loaded feed yet. Browse Discover to load more posts.</div>';
+}
                                     function renderPost(post) {
                                     const username =
                                     escapeHtml(
@@ -9791,6 +9954,7 @@ async function enforceXoxoSuspension() {
                                     >
                                     Comment${post.comments ? ` ${post.comments}` : ""}
                                     </button>
+                                    ${!String(post.id).startsWith("sample-") ? `<button type="button" class="post-action xoxo-repost-btn ${xoxoRepostIds.has(String(post.id)) ? 'xoxo-repost-active' : ''}" onclick="xoxoToggleRepost('${escapeHtmlAttribute(String(post.id))}')">🔁 ${xoxoRepostIds.has(String(post.id)) ? 'Reposted' : 'Repost'}</button>` : ''}
                                     <button
                                     class="post-action saved-post-action ${savedClass}"
                                     onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"
@@ -10088,6 +10252,7 @@ async function openPublicProfile(userId) {
                                     if (postsContainer) postsContainer.innerHTML = '<div class="empty-state">You blocked this user. Unblock them to see their posts.</div>';
                                     } else {
                                     renderPublicProfilePosts(String(userId), profile.profile_photo || null);
+                                    xoxoSetProfileTab("posts");
                                     }
                                     }
                                     async function sharePublicProfile(userId, username = "@User") {
@@ -12823,6 +12988,7 @@ async function openPublicProfile(userId) {
                                     if (type === "follow") return "👤";
                                     if (type === "mention") return "@";
                                     if (type === "dm") return "✉️";
+                                    if (type === "repost") return "🔁";
                                     return "🔔";
                                     }
                                     function setNotificationFilter(filter, button) {
