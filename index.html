@@ -1544,6 +1544,18 @@
                                       --fh-shadow: 0 12px 34px rgba(0,150,210,.10);
                                       --fh-glow: 0 0 18px rgba(0,174,240,.20);
                                     }
+                                    /* Edit Profile: readable labels and help text in Day Mode only */
+                                    html[data-theme="day"] #profileCard .form-group label {
+                                      color: #152b47 !important;
+                                    }
+                                    html[data-theme="day"] #profileCard .form-group .help-text {
+                                      color: #455a75 !important;
+                                    }
+                                    html[data-theme="day"] #profileCard .form-group input,
+                                    html[data-theme="day"] #profileCard .form-group select,
+                                    html[data-theme="day"] #profileCard .form-group textarea {
+                                      color: #f6f4ff;
+                                    }
                                     html[data-theme="night"] {
                                       --fh-bg: #07091c;
                                       --fh-surface: rgba(18,20,53,.84);
