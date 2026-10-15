@@ -6494,8 +6494,8 @@
     <div id="xoxoAdminComments" class="xoxo-admin-panel"><input id="xoxoAdminCommentSearch" class="xoxo-admin-search" type="search" placeholder="Search comments or usernames..." oninput="renderXoxoAdminComments()"><div id="xoxoAdminCommentsList"></div></div>
     <div id="xoxoAdminReports" class="xoxo-admin-panel"><div id="xoxoAdminReportsList"></div></div>
     <div id="xoxoAdminActivity" class="xoxo-admin-panel">
-      <div class="xam-head"><div><h2>💜 Activity Monitor</h2><p>Interactions and original content · Read-only moderation</p></div><button class="btn btn-secondary" type="button" onclick="loadXoxoActivity()">↻ Refresh</button></div>
-      <div class="xam-filters"><button type="button" class="xam-filter active" data-xam="all" onclick="xoxoActivityFilter('all')">✨ All</button><button type="button" class="xam-filter" data-xam="like" onclick="xoxoActivityFilter('like')">❤️ Likes</button><button type="button" class="xam-filter" data-xam="repost" onclick="xoxoActivityFilter('repost')">🔁 Reposts</button><button type="button" class="xam-filter" data-xam="comment_like" onclick="xoxoActivityFilter('comment_like')">💬 Comment Likes</button><button type="button" class="xam-filter" data-xam="save" onclick="xoxoActivityFilter('save')">🔖 Saves</button></div>
+      <div class="xam-head"><div><h2>💜 Activity Monitor</h2><p>Comments, interactions and original content · Read-only moderation</p></div><button class="btn btn-secondary" type="button" onclick="loadXoxoActivity()">↻ Refresh</button></div>
+      <div class="xam-filters"><button type="button" class="xam-filter active" data-xam="comment" onclick="xoxoActivityFilter('comment')">💬 Comments</button><button type="button" class="xam-filter" data-xam="like" onclick="xoxoActivityFilter('like')">❤️ Likes</button><button type="button" class="xam-filter" data-xam="repost" onclick="xoxoActivityFilter('repost')">🔁 Reposts</button><button type="button" class="xam-filter" data-xam="comment_like" onclick="xoxoActivityFilter('comment_like')">💬 Comment Likes</button><button type="button" class="xam-filter" data-xam="save" onclick="xoxoActivityFilter('save')">🔖 Saves</button></div>
       <div id="xoxoActivityStatus" role="status" aria-live="polite" class="xoxo-admin-meta">Open this tab to load activity.</div>
       <div id="xoxoActivityList" class="xam-list"></div>
     </div>
@@ -18167,14 +18167,29 @@ async function xsLoadLikes(kind){
 </script>
 <script id="xoxoActivityScript">
 /* Admin-only read-only activity feed. Requires the secure SQL RPC supplied separately. */
-let xoxoActivityRows=[],xoxoActivitySelected='all';
+let xoxoActivityRows=[],xoxoActivitySelected='comment';
 function xoxoActivityFilter(kind){xoxoActivitySelected=kind;document.querySelectorAll('.xam-filter').forEach(b=>b.classList.toggle('active',b.dataset.xam===kind));renderXoxoActivity();}
 async function loadXoxoActivity(){
  const status=document.getElementById('xoxoActivityStatus');if(!status)return;
  if(typeof xoxoIsAdmin==='undefined'||!xoxoIsAdmin){status.textContent='Administrator access required.';return;}
  status.textContent='Loading activity…';
- try{const {data,error}=await supabaseClient.rpc('xoxo_admin_activity_feed',{max_rows:100});if(error)throw error;xoxoActivityRows=Array.isArray(data)?data:[];status.textContent=xoxoActivityRows.length?`${xoxoActivityRows.length} recent interactions · Read-only`:'No interactions found.';renderXoxoActivity();}
- catch(e){status.textContent='Activity Monitor requires the accompanying Supabase admin RPC. '+String(e.message||e);document.getElementById('xoxoActivityList').replaceChildren();}
+ try{
+  const results=await Promise.allSettled([
+   supabaseClient.rpc('xoxo_admin_activity_feed',{max_rows:100}),
+   supabaseClient.rpc('xoxo_admin_comments_feed',{max_rows:100})
+  ]);
+  const activity=results[0].status==='fulfilled'?results[0].value:null;
+  const comments=results[1].status==='fulfilled'?results[1].value:null;
+  const problems=[];
+  if(!activity||activity.error)problems.push('Interactions: '+(activity?.error?.message||'Request failed'));
+  if(!comments||comments.error)problems.push('Comments: '+(comments?.error?.message||'Run the new Comments SQL setup'));
+  xoxoActivityRows=[
+   ...(!activity?.error&&Array.isArray(activity?.data)?activity.data:[]),
+   ...(!comments?.error&&Array.isArray(comments?.data)?comments.data:[])
+  ].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  status.textContent=`${xoxoActivityRows.length} recent activities · Read-only`+(problems.length?' · '+problems.join(' · '):'');
+  renderXoxoActivity();
+ }catch(e){status.textContent='Activity Monitor: '+String(e.message||e);document.getElementById('xoxoActivityList').replaceChildren();}
 }
 function xoxoActivityIsVideo(url,type){
  const t=String(type||'').toLowerCase().trim();
@@ -18198,7 +18213,7 @@ function xoxoActivityPost(postId){
  const author=document.createElement('button');author.type='button';author.textContent='@'+String(row.author_username||'Unknown author').replace(/^@/,'');author.title='Open author profile';author.style.cssText='display:inline-block;font:inherit;font-weight:800;color:#27d7ff;margin:0 0 12px;padding:0;border:0;background:transparent;cursor:pointer;text-decoration:underline;text-underline-offset:3px;';author.onclick=()=>{if(row.author_id&&typeof openPublicProfile==='function'){overlay.remove();xoxoActivityProfile(String(row.author_id));}else if(typeof setXoxoAdminStatus==='function'){setXoxoAdminStatus('Could not open this profile: author ID is unavailable.','error');}};panel.append(author);
  const body=document.createElement('div');body.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:17px;line-height:1.55;margin:0 0 14px;';body.textContent=row.post_content||'No text content';panel.append(body);
  if(row.media_url){const media=xoxoActivityIsVideo(row.media_url,row.media_type)?document.createElement('video'):document.createElement('img');media.src=row.media_url;media.style.cssText='display:block;max-width:100%;max-height:55vh;object-fit:contain;border-radius:12px;margin:12px auto;';if(media.tagName==='VIDEO'){media.controls=true;media.playsInline=true;media.preload='metadata';media.onerror=()=>{media.replaceWith(Object.assign(document.createElement('p'),{textContent:'Video preview could not load. Open the original post to check this media.'}));};}else{media.alt='Original post media';media.loading='lazy';media.onerror=()=>{media.alt='Image preview could not load';media.style.display='none';const note=document.createElement('p');note.textContent='Image preview could not load. Open the original post to check this media.';panel.insertBefore(note,meta);} }panel.append(media);}
- if(row.activity_type==='comment_like'&&row.comment_content){const commentTitle=document.createElement('h3');commentTitle.textContent='💬 Comment that received a Like';panel.append(commentTitle);const comment=document.createElement('div');comment.textContent=row.comment_content;comment.style.cssText='white-space:pre-wrap;border:1px solid #7650dc;border-radius:12px;padding:12px;margin-bottom:12px;';panel.append(comment);}
+ if((row.activity_type==='comment_like'||row.activity_type==='comment')&&row.comment_content){const commentTitle=document.createElement('h3');commentTitle.textContent=row.activity_type==='comment'?'💬 Published comment':'💬 Comment that received a Like';panel.append(commentTitle);const comment=document.createElement('div');comment.textContent=row.comment_content;comment.style.cssText='white-space:pre-wrap;border:1px solid #7650dc;border-radius:12px;padding:12px;margin-bottom:12px;';panel.append(comment);}
  const meta=document.createElement('p');meta.style.cssText='opacity:.72;font-size:12px;';meta.textContent='Read-only moderation preview · '+xoxoAdminDate(row.created_at);panel.append(meta);
  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
  document.addEventListener('keydown',function closeOnEscape(e){if(e.key==='Escape'&&document.getElementById('xoxoActivityOriginalModal')){overlay.remove();document.removeEventListener('keydown',closeOnEscape);}});
@@ -18206,10 +18221,10 @@ function xoxoActivityPost(postId){
 }
 function renderXoxoActivity(){
  const list=document.getElementById('xoxoActivityList');if(!list)return;
- const rows=xoxoActivityRows.filter(r=>xoxoActivitySelected==='all'||r.activity_type===xoxoActivitySelected);
+ const rows=xoxoActivityRows.filter(r=>r.activity_type===xoxoActivitySelected);
  if(!rows.length){list.innerHTML='<div class="empty-state">No activity in this category yet.</div>';return;}
  const h=v=>escapeHtml(String(v??''));const a=v=>escapeHtmlAttribute(String(v??''));
- const kinds={like:'❤️ Like',repost:'🔁 Repost',comment_like:'💬 Comment Like',save:'🔖 Save'};
+ const kinds={comment:'💬 Comment',like:'❤️ Like',repost:'🔁 Repost',comment_like:'💗 Comment Like',save:'🔖 Save'};
  list.innerHTML=rows.map(r=>{
  const saved=r.activity_type==='save';
  const actor=saved?'Private':h(r.actor_username||'Unknown user');
@@ -18218,8 +18233,8 @@ function renderXoxoActivity(){
  const owner=r.author_id?`<button type="button" class="xam-user" onclick="xoxoActivityProfile('${a(r.author_id)}')">${author}</button>`:author;
  const content=h(r.post_content||'No text content');const media=String(r.media_url||'');const video=xoxoActivityIsVideo(media,r.media_type);
  const mediaHtml=media?(video?`<video class="xam-media" controls playsinline preload="metadata" src="${a(media)}"></video>`:`<img class="xam-media" loading="lazy" src="${a(media)}" alt="Post media" onclick="openProfilePhotoViewer(this.src)">`):'';
- const comments=r.activity_type==='comment_like'?`<div class="xam-post"><strong>💬 Liked comment</strong><div class="xam-content">${h(r.comment_content||'')}</div></div>`:'';
- return `<article class="xam-card"><div class="xam-activity">${kinds[r.activity_type]||'Activity'} · ${h(xoxoAdminDate(r.created_at))}</div><div>${saved?'🔖 Saved post activity (user hidden)':`${avatar} → ${owner}`}</div><div class="xam-post"><strong>📝 Original post · ${owner}</strong><div class="xam-content">${content}</div>${mediaHtml}${comments}<div class="xam-actions"><button type="button" onclick="xoxoActivityPost('${a(r.post_id)}')">📝 View original</button><button type="button" onclick="xoxoActivityFilter('like')">❤️ Likes</button><button type="button" onclick="xoxoActivityFilter('repost')">🔁 Reposts</button><button type="button" onclick="xoxoActivityFilter('comment_like')">💬 Comments</button><button type="button" onclick="xoxoActivityFilter('save')">🔖 Saves</button></div><div class="xam-note">Read-only preview. Interaction buttons filter moderation activity; they do not like, repost or save on behalf of Admin.</div></div></article>`;
+ const comments=(r.activity_type==='comment_like'||r.activity_type==='comment')?`<div class="xam-post"><strong>${r.activity_type==='comment'?'💬 Published comment':'💗 Liked comment'}</strong><div class="xam-content">${h(r.comment_content||'')}</div></div>`:'';
+ return `<article class="xam-card"><div class="xam-activity">${kinds[r.activity_type]||'Activity'} · ${h(xoxoAdminDate(r.created_at))}</div><div>${saved?'🔖 Saved post activity (user hidden)':`${avatar} → ${owner}`}</div><div class="xam-post"><strong>📝 Original post · ${owner}</strong><div class="xam-content">${content}</div>${mediaHtml}${comments}<div class="xam-actions"><button type="button" onclick="xoxoActivityPost('${a(r.post_id)}')">📝 View original</button><button type="button" onclick="xoxoActivityFilter('like')">❤️ Likes</button><button type="button" onclick="xoxoActivityFilter('repost')">🔁 Reposts</button><button type="button" onclick="xoxoActivityFilter('comment')">💬 Comments</button><button type="button" onclick="xoxoActivityFilter('comment_like')">💗 Comment Likes</button><button type="button" onclick="xoxoActivityFilter('save')">🔖 Saves</button></div><div class="xam-note">Read-only preview. Interaction buttons filter moderation activity; they do not like, repost or save on behalf of Admin.</div></div></article>`;
  }).join('');
 }
 </script>
