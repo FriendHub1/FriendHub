@@ -1888,7 +1888,7 @@
                                     .dm-camera-choice-overlay { position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;padding:18px 18px calc(18px + env(safe-area-inset-bottom)); }
                                     .dm-camera-choice { width:min(100%,420px);border:1px solid var(--border);border-radius:22px;padding:14px;background:var(--card);box-shadow:0 20px 60px rgba(0,0,0,.35); }
                                     .dm-camera-choice-title { text-align:center;font-weight:800;margin:2px 0 12px; }
-                                    .dm-camera-choice-actions { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+                                    .dm-camera-choice-actions { display:grid;grid-template-columns:1fr 1fr;gap:10px; } .dm-camera-choice-actions #dmChooseGalleryButton { grid-column:1 / -1; }
                                     .dm-camera-choice-actions button { min-height:54px;border:1px solid var(--border);border-radius:15px;background:rgba(255,47,168,.08);color:inherit;font:inherit;font-weight:800;cursor:pointer; }
                                     .dm-camera-choice-cancel { width:100%;min-height:46px;margin-top:10px;border:0;border-radius:14px;background:transparent;color:inherit;font:inherit;cursor:pointer;opacity:.8; }
                                     .dm-normal-media-button { position:relative;display:block;padding:0;border:0;background:transparent;cursor:pointer;border-radius:14px;overflow:hidden;max-width:100%; }
@@ -5925,8 +5925,9 @@
                                     <div class="dm-camera-choice" role="dialog" aria-modal="true">
                                     <div id="dmCameraChoiceTitle" class="dm-camera-choice-title">Camera</div>
                                     <div class="dm-camera-choice-actions">
-                                    <button id="dmTakePhotoButton" type="button" onclick="chooseDmCameraMode('photo')">📸 Photo</button>
-                                    <button id="dmTakeVideoButton" type="button" onclick="chooseDmCameraMode('video')">🎥 Video</button>
+                                    <button id="dmTakePhotoButton" type="button" onclick="chooseDmCameraMode('photo')">📸 Take Photo</button>
+                                    <button id="dmTakeVideoButton" type="button" onclick="chooseDmCameraMode('video')">🎥 Record Video</button>
+                                    <button id="dmChooseGalleryButton" type="button" onclick="chooseDmCameraMode('gallery')">🖼️ Choose from Gallery</button>
                                     </div>
                                     <button id="dmCameraChoiceCancel" type="button" class="dm-camera-choice-cancel" onclick="closeDmCameraChoice()">Cancel</button>
                                     </div>
@@ -12223,11 +12224,13 @@ async function openPublicProfile(userId) {
                                     const title = document.getElementById("dmCameraChoiceTitle");
                                     const photo = document.getElementById("dmTakePhotoButton");
                                     const video = document.getElementById("dmTakeVideoButton");
+                                    const gallery = document.getElementById("dmChooseGalleryButton");
                                     const cancel = document.getElementById("dmCameraChoiceCancel");
                                     const es = getFriendHubLanguage() === "es";
                                     if (title) title.textContent = es ? "Cámara" : "Camera";
-                                    if (photo) photo.textContent = es ? "📸 Foto" : "📸 Photo";
-                                    if (video) video.textContent = es ? "🎥 Video" : "🎥 Video";
+                                    if (photo) photo.textContent = es ? "📸 Tomar foto" : "📸 Take Photo";
+                                    if (video) video.textContent = es ? "🎥 Grabar video" : "🎥 Record Video";
+                                    if (gallery) gallery.textContent = es ? "🖼️ Elegir de galería" : "🖼️ Choose from Gallery";
                                     if (cancel) cancel.textContent = es ? "Cancelar" : "Cancel";
                                     if (overlay) overlay.style.display = "flex";
                                     }
@@ -12238,7 +12241,7 @@ async function openPublicProfile(userId) {
                                     }
 
                                     function chooseDmCameraMode(mode) {
-                                    const input = document.getElementById(mode === "video" ? "dmVideoCameraInput" : "dmCameraInput");
+                                    const input = document.getElementById(mode === "gallery" ? "dmMediaInput" : mode === "video" ? "dmVideoCameraInput" : "dmCameraInput");
                                     closeDmCameraChoice();
                                     if (input) { input.value = ""; input.click(); }
                                     }
