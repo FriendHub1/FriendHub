@@ -15317,6 +15317,37 @@ function renderXoxoDmConversations(){
 // Paginated, audited administrator history. Every request is authorized server-side.
 let xoxoDmHistoryState=null;
 let xoxoDmHistoryToken=0;
+function xoxoDmOpenMediaFullscreen(source){
+  if(!xoxoIsAdmin || !source || !["IMG","VIDEO"].includes(source.tagName))return;
+  const existing=document.getElementById("xoxoDmMediaFullscreen");
+  if(existing)existing.remove();
+  const overlay=document.createElement("div");
+  overlay.id="xoxoDmMediaFullscreen";
+  overlay.setAttribute("role","dialog");
+  overlay.setAttribute("aria-modal","true");
+  overlay.setAttribute("aria-label","Private media fullscreen viewer");
+  overlay.style.cssText="position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.96);display:flex;align-items:center;justify-content:center;padding:56px 16px 20px;box-sizing:border-box";
+  const close=document.createElement("button");
+  close.type="button";close.textContent="✕";close.setAttribute("aria-label","Close fullscreen viewer");
+  close.style.cssText="position:absolute;top:14px;right:18px;z-index:2;width:44px;height:44px;border:1px solid #ffffff55;border-radius:50%;background:#24212e;color:white;font-size:26px;cursor:pointer";
+  const media=source.cloneNode(false);
+  media.style.cssText="display:block;max-width:100%;max-height:calc(100dvh - 85px);width:auto;height:auto;object-fit:contain;border-radius:8px";
+  if(media.tagName==="VIDEO"){
+    source.pause();media.controls=true;media.autoplay=false;media.playsInline=true;
+  }
+  const previousFocus=document.activeElement;
+  const onKey=(event)=>{if(event.key==="Escape"){event.preventDefault();dismiss();}};
+  const dismiss=()=>{
+    if(media.tagName==="VIDEO"){media.pause();media.removeAttribute("src");media.load();}
+    document.removeEventListener("keydown",onKey);
+    overlay.remove();
+    if(previousFocus?.isConnected)previousFocus.focus();
+  };
+  close.addEventListener("click",dismiss);
+  overlay.addEventListener("click",event=>{if(event.target===overlay)dismiss();});
+  overlay.append(media,close);document.body.append(overlay);
+  document.addEventListener("keydown",onKey);close.focus();
+}
 function xoxoDmMakeMessage(m,c){
   const bubble=document.createElement("article");
   bubble.className="xmm-admin-message "+(String(m.sender_id)===String(c.user_1)?"xmm-chat-left":"xmm-chat-right");
@@ -15351,7 +15382,12 @@ function xoxoDmMakeMessage(m,c){
           const a=document.createElement("a");a.href=data.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent="Open protected attachment";media=a;
         }
         if(media.tagName==="IMG"||media.tagName==="VIDEO"){
-          media.src=data.url;media.style.cssText="display:block;max-width:100%;max-height:460px;border-radius:10px;margin-top:8px";
+          media.src=data.url;media.style.cssText="display:block;max-width:100%;max-height:460px;border-radius:10px;margin-top:8px;cursor:zoom-in";
+          media.title="Click to view fullscreen";
+          media.setAttribute("role","button");media.setAttribute("tabindex","0");
+          media.setAttribute("aria-label","Open private media fullscreen");
+          media.addEventListener("click",()=>xoxoDmOpenMediaFullscreen(media));
+          media.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();xoxoDmOpenMediaFullscreen(media);}});
         }
         mediaBox.replaceChildren(media);
       }catch(e){
