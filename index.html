@@ -6521,6 +6521,7 @@
       <button class="xoxo-admin-tab" data-admin-tab="reports" onclick="switchXoxoAdminTab('reports',this)">Reports</button>
       <button class="xoxo-admin-tab" data-admin-tab="posts" onclick="switchXoxoAdminTab('posts',this)">Posts</button>
       <button class="xoxo-admin-tab" data-admin-tab="activity" onclick="switchXoxoAdminTab('activity',this)">💜 Activity Monitor</button>
+      <button class="xoxo-admin-tab" data-admin-tab="vibes" onclick="switchXoxoAdminTab('vibes',this)">✨ Daily Vibes Preview</button>
       <button class="xoxo-admin-tab" data-admin-tab="support" onclick="switchXoxoAdminTab('support',this)">💬 Support Cases</button>
       <button class="xoxo-admin-tab" data-admin-tab="moderation" onclick="switchXoxoAdminTab('moderation',this)">🛡️ Message Moderation</button>
 
@@ -6544,6 +6545,14 @@
           <div id="xmmReportsList" aria-live="polite">Open this tab to load reports.</div>
         </section>
         <div id="xmmStatsStatus" class="xmm-foot" role="status" aria-live="polite">🎀 Message viewer inactive · Statistics load only for authorized admins · No private messages displayed</div>
+      </div>
+    </div>
+    <div id="xoxoAdminVibes" class="xoxo-admin-panel">
+      <div class="xoxo-admin-card" style="padding:22px;border-radius:20px">
+        <h2>✨ XOXO Daily Vibes · Private Preview</h2>
+        <p style="margin:10px 0 18px">🔒 Only administrators can load these unpublished quotes. Preview is read-only; the public launch remains paused.</p>
+        <button class="btn btn-primary" type="button" onclick="window.xoxoOpenVibesAdminPreview?.()">💜 View all 50 designs</button>
+        <p style="margin-top:12px;font-size:13px;opacity:.75">The daily counter will not advance. Likes, comments, reposts and sharing are disabled in preview.</p>
       </div>
     </div>
     <div id="xoxoAdminOverview" class="xoxo-admin-panel active"><div id="xoxoAdminStats" class="xoxo-admin-stats"><div class="empty-state">Loading statistics...</div></div></div>
@@ -15227,7 +15236,7 @@ async function openXoxoAdminPanel() {
 function switchXoxoAdminTab(tab, button) {
   document.querySelectorAll(".xoxo-admin-panel").forEach(el=>el.classList.remove("active"));
   document.querySelectorAll(".xoxo-admin-tab").forEach(el=>el.classList.remove("active"));
-  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport",moderation:"xoxoAdminModeration",activity:"xoxoAdminActivity"};
+  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport",moderation:"xoxoAdminModeration",activity:"xoxoAdminActivity",vibes:"xoxoAdminVibes"};
   const panel=document.getElementById(map[tab]); if(panel) panel.classList.add("active");
   if(button) button.classList.add("active");
   if(tab === "support") loadXoxoAdminSupportCases();
@@ -18584,7 +18593,7 @@ function renderXoxoActivity(){
   const client = () => typeof supabaseClient !== 'undefined' ? supabaseClient : null;
   const user = () => typeof currentUser !== 'undefined' ? currentUser : null;
   const $ = id => document.getElementById(id);
-  const state = {enabled:false,count:0,selected:0,items:[],language:'en',busy:false};
+  const state = {enabled:false,count:0,selected:0,items:[],language:'en',busy:false,preview:false};
   const esc = text => String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const label = (en,es) => state.language==='es'?es:en;
   const quote = v => state.language==='es'?v.quote_es:v.quote_en;
@@ -18624,9 +18633,32 @@ function renderXoxoActivity(){
       if(deep && /^\d+$/.test(deep))open(Number(deep));
     }catch(e){console.warn('Daily Vibes is inactive',e)}
   }
+  window.xoxoOpenVibesAdminPreview = async function(){
+    const db=client();
+    if(!db || !user())return alert('Please sign in as an administrator.');
+    const {data:allowed,error:authError}=await db.rpc('is_xoxo_admin');
+    if(authError || allowed!==true)return alert('Administrator access required.');
+    makeUI();
+    $('xv-overlay').classList.add('xv-open');
+    $('xv-content').innerHTML='<div class="xv-section">✨ Loading private preview...</div>';
+    const {data,error}=await db.rpc('xoxo_vibes_admin_preview');
+    if(error){
+      $('xv-content').textContent='Private preview unavailable: '+error.message;
+      return;
+    }
+    state.preview=true;
+    state.enabled=false;
+    state.items=data||[];
+    state.count=state.items.length;
+    state.selected=state.items[0]?.id||0;
+    state.language=isEnglish()?'en':'es';
+    if(!state.count){$('xv-content').textContent='No Daily Vibes found.';return;}
+    await render();
+  };
   async function open(id){
     if(!state.enabled || !Number.isInteger(id) || id<1 || id>state.count)return;
     state.language=isEnglish()?'en':'es';
+    state.preview=false;
     state.selected=id;
     $('xv-overlay').classList.add('xv-open');
     $('xv-content').innerHTML='<div class="xv-section">✨ Loading Daily Vibes...</div>';
@@ -18663,6 +18695,22 @@ function renderXoxoActivity(){
       <div class="xv-controls"><button id="xv-prev" ${v.id===1?'disabled':''}>← ${label('Previous','Anterior')}</button><button id="xv-next" ${v.id===state.count?'disabled':''}>${label('Next','Siguiente')} →</button></div>
       <div class="xv-section"><h3>✨ Vibe Collection</h3><div class="xv-collection">${state.items.map(x=>`<button data-xv-id="${x.id}" class="${x.id===v.id?'xv-active':''}">✦ ${x.id}</button>`).join('')}</div></div>
       <div class="xv-section"><h3>💬 ${label('Comments','Comentarios')}</h3><div id="xv-comments" class="xv-comment-list"></div><form id="xv-form" class="xv-comment-form"><input id="xv-input" maxlength="600" placeholder="${label('Write a comment...','Escribe un comentario...')}" required><button type="submit">${label('Send','Enviar')}</button></form><div id="xv-notice" class="xv-notice"></div></div>`;
+    if(state.preview){
+      const actions=root.querySelector('.xv-actions');
+      if(actions)actions.innerHTML='<span style="font-weight:800;color:#7943a3">🔒 ADMIN PREVIEW · READ ONLY</span>';
+      const comments=root.querySelector('#xv-comments');
+      if(comments)comments.textContent='Comments will be available after launch.';
+      const form=root.querySelector('#xv-form');
+      if(form)form.style.display='none';
+      const counts=root.querySelector('#xv-counts');
+      if(counts)counts.textContent='✨ Unpublished design preview · '+state.count+' quotes';
+      const art=root.querySelector('.xv-art-label');
+      if(art)art.textContent='✦ PRIVATE PREVIEW · DESIGN '+v.id+' ✦';
+      root.querySelectorAll('[data-xv-id]').forEach(b=>b.onclick=()=>choose(Number(b.dataset.xvId)));
+      $('xv-prev').onclick=()=>choose(v.id-1);
+      $('xv-next').onclick=()=>choose(v.id+1);
+      return;
+    }
     root.querySelectorAll('[data-xv-id]').forEach(b=>b.onclick=()=>choose(Number(b.dataset.xvId)));
     $('xv-prev').onclick=()=>choose(v.id-1);$('xv-next').onclick=()=>choose(v.id+1);
     $('xv-like').onclick=()=>toggle('xoxo_vibe_likes');
