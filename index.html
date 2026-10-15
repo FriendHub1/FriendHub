@@ -4813,6 +4813,14 @@
 #sl2Bubbles .sl2-letter-intro span { display:block; font-family:Georgia,'Times New Roman',serif; font-size:clamp(17px,2.6vw,20px); font-style:italic; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
 #sl5Envelopes .sl2-envelope:disabled { opacity:.7; cursor:wait; }
 
+
+/* XOXO v12: secure password generation on signup only */
+.xoxo-strong-password-tools[hidden],.xoxo-strong-password-copy[hidden]{display:none!important}
+.xoxo-strong-password-tools{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:-2px 0 18px}
+.xoxo-strong-password-generate,.xoxo-strong-password-copy{border:1px solid var(--fh-border,#b9b3d9);border-radius:11px;padding:10px 13px;font-weight:750;cursor:pointer}
+.xoxo-strong-password-generate{background:var(--fh-primary,#5865f2);color:#fff}
+.xoxo-strong-password-copy{background:var(--fh-surface-strong,#fff);color:var(--fh-text,#172033)}
+.xoxo-strong-password-status{flex-basis:100%;font-size:12px;color:var(--fh-muted,#667085);margin:0}
 </style>
                                     
                 <style>
@@ -6648,6 +6656,11 @@
                                     placeholder="Confirm password"
                                     autocomplete="new-password"
                                     ><button type="button" class="xoxo-password-eye" data-password-target="authConfirmPassword" aria-label="Show password" aria-pressed="false" title="Show password"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+                                    </div>
+                                    <div id="xoxoStrongPasswordTools" class="xoxo-strong-password-tools" hidden>
+                                      <button id="xoxoGenerateStrongPassword" type="button" class="xoxo-strong-password-generate">🔐 Generate Strong Password</button>
+                                      <button id="xoxoCopyStrongPassword" type="button" class="xoxo-strong-password-copy" hidden>📋 Copy Password</button>
+                                      <p id="xoxoStrongPasswordStatus" role="status" aria-live="polite" class="xoxo-strong-password-status"></p>
                                     </div>
                                     <div id="forgotWrap" class="forgot-wrap">
                                     <button
@@ -18378,5 +18391,92 @@ function renderXoxoActivity(){
   });
 })();
 </script>
+
+<script id="xoxo-strong-password-generator-v12">
+(() => {
+  "use strict";
+  const byId = id => document.getElementById(id);
+  const tools = byId("xoxoStrongPasswordTools");
+  const generate = byId("xoxoGenerateStrongPassword");
+  const copy = byId("xoxoCopyStrongPassword");
+  const status = byId("xoxoStrongPasswordStatus");
+  if (!tools || !generate || !copy || !status) return;
+  const password = byId("authPassword");
+  const confirm = byId("authConfirmPassword");
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*-_";
+  const groups = [
+    "ABCDEFGHJKLMNPQRSTUVWXYZ",
+    "abcdefghijkmnopqrstuvwxyz",
+    "23456789",
+    "!@#$%*-_"
+  ];
+  function randomIndex(max) {
+    const limit = Math.floor(256 / max) * max;
+    const bytes = new Uint8Array(1);
+    while (true) {
+      crypto.getRandomValues(bytes);
+      if (bytes[0] < limit) return bytes[0] % max;
+    }
+  }
+  function generatePassword() {
+    const chars = groups.map(group => group[randomIndex(group.length)]);
+    while (chars.length < 20) chars.push(alphabet[randomIndex(alphabet.length)]);
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = randomIndex(i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join("");
+  }
+  function syncMode() {
+    const signup = typeof authMode !== "undefined" && authMode === "signup";
+    tools.hidden = !signup;
+    if (!signup) {
+      copy.hidden = true;
+      status.textContent = "";
+    }
+  }
+  generate.addEventListener("click", () => {
+    if (typeof authMode === "undefined" || authMode !== "signup") return;
+    if (!globalThis.crypto || typeof crypto.getRandomValues !== "function") {
+      status.textContent = "Secure password generation is not supported in this browser.";
+      return;
+    }
+    const value = generatePassword();
+    password.value = value;
+    confirm.value = value;
+    password.dispatchEvent(new Event("input", {bubbles:true}));
+    confirm.dispatchEvent(new Event("input", {bubbles:true}));
+    copy.hidden = false;
+    status.textContent = "Strong password generated and filled in both fields. Copy it and store it safely.";
+  });
+  copy.addEventListener("click", async () => {
+    if (typeof authMode === "undefined" || authMode !== "signup" || !password.value) return;
+    try {
+      await navigator.clipboard.writeText(password.value);
+      status.textContent = "Password copied. Keep it somewhere safe; clipboard contents may be accessible to other apps.";
+    } catch (_) {
+      status.textContent = "Could not copy automatically. Use the eye icon to reveal the password and copy it manually.";
+    }
+  });
+  // The existing signup/login flow remains untouched.
+  const oldUpdate = window.updateAuthModal;
+  if (typeof oldUpdate === "function") {
+    window.updateAuthModal = function(...args) {
+      const result = oldUpdate.apply(this, args);
+      syncMode();
+      return result;
+    };
+  }
+  // Detect edits so Copy Password does not silently copy an obsolete generated value.
+  password.addEventListener("input", () => {
+    if (!tools.hidden) {
+      copy.hidden = !password.value;
+      status.textContent = "";
+    }
+  });
+  syncMode();
+})();
+</script>
+
 </body>
                                     </html>
