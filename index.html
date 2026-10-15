@@ -4791,34 +4791,6 @@
 #sl2Bubbles .sl2-letter-intro span { display:block; font-family:Georgia,'Times New Roman',serif; font-size:clamp(17px,2.6vw,20px); font-style:italic; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
 #sl5Envelopes .sl2-envelope:disabled { opacity:.7; cursor:wait; }
 
-
-/* XOXO Discover tabs — additive, no existing post/feed behavior removed */
-.xoxo-discover-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 22px;padding:7px;border:1px solid var(--fh-border,#d9dcea);border-radius:19px;background:var(--fh-surface,#fff)}
-.xoxo-discover-tab{flex:1 1 145px;min-height:48px;border:1px solid transparent;border-radius:13px;background:transparent;color:var(--fh-text,#18223a);font-weight:800;padding:11px 15px}
-.xoxo-discover-tab.active{background:linear-gradient(110deg,#00aeea,#11cf8d);color:#092037;box-shadow:0 5px 16px rgba(0,180,185,.2)}
-.xoxo-discover-panel[hidden]{display:none!important}
-.xoxo-explore-heading{padding:20px 22px;margin-bottom:16px;border:1px solid var(--fh-border,#d9dcea);border-radius:19px;background:var(--fh-surface,#fff);color:var(--fh-text,#18223a)}
-.xoxo-explore-heading h2{font-size:clamp(24px,4vw,34px);margin-bottom:5px}
-.xoxo-explore-heading p{color:var(--fh-muted,#667085)}
-.xoxo-explore-pills{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:14px}
-.xoxo-explore-pills span{padding:9px 13px;border:1px solid var(--fh-border,#d9dcea);border-radius:999px;background:var(--fh-surface,#fff);color:var(--fh-text,#18223a);font-weight:700;font-size:13px}
-#xoxoDiscoverPeople .discover-filter-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
-#xoxoDiscoverPeople #discoverPeopleResults>.friend-suggestions-list,.xoxo-people-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
-#xoxoDiscoverPeople .friend-suggestion-card,.xoxo-people-grid .friend-suggestion-card{min-width:0;border-radius:18px;background:var(--fh-surface,#fff);color:var(--fh-text,#18223a);border:1px solid var(--fh-border,#d9dcea)}
-#xoxoDiscoverPeople .friend-suggestion-avatar,.xoxo-people-grid .friend-suggestion-avatar{width:70px;height:70px;border-radius:50%;margin:0 auto 10px}
-#xoxoDiscoverPeople .friend-suggestion-info,.xoxo-people-grid .friend-suggestion-info{display:grid;gap:3px;text-align:center;overflow-wrap:anywhere}
-#xoxoDiscoverPeople .friend-suggestion-info span,.xoxo-people-grid .friend-suggestion-info span{font-size:13px;color:var(--fh-muted,#667085)}
-#xoxoDiscoverPeople .friend-suggestion-actions,.xoxo-people-grid .friend-suggestion-actions{flex-wrap:wrap}
-.xoxo-favorite-btn{width:100%;margin-top:9px;padding:8px;border:1px solid var(--fh-border,#d9dcea);border-radius:10px;background:var(--fh-surface-strong,#fff);color:var(--fh-text,#18223a);font-weight:700}
-@media(max-width:540px){.xoxo-discover-tabs{gap:5px}.xoxo-discover-tab{flex-basis:95px;font-size:12px;padding:10px 5px}#xoxoDiscoverPeople #discoverPeopleResults>.friend-suggestions-list,.xoxo-people-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}#xoxoDiscoverPeople .friend-suggestion-card,.xoxo-people-grid .friend-suggestion-card{padding:10px}#xoxoDiscoverPeople .friend-suggestion-actions .btn,.xoxo-people-grid .friend-suggestion-actions .btn{font-size:12px;padding:9px 5px}}
-
-/* XOXO RTs — first release */
-.feed[hidden]{display:none!important}
-.xoxo-rt-tabs{display:flex;gap:10px;margin:22px 0 16px;flex-wrap:wrap}
-.xoxo-rt-tab{padding:11px 19px;border:1px solid var(--fh-border,#dfe3eb);border-radius:12px;background:var(--fh-surface,#fff);color:var(--fh-text,#172033);font-weight:800}
-.xoxo-rt-tab.active{background:#653bb4;color:white}
-.xoxo-rt-label{color:var(--fh-muted,#667085);font-size:13px;font-weight:700;margin-bottom:9px}
-.xoxo-repost-active{color:#17a57a!important;font-weight:800!important}
 </style>
                                     
                 <style>
@@ -5167,7 +5139,33 @@
 .xj-story-pop{position:fixed;left:50%!important;top:50%!important;transform:translate(-50%,-50%);max-height:calc(100dvh - 36px);overflow-y:auto;z-index:2147483646;width:min(335px,calc(100vw - 24px));padding:18px;border:1px solid #f5b6ff;border-radius:18px;background:radial-gradient(circle at 90% 0%,#68348e,#251038 65%,#12091f);color:#f9edff;box-shadow:0 14px 45px #05000bd9,0 0 25px #d65aff66;pointer-events:auto}
 .xj-story-pop[hidden]{display:none!important}.xj-story-pop h3{margin:0 25px 7px 0;color:#fff;font-size:18px}.xj-story-pop p{font-size:13px;line-height:1.5;margin:8px 0;color:#eedaf6}.xj-story-pop .xj-story-label{font-size:10px;letter-spacing:1.3px;font-weight:800;color:#ffb6eb}.xj-story-pop .xj-story-status{display:inline-block;border:1px solid #a86cc6;border-radius:30px;padding:3px 9px;margin:6px 0;font-size:11px;font-weight:700}.xj-story-pop .xj-story-close{position:absolute;right:10px;top:8px;border:0;border-radius:50%;width:30px;height:30px;background:#ffffff1b;color:white;cursor:pointer;font-size:22px}.xj-story-pop.xj-story-earned{box-shadow:0 0 30px #ff72d67d,0 16px 45px #000b;animation:xjStoryGlow .65s ease-out}@keyframes xjStoryGlow{from{filter:brightness(1.5);transform:translate(-50%,-50%) scale(.97)}to{filter:brightness(1);transform:translate(-50%,-50%) scale(1)}}@media(prefers-reduced-motion:reduce){.xj-story-pop.xj-story-earned{animation:none}}
 </style>
-</head>
+<style id="xoxo-signature-2-safe">
+/* Scoped, reversible styling: preserve original feed width and alignment */
+#feed .post,#savedPostsFeed .post{position:relative;overflow:visible;border:1px solid #8353c4;border-radius:21px;background:linear-gradient(145deg,#12132e,#1b1233);color:#f2e9ff;box-shadow:0 8px 28px #7c2dba1b}
+#feed .post-header,#savedPostsFeed .post-header{display:flex;align-items:center;position:relative}
+#feed .post-user,#savedPostsFeed .post-user{color:#f7ecff}
+#feed .post-meta,#savedPostsFeed .post-meta{color:#bcaed0}
+#feed .post-content,#savedPostsFeed .post-content{color:#f2e9ff}
+#feed .avatar,#savedPostsFeed .avatar{border:2px solid #9560ee;box-shadow:0 0 12px #9559ef66}
+#feed .post-media img,#feed .post-media video,#savedPostsFeed .post-media img{border-radius:14px}
+.xs-more-wrap{position:relative;margin-left:auto;align-self:flex-start}
+.xs-more-button{border:0;background:transparent;color:#e3d1fa;font-size:23px;line-height:1;padding:3px 8px;letter-spacing:2px}
+.xs-more-menu{display:none;position:absolute;z-index:400;right:0;top:100%;min-width:170px;padding:6px;border-radius:12px;border:1px solid #9d60e3;background:#27183f;box-shadow:0 12px 25px #0008}
+.xs-more-menu.xs-open{display:block}.xs-more-menu button{display:block;width:100%;background:transparent;border:0;color:#f8eaff;text-align:left;padding:10px;border-radius:8px;cursor:pointer}
+.xs-more-menu button:hover{background:#573179}
+.xs-actions{display:flex;align-items:flex-start;gap:clamp(12px,3vw,27px);padding-top:12px;margin-top:13px;border-top:1px solid #514071}
+.xs-action{border:0;background:transparent;color:#e1c9f7;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:3px;min-width:30px}
+.xs-action svg{width:25px;height:25px;display:block}.xs-action small{color:#bfaed8;font-size:11px}.xs-action:hover{color:#fa90e7}.xs-action.liked{color:#ff619d}
+.xs-bookmark{margin-left:auto}.xs-bookmark.saved{color:#df96ff}
+.xs-repost-wrap{position:relative}.xs-repost-menu{top:auto;bottom:100%;left:0;right:auto}
+
+@media(max-width:480px){.xs-actions{gap:8px}.xs-action svg{width:23px;height:23px}}
+</style><style id="xs-profile-tabs-style">
+.xs-profile-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0 20px;padding:9px;background:#19112f;border:1px solid #7240a6;border-radius:16px}
+.xs-profile-tabs button{flex:1 1 135px;border:1px solid #8051b2;border-radius:11px;padding:12px 10px;background:#25143d;color:#e8d7fa;font-weight:700;cursor:pointer}
+.xs-profile-tabs button.active{background:linear-gradient(100deg,#8d30d9,#cb43c7);color:white;box-shadow:0 0 15px #9b43e766}
+.xs-profile-empty{padding:28px 18px;text-align:center;background:linear-gradient(130deg,#18122f,#24143e);color:#e8d4f7;border:1px solid #8e4ec4;border-radius:17px;margin-bottom:20px}
+</style></head>
                                     <body>
                                     <header>
                                     <div class="container nav">
@@ -5207,6 +5205,7 @@
                                     </div>
                                     <div class="notification-tabs" id="notificationTabs">
                                     <button class="notification-tab" type="button" data-notification-filter="like" onclick="setNotificationFilter('like', this); event.stopPropagation();">❤️ Likes</button>
+                                    <button class="notification-tab" type="button" data-notification-filter="repost" onclick="setNotificationFilter('repost', this); event.stopPropagation();">🔁 Reposts</button>
                                     <button class="notification-tab" type="button" data-notification-filter="comment" onclick="setNotificationFilter('comment', this); event.stopPropagation();">💬 Comments</button>
                                     <button class="notification-tab" type="button" data-notification-filter="follow" onclick="setNotificationFilter('follow', this); event.stopPropagation();">👤 Follows</button>
                                     <button class="notification-tab" type="button" data-notification-filter="mention" onclick="setNotificationFilter('mention', this); event.stopPropagation();">@ Mentions</button>
@@ -5287,12 +5286,16 @@
                                     <h1>Discover</h1>
                                     <p>Find people and communities that match what you're looking for.</p>
                                     </div>
-                                    <div class="xoxo-discover-tabs" role="tablist" aria-label="Discover sections">
-                                      <button type="button" class="xoxo-discover-tab active" id="xoxoTabPosts" role="tab" aria-selected="true" onclick="xoxoSwitchDiscover('posts')">📝 Posts</button>
-                                      <button type="button" class="xoxo-discover-tab" id="xoxoTabPeople" role="tab" aria-selected="false" onclick="xoxoSwitchDiscover('people')">🌎 Explore People</button>
-                                      <button type="button" class="xoxo-discover-tab" id="xoxoTabFavorites" role="tab" aria-selected="false" onclick="xoxoSwitchDiscover('favorites')">💜 Favorites</button>
+                                    <div id="friendSuggestionsSection" class="friend-suggestions-section" style="display:none;">
+                                    <div class="friend-suggestions-heading">
+                                    <div>
+                                    <h2>People You May Know</h2>
+                                    <p>Suggestions based on mutual connections.</p>
                                     </div>
-                                    <div id="xoxoDiscoverPosts" class="xoxo-discover-panel">
+                                    <button class="btn btn-secondary" type="button" onclick="loadFriendSuggestions()">Refresh</button>
+                                    </div>
+                                    <div id="friendSuggestionsList" class="friend-suggestions-list"></div>
+                                    </div>
                                     <div class="global-search-wrap">
                                     <input
                                     id="searchInput"
@@ -5324,6 +5327,89 @@
                                     <button class="filter-btn" data-filter="discord" onclick="setFilter('discord', this)">
                                     &#128998; Discord
                                     </button>
+                                    </div>
+                                    <div class="discover-advanced-filters">
+                                    <div class="discover-filter-grid">
+                                    <input id="discoverCountryFilter" type="text" maxlength="80" placeholder="🌎 Country">
+                                    <select id="discoverLanguageFilter">
+                                    <option value="">🗣️ Any language</option>
+                                    <option value="English">🇺🇸 English</option>
+                                    <option value="Spanish">🇪🇸 Spanish</option>
+                                    <option value="Portuguese">🇵🇹 Portuguese</option>
+                                    <option value="French">🇫🇷 French</option>
+                                    <option value="German">🇩🇪 German</option>
+                                    <option value="Italian">🇮🇹 Italian</option>
+                                    <option value="Japanese">🇯🇵 Japanese</option>
+                                    <option value="Korean">🇰🇷 Korean</option>
+                                    <option value="Chinese">🇨🇳 Chinese</option>
+                                    <option value="Other">🌐 Other</option>
+                                    </select>
+                                    <select id="discoverInterestFilter">
+                                    <option value="">✨ Any interest</option>
+                                    <option value="Gaming">🎮 Gaming</option>
+                                    <option value="Music">🎵 Music</option>
+                                    <option value="Movies & TV">🎬 Movies & TV</option>
+                                    <option value="Books">📚 Books</option>
+                                    <option value="Sports">⚽ Sports</option>
+                                    <option value="Technology">💻 Technology</option>
+                                    <option value="Art">🎨 Art</option>
+                                    <option value="Travel">✈️ Travel</option>
+                                    <option value="Food">🍕 Food</option>
+                                    <option value="Photography">📸 Photography</option>
+                                    <option value="Psychology">🧠 Psychology</option>
+                                    <option value="Fitness">💪 Fitness</option>
+                                    <option value="Nature">🌿 Nature</option>
+                                    <option value="Entertainment">🎭 Entertainment</option>
+                                    <option value="Languages">🗣️ Languages</option>
+                                    <option value="Culture">🌎 Culture</option>
+                                    <option value="Other">✨ Other</option>
+                                    </select>
+                                    <select id="discoverGenderFilter">
+                                    <option value="">⚧ Any gender</option>
+                                    <option value="Man">Man</option>
+                                    <option value="Woman">Woman</option>
+                                    <option value="Non-binary">Non-binary</option>
+                                    <option value="Trans man">Trans man</option>
+                                    <option value="Trans woman">Trans woman</option>
+                                    <option value="Other">Other</option>
+                                    </select>
+                                    <select id="discoverOrientationFilter">
+                                    <option value="">🌈 Any orientation</option>
+                                    <option value="Straight">Straight</option>
+                                    <option value="Gay">Gay</option>
+                                    <option value="Lesbian">Lesbian</option>
+                                    <option value="Bisexual">Bisexual</option>
+                                    <option value="Pansexual">Pansexual</option>
+                                    <option value="Asexual">Asexual</option>
+                                    <option value="Other">Other</option>
+                                    </select>
+                                    <select id="discoverLookingForFilter">
+                                    <option value="">🔎 Looking for anything</option>
+                                    <option value="New friends">👋 New friends</option>
+                                    <option value="Someone to talk to">💬 Someone to talk to</option>
+                                    <option value="Gaming partners">🎮 Gaming partners</option>
+                                    <option value="People with similar music taste">🎵 Similar music taste</option>
+                                    <option value="Movie & TV friends">🎬 Movie & TV friends</option>
+                                    <option value="Study partners">📚 Study partners</option>
+                                    <option value="Language exchange">🗣️ Language exchange</option>
+                                    <option value="Friends from other countries">🌎 Friends from other countries</option>
+                                    <option value="Communities & groups">👥 Communities & groups</option>
+                                    <option value="WhatsApp groups">💚 WhatsApp groups</option>
+                                    <option value="Telegram groups">✈️ Telegram groups</option>
+                                    <option value="Snapchat friends">👻 Snapchat friends</option>
+                                    <option value="People with similar interests">✨ Similar interests</option>
+                                    <option value="Sports partners">⚽ Sports partners</option>
+                                    <option value="Travel friends">🧳 Travel friends</option>
+                                    <option value="Networking">🤝 Networking</option>
+                                    <option value="Meet new people">🌟 Meet new people</option>
+                                    <option value="Other">🔎 Other</option>
+                                    </select>
+                                    </div>
+                                    <div class="discover-filter-actions">
+                                    <button class="btn btn-primary" type="button" onclick="applyDiscoverPeopleFilters()">🔎 Find people</button>
+                                    <button class="btn btn-secondary" type="button" onclick="clearDiscoverPeopleFilters()">Clear filters</button>
+                                    </div>
+                                    <div id="discoverPeopleResults"></div>
                                     </div>
                                     <div class="composer" id="postComposer" style="display:none;">
                                     <h3>Create a post</h3>
@@ -5416,98 +5502,6 @@
                                     </div>
                                     </div>
                                     <div id="feed" class="feed"></div>
-                                    </div>
-                                    <div id="xoxoDiscoverPeople" class="xoxo-discover-panel" hidden>
-                                      <div class="xoxo-explore-heading"><h2>🌎 Explore People</h2><p>Discover members from around the world — free for everyone.</p></div>
-                                      <div class="xoxo-explore-pills"><span>🌍 Travel the World</span><span>👤 Open a profile to connect</span></div>
-                                    <div class="discover-advanced-filters">
-                                    <div class="discover-filter-grid">
-                                    <input id="discoverCountryFilter" type="text" maxlength="80" placeholder="🌎 Country">
-                                    <select id="discoverLanguageFilter">
-                                    <option value="">🗣️ Any language</option>
-                                    <option value="English">🇺🇸 English</option>
-                                    <option value="Spanish">🇪🇸 Spanish</option>
-                                    <option value="Portuguese">🇵🇹 Portuguese</option>
-                                    <option value="French">🇫🇷 French</option>
-                                    <option value="German">🇩🇪 German</option>
-                                    <option value="Italian">🇮🇹 Italian</option>
-                                    <option value="Japanese">🇯🇵 Japanese</option>
-                                    <option value="Korean">🇰🇷 Korean</option>
-                                    <option value="Chinese">🇨🇳 Chinese</option>
-                                    <option value="Other">🌐 Other</option>
-                                    </select>
-                                    <select id="discoverInterestFilter" style="display:none" aria-hidden="true">
-                                    <option value="">✨ Any interest</option>
-                                    <option value="Gaming">🎮 Gaming</option>
-                                    <option value="Music">🎵 Music</option>
-                                    <option value="Movies & TV">🎬 Movies & TV</option>
-                                    <option value="Books">📚 Books</option>
-                                    <option value="Sports">⚽ Sports</option>
-                                    <option value="Technology">💻 Technology</option>
-                                    <option value="Art">🎨 Art</option>
-                                    <option value="Travel">✈️ Travel</option>
-                                    <option value="Food">🍕 Food</option>
-                                    <option value="Photography">📸 Photography</option>
-                                    <option value="Psychology">🧠 Psychology</option>
-                                    <option value="Fitness">💪 Fitness</option>
-                                    <option value="Nature">🌿 Nature</option>
-                                    <option value="Entertainment">🎭 Entertainment</option>
-                                    <option value="Languages">🗣️ Languages</option>
-                                    <option value="Culture">🌎 Culture</option>
-                                    <option value="Other">✨ Other</option>
-                                    </select>
-                                    <select id="discoverGenderFilter">
-                                    <option value="">⚧ Any gender</option>
-                                    <option value="Man">Man</option>
-                                    <option value="Woman">Woman</option>
-                                    <option value="Non-binary">Non-binary</option>
-                                    <option value="Trans man">Trans man</option>
-                                    <option value="Trans woman">Trans woman</option>
-                                    <option value="Other">Other</option>
-                                    </select>
-                                    <select id="discoverOrientationFilter">
-                                    <option value="">🌈 Any orientation</option>
-                                    <option value="Straight">Straight</option>
-                                    <option value="Gay">Gay</option>
-                                    <option value="Lesbian">Lesbian</option>
-                                    <option value="Bisexual">Bisexual</option>
-                                    <option value="Pansexual">Pansexual</option>
-                                    <option value="Asexual">Asexual</option>
-                                    <option value="Other">Other</option>
-                                    </select>
-                                    <select id="discoverLookingForFilter" style="display:none" aria-hidden="true">
-                                    <option value="">🔎 Looking for anything</option>
-                                    <option value="New friends">👋 New friends</option>
-                                    <option value="Someone to talk to">💬 Someone to talk to</option>
-                                    <option value="Gaming partners">🎮 Gaming partners</option>
-                                    <option value="People with similar music taste">🎵 Similar music taste</option>
-                                    <option value="Movie & TV friends">🎬 Movie & TV friends</option>
-                                    <option value="Study partners">📚 Study partners</option>
-                                    <option value="Language exchange">🗣️ Language exchange</option>
-                                    <option value="Friends from other countries">🌎 Friends from other countries</option>
-                                    <option value="Communities & groups">👥 Communities & groups</option>
-                                    <option value="WhatsApp groups">💚 WhatsApp groups</option>
-                                    <option value="Telegram groups">✈️ Telegram groups</option>
-                                    <option value="Snapchat friends">👻 Snapchat friends</option>
-                                    <option value="People with similar interests">✨ Similar interests</option>
-                                    <option value="Sports partners">⚽ Sports partners</option>
-                                    <option value="Travel friends">🧳 Travel friends</option>
-                                    <option value="Networking">🤝 Networking</option>
-                                    <option value="Meet new people">🌟 Meet new people</option>
-                                    <option value="Other">🔎 Other</option>
-                                    </select>
-                                    </div>
-                                    <div class="discover-filter-actions">
-                                    <button class="btn btn-primary" type="button" onclick="applyDiscoverPeopleFilters()">🔎 Find people</button>
-                                    <button class="btn btn-secondary" type="button" onclick="clearDiscoverPeopleFilters()">Clear filters</button>
-                                    </div>
-                                    <div id="discoverPeopleResults"></div>
-                                    </div>
-                                    </div>
-                                    <div id="xoxoDiscoverFavorites" class="xoxo-discover-panel" hidden>
-                                      <div class="xoxo-explore-heading"><h2>💜 Favorites</h2><p>Keep your favorite profiles handy on this device.</p></div>
-                                      <div id="xoxoFavoriteProfiles" class="xoxo-people-grid"></div>
-                                    </div>
                                     </div>
                                     </section>
                                     <section id="profile" class="page">
@@ -5755,7 +5749,10 @@
                                     <h2>📝 My Posts</h2>
                                     <p>Everything you have shared on XOXO Avenue.</p>
                                     </div>
-                                    <div id="myProfilePostsFeed" class="feed">
+                                    <div class="xs-profile-tabs" role="tablist" aria-label="My posts categories">
+<button class="active" onclick="xsMyTab('posts',this)">Posts</button><button onclick="xsMyTab('reposts',this)">Reposts</button><button onclick="xsMyTab('likes',this)">Likes ❤️</button></div>
+<div id="xsMyExtra" class="xs-profile-empty" style="display:none"></div>
+<div id="myProfilePostsFeed" class="feed">
                                     <div class="empty-state">Open this tab to load your posts.</div>
                                     </div>
                                     </div>
@@ -5784,12 +5781,11 @@
                                     <section id="publicProfile" class="page">
                                     <div class="container">
                                     <div id="publicProfileContent"><div class="empty-state">Loading profile...</div></div>
-                                    <div class="xoxo-rt-tabs" role="tablist" aria-label="Profile posts and reposts">
-<button class="xoxo-rt-tab active" id="xoxoProfilePostsTab" type="button" onclick="xoxoSetProfileTab('posts')">📝 Posts</button>
-<button class="xoxo-rt-tab" id="xoxoProfileRTsTab" type="button" onclick="xoxoSetProfileTab('rts')">🔁 RTs</button>
-</div>
+                                    <h2 class="public-profile-posts-title" id="xsPublicHeading">Posts</h2>
+<div class="xs-profile-tabs" role="tablist" aria-label="Public profile post categories">
+<button class="active" onclick="xsPublicTab('posts',this)">Posts</button><button onclick="xsPublicTab('reposts',this)">Reposts</button><button onclick="xsPublicTab('likes',this)">Likes ❤️</button></div>
+<div id="xsPublicExtra" class="xs-profile-empty" style="display:none"></div>
 <div id="publicProfilePosts" class="feed"></div>
-<div id="xoxoProfileReposts" class="feed" hidden></div>
                                     </div>
                                     </section>
                                     <section id="messages" class="page">
@@ -6466,6 +6462,7 @@
       <button class="xoxo-admin-tab" data-admin-tab="users" onclick="switchXoxoAdminTab('users',this)">Users</button>
       <button class="xoxo-admin-tab" data-admin-tab="reports" onclick="switchXoxoAdminTab('reports',this)">Reports</button>
       <button class="xoxo-admin-tab" data-admin-tab="posts" onclick="switchXoxoAdminTab('posts',this)">Posts</button>
+      <button class="xoxo-admin-tab" data-admin-tab="activity" onclick="switchXoxoAdminTab('activity',this)">💜 Activity Monitor</button>
       <button class="xoxo-admin-tab" data-admin-tab="support" onclick="switchXoxoAdminTab('support',this)">💬 Support Cases</button>
       <button class="xoxo-admin-tab" data-admin-tab="moderation" onclick="switchXoxoAdminTab('moderation',this)">🛡️ Message Moderation</button>
 
@@ -6496,6 +6493,12 @@
     <div id="xoxoAdminProfiles" class="xoxo-admin-panel"><input id="xoxoAdminProfileSearch" class="xoxo-admin-search" type="search" placeholder="Search profiles..." oninput="renderXoxoAdminProfiles()"><div id="xoxoAdminProfilesList"></div></div>
     <div id="xoxoAdminComments" class="xoxo-admin-panel"><input id="xoxoAdminCommentSearch" class="xoxo-admin-search" type="search" placeholder="Search comments or usernames..." oninput="renderXoxoAdminComments()"><div id="xoxoAdminCommentsList"></div></div>
     <div id="xoxoAdminReports" class="xoxo-admin-panel"><div id="xoxoAdminReportsList"></div></div>
+    <div id="xoxoAdminActivity" class="xoxo-admin-panel">
+      <div class="xam-head"><div><h2>💜 Activity Monitor</h2><p>Interactions and original content · Read-only moderation</p></div><button class="btn btn-secondary" type="button" onclick="loadXoxoActivity()">↻ Refresh</button></div>
+      <div class="xam-filters"><button type="button" class="xam-filter active" data-xam="all" onclick="xoxoActivityFilter('all')">✨ All</button><button type="button" class="xam-filter" data-xam="like" onclick="xoxoActivityFilter('like')">❤️ Likes</button><button type="button" class="xam-filter" data-xam="repost" onclick="xoxoActivityFilter('repost')">🔁 Reposts</button><button type="button" class="xam-filter" data-xam="comment_like" onclick="xoxoActivityFilter('comment_like')">💬 Comment Likes</button><button type="button" class="xam-filter" data-xam="save" onclick="xoxoActivityFilter('save')">🔖 Saves</button></div>
+      <div id="xoxoActivityStatus" role="status" aria-live="polite" class="xoxo-admin-meta">Open this tab to load activity.</div>
+      <div id="xoxoActivityList" class="xam-list"></div>
+    </div>
     <div id="xoxoAdminPosts" class="xoxo-admin-panel"><input id="xoxoAdminPostSearch" class="xoxo-admin-search" type="search" placeholder="Search posts or usernames..." oninput="renderXoxoAdminPosts()"><div id="xoxoAdminPostsList"></div></div>
     <div id="xoxoAdminSupport" class="xoxo-admin-panel">
       <div id="xoxoAdminSupportToggleCard" class="xoxo-admin-card" style="margin-bottom:16px;">
@@ -7081,7 +7084,6 @@ async function enforceXoxoSuspension() {
                                     behavior: "smooth"
                                     });
                                     if (pageId === "discover") {
-                                    xoxoSwitchDiscover('posts');
                                     activeGlobalHashtag = "";
                                     hashtagOffset = 0;
                                     hashtagHasMore = false;
@@ -9050,52 +9052,6 @@ async function enforceXoxoSuspension() {
                                     getOptionTextWithoutEmoji(item).toLowerCase() === String(wanted).toLowerCase()
                                     );
                                     }
-
-// XOXO Explore People tabs and device-local favorite profiles.
-let xoxoDiscoverCurrentTab='posts';
-let xoxoDiscoverLastProfiles=[];
-function xoxoSwitchDiscover(tab){
-  if(!['posts','people','favorites'].includes(tab))tab='posts';
-  xoxoDiscoverCurrentTab=tab;
-  const ids={posts:'xoxoDiscoverPosts',people:'xoxoDiscoverPeople',favorites:'xoxoDiscoverFavorites'};
-  const buttons={posts:'xoxoTabPosts',people:'xoxoTabPeople',favorites:'xoxoTabFavorites'};
-  for(const key of Object.keys(ids)){
-    const panel=document.getElementById(ids[key]);if(panel)panel.hidden=key!==tab;
-    const button=document.getElementById(buttons[key]);if(button){button.classList.toggle('active',key===tab);button.setAttribute('aria-selected',String(key===tab));}
-  }
-  if(tab==='people')applyDiscoverPeopleFilters();
-  if(tab==='favorites')xoxoRenderFavorites();
-}
-function xoxoFavoritesKey(){return 'xoxo_explore_favorites_'+(currentUser?.id||'guest');}
-function xoxoGetFavorites(){try{const a=JSON.parse(localStorage.getItem(xoxoFavoritesKey())||'[]');return Array.isArray(a)?a.slice(0,100):[];}catch{return [];}}
-function xoxoToggleFavorite(userId){
-  const profile=xoxoDiscoverLastProfiles.find(p=>String(p.user_id)===String(userId));
-  if(!profile)return;
-  const list=xoxoGetFavorites(), index=list.findIndex(p=>String(p.user_id)===String(userId));
-  if(index>=0)list.splice(index,1);else list.unshift({user_id:profile.user_id,username:profile.username,profile_photo:profile.profile_photo,country:profile.country});
-  try{localStorage.setItem(xoxoFavoritesKey(),JSON.stringify(list.slice(0,100)));}catch{}
-  xoxoRefreshFavoriteButtons();
-}
-function xoxoRefreshFavoriteButtons(){
-  const saved=new Set(xoxoGetFavorites().map(p=>String(p.user_id)));
-  document.querySelectorAll('[data-xoxo-favorite]').forEach(button=>{
-    const yes=saved.has(button.dataset.xoxoFavorite);
-    button.textContent=yes?'💜 Favorited':'🤍 Add to Favorites';
-    button.setAttribute('aria-pressed',String(yes));
-  });
-}
-function xoxoRenderFavorites(){
-  const box=document.getElementById('xoxoFavoriteProfiles');if(!box)return;
-  const list=xoxoGetFavorites();
-  if(!list.length){box.innerHTML='<div class="empty-state">No favorite profiles yet. Explore People and tap the heart to save someone.</div>';return;}
-  box.innerHTML=list.map(p=>{
-    const id=escapeHtmlAttribute(String(p.user_id));
-    const name=escapeHtml(p.username||'@User');
-    const avatar=p.profile_photo?`<img src="${escapeHtmlAttribute(p.profile_photo)}" alt="">`:escapeHtml((p.username||'U').replace('@','').charAt(0).toUpperCase());
-    return `<div class="friend-suggestion-card"><div class="friend-suggestion-avatar">${avatar}</div><div class="friend-suggestion-info"><strong>${name}</strong><span>${escapeHtml(p.country||'XOXO Avenue member')}</span></div><div class="friend-suggestion-actions"><button type="button" class="btn btn-primary" onclick="openPublicProfile('${id}')">Profile</button><button type="button" class="btn btn-secondary" onclick="xoxoRemoveFavorite('${id}')">Remove 💜</button></div></div>`;
-  }).join('');
-}
-function xoxoRemoveFavorite(id){try{localStorage.setItem(xoxoFavoritesKey(),JSON.stringify(xoxoGetFavorites().filter(p=>String(p.user_id)!==String(id))));}catch{}xoxoRenderFavorites();xoxoRefreshFavoriteButtons();}
                                     async function applyDiscoverPeopleFilters() {
                                     const results = document.getElementById("discoverPeopleResults");
                                     if (!results) return;
@@ -9163,11 +9119,8 @@ function xoxoRemoveFavorite(id){try{localStorage.setItem(xoxoFavoritesKey(),JSON
                                     <button class="btn btn-secondary" type="button" onclick="openPublicProfile('${escapeHtmlAttribute(String(profile.user_id))}')">Profile</button>
                                     <button class="btn btn-primary" type="button" onclick="followFriendSuggestion('${escapeHtmlAttribute(String(profile.user_id))}', this)">${followed.has(String(profile.user_id)) ? "Following" : "Follow"}</button>
                                     </div>
-                                    <button type="button" class="xoxo-favorite-btn" data-xoxo-favorite="${escapeHtmlAttribute(String(profile.user_id))}" onclick="xoxoToggleFavorite('${escapeHtmlAttribute(String(profile.user_id))}')">🤍 Add to Favorites</button>
                                     </div>`;
                                     }).join("")}</div>`;
-                                    xoxoDiscoverLastProfiles=matches;
-                                    xoxoRefreshFavoriteButtons();
                                     }
                                     function clearDiscoverPeopleFilters() {
                                     ["discoverCountryFilter","discoverLanguageFilter","discoverInterestFilter","discoverGenderFilter","discoverOrientationFilter","discoverLookingForFilter"]
@@ -9437,7 +9390,6 @@ function xoxoRemoveFavorite(id){try{localStorage.setItem(xoxoFavoritesKey(),JSON
                                     renderPosts();
                                     }
                                     function renderPosts() {
-                                    if(currentUser) xoxoLoadMyReposts().catch(console.error);
                                     const feed =
                                     document.getElementById(
                                     "feed"
@@ -9747,71 +9699,6 @@ function xoxoRemoveFavorite(id){try{localStorage.setItem(xoxoFavoritesKey(),JSON
                                     }
                                     }
 
-
-/* XOXO Reposts — uses post_reposts with existing auth/RLS */
-let xoxoRepostIds = new Set();
-let xoxoRepostProfileToken = 0;
-async function xoxoLoadMyReposts(){
-  xoxoRepostIds = new Set();
-  if(!currentUser) return;
-  const {data,error}=await supabaseClient.from('post_reposts').select('post_id').eq('user_id',currentUser.id).limit(1000);
-  if(error){console.error('Reposts load:',error);return;}
-  xoxoRepostIds=new Set((data||[]).map(r=>String(r.post_id)));
-  document.querySelectorAll('.xoxo-repost-btn').forEach(b=>{
-    const id=b.closest('[data-post-id]')?.getAttribute('data-post-id');
-    if(!id)return; const active=xoxoRepostIds.has(id);b.classList.toggle('xoxo-repost-active',active);b.textContent=active?'🔁 Reposted':'🔁 Repost';
-  });
-}
-async function xoxoToggleRepost(postId){
-  if(!currentUser){if(typeof openAuthModal==='function')openAuthModal('login');else alert('Please log in to repost.');return;}
-  const post=posts.find(p=>String(p.id)===String(postId));
-  if(!post){alert('Please reload this post to repost it.');return;}
-  if(blockedUserIds?.has(String(post.userId))){alert('This post is unavailable.');return;}
-  if(String(post.userId)===String(currentUser.id)){alert('You cannot repost your own post.');return;}
-  const existing=xoxoRepostIds.has(String(postId));
-  const result=existing
-    ?await supabaseClient.from('post_reposts').delete().eq('post_id',postId).eq('user_id',currentUser.id)
-    :await supabaseClient.from('post_reposts').insert({post_id:postId,user_id:currentUser.id});
-  if(result.error){console.error('Repost error:',result.error);alert('Could not update repost. Please try again.');return;}
-  if(existing)xoxoRepostIds.delete(String(postId));else xoxoRepostIds.add(String(postId));
-  document.querySelectorAll('.xoxo-repost-btn').forEach(b=>{
-    if(b.closest('[data-post-id]')?.getAttribute('data-post-id')!==String(postId))return;
-    b.classList.toggle('xoxo-repost-active',!existing);b.textContent=existing?'🔁 Repost':'🔁 Reposted';
-  });
-  if(!existing && post.userId){
-    const actor=currentProfile?.username||'@User';
-    const {error}=await supabaseClient.from('notifications').insert({
-      user_id:String(post.userId),actor_id:currentUser.id,post_id:String(postId),type:'repost',
-      message:`${actor} reposted your post! 🔁💜`
-    });
-    if(error)console.error('Repost notification:',error);
-  }
-  if(currentPublicProfileUserId && String(currentPublicProfileUserId)===String(currentUser.id))
-    xoxoLoadProfileReposts(currentPublicProfileUserId);
-}
-function xoxoSetProfileTab(tab){
-  const rts=tab==='rts';
-  const postsEl=document.getElementById('publicProfilePosts');
-  const rtEl=document.getElementById('xoxoProfileReposts');
-  if(postsEl)postsEl.hidden=rts;
-  if(rtEl)rtEl.hidden=!rts;
-  document.getElementById('xoxoProfilePostsTab')?.classList.toggle('active',!rts);
-  document.getElementById('xoxoProfileRTsTab')?.classList.toggle('active',rts);
-  if(rts && currentPublicProfileUserId)xoxoLoadProfileReposts(currentPublicProfileUserId);
-}
-async function xoxoLoadProfileReposts(userId){
-  const box=document.getElementById('xoxoProfileReposts');if(!box||!userId)return;
-  const token=++xoxoRepostProfileToken;box.innerHTML='<div class="empty-state">Loading reposts...</div>';
-  const {data,error}=await supabaseClient.from('post_reposts').select('post_id,created_at').eq('user_id',userId).order('created_at',{ascending:false}).limit(50);
-  if(token!==xoxoRepostProfileToken||String(currentPublicProfileUserId)!==String(userId))return;
-  if(error){console.error('Profile reposts:',error);box.innerHTML='<div class="empty-state">Could not load reposts.</div>';return;}
-  const ids=(data||[]).map(r=>String(r.post_id));
-  if(!ids.length){box.innerHTML='<div class="empty-state">No reposts yet. 🔁</div>';return;}
-  const missing=ids.filter(id=>!posts.some(p=>String(p.id)===id));
-  // Only show posts already loaded into the authorized feed; no unsafe raw post rendering.
-  const visible=ids.map(id=>posts.find(p=>String(p.id)===id)).filter(Boolean).filter(p=>!blockedUserIds?.has(String(p.userId)));
-  box.innerHTML=visible.length?visible.map(p=>`<div class="xoxo-rt-label">🔁 Reposted</div>`+renderPost(p)).join(''):'<div class="empty-state">Reposted posts are not in your loaded feed yet. Browse Discover to load more posts.</div>';
-}
                                     function renderPost(post) {
                                     const username =
                                     escapeHtml(
@@ -9924,58 +9811,30 @@ async function xoxoLoadProfileReposts(userId){
                                     · ${escapeHtml(post.time)}${post.editedAt ? " · Edited" : ""}
                                     </div>
                                     </div>
+                                    <div class="xs-more-wrap">
+                                    <button class="xs-more-button" aria-label="Post options" aria-expanded="false" onclick="xsToggleMenu(event,this)">•••</button>
+                                    <div class="xs-more-menu" role="menu">
+                                    ${currentUser && !String(post.id).startsWith("sample-") && String(post.userId || "") === String(currentUser.id) ? `
+                                    <button onclick="xsCloseMenus();openEditPost('${escapeHtmlAttribute(String(post.id))}')">✎ Edit Post</button>
+                                    <button onclick="xsCloseMenus();deletePost('${escapeHtmlAttribute(String(post.id))}')">Delete Post</button>` : `
+                                    <button onclick="xsCloseMenus();reportPost('${escapeHtmlAttribute(String(post.id))}')">⚑ Report Post</button>`}
+                                    </div></div>
                                     </div>
                                     <div>
                                     ${tags}
                                     </div>
                                     <div class="post-content">${renderTextWithMentions(post.text)}</div>
                                     ${mediaHtml}
-                                    <div class="post-actions">
-                                    <button
-                                    class="post-action ${likedClass}"
-                                    onclick="toggleLike('${escapeHtmlAttribute(String(post.id))}')"
-                                    >
-                                    ${likeText}
-                                    ${post.likes ? ` ${post.likes}` : ""}
-                                    </button>
-                                    <button
-                                    class="post-action"
-                                    onclick="commentPost('${escapeHtmlAttribute(String(post.id))}')"
-                                    >
-                                    Comment${post.comments ? ` ${post.comments}` : ""}
-                                    </button>
-                                    ${!String(post.id).startsWith("sample-") ? `<button type="button" class="post-action xoxo-repost-btn ${xoxoRepostIds.has(String(post.id)) ? 'xoxo-repost-active' : ''}" onclick="xoxoToggleRepost('${escapeHtmlAttribute(String(post.id))}')">🔁 ${xoxoRepostIds.has(String(post.id)) ? 'Reposted' : 'Repost'}</button>` : ''}
-                                    <button
-                                    class="post-action saved-post-action ${savedClass}"
-                                    onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"
-                                    >
-                                    ${saveText}
-                                    </button>
-                                    <button
-                                    class="post-action share-post-action"
-                                    onclick="sharePost('${escapeHtmlAttribute(String(post.id))}')"
-                                    >
-                                    Share
-                                    </button>
-                                    ${currentUser && !String(post.id).startsWith("sample-") && String(post.userId || "") === String(currentUser.id) ? `
-                                    <button
-                                    class="post-action edit-post-action"
-                                    onclick="openEditPost('${escapeHtmlAttribute(String(post.id))}')"
-                                    >
-                                    Edit
-                                    </button>
-                                    <button
-                                    class="post-action delete-post-action"
-                                    onclick="deletePost('${escapeHtmlAttribute(String(post.id))}')"
-                                    >
-                                    Delete
-                                    </button>` : ""}
-                                    <button
-                                    class="post-action"
-                                    onclick="reportPost('${escapeHtmlAttribute(String(post.id))}')"
-                                    >
-                                    Report
-                                    </button>
+                                    <div class="xs-actions">
+                                    <button class="xs-action ${likedClass}" title="Like" onclick="toggleLike('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><small>${post.likes || 0}</small></button>
+                                    <button class="xs-action" title="Comments" onclick="commentPost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a8.5 8.5 0 0 1-8.5 8.5 9 9 0 0 1-4-.9L3 20l1-4.4a8.5 8.5 0 1 1 16-4.1Z"/></svg><small>${post.comments || 0}</small></button>
+                                    <div class="xs-repost-wrap">
+                                    <button class="xs-action xs-repost-trigger" data-xs-post-id="${escapeHtmlAttribute(String(post.id))}" title="Repost" aria-expanded="false" onclick="xsToggleMenu(event,this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 3 4 4-4 4M20 7H7a3 3 0 0 0-3 3v1M8 21l-4-4 4-4M4 17h13a3 3 0 0 0 3-3v-1"/></svg><small>0</small></button>
+                                    <div class="xs-more-menu xs-repost-menu" role="menu">
+                                    <button onclick="xsToggleRepost('${escapeHtmlAttribute(String(post.id))}')">🔁 Repost / Undo Repost</button>
+                                    </div></div>
+                                    <button class="xs-action" title="Share" onclick="sharePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg><small>Share</small></button>
+                                    <button class="xs-action xs-bookmark ${savedClass}" title="Save" onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-5-7 5V4a1 1 0 0 1 1-1Z"/></svg><small>${saved ? "Saved" : "Save"}</small></button>
                                     </div>
                                     </article>
                                     `;
@@ -10242,7 +10101,6 @@ async function openPublicProfile(userId) {
                                     if (postsContainer) postsContainer.innerHTML = '<div class="empty-state">You blocked this user. Unblock them to see their posts.</div>';
                                     } else {
                                     renderPublicProfilePosts(String(userId), profile.profile_photo || null);
-                                    xoxoSetProfileTab("posts");
                                     }
                                     }
                                     async function sharePublicProfile(userId, username = "@User") {
@@ -12975,10 +12833,10 @@ async function openPublicProfile(userId) {
                                     function notificationTypeIcon(type) {
                                     if (type === "like") return "❤️";
                                     if (type === "comment") return "💬";
+                                    if (type === "repost") return "🔁";
                                     if (type === "follow") return "👤";
                                     if (type === "mention") return "@";
                                     if (type === "dm") return "✉️";
-                                    if (type === "repost") return "🔁";
                                     return "🔔";
                                     }
                                     function setNotificationFilter(filter, button) {
@@ -15232,6 +15090,9 @@ async function openPublicProfile(userId) {
 
                 <div id="profilePhotoViewer" class="profile-photo-viewer" onclick="closeProfilePhotoViewer(event)" aria-hidden="true"><button type="button" class="profile-photo-viewer-close" onclick="closeProfilePhotoViewer(event,true)" aria-label="Close">&times;</button><img id="profilePhotoViewerImage" class="profile-photo-viewer-image" src="" alt="Profile photo" onclick="event.stopPropagation()"></div>
 
+<style id="xoxoActivityStyles">
+.xam-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}.xam-head h2{margin:0}.xam-head p{opacity:.7}.xam-filters{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 18px}.xam-filter{border:1px solid var(--fh-border,#d9ddea);background:var(--fh-surface,#fff);color:var(--fh-text,#263043);border-radius:99px;padding:9px 12px;font-weight:700}.xam-filter.active{background:#6e43e8;color:white}.xam-list{display:grid;gap:18px;margin-top:16px}.xam-card{border:1px solid var(--fh-border,#d9ddea);border-radius:19px;padding:18px;background:var(--fh-surface,#fff);color:var(--fh-text,#263043)}.xam-activity{font-weight:800;margin-bottom:10px}.xam-post{border:1px solid var(--fh-border,#e3e7ef);border-radius:14px;padding:14px;margin-top:10px}.xam-user{border:0;background:none;color:var(--fh-primary,#7852df);font-weight:800;cursor:pointer;padding:0}.xam-content{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0}.xam-media{max-width:100%;max-height:440px;object-fit:contain;border-radius:12px;display:block;margin:12px 0;cursor:pointer}.xam-actions{display:flex;flex-wrap:wrap;gap:9px;border-top:1px solid var(--fh-border,#eee);padding-top:12px;margin-top:12px}.xam-actions button{border:1px solid var(--fh-border,#ddd);background:var(--fh-surface-strong,#fff);color:inherit;border-radius:10px;padding:8px 11px;cursor:pointer}.xam-actions button:hover{border-color:#9b6dff}.xam-note{font-size:12px;opacity:.75;margin-top:8px}
+</style>
 <script id="xoxoAdminPanelScript">
 /* =========================================================
    XOXO AVENUE — ADMIN PANEL
@@ -15341,10 +15202,11 @@ async function openXoxoAdminPanel() {
 function switchXoxoAdminTab(tab, button) {
   document.querySelectorAll(".xoxo-admin-panel").forEach(el=>el.classList.remove("active"));
   document.querySelectorAll(".xoxo-admin-tab").forEach(el=>el.classList.remove("active"));
-  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport",moderation:"xoxoAdminModeration"};
+  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport",moderation:"xoxoAdminModeration",activity:"xoxoAdminActivity"};
   const panel=document.getElementById(map[tab]); if(panel) panel.classList.add("active");
   if(button) button.classList.add("active");
   if(tab === "support") loadXoxoAdminSupportCases();
+  if(tab === "activity") loadXoxoActivity();
   if(tab === "moderation") { loadXoxoAdminMessageStats(); loadXoxoDmReports(); loadXoxoDmConversations(); }
 }
 
@@ -18153,5 +18015,213 @@ html:not([data-theme="night"]) #messages .dm-inbox-time {
 }
 </style>
 
+<script>
+/* Profile navigation preview. Does not write to Supabase or invent repost data. */
+function xsProfileActivate(btn){const parent=btn.parentElement;parent.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===btn))}
+</script>
+<script id="xs-repost-only">
+// Repost normal. Uses the existing post_reposts table and the authenticated session.
+function xsProfileActivate(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===btn))}
+function xsCloseMenus(){document.querySelectorAll('.xs-more-menu.xs-open').forEach(m=>m.classList.remove('xs-open'));document.querySelectorAll('.xs-more-button[aria-expanded="true"],.xs-repost-wrap button[aria-expanded="true"]').forEach(b=>b.setAttribute('aria-expanded','false'))}
+function xsToggleMenu(e,b){e.stopPropagation();const menu=b.nextElementSibling,was=menu.classList.contains('xs-open');xsCloseMenus();if(!was){menu.classList.add('xs-open');b.setAttribute('aria-expanded','true')}}
+document.addEventListener('click',e=>{if(!e.target.closest('.xs-more-wrap,.xs-repost-wrap'))xsCloseMenus()});
+async function xsToggleRepost(id){
+ xsCloseMenus();if(!currentUser){alert('Please sign in to repost.');return}
+ try{
+  const {data:existing,error:checkError}=await supabaseClient.from('post_reposts').select('post_id').eq('user_id',currentUser.id).eq('post_id',id).maybeSingle();
+  if(checkError)throw checkError;
+  if(existing){const {error}=await supabaseClient.from('post_reposts').delete().eq('user_id',currentUser.id).eq('post_id',id);if(error)throw error;alert('Repost removed 💜')}
+  else{
+   const {error}=await supabaseClient.from('post_reposts').insert({user_id:currentUser.id,post_id:id});
+   if(error)throw error;
+   // A notification is sent only for a newly created repost, never for Undo.
+   // Notification failure must not undo or falsely report failure of the successful repost.
+   try {
+    const {data:original,error:ownerError}=await supabaseClient.from('posts').select('user_id').eq('id',id).maybeSingle();
+    if(ownerError)throw ownerError;
+    if(original?.user_id && String(original.user_id)!==String(currentUser.id)){
+     const actor=currentProfile?.username || '@User';
+     const {error:notificationError}=await supabaseClient.from('notifications').insert({
+      user_id:original.user_id, actor_id:currentUser.id, post_id:id,
+      type:'repost', message:`${actor} reposted your post!`
+     });
+     if(notificationError)console.warn('Repost notification not delivered:',notificationError);
+    }
+   }catch(notificationError){console.warn('Repost notification unavailable:',notificationError)}
+   alert('Reposted! 💜');
+  }
+  await xsSyncRepostButtons();
+  if(document.querySelector('#xsMyTabs .active')?.textContent.trim()==='Reposts')xsLoadReposts('my');
+ }catch(e){console.error('XOXO repost error',e);alert('Could not save repost: '+(e.message||'Please verify the post_reposts table and its policies.'))}
+}
+async function xsLoadReposts(kind){
+ const extra=document.getElementById(kind==='my'?'xsMyExtra':'xsPublicExtra');if(!extra)return;
+ const uid=kind==='my'?currentUser?.id:currentPublicProfileUserId;
+ if(!uid){extra.textContent='Sign in or open a profile to see reposts.';return}
+ extra.textContent='Loading reposts…';
+ try{
+  const {data:rows,error}=await supabaseClient.from('post_reposts').select('post_id,created_at').eq('user_id',uid).order('created_at',{ascending:false}).limit(100);
+  if(error)throw error;
+  if(!rows?.length){extra.textContent='No reposts yet 💜';return}
+  extra.innerHTML='';const ids=[...new Set(rows.map(r=>r.post_id).filter(Boolean))];
+  const {data:originals,error:postError}=await supabaseClient.from('posts').select('*').in('id',ids);
+  if(postError)throw postError;
+  const map=new Map((originals||[]).map(p=>[String(p.id),p]));
+  for(const r of rows){const p=map.get(String(r.post_id));if(!p)continue;
+   const card=document.createElement('div');card.className='xs-repost-profile-card';
+   const label=document.createElement('div');label.className='xs-repost-label';label.textContent='🔁 Reposted';card.append(label);
+   const author=document.createElement('button');author.type='button';author.className='xs-repost-author';author.textContent='@'+String(p.username||'User').replace(/^@/,'');author.title='View @'+String(p.username||'User').replace(/^@/,'')+' profile';
+   author.onclick=async()=>{let authorId=p.user_id||p.userId||null;if(!authorId){const match=(typeof posts!=='undefined'&&Array.isArray(posts))?posts.find(x=>String(x.id)===String(p.id)):null;authorId=match?.userId||match?.user_id}if(!authorId){const {data:profiles}=await supabaseClient.from('profiles').select('user_id').eq('username',String(p.username||'').replace(/^@/,'')).limit(1);authorId=profiles?.[0]?.user_id}if(authorId&&typeof openPublicProfile==='function')openPublicProfile(String(authorId));else alert('Could not find this author profile.');};card.append(author);
+   const body=document.createElement('p');body.textContent=p.content||'';card.append(body);
+   if(p.media_url && p.media_type?.startsWith('image')){const img=document.createElement('img');img.src=p.media_url;img.loading='lazy';card.append(img)}
+   if(kind==='my'){const undo=document.createElement('button');undo.className='xs-undo';undo.textContent='Undo Repost';undo.onclick=async()=>{await xsToggleRepost(String(p.id));xsLoadReposts('my')};card.append(undo)}
+   extra.append(card);
+  }
+  if(!extra.children.length)extra.textContent='No visible reposts yet.';
+ }catch(e){console.error(e);extra.textContent='Could not load reposts: '+(e.message||'Check Supabase permissions.')}
+}
+function xsMyTab(kind,btn){xsProfileActivate(btn);const feed=document.getElementById('myProfilePostsFeed'),extra=document.getElementById('xsMyExtra');if(!feed||!extra)return;feed.style.display=kind==='posts'?'':'none';extra.style.display=kind==='posts'?'none':'';if(kind==='posts'){if(typeof loadMyProfilePosts==='function')loadMyProfilePosts();return}if(kind==='likes')xsLoadLikes('my');else xsLoadReposts('my')}
+function xsPublicTab(kind,btn){xsProfileActivate(btn);const feed=document.getElementById('publicProfilePosts'),extra=document.getElementById('xsPublicExtra'),heading=document.getElementById('xsPublicHeading');if(!feed||!extra)return;feed.style.display=kind==='posts'?'':'none';extra.style.display=kind==='posts'?'none':'';if(heading)heading.textContent=kind==='posts'?'Posts':kind==='likes'?'Likes':'Reposts';if(kind==='reposts')xsLoadReposts('public');if(kind==='likes')xsLoadLikes('public')}
+const xsOldRenderPublic=window.renderPublicProfilePosts;
+if(typeof xsOldRenderPublic==='function')window.renderPublicProfilePosts=function(...args){const btn=document.querySelector('#publicProfile .xs-profile-tabs button');if(btn)xsPublicTab('posts',btn);return xsOldRenderPublic.apply(this,args)};
+</script>
+<style id="xs-repost-only-style">
+.xs-repost-profile-card{background:linear-gradient(140deg,#17112e,#271641);border:1px solid #9956db;border-radius:18px;padding:17px;color:#f4e9ff;margin:12px 0;display:grid;gap:9px;box-shadow:0 0 18px #7d37c021}
+.xs-repost-profile-card p{white-space:pre-wrap;overflow-wrap:anywhere}.xs-repost-profile-card img{max-width:100%;max-height:350px;object-fit:contain;border-radius:12px}
+.xs-repost-label{color:#e9a2fa;font-size:13px;font-weight:bold}.xs-undo{justify-self:start;background:#4a286c;color:white;border:1px solid #a66bdd;border-radius:10px;padding:8px 12px}
+</style>
+<style id="xs-repost-visual-upgrade">
+.xs-repost-trigger.xs-reposted{color:#ff66ce!important;filter:drop-shadow(0 0 7px #ef45c899)}
+.xs-repost-trigger.xs-reposted small{color:#ff9ee4!important;font-weight:800}
+.xs-repost-trigger.xs-reposted svg{stroke-width:2.3}
+.xs-repost-label{color:#ff87df!important;text-shadow:0 0 10px #e947a87d}
+.xs-repost-author{background:none;border:0;padding:0;justify-self:center;color:#f4dcff;font:inherit;font-weight:800;cursor:pointer;text-decoration:underline;text-decoration-color:#c76bde;text-underline-offset:4px}
+.xs-repost-author:hover,.xs-repost-author:focus-visible{color:#ff89df;text-decoration-color:#ff89df}
+</style>
+<script id="xs-repost-visual-upgrade-script">
+let xsSyncBusy=false;
+async function xsSyncRepostButtons(){
+ if(xsSyncBusy||!currentUser||typeof supabaseClient === "undefined")return;
+ const buttons=[...document.querySelectorAll('.xs-repost-trigger[data-xs-post-id]')];
+ if(!buttons.length)return;
+ xsSyncBusy=true;
+ try{
+  const ids=[...new Set(buttons.map(b=>b.dataset.xsPostId).filter(x=>/^[0-9a-f-]{36}$/i.test(x)))];
+  if(!ids.length)return;
+  const {data,error}=await supabaseClient.from('post_reposts').select('post_id,user_id').in('post_id',ids);
+  if(error)throw error;
+  const owned=new Set((data||[]).filter(r=>String(r.user_id)===String(currentUser.id)).map(r=>String(r.post_id)));
+  const counts=new Map();
+  for(const r of data||[])counts.set(String(r.post_id),(counts.get(String(r.post_id))||0)+1);
+  buttons.forEach(b=>{
+   const active=owned.has(b.dataset.xsPostId);
+   b.classList.toggle('xs-reposted',active);
+   b.title=active?'Reposted — click to undo':'Repost';
+   b.setAttribute('aria-label',active?'Reposted':'Repost');
+   const counter=b.querySelector('small');
+   if(counter)counter.textContent=String(counts.get(b.dataset.xsPostId)||0);
+  });
+ }catch(e){console.warn('Repost indicator could not load',e)}finally{xsSyncBusy=false}
+}
+let xsRepostSyncTimer;
+const xsRepostObserver=new MutationObserver(mutations=>{if(mutations.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.xs-repost-trigger')||n.querySelector?.('.xs-repost-trigger'))))){clearTimeout(xsRepostSyncTimer);xsRepostSyncTimer=setTimeout(xsSyncRepostButtons,150)}});
+xsRepostObserver.observe(document.body,{childList:true,subtree:true});
+setTimeout(xsSyncRepostButtons,500);
+setTimeout(xsSyncRepostButtons,1800);
+document.addEventListener("click",e=>{if(e.target.closest(".xs-repost-trigger"))setTimeout(xsSyncRepostButtons,300)});
+</script>
+<style id="xs-public-likes-style">
+.xs-liked-profile-card{background:linear-gradient(145deg,#17112e,#271641);border:1px solid #9956db;border-radius:18px;padding:17px;color:#f4e9ff;margin:12px 0;display:grid;gap:9px;box-shadow:0 0 18px #7d37c021}
+.xs-liked-profile-card p{white-space:pre-wrap;overflow-wrap:anywhere}.xs-liked-profile-card img{max-width:100%;max-height:350px;object-fit:contain;border-radius:12px}
+.xs-liked-label{color:#ff8ed8;font-size:13px;font-weight:700}.xs-liked-author{justify-self:start;border:0;background:transparent;color:#ff9fdf;text-decoration:underline;cursor:pointer;font:inherit;font-weight:700;padding:0}
+</style>
+<script id="xs-public-likes-script">
+async function xsLoadLikes(kind){
+ const extra=document.getElementById(kind==='my'?'xsMyExtra':'xsPublicExtra');if(!extra)return;
+ const uid=kind==='my'?currentUser?.id:window.currentPublicProfileUserId;
+ extra.replaceChildren();
+ if(!uid){extra.textContent='Could not identify this profile.';return}
+ extra.textContent='Loading liked posts…';
+ try{
+  const {data:likes,error}=await supabaseClient.from('post_likes').select('post_id').eq('user_id',uid).limit(100);
+  if(error)throw error;
+  if(!likes?.length){extra.textContent='No liked posts yet ❤️';return}
+  const ids=[...new Set(likes.map(x=>x.post_id).filter(Boolean))];
+  const {data:originals,error:postError}=await supabaseClient.from('posts').select('*').in('id',ids);
+  if(postError)throw postError;
+  const map=new Map((originals||[]).map(x=>[String(x.id),x]));
+  extra.replaceChildren();
+  for(const like of likes){
+   const p=map.get(String(like.post_id));if(!p)continue;
+   const card=document.createElement('article');card.className='xs-liked-profile-card';
+   const label=document.createElement('div');label.className='xs-liked-label';label.textContent='❤️ Liked post';card.append(label);
+   const author=document.createElement('button');author.type='button';author.className='xs-liked-author';author.textContent='@'+String(p.username||'User').replace(/^@/,'');
+   author.onclick=async()=>{let authorId=p.user_id||p.userId;if(!authorId){const {data}=await supabaseClient.from('profiles').select('user_id').eq('username',String(p.username||'').replace(/^@/,'')).limit(1);authorId=data?.[0]?.user_id}if(authorId&&typeof openPublicProfile==='function')openPublicProfile(String(authorId));else alert('Could not find this author profile.')};card.append(author);
+   const body=document.createElement('p');body.textContent=p.content||'';card.append(body);
+   if(p.media_url&&String(p.media_type||'').startsWith('image')){const img=document.createElement('img');img.src=p.media_url;img.loading='lazy';img.alt='Liked post image';card.append(img)}
+   extra.append(card);
+  }
+  if(!extra.children.length)extra.textContent='No visible liked posts yet.';
+ }catch(e){console.error('XOXO Likes tab',e);extra.textContent='Could not load Likes: '+(e.message||'Check public SELECT permissions for post_likes.');}
+}
+</script>
+<script id="xoxoActivityScript">
+/* Admin-only read-only activity feed. Requires the secure SQL RPC supplied separately. */
+let xoxoActivityRows=[],xoxoActivitySelected='all';
+function xoxoActivityFilter(kind){xoxoActivitySelected=kind;document.querySelectorAll('.xam-filter').forEach(b=>b.classList.toggle('active',b.dataset.xam===kind));renderXoxoActivity();}
+async function loadXoxoActivity(){
+ const status=document.getElementById('xoxoActivityStatus');if(!status)return;
+ if(typeof xoxoIsAdmin==='undefined'||!xoxoIsAdmin){status.textContent='Administrator access required.';return;}
+ status.textContent='Loading activity…';
+ try{const {data,error}=await supabaseClient.rpc('xoxo_admin_activity_feed',{max_rows:100});if(error)throw error;xoxoActivityRows=Array.isArray(data)?data:[];status.textContent=xoxoActivityRows.length?`${xoxoActivityRows.length} recent interactions · Read-only`:'No interactions found.';renderXoxoActivity();}
+ catch(e){status.textContent='Activity Monitor requires the accompanying Supabase admin RPC. '+String(e.message||e);document.getElementById('xoxoActivityList').replaceChildren();}
+}
+function xoxoActivityIsVideo(url,type){
+ const t=String(type||'').toLowerCase().trim();
+ const u=String(url||'').toLowerCase().split('?')[0].split('#')[0];
+ return t==='video'||t.startsWith('video/')||/\.(mp4|webm|mov|m4v|ogv)$/.test(u);
+}
+function xoxoActivityProfile(uid){if(uid&&typeof openPublicProfile==='function')openPublicProfile(uid);}
+function xoxoActivityPost(postId){
+ if(!postId)return;
+ const row=xoxoActivityRows.find(r=>String(r.post_id)===String(postId));
+ if(!row){setXoxoAdminStatus('Could not find the selected original post in the activity feed.','error');return;}
+ const prior=document.getElementById('xoxoActivityOriginalModal');if(prior)prior.remove();
+ const overlay=document.createElement('div');overlay.id='xoxoActivityOriginalModal';
+ overlay.style.cssText='position:fixed;inset:0;z-index:100000;background:rgba(4,5,20,.82);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;';
+ const panel=document.createElement('section');
+ panel.style.cssText='width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--fh-surface,#11132e);color:var(--fh-text,#f7f4ff);border:1px solid #7650dc;border-radius:20px;padding:22px;box-shadow:0 20px 70px rgba(0,0,0,.45);';
+ const header=document.createElement('div');header.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;';
+ const title=document.createElement('h2');title.textContent='📝 Original post';title.style.margin='0';
+ const close=document.createElement('button');close.type='button';close.textContent='✕ Close';close.style.cssText='border:1px solid #7650dc;border-radius:10px;padding:9px 12px;background:transparent;color:inherit;cursor:pointer;';close.onclick=()=>overlay.remove();
+ header.append(title,close);panel.append(header);
+ const author=document.createElement('button');author.type='button';author.textContent='@'+String(row.author_username||'Unknown author').replace(/^@/,'');author.title='Open author profile';author.style.cssText='display:inline-block;font:inherit;font-weight:800;color:#27d7ff;margin:0 0 12px;padding:0;border:0;background:transparent;cursor:pointer;text-decoration:underline;text-underline-offset:3px;';author.onclick=()=>{if(row.author_id&&typeof openPublicProfile==='function'){overlay.remove();xoxoActivityProfile(String(row.author_id));}else if(typeof setXoxoAdminStatus==='function'){setXoxoAdminStatus('Could not open this profile: author ID is unavailable.','error');}};panel.append(author);
+ const body=document.createElement('div');body.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;font-size:17px;line-height:1.55;margin:0 0 14px;';body.textContent=row.post_content||'No text content';panel.append(body);
+ if(row.media_url){const media=xoxoActivityIsVideo(row.media_url,row.media_type)?document.createElement('video'):document.createElement('img');media.src=row.media_url;media.style.cssText='display:block;max-width:100%;max-height:55vh;object-fit:contain;border-radius:12px;margin:12px auto;';if(media.tagName==='VIDEO'){media.controls=true;media.playsInline=true;media.preload='metadata';media.onerror=()=>{media.replaceWith(Object.assign(document.createElement('p'),{textContent:'Video preview could not load. Open the original post to check this media.'}));};}else{media.alt='Original post media';media.loading='lazy';media.onerror=()=>{media.alt='Image preview could not load';media.style.display='none';const note=document.createElement('p');note.textContent='Image preview could not load. Open the original post to check this media.';panel.insertBefore(note,meta);} }panel.append(media);}
+ if(row.activity_type==='comment_like'&&row.comment_content){const commentTitle=document.createElement('h3');commentTitle.textContent='💬 Comment that received a Like';panel.append(commentTitle);const comment=document.createElement('div');comment.textContent=row.comment_content;comment.style.cssText='white-space:pre-wrap;border:1px solid #7650dc;border-radius:12px;padding:12px;margin-bottom:12px;';panel.append(comment);}
+ const meta=document.createElement('p');meta.style.cssText='opacity:.72;font-size:12px;';meta.textContent='Read-only moderation preview · '+xoxoAdminDate(row.created_at);panel.append(meta);
+ overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+ document.addEventListener('keydown',function closeOnEscape(e){if(e.key==='Escape'&&document.getElementById('xoxoActivityOriginalModal')){overlay.remove();document.removeEventListener('keydown',closeOnEscape);}});
+ overlay.append(panel);document.body.append(overlay);
+}
+function renderXoxoActivity(){
+ const list=document.getElementById('xoxoActivityList');if(!list)return;
+ const rows=xoxoActivityRows.filter(r=>xoxoActivitySelected==='all'||r.activity_type===xoxoActivitySelected);
+ if(!rows.length){list.innerHTML='<div class="empty-state">No activity in this category yet.</div>';return;}
+ const h=v=>escapeHtml(String(v??''));const a=v=>escapeHtmlAttribute(String(v??''));
+ const kinds={like:'❤️ Like',repost:'🔁 Repost',comment_like:'💬 Comment Like',save:'🔖 Save'};
+ list.innerHTML=rows.map(r=>{
+ const saved=r.activity_type==='save';
+ const actor=saved?'Private':h(r.actor_username||'Unknown user');
+ const author=h(r.author_username||'Unknown author');
+ const avatar=r.actor_id&&!saved?`<button type="button" class="xam-user" onclick="xoxoActivityProfile('${a(r.actor_id)}')">${actor}</button>`:actor;
+ const owner=r.author_id?`<button type="button" class="xam-user" onclick="xoxoActivityProfile('${a(r.author_id)}')">${author}</button>`:author;
+ const content=h(r.post_content||'No text content');const media=String(r.media_url||'');const video=xoxoActivityIsVideo(media,r.media_type);
+ const mediaHtml=media?(video?`<video class="xam-media" controls playsinline preload="metadata" src="${a(media)}"></video>`:`<img class="xam-media" loading="lazy" src="${a(media)}" alt="Post media" onclick="openProfilePhotoViewer(this.src)">`):'';
+ const comments=r.activity_type==='comment_like'?`<div class="xam-post"><strong>💬 Liked comment</strong><div class="xam-content">${h(r.comment_content||'')}</div></div>`:'';
+ return `<article class="xam-card"><div class="xam-activity">${kinds[r.activity_type]||'Activity'} · ${h(xoxoAdminDate(r.created_at))}</div><div>${saved?'🔖 Saved post activity (user hidden)':`${avatar} → ${owner}`}</div><div class="xam-post"><strong>📝 Original post · ${owner}</strong><div class="xam-content">${content}</div>${mediaHtml}${comments}<div class="xam-actions"><button type="button" onclick="xoxoActivityPost('${a(r.post_id)}')">📝 View original</button><button type="button" onclick="xoxoActivityFilter('like')">❤️ Likes</button><button type="button" onclick="xoxoActivityFilter('repost')">🔁 Reposts</button><button type="button" onclick="xoxoActivityFilter('comment_like')">💬 Comments</button><button type="button" onclick="xoxoActivityFilter('save')">🔖 Saves</button></div><div class="xam-note">Read-only preview. Interaction buttons filter moderation activity; they do not like, repost or save on behalf of Admin.</div></div></article>`;
+ }).join('');
+}
+</script>
 </body>
                                     </html>
