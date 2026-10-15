@@ -6612,6 +6612,7 @@
                                     Welcome back to XOXO Avenue.
                                     </p>
                                     <div id="authMessage" class="message"></div>
+                                    <form id="xoxoAuthForm" autocomplete="on" onsubmit="event.preventDefault(); submitAuth();">
                                     <div class="form-group">
                                     <label for="authEmail">
                                     Email
@@ -6650,7 +6651,7 @@
                                     </div>
                                     <div id="forgotWrap" class="forgot-wrap">
                                     <button
-                                    class="forgot-btn"
+                                    class="forgot-btn" type="button"
                                     onclick="openResetPassword()"
                                     >
                                     Forgot password?
@@ -6658,12 +6659,13 @@
                                     </div>
                                     <button
                                     id="authSubmitBtn"
+                                    type="submit"
                                     class="btn btn-primary"
                                     style="width:100%;"
-                                    onclick="submitAuth()"
                                     >
                                     Log In
                                     </button>
+                                    </form>
                                     <div class="auth-switch">
                                     <span id="authSwitchText">
                                     Don't have an account?
@@ -18354,13 +18356,6 @@ function renderXoxoActivity(){
       const send = document.querySelector('#commentForm .btn-primary');
       if (send && !send.disabled && typeof window.submitComment === 'function') window.submitComment();
       return;
-    }
-    if ((target.id === 'authEmail' || target.id === 'authPassword') &&
-        document.getElementById('authModal')?.classList.contains('active') &&
-        typeof authMode !== 'undefined' && authMode === 'login') {
-      event.preventDefault();
-      const button = document.getElementById('authSubmitBtn');
-      if (button && !button.disabled && typeof window.submitAuth === 'function') window.submitAuth();
     }
   });
 })();
