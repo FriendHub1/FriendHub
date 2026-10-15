@@ -5852,8 +5852,6 @@
                                     <div id="dmReplyPreview" class="dm-reply-preview" style="display:none;"></div>
                                     <form id="dmForm" class="dm-composer" onsubmit="sendDirectMessage(event)">
                                     <input id="dmMediaInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleDmMediaSelected(event)">
-                                    <input id="dmCameraInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="handleDmCameraSelected(event)">
-                                    <input id="dmVideoCameraInput" type="file" accept="video/*" capture="environment" style="display:none" onchange="handleDmCameraSelected(event)">
                                     <div class="dm-composer-main">
                                     <textarea id="dmInput" maxlength="2000" rows="2" placeholder="Write a message..."></textarea>
                                     <div class="xoxo-dm-format-wrap">
@@ -5903,8 +5901,8 @@
                                     <div class="dm-tools-wrap">
                                     <button id="dmToolsButton" class="dm-tools-button" type="button" onclick="toggleDmToolsMenu(event)" aria-label="More message options" title="More options" aria-expanded="false">＋</button>
                                     <div id="dmToolsMenu" class="dm-tools-menu" role="menu" aria-label="Message options">
-                                    <button id="dmAttachButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); document.getElementById('dmMediaInput').click()" role="menuitem"><span class="dm-tool-icon">📎</span><span data-dm-tool-en="File" data-dm-tool-es="Archivo">File</span></button>
-                                    <button id="dmCameraButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); openDmCamera()" role="menuitem"><span class="dm-tool-icon">📷</span><span data-dm-tool-en="Camera" data-dm-tool-es="Cámara">Camera</span></button>
+                                    <button id="dmAttachButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); document.getElementById('dmMediaInput').click()" role="menuitem"><span class="dm-tool-icon">📎</span><span data-dm-tool-en="Photos & Videos" data-dm-tool-es="Fotos y videos">Photos & Videos</span></button>
+                                    
                                     <button id="dmVoiceButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); toggleDmVoiceRecording()" role="menuitem"><span class="dm-tool-icon">🎙️</span><span data-dm-tool-en="Voice" data-dm-tool-es="Voz">Voice</span></button>
                                     <button id="dmGifButton" class="dm-tool-option" type="button" onclick="closeDmToolsMenu(); openDmGifPicker()" role="menuitem"><span class="dm-tool-icon dm-tool-gif-icon">GIF</span><span>GIF</span></button>
                                     <button type="button" id="dmBuzzButton" class="dm-tool-option" onclick="closeDmToolsMenu(); sendDmBuzz()" role="menuitem"><span class="dm-tool-icon">⚡</span><span>Buzz</span></button>
@@ -5921,17 +5919,6 @@
                                     <div id="dmGifGrid" class="dm-gif-grid"></div>
                                     <div class="dm-gif-powered">Powered by GIPHY</div>
                                     </div></div>
-                                    <div id="dmCameraChoiceOverlay" class="dm-camera-choice-overlay" onclick="if(event.target===this) closeDmCameraChoice()" style="display:none;">
-                                    <div class="dm-camera-choice" role="dialog" aria-modal="true">
-                                    <div id="dmCameraChoiceTitle" class="dm-camera-choice-title">Camera</div>
-                                    <div class="dm-camera-choice-actions">
-                                    <button id="dmTakePhotoButton" type="button" onclick="chooseDmCameraMode('photo')">📸 Take Photo</button>
-                                    <button id="dmTakeVideoButton" type="button" onclick="chooseDmCameraMode('video')">🎥 Record Video</button>
-                                    <button id="dmChooseGalleryButton" type="button" onclick="chooseDmCameraMode('gallery')">🖼️ Choose from Gallery</button>
-                                    </div>
-                                    <button id="dmCameraChoiceCancel" type="button" class="dm-camera-choice-cancel" onclick="closeDmCameraChoice()">Cancel</button>
-                                    </div>
-                                    </div>
                                     <div id="dmEphemeralOverlay" class="dm-ephemeral-overlay" onclick="if(event.target===this) closeDmEphemeralViewer()" style="display:none;">
                                     <div class="dm-ephemeral-modal" role="dialog" aria-modal="true">
                                     <div id="dmEphemeralCountdown" class="dm-ephemeral-countdown"></div>
@@ -12205,12 +12192,8 @@ async function openPublicProfile(userId) {
                                     if (dmSelectedAttachment?.previewUrl) URL.revokeObjectURL(dmSelectedAttachment.previewUrl);
                                     dmSelectedAttachment = null;
                                     const input = document.getElementById("dmMediaInput");
-                                    const cameraInput = document.getElementById("dmCameraInput");
-                                    const videoCameraInput = document.getElementById("dmVideoCameraInput");
                                     const preview = document.getElementById("dmAttachmentPreview");
                                     if (input) input.value = "";
-                                    if (cameraInput) cameraInput.value = "";
-                                    if (videoCameraInput) videoCameraInput.value = "";
                                     if (preview) {
                                     preview.innerHTML = "";
                                     preview.style.display = "none";
@@ -12220,29 +12203,7 @@ async function openPublicProfile(userId) {
                                     function openDmCamera() {
                                     if (!currentUser || !currentDmUserId) return;
                                     clearDmEdit();
-                                    const overlay = document.getElementById("dmCameraChoiceOverlay");
-                                    const title = document.getElementById("dmCameraChoiceTitle");
-                                    const photo = document.getElementById("dmTakePhotoButton");
-                                    const video = document.getElementById("dmTakeVideoButton");
-                                    const gallery = document.getElementById("dmChooseGalleryButton");
-                                    const cancel = document.getElementById("dmCameraChoiceCancel");
-                                    const es = getFriendHubLanguage() === "es";
-                                    if (title) title.textContent = es ? "Cámara" : "Camera";
-                                    if (photo) photo.textContent = es ? "📸 Tomar foto" : "📸 Take Photo";
-                                    if (video) video.textContent = es ? "🎥 Grabar video" : "🎥 Record Video";
-                                    if (gallery) gallery.textContent = es ? "🖼️ Elegir de galería" : "🖼️ Choose from Gallery";
-                                    if (cancel) cancel.textContent = es ? "Cancelar" : "Cancel";
-                                    if (overlay) overlay.style.display = "flex";
-                                    }
-
-                                    function closeDmCameraChoice() {
-                                    const overlay = document.getElementById("dmCameraChoiceOverlay");
-                                    if (overlay) overlay.style.display = "none";
-                                    }
-
-                                    function chooseDmCameraMode(mode) {
-                                    const input = document.getElementById(mode === "gallery" ? "dmMediaInput" : mode === "video" ? "dmVideoCameraInput" : "dmCameraInput");
-                                    closeDmCameraChoice();
+                                    const input = document.getElementById("dmMediaInput");
                                     if (input) { input.value = ""; input.click(); }
                                     }
 
