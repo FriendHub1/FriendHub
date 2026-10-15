@@ -18268,7 +18268,7 @@ function renderXoxoGroupedComments(list,rows){
   const video=xoxoActivityIsVideo(media,post.media_type);
   const mediaHtml=media?(video?`<video class="xam-media" controls playsinline preload="metadata" src="${a(media)}"></video>`:`<img class="xam-media" loading="lazy" src="${a(media)}" alt="Post media" onclick="openProfilePhotoViewer(this.src)">`):'';
   const expanded=xoxoExpandedCommentPosts.has(id);
-  const visible=expanded?comments:comments.slice(0,3);
+  const visible=expanded?comments:[];
   const commentHtml=visible.map(c=>{
    const commentMedia=String(c.comment_media_url||'');
    const commentType=String(c.comment_media_type||'').toLowerCase();
@@ -18281,8 +18281,8 @@ function renderXoxoGroupedComments(list,rows){
    const who=c.actor_id?`<button type="button" class="xam-user" onclick="xoxoActivityProfile('${a(c.actor_id)}')">${actor}</button>`:actor;
    return `<div class="xam-post" style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>💬 ${who}</strong><small>${h(xoxoAdminDate(c.created_at))}</small></div><div class="xam-content" style="white-space:pre-wrap">${h(c.comment_content||'')}</div>${commentMediaHtml}</div>`;
   }).join('');
-  const toggle=comments.length>3?`<button type="button" onclick="xoxoToggleGroupedComments('${a(id)}')">${expanded?'Show fewer comments':`💬 View all comments (${comments.length})`}</button>`:'';
-  return `<article class="xam-card"><div class="xam-activity">💬 Comments · ${comments.length} on this post</div><div><strong>📝 Original post · ${owner}</strong></div><div class="xam-post"><div class="xam-content">${h(post.post_content||'No text content')}</div>${mediaHtml}<div style="margin-top:14px;font-weight:700">💬 Comments on this post (${comments.length})</div>${commentHtml}<div class="xam-actions">${toggle}<button type="button" onclick="xoxoActivityPost('${a(id)}')">📝 View original post</button></div><div class="xam-note">Read-only moderation · Comments grouped by original post.</div></div></article>`;
+  const toggle=`<button type="button" aria-expanded="${expanded}" aria-label="${expanded?'Hide':'Show'} ${comments.length} comments" onclick="xoxoToggleGroupedComments('${a(id)}')" style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 0;text-align:left;font-weight:700;font-size:16px;background:transparent;color:inherit;border:0;cursor:pointer"><span aria-hidden="true" style="display:inline-block;transform:rotate(${expanded?'180':'0'}deg);transition:transform .18s">⌄</span> 💬 Comments on this post (${comments.length})</button>`;
+  return `<article class="xam-card"><div class="xam-activity">💬 Comments · ${comments.length} on this post</div><div><strong>📝 Original post · ${owner}</strong></div><div class="xam-post"><div class="xam-content">${h(post.post_content||'No text content')}</div>${mediaHtml}<div style="margin-top:14px">${toggle}</div>${expanded?commentHtml:""}<div class="xam-actions"><button type="button" onclick="xoxoActivityPost('${a(id)}')">📝 View original post</button></div><div class="xam-note">Read-only moderation · Comments grouped by original post.</div></div></article>`;
  }).join('');
 }
 function renderXoxoActivity(){
