@@ -801,8 +801,30 @@
                                     background: #f4f5f8;
                                     color: #5865f2;
                                     }
+                                    /* v6: stack replies vertically, aligned with regular comments. */
                                     .comment-replies {
-                                    margin-left: 44px;
+                                    margin-left: -44px;
+                                    width: calc(100% + 44px);
+                                    max-width: calc(100% + 44px);
+                                    box-sizing: border-box;
+                                    display: grid;
+                                    gap: 8px;
+                                    margin-top: 10px;
+                                    }
+                                    .comment-replies .comment-item {
+                                    min-width: 0;
+                                    width: 100%;
+                                    box-sizing: border-box;
+                                    }
+                                    .comment-replies .comment-body { min-width: 0; }
+                                    .comment-replies .comment-media img,
+                                    .comment-replies .comment-media video {
+                                    max-width: 100%;
+                                    height: auto;
+                                    }
+                                    @media (max-width: 600px) {
+                                    .comment-replies { margin-left: -44px; }
+                                    .comment-media img, .comment-media video { max-width: 100%; }
                                     }
                                     .comment-item.comment-reply-item {
                                     padding-top: 8px;
@@ -18176,7 +18198,7 @@ async function loadXoxoActivity(){
  try{
   const results=await Promise.allSettled([
    supabaseClient.rpc('xoxo_admin_activity_feed',{max_rows:100}),
-   supabaseClient.rpc('xoxo_admin_comments_feed',{max_rows:100})
+   supabaseClient.rpc('xoxo_admin_comments_media_feed',{max_rows:100})
   ]);
   const activity=results[0].status==='fulfilled'?results[0].value:null;
   const comments=results[1].status==='fulfilled'?results[1].value:null;
@@ -18248,9 +18270,16 @@ function renderXoxoGroupedComments(list,rows){
   const expanded=xoxoExpandedCommentPosts.has(id);
   const visible=expanded?comments:comments.slice(0,3);
   const commentHtml=visible.map(c=>{
+   const commentMedia=String(c.comment_media_url||'');
+   const commentType=String(c.comment_media_type||'').toLowerCase();
+   const safeMedia=/^https:\/\/[^\s]+$/i.test(commentMedia);
+   const isCommentVideo=commentType.startsWith('video')||(!['gif','image'].includes(commentType)&&/\.(mp4|webm|mov)(?:[?#]|$)/i.test(commentMedia));
+   const commentMediaHtml=safeMedia?(isCommentVideo
+    ?`<video class="xam-media" controls playsinline preload="metadata" src="${a(commentMedia)}"></video>`
+    :`<img class="xam-media" loading="lazy" src="${a(commentMedia)}" alt="${commentType==='gif'?'Animated GIF':'Comment image'}" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><small hidden>Media could not be loaded.</small>`):'';
    const actor=h(c.actor_username||'Unknown user');
    const who=c.actor_id?`<button type="button" class="xam-user" onclick="xoxoActivityProfile('${a(c.actor_id)}')">${actor}</button>`:actor;
-   return `<div class="xam-post" style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>💬 ${who}</strong><small>${h(xoxoAdminDate(c.created_at))}</small></div><div class="xam-content" style="white-space:pre-wrap">${h(c.comment_content||'')}</div></div>`;
+   return `<div class="xam-post" style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong>💬 ${who}</strong><small>${h(xoxoAdminDate(c.created_at))}</small></div><div class="xam-content" style="white-space:pre-wrap">${h(c.comment_content||'')}</div>${commentMediaHtml}</div>`;
   }).join('');
   const toggle=comments.length>3?`<button type="button" onclick="xoxoToggleGroupedComments('${a(id)}')">${expanded?'Show fewer comments':`💬 View all comments (${comments.length})`}</button>`:'';
   return `<article class="xam-card"><div class="xam-activity">💬 Comments · ${comments.length} on this post</div><div><strong>📝 Original post · ${owner}</strong></div><div class="xam-post"><div class="xam-content">${h(post.post_content||'No text content')}</div>${mediaHtml}<div style="margin-top:14px;font-weight:700">💬 Comments on this post (${comments.length})</div>${commentHtml}<div class="xam-actions">${toggle}<button type="button" onclick="xoxoActivityPost('${a(id)}')">📝 View original post</button></div><div class="xam-note">Read-only moderation · Comments grouped by original post.</div></div></article>`;
