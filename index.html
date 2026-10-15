@@ -1,4 +1,4 @@
-                <!-- XOXO Avenue v13: native browser password autofill only; custom generator removed. -->
+                <!-- XOXO Avenue v14: regular DM photo/video only; existing temporary media history preserved. -->
 <html lang="en">
                                     <head>
                                     <meta name="google-adsense-account" content="ca-pub-5183362027645294">
@@ -6946,8 +6946,6 @@ async function enforceXoxoSuspension() {
                                     let dmLastRenderedSignature = "";
                                     let dmSeenMessageIds = new Set();
                                     let dmSelectedAttachment = null;
-                                    let dmMediaViewMode = "normal";
-                                    let dmMediaViewSeconds = null;
                                     let dmEphemeralTimer = null;
                                     let dmVoiceRecorder = null;
                                     let dmVoiceStream = null;
@@ -12212,8 +12210,6 @@ async function openPublicProfile(userId) {
                                     if (input) input.value = "";
                                     if (cameraInput) cameraInput.value = "";
                                     if (videoCameraInput) videoCameraInput.value = "";
-                                    dmMediaViewMode = "normal";
-                                    dmMediaViewSeconds = null;
                                     if (preview) {
                                     preview.innerHTML = "";
                                     preview.style.display = "none";
@@ -12245,26 +12241,6 @@ async function openPublicProfile(userId) {
                                     const input = document.getElementById(mode === "video" ? "dmVideoCameraInput" : "dmCameraInput");
                                     closeDmCameraChoice();
                                     if (input) { input.value = ""; input.click(); }
-                                    }
-
-                                    function setDmMediaViewMode(mode, seconds=null) {
-                                    dmMediaViewMode = mode;
-                                    dmMediaViewSeconds = mode === "timed" ? Number(seconds) : null;
-                                    document.querySelectorAll(".dm-media-mode-picker button").forEach(button => {
-                                      button.classList.toggle("active", button.dataset.mode === mode && String(button.dataset.seconds || "") === String(seconds || ""));
-                                    });
-                                    }
-
-                                    function renderDmImagePreviewOptions() {
-                                    if (!dmSelectedAttachment || !["image", "video"].includes(dmSelectedAttachment.type)) return "";
-                                    const es = getFriendHubLanguage() === "es";
-                                    return `<div class="dm-media-mode-picker">
-                                      <button type="button" class="active" data-mode="normal" data-seconds="" onclick="setDmMediaViewMode('normal')">📷 ${es ? "Normal" : "Normal"}</button>
-                                      <button type="button" data-mode="timed" data-seconds="5" onclick="setDmMediaViewMode('timed',5)">⏱️ 5s</button>
-                                      <button type="button" data-mode="timed" data-seconds="10" onclick="setDmMediaViewMode('timed',10)">⏱️ 10s</button>
-                                      <button type="button" data-mode="timed" data-seconds="30" onclick="setDmMediaViewMode('timed',30)">⏱️ 30s</button>
-                                      <button type="button" data-mode="once" data-seconds="" onclick="setDmMediaViewMode('once')">👁️ ${es ? "Ver una vez" : "View once"}</button>
-                                    </div>`;
                                     }
 
                                     async function handleDmCameraSelected(event) {
@@ -12311,7 +12287,7 @@ async function openPublicProfile(userId) {
                                     <button type="button" class="dm-remove-attachment" onclick="clearDmAttachment()" aria-label="Remove attachment">&#10005;</button>
                                     </div>
                                     </div>
-                                    ${renderDmImagePreviewOptions()}`;
+                                    `;
                                     preview.style.display = "block";
                                     setDmStatus("");
                                     }
@@ -12746,9 +12722,10 @@ async function openPublicProfile(userId) {
                                     payload.attachment_type = uploaded.type;
                                     payload.attachment_name = uploaded.name;
                                     payload.attachment_size = uploaded.size;
+                                    // All newly sent photos and videos use normal viewing.
                                     if (["image", "video"].includes(uploaded.type)) {
-                                      payload.media_view_mode = dmMediaViewMode || "normal";
-                                      payload.media_view_seconds = dmMediaViewMode === "timed" ? dmMediaViewSeconds : null;
+                                      payload.media_view_mode = "normal";
+                                      payload.media_view_seconds = null;
                                     }
                                     }
 
