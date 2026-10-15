@@ -18404,74 +18404,138 @@ function renderXoxoActivity(){
 <script>
 (function(){
   'use strict';
-  const observed=new WeakSet(), counted=new Set(), pending=new Map(), visibleTimers=new Map();
-  const io=typeof IntersectionObserver==='function' ? new IntersectionObserver(entries=>{
-    for(const entry of entries){
-      const el=entry.target, id=el.dataset.postId;
-      if(!id)continue;
-      if(!entry.isIntersecting||entry.intersectionRatio<.5){clearTimeout(visibleTimers.get(el));visibleTimers.delete(el);continue;}
-      if(visibleTimers.has(el))continue;
-      visibleTimers.set(el,setTimeout(()=>{
-        visibleTimers.delete(el);
-        if(document.hidden||!el.isConnected||!el.getClientRects().length)return;
-        const rect=el.getBoundingClientRect(), overlap=Math.max(0,Math.min(rect.bottom,innerHeight)-Math.max(rect.top,0));
-        if(overlap<rect.height*.5)return;
-        const u=typeof currentUser!=='undefined'?currentUser:null;
-        const post=typeof posts!=='undefined'?posts.find(p=>String(p.id)===id):null;
-        if(!u||!post||String(post.userId)===String(u.id)||id.startsWith('sample-')||counted.has(id))return;
-        counted.add(id);pending.set(id,u.id);scheduleFlush();
-      },2000));
-    }
-  },{threshold:[0,.5,1]}):null;
-  let flushTimer=null, countsTimer=null;
-  function scheduleFlush(){if(!flushTimer)flushTimer=setTimeout(flush,350)}
-  async function flush(){
-    flushTimer=null;
-    const client=typeof supabaseClient!=='undefined'?supabaseClient:null;
-    if(!client||!pending.size)return;
-    const entries=[...pending.entries()].slice(0,30);for(const [id] of entries)pending.delete(id);
-    const u=typeof currentUser!=='undefined'?currentUser:null;
-    if(!u){counted.clear();return;}
-    const rows=entries.filter(([,uid])=>uid===u.id).map(([post_id,user_id])=>({post_id,user_id}));
-    if(rows.length){
-      try{
-        const {error}=await client.from('post_views').upsert(rows,{onConflict:'post_id,user_id',ignoreDuplicates:true});
-        if(error){console.warn('Post views could not be saved:',error.message);rows.forEach(r=>counted.delete(r.post_id))}
-      }catch(e){console.warn('Post views unavailable',e);rows.forEach(r=>counted.delete(r.post_id))}
-      scheduleCounts();
-    }
-    if(pending.size)scheduleFlush();
+  const observed = new WeakSet();
+  const counted = new Set();
+  const pending = new Set();
+  const visibleTimers = new Map();
+  let flushTimer = null, countsTimer = null, flushing = false;
+
+  // Supabase checks the actual author; the feed's post.userId can be stale.
+  const io = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver(entries => {
+        for (const entry of entries) {
+          const el = entry.target, id = el.dataset.postId;
+          if (!id || id.startsWith('sample-')) continue;
+          if (!entry.isIntersecting || entry.intersectionRatio < 0.5) {
+            clearTimeout(visibleTimers.get(el));
+            visibleTimers.delete(el);
+            continue;
+          }
+          if (visibleTimers.has(el) || counted.has(id)) continue;
+          visibleTimers.set(el, setTimeout(() => {
+            visibleTimers.delete(el);
+            if (document.hidden || !el.isConnected || !el.getClientRects().length) return;
+            const rect = el.getBoundingClientRect();
+            const overlap = Math.max(0, Math.min(rect.bottom, innerHeight) - Math.max(rect.top, 0));
+            if (overlap < rect.height * 0.5) return;
+            if (typeof currentUser === 'undefined' || !currentUser?.id || counted.has(id)) return;
+            counted.add(id);
+            pending.add(id);
+            scheduleFlush();
+          }, 2000));
+        }
+      }, {threshold:[0,0.5,1]})
+    : null;
+
+  function scheduleFlush() {
+    if (!flushTimer) flushTimer = setTimeout(flush, 350);
   }
-  function scheduleCounts(){if(!countsTimer)countsTimer=setTimeout(refreshCounts,400)}
-  async function refreshCounts(){
-    countsTimer=null;
-    const client=typeof supabaseClient!=='undefined'?supabaseClient:null;
-    if(!client||typeof currentUser==='undefined'||!currentUser)return;
-    const els=[...document.querySelectorAll('.xoxo-post-views[data-view-post-id]')];
-    const ids=[...new Set(els.map(e=>e.dataset.viewPostId).filter(id=>id&&!id.startsWith('sample-')))];
-    for(let i=0;i<ids.length;i+=50){
-      const chunk=ids.slice(i,i+50);
-      try{
-        const {data,error}=await client.rpc('get_post_view_counts',{p_post_ids:chunk});
-        if(error){console.warn('Post view counts unavailable:',error.message);return}
-        const counts=new Map((data||[]).map(row=>[String(row.post_id),Number(row.view_count)||0]));
-        for(const el of els){if(!counts.has(el.dataset.viewPostId))continue;const n=counts.get(el.dataset.viewPostId);el.querySelector('small').textContent=n.toLocaleString('en-US');el.setAttribute('aria-label',n+' views')}
-      }catch(e){console.warn('Post view count error',e);return}
+
+  async function flush() {
+    flushTimer = null;
+    if (flushing || !pending.size) return;
+    const client = typeof supabaseClient !== 'undefined' ? supabaseClient : null;
+    if (!client || typeof currentUser === 'undefined' || !currentUser?.id) {
+      for (const id of pending) counted.delete(id);
+      pending.clear();
+      return;
+    }
+    flushing = true;
+    const userId = currentUser.id;
+    const ids = [...pending].slice(0, 10);
+    ids.forEach(id => pending.delete(id));
+    try {
+      // This SECURITY DEFINER RPC enforces auth.uid(), author exclusion and uniqueness.
+      await Promise.all(ids.map(async id => {
+        try {
+          const {data, error} = await client.rpc('record_post_view', {p_post_id:id});
+          if (error) {
+            console.warn('Post view could not be saved:', error.message);
+            counted.delete(id);
+          }
+          // false means this is the author's own post (not an error).
+        } catch (e) {
+          console.warn('Post view unavailable:', e);
+          counted.delete(id);
+        }
+      }));
+      if (typeof currentUser !== 'undefined' && currentUser?.id === userId) scheduleCounts();
+    } finally {
+      flushing = false;
+      if (pending.size) scheduleFlush();
     }
   }
-  function sync(){
-    const cards=document.querySelectorAll('.post[data-post-id]');
-    for(const card of cards){if(observed.has(card))continue;observed.add(card);if(io)io.observe(card)}
+
+  function scheduleCounts() {
+    if (!countsTimer) countsTimer = setTimeout(refreshCounts, 400);
+  }
+
+  async function refreshCounts() {
+    countsTimer = null;
+    const client = typeof supabaseClient !== 'undefined' ? supabaseClient : null;
+    if (!client || typeof currentUser === 'undefined' || !currentUser) return;
+    const els = [...document.querySelectorAll('.xoxo-post-views[data-view-post-id]')];
+    const ids = [...new Set(els.map(e => e.dataset.viewPostId).filter(id => id && !id.startsWith('sample-')))];
+    for (let i = 0; i < ids.length; i += 50) {
+      const chunk = ids.slice(i, i + 50);
+      try {
+        const {data, error} = await client.rpc('get_post_view_counts', {p_post_ids:chunk});
+        if (error) { console.warn('Post view counts unavailable:', error.message); return; }
+        const counts = new Map((data || []).map(row => [String(row.post_id), Number(row.view_count) || 0]));
+        for (const el of els) {
+          if (!counts.has(el.dataset.viewPostId)) continue;
+          const n = counts.get(el.dataset.viewPostId);
+          const label = el.querySelector('small');
+          if (label) label.textContent = n.toLocaleString('en-US');
+          el.setAttribute('aria-label', n + ' views');
+        }
+      } catch (e) { console.warn('Post view count error:', e); return; }
+    }
+  }
+
+  function sync() {
+    const cards = document.querySelectorAll('.post[data-post-id]');
+    for (const card of cards) {
+      if (observed.has(card)) continue;
+      observed.add(card);
+      if (io) io.observe(card);
+    }
     scheduleCounts();
   }
-  let syncTimer=null;
-  const observer=new MutationObserver(changes=>{
-    if(!changes.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.post[data-post-id]')||n.querySelector?.('.post[data-post-id]')))))return;
-    clearTimeout(syncTimer);syncTimer=setTimeout(sync,180);
+
+  let syncTimer = null;
+  const observer = new MutationObserver(changes => {
+    if (!changes.some(m => [...m.addedNodes].some(n =>
+      n.nodeType === 1 && (n.matches?.('.post[data-post-id]') || n.querySelector?.('.post[data-post-id]'))
+    ))) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(sync, 180);
   });
-  function init(){observer.observe(document.body,{childList:true,subtree:true});sync()}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){for(const t of visibleTimers.values())clearTimeout(t);visibleTimers.clear()}else sync()});
+  function init() { observer.observe(document.body, {childList:true, subtree:true}); sync(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
+  else init();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      for (const t of visibleTimers.values()) clearTimeout(t);
+      visibleTimers.clear();
+    } else {
+      // Recheck current intersections when the tab becomes active again.
+      for (const card of document.querySelectorAll('.post[data-post-id]')) {
+        if (io) { io.unobserve(card); io.observe(card); }
+      }
+      scheduleCounts();
+    }
+  });
 })();
 </script>
 </body>
