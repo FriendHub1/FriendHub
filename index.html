@@ -15324,7 +15324,43 @@ function xoxoDmMakeMessage(m,c){
   head.append(xoxoDmAvatar(m.sender_id),xoxoDmProfileButton(m.sender_id));bubble.append(head);
   bubble.append(xoxoDmReportText("div",m.content||"","xmm-admin-message-content"));
   if(m.attachment_name||m.attachment_type){
-    bubble.append(xoxoDmReportText("div","🔒 "+(m.attachment_name||m.attachment_type||"Private media")+" · Secure media viewer requires a protected server endpoint.","xmm-chat-attachment"));
+    const mediaBox=document.createElement("div");
+    mediaBox.className="xmm-chat-attachment";
+    const button=document.createElement("button");
+    button.type="button";
+    button.textContent="🔒 View private media · "+(m.attachment_name||m.attachment_type||"Attachment");
+    button.style.cssText="max-width:100%;overflow-wrap:anywhere;padding:9px;border:1px solid #9863d5;border-radius:10px;background:transparent;color:inherit;cursor:pointer;text-align:left";
+    button.addEventListener("click",async()=>{
+      if(!xoxoIsAdmin||!xoxoDmHistoryState||xoxoDmHistoryState.conversation!==c)return;
+      const state=xoxoDmHistoryState;
+      button.disabled=true;button.textContent="🔒 Verifying access…";
+      try{
+        const {data,error}=await supabaseClient.functions.invoke("xoxo-admin-dm-media",{
+          body:{message_id:m.id,reason:state.reason}
+        });
+        if(error||!data?.url)throw new Error(data?.error||error?.message||"Unable to access media");
+        if(xoxoDmHistoryState!==state||!xoxoIsAdmin)return;
+        const type=String(data.type||"").toLowerCase();
+        const filename=String(data.name||m.attachment_name||"").toLowerCase();
+        let media;
+        if(type.includes("video")||/\\.(mov|mp4|webm)$/i.test(filename)){
+          media=document.createElement("video");media.controls=true;media.playsInline=true;media.preload="metadata";
+        }else if(type.includes("image")||/\\.(jpg|jpeg|png|gif|webp)$/i.test(filename)){
+          media=document.createElement("img");media.alt="Private DM attachment";
+        }else{
+          const a=document.createElement("a");a.href=data.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent="Open protected attachment";media=a;
+        }
+        if(media.tagName==="IMG"||media.tagName==="VIDEO"){
+          media.src=data.url;media.style.cssText="display:block;max-width:100%;max-height:460px;border-radius:10px;margin-top:8px";
+        }
+        mediaBox.replaceChildren(media);
+      }catch(e){
+        button.disabled=false;button.textContent="🔒 Retry private media";
+        const msg=xoxoDmReportText("div","⚠️ "+(e?.message||"Unable to load attachment"));
+        mediaBox.append(msg);
+      }
+    });
+    mediaBox.append(button);bubble.append(mediaBox);
   }
   bubble.append(xoxoDmReportText("small",xoxoAdminDate(m.created_at)+(m.edited_at?" · edited":"")));
   return bubble;
