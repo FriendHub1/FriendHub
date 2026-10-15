@@ -5187,7 +5187,15 @@
 .xs-profile-tabs button{flex:1 1 135px;border:1px solid #8051b2;border-radius:11px;padding:12px 10px;background:#25143d;color:#e8d7fa;font-weight:700;cursor:pointer}
 .xs-profile-tabs button.active{background:linear-gradient(100deg,#8d30d9,#cb43c7);color:white;box-shadow:0 0 15px #9b43e766}
 .xs-profile-empty{padding:28px 18px;text-align:center;background:linear-gradient(130deg,#18122f,#24143e);color:#e8d4f7;border:1px solid #8e4ec4;border-radius:17px;margin-bottom:20px}
-</style></head>
+</style><style id="xoxo-password-eye-v9">
+.xoxo-password-field{position:relative;width:100%}
+.xoxo-password-field input{width:100%;box-sizing:border-box;padding-right:48px!important}
+.xoxo-password-eye{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:0;border-radius:9px;background:transparent;color:inherit;opacity:.75;cursor:pointer;z-index:2}
+.xoxo-password-eye:hover,.xoxo-password-eye:focus-visible{opacity:1;background:rgba(135,95,190,.13)}
+.xoxo-password-eye:focus-visible{outline:2px solid #9b72d0;outline-offset:1px}
+.xoxo-password-eye svg{pointer-events:none}
+</style>
+</head>
                                     <body>
                                     <header>
                                     <div class="container nav">
@@ -6610,32 +6618,35 @@
                                     </label>
                                     <input
                                     id="authEmail"
+                                    name="username"
                                     type="email"
                                     placeholder="you@example.com"
-                                    autocomplete="email"
+                                    autocomplete="username"
                                     >
                                     </div>
                                     <div class="form-group">
                                     <label for="authPassword">
                                     Password
                                     </label>
-                                    <input
+                                    <div class="xoxo-password-field"><input
                                     id="authPassword"
+                                    name="password"
                                     type="password"
                                     placeholder="Password"
                                     autocomplete="current-password"
-                                    >
+                                    ><button type="button" class="xoxo-password-eye" data-password-target="authPassword" aria-label="Show password" aria-pressed="false" title="Show password"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                                     </div>
                                     <div id="confirmPasswordGroup" class="form-group" style="display:none;">
                                     <label for="authConfirmPassword">
                                     Confirm Password
                                     </label>
-                                    <input
+                                    <div class="xoxo-password-field"><input
                                     id="authConfirmPassword"
+                                    name="confirm-password"
                                     type="password"
                                     placeholder="Confirm password"
                                     autocomplete="new-password"
-                                    >
+                                    ><button type="button" class="xoxo-password-eye" data-password-target="authConfirmPassword" aria-label="Show password" aria-pressed="false" title="Show password"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                                     </div>
                                     <div id="forgotWrap" class="forgot-wrap">
                                     <button
@@ -6709,21 +6720,25 @@
                                     <label for="newPassword">
                                     New Password
                                     </label>
-                                    <input
+                                    <div class="xoxo-password-field"><input
                                     id="newPassword"
+                                    name="new-password"
                                     type="password"
+                                    autocomplete="new-password"
                                     placeholder="New password"
-                                    >
+                                    ><button type="button" class="xoxo-password-eye" data-password-target="newPassword" aria-label="Show password" aria-pressed="false" title="Show password"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                                     </div>
                                     <div class="form-group">
                                     <label for="newPasswordConfirm">
                                     Confirm New Password
                                     </label>
-                                    <input
+                                    <div class="xoxo-password-field"><input
                                     id="newPasswordConfirm"
+                                    name="new-password"
                                     type="password"
+                                    autocomplete="new-password"
                                     placeholder="Confirm new password"
-                                    >
+                                    ><button type="button" class="xoxo-password-eye" data-password-target="newPasswordConfirm" aria-label="Show password" aria-pressed="false" title="Show password"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
                                     </div>
                                     <button
                                     class="btn btn-primary"
@@ -7163,6 +7178,10 @@ async function enforceXoxoSuspension() {
                                     document.getElementById("confirmPasswordGroup");
                                     const forgotWrap =
                                     document.getElementById("forgotWrap");
+                                    const passwordInput = document.getElementById("authPassword");
+                                    if (passwordInput) {
+                                      passwordInput.setAttribute("autocomplete", authMode === "signup" ? "new-password" : "current-password");
+                                    }
                                     if (authMode === "signup") {
                                     title.textContent = "Create Account";
                                     subtitle.textContent =
@@ -18343,6 +18362,24 @@ function renderXoxoActivity(){
       const button = document.getElementById('authSubmitBtn');
       if (button && !button.disabled && typeof window.submitAuth === 'function') window.submitAuth();
     }
+  });
+})();
+</script>
+<script id="xoxo-password-eye-script-v9">
+(function(){
+  document.addEventListener('click',function(event){
+    const btn=event.target.closest&&event.target.closest('.xoxo-password-eye');
+    if(!btn)return;
+    const input=document.getElementById(btn.getAttribute('data-password-target'));
+    if(!input)return;
+    const show=input.type==='password';
+    input.type=show?'text':'password';
+    btn.setAttribute('aria-label',show?'Hide password':'Show password');
+    btn.setAttribute('title',show?'Hide password':'Show password');
+    btn.setAttribute('aria-pressed',String(show));
+    btn.style.opacity=show?'1':'';
+    // Keep keyboard focus in the password field after clicking the icon.
+    input.focus({preventScroll:true});
   });
 })();
 </script>
