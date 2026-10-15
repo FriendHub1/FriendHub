@@ -9863,6 +9863,7 @@ async function enforceXoxoSuspension() {
                                     <div class="xs-more-menu xs-repost-menu" role="menu">
                                     <button onclick="xsToggleRepost('${escapeHtmlAttribute(String(post.id))}')">🔁 Repost / Undo Repost</button>
                                     </div></div>
+                                    <span class="xs-action xoxo-post-views" title="Views" aria-label="0 views" data-view-post-id="${escapeHtmlAttribute(String(post.id))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><small>0</small></span>
                                     <button class="xs-action" title="Share" onclick="sharePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg><small>Share</small></button>
                                     <button class="xs-action xs-bookmark ${savedClass}" title="Save" onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-5-7 5V4a1 1 0 0 1 1-1Z"/></svg><small>${saved ? "Saved" : "Save"}</small></button>
                                     </div>
@@ -18390,6 +18391,87 @@ function renderXoxoActivity(){
     // Keep keyboard focus in the password field after clicking the icon.
     input.focus({preventScroll:true});
   });
+})();
+</script>
+
+<!-- XOXO Avenue — unique post views v1; noninteractive counter -->
+<style id="xoxo-post-views-style">
+.xs-actions .xoxo-post-views{color:#a855f7;cursor:default;user-select:none;pointer-events:none}
+.xs-actions .xoxo-post-views svg{width:23px;height:23px}
+.xs-actions .xoxo-post-views small{color:#a855f7;font-weight:700;font-size:11px}
+@media(max-width:480px){.xs-actions .xoxo-post-views svg{width:21px;height:21px}}
+</style>
+<script>
+(function(){
+  'use strict';
+  const observed=new WeakSet(), counted=new Set(), pending=new Map(), visibleTimers=new Map();
+  const io=typeof IntersectionObserver==='function' ? new IntersectionObserver(entries=>{
+    for(const entry of entries){
+      const el=entry.target, id=el.dataset.postId;
+      if(!id)continue;
+      if(!entry.isIntersecting||entry.intersectionRatio<.5){clearTimeout(visibleTimers.get(el));visibleTimers.delete(el);continue;}
+      if(visibleTimers.has(el))continue;
+      visibleTimers.set(el,setTimeout(()=>{
+        visibleTimers.delete(el);
+        if(document.hidden||!el.isConnected||!el.getClientRects().length)return;
+        const rect=el.getBoundingClientRect(), overlap=Math.max(0,Math.min(rect.bottom,innerHeight)-Math.max(rect.top,0));
+        if(overlap<rect.height*.5)return;
+        const u=typeof currentUser!=='undefined'?currentUser:null;
+        const post=typeof posts!=='undefined'?posts.find(p=>String(p.id)===id):null;
+        if(!u||!post||String(post.userId)===String(u.id)||id.startsWith('sample-')||counted.has(id))return;
+        counted.add(id);pending.set(id,u.id);scheduleFlush();
+      },2000));
+    }
+  },{threshold:[0,.5,1]}):null;
+  let flushTimer=null, countsTimer=null;
+  function scheduleFlush(){if(!flushTimer)flushTimer=setTimeout(flush,350)}
+  async function flush(){
+    flushTimer=null;
+    const client=typeof supabaseClient!=='undefined'?supabaseClient:null;
+    if(!client||!pending.size)return;
+    const entries=[...pending.entries()].slice(0,30);for(const [id] of entries)pending.delete(id);
+    const u=typeof currentUser!=='undefined'?currentUser:null;
+    if(!u){counted.clear();return;}
+    const rows=entries.filter(([,uid])=>uid===u.id).map(([post_id,user_id])=>({post_id,user_id}));
+    if(rows.length){
+      try{
+        const {error}=await client.from('post_views').upsert(rows,{onConflict:'post_id,user_id',ignoreDuplicates:true});
+        if(error){console.warn('Post views could not be saved:',error.message);rows.forEach(r=>counted.delete(r.post_id))}
+      }catch(e){console.warn('Post views unavailable',e);rows.forEach(r=>counted.delete(r.post_id))}
+      scheduleCounts();
+    }
+    if(pending.size)scheduleFlush();
+  }
+  function scheduleCounts(){if(!countsTimer)countsTimer=setTimeout(refreshCounts,400)}
+  async function refreshCounts(){
+    countsTimer=null;
+    const client=typeof supabaseClient!=='undefined'?supabaseClient:null;
+    if(!client||typeof currentUser==='undefined'||!currentUser)return;
+    const els=[...document.querySelectorAll('.xoxo-post-views[data-view-post-id]')];
+    const ids=[...new Set(els.map(e=>e.dataset.viewPostId).filter(id=>id&&!id.startsWith('sample-')))];
+    for(let i=0;i<ids.length;i+=50){
+      const chunk=ids.slice(i,i+50);
+      try{
+        const {data,error}=await client.rpc('get_post_view_counts',{p_post_ids:chunk});
+        if(error){console.warn('Post view counts unavailable:',error.message);return}
+        const counts=new Map((data||[]).map(row=>[String(row.post_id),Number(row.view_count)||0]));
+        for(const el of els){if(!counts.has(el.dataset.viewPostId))continue;const n=counts.get(el.dataset.viewPostId);el.querySelector('small').textContent=n.toLocaleString('en-US');el.setAttribute('aria-label',n+' views')}
+      }catch(e){console.warn('Post view count error',e);return}
+    }
+  }
+  function sync(){
+    const cards=document.querySelectorAll('.post[data-post-id]');
+    for(const card of cards){if(observed.has(card))continue;observed.add(card);if(io)io.observe(card)}
+    scheduleCounts();
+  }
+  let syncTimer=null;
+  const observer=new MutationObserver(changes=>{
+    if(!changes.some(m=>[...m.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.post[data-post-id]')||n.querySelector?.('.post[data-post-id]')))))return;
+    clearTimeout(syncTimer);syncTimer=setTimeout(sync,180);
+  });
+  function init(){observer.observe(document.body,{childList:true,subtree:true});sync()}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){for(const t of visibleTimers.values())clearTimeout(t);visibleTimers.clear()}else sync()});
 })();
 </script>
 </body>
