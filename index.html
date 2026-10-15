@@ -5196,6 +5196,45 @@
 .xoxo-password-eye:focus-visible{outline:2px solid #9b72d0;outline-offset:1px}
 .xoxo-password-eye svg{pointer-events:none}
 </style>
+
+<style id="xoxo-daily-vibes-styles">
+#xv-launch{position:fixed;right:22px;bottom:92px;z-index:1800;border:0;border-radius:50%;width:60px;height:60px;color:white;font-size:28px;cursor:pointer;background:linear-gradient(135deg,#f35fc6,#8548ff);box-shadow:0 8px 32px #a44bf7aa;animation:xv-glow 3s ease-in-out infinite}
+@keyframes xv-glow{50%{box-shadow:0 8px 36px #f35fc6dd;transform:translateY(-3px)}}
+#xv-overlay{position:fixed;inset:0;z-index:5500;display:none;align-items:center;justify-content:center;padding:16px;background:#120c2bc9;backdrop-filter:blur(7px)}
+#xv-overlay.xv-open{display:flex}
+.xv-panel{width:min(540px,100%);max-height:94dvh;overflow:auto;border:1px solid #ffbaf6aa;border-radius:27px;background:#fff;color:#261747;box-shadow:0 20px 80px #190f4488}
+.xv-header{display:flex;align-items:center;gap:10px;padding:15px 18px;background:#fbf6ff}
+.xv-logo{width:43px;height:43px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#fa7ed9,#a76aff);color:white;font-size:24px}
+.xv-head-title{flex:1;min-width:0}.xv-head-title strong{display:block;font-size:15px}.xv-head-title small{font-size:11px;color:#8b719f}
+.xv-close{border:0;background:#efe3ff;color:#64368c;width:36px;height:36px;border-radius:50%;font-size:22px}
+.xv-art{position:relative;min-height:270px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:42px 28px;text-align:center;color:white;isolation:isolate;overflow:hidden;background:radial-gradient(circle at 50% 80%,#ffccaa 0%,transparent 40%),linear-gradient(145deg,#7c49ca,#ed8fcb 54%,#ffbc8d)}
+.xv-art::before{content:"✦ ✧ ✨ ✧ ✦";position:absolute;top:20px;left:0;width:100%;font-size:22px;letter-spacing:24px;opacity:.7}
+.xv-art::after{content:"";position:absolute;inset:auto -15% -40% -15%;height:60%;border-radius:50%;background:#ffffff23;filter:blur(25px);z-index:-1}
+.xv-theme-2{background:radial-gradient(circle at 70% 30%,#f9baff88,transparent 35%),linear-gradient(140deg,#1e1a63,#7541b7,#d971c1)}
+.xv-theme-3{background:radial-gradient(circle at 70% 20%,#fff2c4,transparent 25%),linear-gradient(140deg,#537bb9,#a38de1,#ffc9de)}
+.xv-theme-4{background:radial-gradient(circle at 25% 70%,#ff75ca88,transparent 35%),linear-gradient(140deg,#231454,#7642bd,#f56fa7)}
+.xv-theme-5{background:radial-gradient(circle at 30% 30%,#e8e2ff,transparent 30%),linear-gradient(140deg,#4055a5,#a271e5,#fa9fc0)}
+.xv-art-label{font-size:11px;font-weight:900;letter-spacing:3px;text-shadow:0 1px 6px #572d7a}
+.xv-quote{font-size:clamp(24px,5vw,34px);line-height:1.25;font-weight:800;max-width:440px;text-shadow:0 3px 14px #56377388}
+.xv-art-footer{font-size:12px;font-weight:800;letter-spacing:1px}
+.xv-actions{display:flex;justify-content:space-around;gap:4px;flex-wrap:wrap;padding:13px 10px;border-bottom:1px solid #eadcf2}
+.xv-actions button,.xv-controls button{border:0;border-radius:11px;background:#f5edff;color:#67349a;padding:9px 11px;font-weight:700;font-size:13px}
+.xv-actions button.xv-selected{background:#f9d6f0;color:#be297e}
+.xv-controls{display:flex;justify-content:space-between;gap:8px;padding:12px 17px}
+.xv-counts{font-size:12px;color:#8d789f;padding:0 18px 12px}
+.xv-section{padding:12px 18px 18px;border-top:1px solid #eadcf2}
+.xv-section h3{font-size:15px;margin:0 0 10px}
+.xv-collection{display:flex;gap:8px;flex-wrap:wrap;max-height:145px;overflow:auto}
+.xv-collection button{border:1px solid #e6d2fb;border-radius:11px;padding:8px 11px;background:#fbf7ff;color:#6b399a;font-weight:700}
+.xv-collection button.xv-active{background:#8b4de1;color:white}
+.xv-comment-list{max-height:160px;overflow:auto;display:grid;gap:8px;font-size:13px}
+.xv-comment{padding:9px 11px;background:#f8f2ff;border-radius:10px;overflow-wrap:anywhere}
+.xv-comment-form{display:flex;gap:7px;margin-top:10px}
+.xv-comment-form input{min-width:0;flex:1;border:1px solid #dfc9f3;border-radius:10px;padding:10px}
+.xv-comment-form button{border:0;border-radius:10px;background:#9250e6;color:white;padding:10px 13px;font-weight:800}
+.xv-notice{font-size:12px;color:#76538e;margin-top:8px}
+@media(max-width:600px){#xv-launch{right:15px;bottom:83px;width:53px;height:53px}#xv-overlay{padding:0;align-items:flex-end}.xv-panel{border-radius:23px 23px 0 0;max-height:96dvh}.xv-art{min-height:240px;padding:34px 20px}.xv-actions button{font-size:12px;padding:8px}}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -18536,6 +18575,177 @@ function renderXoxoActivity(){
       scheduleCounts();
     }
   });
+})();
+</script>
+
+<script id="xoxo-daily-vibes-script">
+(function(){
+  'use strict';
+  const client = () => typeof supabaseClient !== 'undefined' ? supabaseClient : null;
+  const user = () => typeof currentUser !== 'undefined' ? currentUser : null;
+  const $ = id => document.getElementById(id);
+  const state = {enabled:false,count:0,selected:0,items:[],language:'en',busy:false};
+  const esc = text => String(text??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const label = (en,es) => state.language==='es'?es:en;
+  const quote = v => state.language==='es'?v.quote_es:v.quote_en;
+  const urlFor = id => location.origin+location.pathname+'?vibe='+encodeURIComponent(id);
+  function isEnglish(){
+    const select = document.querySelector('#languageSelect, .language-select');
+    const val = select?.value || document.documentElement.lang || 'en';
+    return !String(val).toLowerCase().startsWith('es');
+  }
+  function makeUI(){
+    if ($('xv-launch'))return;
+    const btn=document.createElement('button');
+    btn.id='xv-launch';btn.textContent='✨';btn.title='XOXO Daily Vibes';btn.hidden=true;
+    btn.style.display='none';btn.onclick=()=>open(state.count);
+    document.body.append(btn);
+    const overlay=document.createElement('div');overlay.id='xv-overlay';
+    overlay.innerHTML=`<div class="xv-panel" role="dialog" aria-modal="true" aria-label="XOXO Daily Vibes">
+      <div class="xv-header"><div class="xv-logo">💜</div><div class="xv-head-title"><strong>XOXO Avenue ✨</strong><small>Official Daily Vibes</small></div><button class="xv-close" id="xv-close" aria-label="Close">×</button></div>
+      <div id="xv-content"></div>
+    </div>`;
+    document.body.append(overlay);
+    $('xv-close').onclick=close;
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('xv-open'))close()});
+  }
+  async function init(){
+    makeUI();
+    const db=client();if(!db)return;
+    try{
+      const {data,error}=await db.rpc('xoxo_vibe_status');
+      if(error) return; // Feature not installed yet: remain invisible.
+      const status=Array.isArray(data)?data[0]:data;
+      if(!status?.enabled || !Number(status.published_count))return;
+      state.enabled=true;state.count=Number(status.published_count);
+      $('xv-launch').hidden=false;$('xv-launch').style.display='block';
+      const deep=new URLSearchParams(location.search).get('vibe');
+      if(deep && /^\d+$/.test(deep))open(Number(deep));
+    }catch(e){console.warn('Daily Vibes is inactive',e)}
+  }
+  async function open(id){
+    if(!state.enabled || !Number.isInteger(id) || id<1 || id>state.count)return;
+    state.language=isEnglish()?'en':'es';
+    state.selected=id;
+    $('xv-overlay').classList.add('xv-open');
+    $('xv-content').innerHTML='<div class="xv-section">✨ Loading Daily Vibes...</div>';
+    const db=client();
+    const {data,error}=await db.from('xoxo_daily_vibes').select('id,quote_en,quote_es,theme').lte('id',state.count).order('id');
+    if(error){$('xv-content').textContent='Daily Vibes is unavailable right now.';return}
+    state.items=data||[];
+    await render();
+  }
+  function close(){
+    $('xv-overlay')?.classList.remove('xv-open');
+    if(new URLSearchParams(location.search).has('vibe')){
+      const u=new URL(location.href);u.searchParams.delete('vibe');
+      history.replaceState(history.state,'',u.pathname+u.search+u.hash);
+    }
+  }
+  async function render(){
+    const v=state.items.find(x=>x.id===state.selected);
+    if(!v)return;
+    const root=$('xv-content');
+    root.innerHTML=`
+      <div class="xv-art xv-theme-${Number(v.theme)||1}">
+        <div class="xv-art-label">✦ ${label("TODAY'S INSPIRATION","INSPIRACIÓN DEL DÍA")} ✦</div>
+        <div class="xv-quote">“${esc(quote(v))}”</div>
+        <div class="xv-art-footer">💜 XOXO AVENUE · #${v.id}</div>
+      </div>
+      <div class="xv-actions">
+        <button id="xv-like">♡ ${label('Like','Me gusta')}</button>
+        <button id="xv-repost">↻ ${label('Repost','Republicar')}</button>
+        <button id="xv-share">↗ ${label('Share','Compartir')}</button>
+        <button id="xv-copy">⧉ ${label('Copy','Copiar')}</button>
+      </div>
+      <div class="xv-counts" id="xv-counts"></div>
+      <div class="xv-controls"><button id="xv-prev" ${v.id===1?'disabled':''}>← ${label('Previous','Anterior')}</button><button id="xv-next" ${v.id===state.count?'disabled':''}>${label('Next','Siguiente')} →</button></div>
+      <div class="xv-section"><h3>✨ Vibe Collection</h3><div class="xv-collection">${state.items.map(x=>`<button data-xv-id="${x.id}" class="${x.id===v.id?'xv-active':''}">✦ ${x.id}</button>`).join('')}</div></div>
+      <div class="xv-section"><h3>💬 ${label('Comments','Comentarios')}</h3><div id="xv-comments" class="xv-comment-list"></div><form id="xv-form" class="xv-comment-form"><input id="xv-input" maxlength="600" placeholder="${label('Write a comment...','Escribe un comentario...')}" required><button type="submit">${label('Send','Enviar')}</button></form><div id="xv-notice" class="xv-notice"></div></div>`;
+    root.querySelectorAll('[data-xv-id]').forEach(b=>b.onclick=()=>choose(Number(b.dataset.xvId)));
+    $('xv-prev').onclick=()=>choose(v.id-1);$('xv-next').onclick=()=>choose(v.id+1);
+    $('xv-like').onclick=()=>toggle('xoxo_vibe_likes');
+    $('xv-repost').onclick=()=>toggle('xoxo_vibe_reposts');
+    $('xv-share').onclick=share;
+    $('xv-copy').onclick=async()=>{
+      try{await navigator.clipboard.writeText('“'+quote(v)+'” 💜 XOXO Avenue\n'+urlFor(v.id));notice(label('Copied!','¡Copiado!'))}
+      catch(e){notice(label('Copy unavailable on this device.','No se pudo copiar.'))}
+    };
+    $('xv-form').onsubmit=comment;
+    await loadSocial(v.id);
+  }
+  async function choose(id){
+    if(id<1||id>state.count)return;
+    state.selected=id;
+    await render();
+  }
+  function notice(message){const el=$('xv-notice');if(el)el.textContent=message}
+  function requireLogin(){
+    if(user())return true;
+    notice(label('Log in to interact with Daily Vibes.','Inicia sesión para interactuar con Daily Vibes.'));
+    return false;
+  }
+  async function toggle(table){
+    if(!requireLogin()||state.busy)return;
+    state.busy=true;
+    try{
+      const db=client(),id=state.selected,uid=user().id;
+      const {data,error}=await db.from(table).select('vibe_id').eq('vibe_id',id).eq('user_id',uid).maybeSingle();
+      if(error)throw error;
+      const result=data
+        ?await db.from(table).delete().eq('vibe_id',id).eq('user_id',uid)
+        :await db.from(table).insert({vibe_id:id,user_id:uid});
+      if(result.error)throw result.error;
+      await loadSocial(id);
+    }catch(e){notice(e.message||'Please try again.')}
+    finally{state.busy=false}
+  }
+  async function loadSocial(id){
+    const db=client();
+    const [likes,reposts,comments]=await Promise.all([
+      db.from('xoxo_vibe_likes').select('user_id').eq('vibe_id',id),
+      db.from('xoxo_vibe_reposts').select('user_id').eq('vibe_id',id),
+      db.from('xoxo_vibe_comments').select('id,user_id,content,created_at').eq('vibe_id',id).order('created_at',{ascending:false}).limit(100)
+    ]);
+    if(id!==state.selected)return;
+    if(likes.error||reposts.error||comments.error){notice(label('Could not load interactions.','No se pudieron cargar las interacciones.'));return}
+    const uid=user()?.id;
+    $('xv-counts').textContent=`❤️ ${(likes.data||[]).length}   ·   🔁 ${(reposts.data||[]).length}   ·   💬 ${(comments.data||[]).length}`;
+    $('xv-like').classList.toggle('xv-selected',!!uid&&(likes.data||[]).some(x=>x.user_id===uid));
+    $('xv-repost').classList.toggle('xv-selected',!!uid&&(reposts.data||[]).some(x=>x.user_id===uid));
+    $('xv-comments').innerHTML=(comments.data||[]).length
+      ?comments.data.map(c=>`<div class="xv-comment"><strong>${c.user_id===uid?label('You','Tú'):label('Member','Miembro')}</strong> · <small>${esc(new Date(c.created_at).toLocaleDateString())}</small><div>${esc(c.content)}</div>${c.user_id===uid?`<button type="button" data-xv-delete="${esc(c.id)}" style="border:0;background:transparent;color:#8b4de1">${label('Delete','Eliminar')}</button>`:''}</div>`).join('')
+      :`<div class="xv-notice">${label('Be the first to comment.','Sé el primero en comentar.')}</div>`;
+    $('xv-comments').querySelectorAll('[data-xv-delete]').forEach(b=>b.onclick=async()=>{
+      const {error}=await db.from('xoxo_vibe_comments').delete().eq('id',b.dataset.xvDelete).eq('user_id',uid);
+      if(error)notice(error.message);else loadSocial(id);
+    });
+  }
+  async function comment(e){
+    e.preventDefault();
+    if(!requireLogin()||state.busy)return;
+    const content=$('xv-input').value.trim();if(!content)return;
+    state.busy=true;
+    try{
+      const {error}=await client().from('xoxo_vibe_comments').insert({vibe_id:state.selected,user_id:user().id,content});
+      if(error)throw error;
+      $('xv-input').value='';
+      await loadSocial(state.selected);
+    }catch(e){notice(e.message||'Please try again.')}
+    finally{state.busy=false}
+  }
+  async function share(){
+    const v=state.items.find(x=>x.id===state.selected);if(!v)return;
+    const data={title:'XOXO Daily Vibes 💜',text:'“'+quote(v)+'”',url:urlFor(v.id)};
+    try{
+      if(navigator.share)await navigator.share(data);
+      else if(navigator.clipboard){await navigator.clipboard.writeText(data.text+'\n'+data.url);notice(label('Link copied!','¡Enlace copiado!'))}
+      else notice(data.url);
+    }catch(e){if(e.name!=='AbortError')notice(label('Unable to share.','No se pudo compartir.'))}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});
+  else init();
 })();
 </script>
 </body>
