@@ -14232,7 +14232,7 @@ async function openPublicProfile(userId) {
                                     buildEmojiPickers();
                                     const panel = document.getElementById(pickerId);
                                     if (!panel) return;
-                                    const shouldOpen = !panel.classList.contains('show');
+                                    const shouldOpen = !panel.classList.contains('active');
                                     closeEmojiPickers();
                                     if (shouldOpen) panel.classList.add('show');
                                     };
@@ -18304,6 +18304,47 @@ function renderXoxoActivity(){
  return `<article class="xam-card"><div class="xam-activity">${kinds[r.activity_type]||'Activity'} · ${h(xoxoAdminDate(r.created_at))}</div><div>${saved?'🔖 Saved post activity (user hidden)':`${avatar} → ${owner}`}</div><div class="xam-post"><strong>📝 Original post · ${owner}</strong><div class="xam-content">${content}</div>${mediaHtml}${comments}<div class="xam-actions"><button type="button" onclick="xoxoActivityPost('${a(r.post_id)}')">📝 View original</button><button type="button" onclick="xoxoActivityFilter('like')">❤️ Likes</button><button type="button" onclick="xoxoActivityFilter('repost')">🔁 Reposts</button><button type="button" onclick="xoxoActivityFilter('comment')">💬 Comments</button><button type="button" onclick="xoxoActivityFilter('comment_like')">💗 Comment Likes</button><button type="button" onclick="xoxoActivityFilter('save')">🔖 Saves</button></div><div class="xam-note">Read-only preview. Interaction buttons filter moderation activity; they do not like, repost or save on behalf of Admin.</div></div></article>`;
  }).join('');
 }
+</script>
+
+<!-- XOXO Avenue v8: desktop-only Enter shortcuts; mobile behavior unchanged -->
+<script id="xoxoDesktopKeyboardShortcutsV8">
+(function () {
+  'use strict';
+  function desktopKeyboard() {
+    return window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 769px)').matches;
+  }
+  function plainEnter(event) {
+    return event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && !event.isComposing && event.keyCode !== 229;
+  }
+  document.addEventListener('keydown', function (event) {
+    if (!desktopKeyboard() || !plainEnter(event) || event.defaultPrevented) return;
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.id === 'dmInput') {
+      event.preventDefault();
+      const send = document.getElementById('dmSendButton');
+      if (send && !send.disabled && typeof window.sendDirectMessage === 'function') {
+        const form = document.getElementById('dmForm');
+        if (form && typeof form.requestSubmit === 'function') form.requestSubmit(send);
+        else window.sendDirectMessage(event);
+      }
+      return;
+    }
+    if (target.id === 'commentInput') {
+      event.preventDefault();
+      const send = document.querySelector('#commentForm .btn-primary');
+      if (send && !send.disabled && typeof window.submitComment === 'function') window.submitComment();
+      return;
+    }
+    if ((target.id === 'authEmail' || target.id === 'authPassword') &&
+        document.getElementById('authModal')?.classList.contains('active') &&
+        typeof authMode !== 'undefined' && authMode === 'login') {
+      event.preventDefault();
+      const button = document.getElementById('authSubmitBtn');
+      if (button && !button.disabled && typeof window.submitAuth === 'function') window.submitAuth();
+    }
+  });
+})();
 </script>
 </body>
                                     </html>
