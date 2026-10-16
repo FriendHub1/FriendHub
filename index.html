@@ -5197,6 +5197,76 @@
 .xoxo-password-eye svg{pointer-events:none}
 </style>
 
+<style>
+
+/* XOXO iPhone chat polish — scoped mobile changes only */
+@media (max-width: 700px) {
+  /* Keep both language names readable without affecting desktop layout. */
+  #languageSelect.language-select {
+    box-sizing: border-box !important;
+    width: 124px !important;
+    min-width: 124px !important;
+    max-width: 124px !important;
+    padding: 9px 19px 9px 7px !important;
+    font-size: 13px !important;
+    text-overflow: clip !important;
+    flex: 0 0 124px !important;
+  }
+  .auth-buttons { min-width: 0; }
+  /* Compact, predictable mobile message composer. */
+  #dmForm.dm-composer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px;
+    padding: 10px !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  #dmForm .dm-composer-main {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  #dmInput {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 52px;
+    max-height: 110px;
+    resize: vertical;
+  }
+  #dmForm #dmSendButton {
+    margin-left: auto;
+    min-height: 44px;
+    align-self: flex-end;
+  }
+  #dmForm .dm-tools-wrap { align-self: flex-end; }
+  /* Preserve the video aspect ratio and avoid giant black previews. */
+  .dm-normal-media-button:has(.dm-attachment-video) {
+    display: block;
+    width: min(100%, 320px);
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 14px;
+  }
+  .dm-normal-media-button .dm-attachment-video {
+    width: 100%;
+    height: auto;
+    max-height: 340px;
+    object-fit: contain;
+    background: #100e1a;
+  }
+}
+@media (max-width: 390px) {
+  #languageSelect.language-select {
+    width: 115px !important;
+    min-width: 115px !important;
+    max-width: 115px !important;
+    font-size: 12px !important;
+  }
+}
+
+</style>
 </head>
                                     <body>
                                     <header>
@@ -12365,7 +12435,7 @@ async function openPublicProfile(userId) {
                                     const url = escapeHtmlAttribute(data.signedUrl);
                                     const name = escapeHtml(message.attachment_name || "Attachment");
                                     if (type === "audio") return `<div class="dm-attachment"><div class="dm-audio-message"><span>🎙️</span><audio class="dm-attachment-audio" src="${url}" controls preload="metadata"></audio></div></div>`;
-                                    if (type === "video") return `<div class="dm-attachment"><button type="button" class="dm-normal-media-button" onclick="openDmNormalMedia('${escapeHtmlAttribute(String(message.id))}')"><video class="dm-attachment-video" src="${url}" muted playsinline preload="metadata"></video><span class="dm-normal-media-play">▶</span></button></div>`;
+                                    if (type === "video") return `<div class="dm-attachment"><button type="button" class="dm-normal-media-button" onclick="openDmNormalMedia('${escapeHtmlAttribute(String(message.id))}')"><video class="dm-attachment-video" src="${url}#t=0.15" muted playsinline webkit-playsinline preload="metadata" aria-label="${es ? "Vista previa del video" : "Video preview"}"></video><span class="dm-normal-media-play">▶</span></button></div>`;
                                     return `<div class="dm-attachment"><button type="button" class="dm-normal-media-button" onclick="openDmNormalMedia('${escapeHtmlAttribute(String(message.id))}')"><img class="dm-attachment-image" src="${url}" alt="${name}"></button></div>`;
                                     }
 
@@ -18650,6 +18720,46 @@ function renderXoxoActivity(){
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
+})();
+</script>
+
+
+<script>
+/* Encourage iOS Safari to display a real video frame before playback.
+   No camera access, upload changes, or database modifications. */
+(function () {
+  function preparePreview(video) {
+    if (video.dataset.xoxoPosterAttempted) return;
+    video.dataset.xoxoPosterAttempted = "1";
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    video.muted = true;
+    const seekPreview = () => {
+      try {
+        if (!Number.isFinite(video.duration) || video.duration <= 0) return;
+        const target = Math.min(0.15, Math.max(0, video.duration / 2));
+        if (Math.abs(video.currentTime - target) > 0.025) video.currentTime = target;
+      } catch (_) { /* Safari may decline a seek before enough data loads. */ }
+    };
+    video.addEventListener("loadedmetadata", seekPreview, {once:true});
+    if (video.readyState >= 1) seekPreview();
+  }
+  function scan(root) {
+    if (root.matches && root.matches(".dm-attachment-video")) preparePreview(root);
+    if (root.querySelectorAll) root.querySelectorAll(".dm-attachment-video").forEach(preparePreview);
+  }
+  function start() {
+    const chat = document.getElementById("dmMessages") || document.querySelector(".dm-messages");
+    if (!chat) return;
+    scan(chat);
+    new MutationObserver(records => {
+      records.forEach(record => record.addedNodes.forEach(node => {
+        if (node.nodeType === 1) scan(node);
+      }));
+    }).observe(chat, {childList:true,subtree:true});
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
 })();
 </script>
 
