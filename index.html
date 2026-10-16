@@ -14236,7 +14236,11 @@ async function openPublicProfile(userId) {
                                         const es=getFriendHubLanguage()==="es";
                                         const header=`<div class="xoxo-sp-top"><button type="button" onclick="xoxoSharedPostBack()">← ${es?"Volver a Discover":"Back to Discover"}</button><strong>XOXO Avenue 💜</strong></div>`;
                                         const card=post ? renderPost(post) : `<div class="xoxo-sp-missing">${es?"Esta publicación no está disponible públicamente.":"This post is not publicly available."}</div>`;
-                                        const invite=!currentUser && post ? `<aside class="xoxo-love-letter">
+                                        // Verify the actual Supabase session rather than relying on
+                                        // currentUser, which may be stale during initial auth events.
+                                        const { data: sharedPostAuth } = await supabaseClient.auth.getSession();
+                                        const sharedPostSignedIn = Boolean(sharedPostAuth?.session?.user?.id);
+                                        const invite=!sharedPostSignedIn && post ? `<aside class="xoxo-love-letter">
                                           <div class="xoxo-love-icon">💌</div>
                                           <h2>You've found your people. ♡</h2>
                                           <p>One post brought you here. A world of friendships is waiting for you.</p>
