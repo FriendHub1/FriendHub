@@ -18841,5 +18841,80 @@ function renderXoxoActivity(){
 })();
 </script>
 
+
+<!-- XOXO FRIENDLY URL ROUTER V1 -->
+<script>
+/* Non-destructive client-side routes. Preserves existing public ?profile= and ?post= links. */
+(function () {
+  "use strict";
+  const routeToPage = Object.freeze({
+    "/": "home",
+    "/discover": "discover",
+    "/profile": "profile",
+    "/messages": "messages"
+  });
+  const pageToRoute = Object.freeze({
+    home: "/", discover: "/discover", profile: "/profile", messages: "/messages"
+  });
+  let applyingHistory = false;
+  let started = false;
+  function path() {
+    return window.location.pathname.replace(/\/+$/, "") || "/";
+  }
+  function setPath(next, replace) {
+    if (applyingHistory || path() === next) return;
+    const url = next + window.location.search + window.location.hash;
+    window.history[replace ? "replaceState" : "pushState"]({xoxoRoute: true}, "", url);
+  }
+  function wrapPageFunction(name) {
+    const original = window[name];
+    if (typeof original !== "function" || original.__xoxoRouted) return;
+    const wrapped = function(pageId, ...rest) {
+      const result = original.apply(this, [pageId, ...rest]);
+      const active = document.getElementById(String(pageId))?.classList.contains("active");
+      if (active && Object.prototype.hasOwnProperty.call(pageToRoute, String(pageId))) {
+        setPath(pageToRoute[String(pageId)], false);
+      }
+      return result;
+    };
+    wrapped.__xoxoRouted = true;
+    window[name] = wrapped;
+  }
+  async function navigateToPath() {
+    const target = routeToPage[path()];
+    if (!target) return;
+    // Legacy shared links have priority over general section navigation.
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.has("profile") || qs.has("post")) return;
+    applyingHistory = true;
+    try {
+      if (target === "messages" && typeof window.openMessagesInbox === "function") {
+        await window.openMessagesInbox();
+      } else if (typeof window.showPage === "function") {
+        window.showPage(target);
+      }
+    } finally {
+      applyingHistory = false;
+    }
+  }
+  function init() {
+    if (started) return;
+    started = true;
+    wrapPageFunction("showPage");
+    wrapPageFunction("showPageWithoutReload");
+    window.addEventListener("popstate", () => { void navigateToPath(); });
+    // Wait for Supabase session restoration; no extra projects or database changes.
+    const auth = typeof supabaseClient !== "undefined" ? supabaseClient.auth : null;
+    if (auth && typeof auth.getSession === "function") {
+      auth.getSession().then(() => navigateToPath()).catch(() => navigateToPath());
+    } else {
+      void navigateToPath();
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+
 </body>
                                     </html>
