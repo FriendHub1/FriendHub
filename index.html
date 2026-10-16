@@ -19826,21 +19826,32 @@ function apply(){
  while((node=walker.nextNode())){
    if(++count>30000)break;
    const p=node.parentElement;if(!p||p.closest(skip))continue;
-   const original=node.nodeValue;const key=original.trim();
-   if(Object.prototype.hasOwnProperty.call(dict,key))node.nodeValue=original.replace(key,dict[key]);
+   const original=node.nodeValue;
+   // HTML paragraphs often contain line breaks and repeated spaces.
+   // Normalize whitespace only for lookup; never modify user-written content.
+   const key=original.replace(/\s+/g,' ').trim();
+   if(Object.prototype.hasOwnProperty.call(dict,key)){
+     const lead=(original.match(/^\s*/)||[''])[0];
+     const trail=(original.match(/\s*$/)||[''])[0];
+     node.nodeValue=lead+dict[key]+trail;
+   }
  }
  root.querySelectorAll('[placeholder],[aria-label],[title]').forEach(el=>{
   if(el.closest(skip))return;
   for(const a of ['placeholder','aria-label','title']){const v=el.getAttribute(a);if(Object.prototype.hasOwnProperty.call(dict,v))el.setAttribute(a,dict[v]);}
  });
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{apply();setTimeout(apply,650);},{once:true});else {apply();setTimeout(apply,650);}
 // UI panels are often rendered after initial load. Translate after direct user actions,
 // without observing every DOM mutation or modifying user-generated content.
 let pending=0;
 function scheduleApply(){
  if(pending)clearTimeout(pending);
  pending=setTimeout(()=>{pending=0;apply();},350);
+ // Some panels redraw their English content after the first UI update.
+ // Two bounded follow-up passes only on user navigation, never a permanent observer.
+ setTimeout(apply,850);
+ setTimeout(apply,1600);
 }
 document.addEventListener('click',scheduleApply,{passive:true});
 document.addEventListener('change',scheduleApply,{passive:true});
