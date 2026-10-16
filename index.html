@@ -6018,7 +6018,7 @@
                                     <span class="dm-chat-private">Private conversation</span>
                                     </span>
                                     </button>
-                                    <button type="button" class="xoxo-chat-studio-launch" onclick="xoxoChatStudioOpen()" title="Customize chat" aria-label="Customize chat">🎨</button>
+                                    
                                     <button type="button" class="dm-chat-delete-button" onclick="openDmDeleteOptions()" title="Delete conversation" aria-label="Delete conversation">🗑️</button>
                                     </div>
                                     <div id="dmMessages" class="dm-messages"></div>
@@ -17754,73 +17754,15 @@ Object.values(panels).forEach(id=>{$(id).hidden=id!=='sl2Create'});root.querySel
 </style>
 
 
-<!-- XOXO CHAT STUDIO — PERSONAL MESSAGE APPEARANCE ONLY -->
-<style id="xoxo-chat-studio-css">
-#messages .xoxo-chat-studio-launch{margin-left:auto;flex:0 0 42px;width:42px;height:42px;border-radius:13px;border:1px solid #b968ee;background:linear-gradient(145deg,#31144e,#622d83);color:#fff;font-size:21px;box-shadow:0 0 14px #a13de055;cursor:pointer}
-#messages .xoxo-chat-studio-launch:hover{filter:brightness(1.2)}
-#xoxoChatStudioOverlay{position:fixed;inset:0;z-index:99050;display:none;align-items:center;justify-content:center;padding:16px;background:#070413dd;backdrop-filter:blur(12px)}
-#xoxoChatStudioOverlay.open{display:flex}
-.xcs-dialog{width:min(740px,100%);max-height:94dvh;overflow:auto;background:#180c2e;color:#f9efff;border:1px solid #b066ee;border-radius:24px;padding:22px;box-shadow:0 20px 65px #0009}
-.xcs-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.xcs-top h2{font-size:25px;color:#fff}.xcs-top p,.xcs-note{color:#e1c6f5;font-size:13px}.xcs-close{border:1px solid #8455ad;border-radius:50%;background:#382050;color:white;font-size:23px;width:39px;height:39px}
-.xcs-label{display:block;font-weight:800;margin:18px 0 10px}.xcs-themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.xcs-theme{border:2px solid #79598c;border-radius:15px;min-height:88px;padding:10px 7px;color:white;font-weight:800;text-align:center;cursor:pointer;background:#2a1947}.xcs-theme[aria-pressed=true]{border-color:#ffd5ff;outline:2px solid #e89bff;outline-offset:1px}.xcs-swatch{display:block;width:100%;height:35px;border-radius:8px;margin-bottom:7px;background:var(--xcs-wall)}
-.xcs-preview{margin-top:14px;border:1px solid #7d4f9e;border-radius:17px;overflow:hidden;background:#1c102e}.xcs-preview-header{padding:11px 14px;background:#29163e;color:#fff;font-weight:800}.xcs-preview-messages{min-height:180px;display:flex;flex-direction:column;gap:11px;padding:16px;background:var(--xcs-wall);background-size:cover;background-position:center}.xcs-preview-messages .xcs-bubble{max-width:80%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.45;background:var(--xcs-received,#34224d);color:var(--xcs-received-text,#fff);border:1px solid #ffffff33}.xcs-preview-messages .xcs-bubble.sent{align-self:flex-end;background:var(--xcs-sent,#9c56e6);color:var(--xcs-sent-text,#fff)}
-.xcs-controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:14px 0}.xcs-controls label{font-size:14px;font-weight:700}.xcs-controls select{padding:10px 12px;background:#29163e;color:#fff;border:1px solid #9b65bf;border-radius:12px}.xcs-actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:15px}.xcs-actions button{padding:11px 16px;border:1px solid #c184e8;border-radius:12px;background:#45205e;color:#fff;font-weight:800}.xcs-actions .xcs-save{background:linear-gradient(110deg,#8032cf,#c34bea)}
-/* Wallpaper palettes: no external assets, safe for privacy and offline caching. */
-#xoxoChatStudioOverlay,[data-xoxo-chat-theme="original"]{--xcs-wall:linear-gradient(140deg,#231137,#140e25);--xcs-sent:#6845a0;--xcs-received:#34224d;--xcs-sent-text:#fff;--xcs-received-text:#fff}
-[data-xoxo-chat-theme="amethyst"]{--xcs-wall:radial-gradient(ellipse at 85% 12%,#9b60dd66,transparent 46%),radial-gradient(ellipse at 5% 90%,#5725a7a8,transparent 60%),repeating-linear-gradient(140deg,transparent 0 36px,#c2a6ff09 38px 40px),linear-gradient(145deg,#120b31,#422069,#170f3d);--xcs-sent:#a474e9;--xcs-received:#302050;--xcs-sent-text:#180b31;--xcs-received-text:#fff}
-[data-xoxo-chat-theme="sakura"]{--xcs-wall:radial-gradient(ellipse at 80% 5%,#ffd6e6 5%,transparent 53%),radial-gradient(circle at 18% 70%,#f7a8cb77,transparent 42%),repeating-linear-gradient(35deg,transparent 0 52px,#ef8db01a 53px 56px),linear-gradient(160deg,#ffebf5,#dfb7e7);--xcs-sent:#a42e72;--xcs-received:#fff2f7;--xcs-sent-text:#fff;--xcs-received-text:#672044}
-[data-xoxo-chat-theme="azure"]{--xcs-wall:radial-gradient(ellipse at 12% 25%,#00dbf87a,transparent 45%),radial-gradient(ellipse at 95% 78%,#3162d688,transparent 52%),repeating-linear-gradient(120deg,transparent 0 35px,#74eaff0d 36px 38px),linear-gradient(160deg,#06162d,#123c6d,#06152b);--xcs-sent:#43d6ed;--xcs-received:#103b64;--xcs-sent-text:#08243b;--xcs-received-text:#fff}
-[data-xoxo-chat-theme="lunar"]{--xcs-wall:radial-gradient(circle at 80% 15%,#f3d59c 0 16px,#f4dcad55 19px,transparent 66px),radial-gradient(circle at 15% 34%,#fff8d4 1px,transparent 3px),radial-gradient(circle at 68% 74%,#fff8d4 1px,transparent 3px),linear-gradient(160deg,#060c2b,#172453,#080d25);--xcs-sent:#d6bd85;--xcs-received:#27365e;--xcs-sent-text:#28233b;--xcs-received-text:#fff}
-[data-xoxo-chat-theme="opal"]{--xcs-wall:radial-gradient(ellipse at 75% 5%,#c3fff2,transparent 55%),radial-gradient(ellipse at 10% 80%,#e5bdfb,transparent 57%),linear-gradient(125deg,#fce6f1,#c7e6f9,#f7e3cf);--xcs-sent:#6846a3;--xcs-received:#ffffffd9;--xcs-sent-text:#fff;--xcs-received-text:#34264b}
-[data-xoxo-chat-theme="emerald"]{--xcs-wall:radial-gradient(circle at 80% 20%,#f9dc73 1px,transparent 5px),radial-gradient(circle at 15% 72%,#d8ed8c 2px,transparent 7px),radial-gradient(ellipse at 70% 10%,#4eae7466,transparent 53%),linear-gradient(155deg,#071f22,#17543e,#092b29);--xcs-sent:#8ce3ac;--xcs-received:#174c40;--xcs-sent-text:#113b31;--xcs-received-text:#fff}
-[data-xoxo-chat-bubble="violet"]{--xcs-sent:#a474e9;--xcs-sent-text:#1b1033}[data-xoxo-chat-bubble="pink"]{--xcs-sent:#f5a3d1;--xcs-sent-text:#582041}[data-xoxo-chat-bubble="blue"]{--xcs-sent:#7adcf5;--xcs-sent-text:#10344e}[data-xoxo-chat-bubble="mint"]{--xcs-sent:#89eac5;--xcs-sent-text:#143c33}[data-xoxo-chat-bubble="dark"]{--xcs-sent:#2d2145;--xcs-sent-text:#fff}
-/* Scope all chat changes to message history and its bubbles only. */
-#messages #dmChat[data-xoxo-chat-theme]:not([data-xoxo-chat-theme="original"]) #dmMessages{background:var(--xcs-wall)!important;background-size:cover!important;background-position:center!important}
-#messages #dmChat[data-xoxo-chat-theme]:not([data-xoxo-chat-theme="original"]) #dmMessages .dm-row.mine .dm-bubble{background:var(--xcs-sent)!important;color:var(--xcs-sent-text)!important;border-color:#ffffff44!important}
-#messages #dmChat[data-xoxo-chat-theme]:not([data-xoxo-chat-theme="original"]) #dmMessages .dm-row.theirs .dm-bubble{background:var(--xcs-received)!important;color:var(--xcs-received-text)!important;border-color:#ffffff44!important}
-#messages #dmChat[data-xoxo-chat-theme="original"][data-xoxo-chat-bubble]:not([data-xoxo-chat-bubble="match"]) #dmMessages .dm-row.mine .dm-bubble{background:var(--xcs-sent)!important;color:var(--xcs-sent-text)!important}
-@media(max-width:530px){.xcs-themes{grid-template-columns:repeat(2,minmax(0,1fr))}.xcs-dialog{padding:15px}.xcs-top h2{font-size:21px}#messages .xoxo-chat-studio-launch{width:37px;height:37px;flex-basis:37px;font-size:19px}}
-</style>
-<div id="xoxoChatStudioOverlay" role="presentation" onclick="if(event.target===this)xoxoChatStudioClose()">
- <section class="xcs-dialog" role="dialog" aria-modal="true" aria-labelledby="xcsTitle">
-  <div class="xcs-top"><div><h2 id="xcsTitle">🎨 XOXO Chat Studio</h2><p>Make your conversations feel like you 💜</p></div><button class="xcs-close" type="button" onclick="xoxoChatStudioClose()" aria-label="Close">×</button></div>
-  <span class="xcs-label">Choose your chat background</span>
-  <div id="xcsThemes" class="xcs-themes">
-   <button class="xcs-theme" type="button" data-theme="original" onclick="xoxoChatStudioChoose('original')"><span class="xcs-swatch" data-xoxo-chat-theme="original"></span>💜 Original XOXO</button>
-   <button class="xcs-theme" type="button" data-theme="amethyst" onclick="xoxoChatStudioChoose('amethyst')"><span class="xcs-swatch" data-xoxo-chat-theme="amethyst"></span>💜 Amethyst Haze</button>
-   <button class="xcs-theme" type="button" data-theme="sakura" onclick="xoxoChatStudioChoose('sakura')"><span class="xcs-swatch" data-xoxo-chat-theme="sakura"></span>🌸 Sakura Wishes</button>
-   <button class="xcs-theme" type="button" data-theme="azure" onclick="xoxoChatStudioChoose('azure')"><span class="xcs-swatch" data-xoxo-chat-theme="azure"></span>💠 Azure Pulse</button>
-   <button class="xcs-theme" type="button" data-theme="lunar" onclick="xoxoChatStudioChoose('lunar')"><span class="xcs-swatch" data-xoxo-chat-theme="lunar"></span>🌙 Lunar Serenade</button>
-   <button class="xcs-theme" type="button" data-theme="opal" onclick="xoxoChatStudioChoose('opal')"><span class="xcs-swatch" data-xoxo-chat-theme="opal"></span>🫧 Opal Fantasy</button>
-   <button class="xcs-theme" type="button" data-theme="emerald" onclick="xoxoChatStudioChoose('emerald')"><span class="xcs-swatch" data-xoxo-chat-theme="emerald"></span>🍃 Emerald Lullaby</button>
-  </div>
-  <div id="xcsPreview" class="xcs-preview" data-xoxo-chat-theme="original" data-xoxo-chat-bubble="match"><div class="xcs-preview-header">💬 Chat preview</div><div class="xcs-preview-messages"><div class="xcs-bubble">Hey! How's your day? ✨</div><div class="xcs-bubble sent">It's going great! 💜</div><div class="xcs-bubble">Love your chat style!</div></div></div>
-  <div class="xcs-controls"><label for="xcsBubble">Message bubble color 💬</label><select id="xcsBubble" onchange="xoxoChatStudioBubble(this.value)"><option value="match">Match background</option><option value="violet">Violet 💜</option><option value="pink">Pink 💕</option><option value="blue">Blue 💠</option><option value="mint">Mint 🍃</option><option value="dark">Midnight 🌙</option></select></div>
-  <p class="xcs-note" id="xcsNote" role="status">Only you see your chat appearance. Your messages stay unchanged.</p>
-  <div class="xcs-actions"><button type="button" onclick="xoxoChatStudioReset()">Restore Original 💜</button><button class="xcs-save" id="xcsSave" type="button" onclick="xoxoChatStudioSave()">Save Chat Style ✨</button></div>
- </section>
-</div>
-<script id="xoxo-chat-studio-js">
-(function(){'use strict';
- const themes=['original','amethyst','sakura','azure','lunar','opal','emerald'];
- const bubbles=['match','violet','pink','blue','mint','dark'];
- const safe=d=>({theme:themes.includes(d?.theme)?d.theme:'original',bubble:bubbles.includes(d?.bubble)?d.bubble:'match'});
- const client=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
- let saved={theme:'original',bubble:'match'},activeUserId=null,loaded=false;
- const note=msg=>{const el=document.getElementById('xcsNote');if(el)el.textContent=msg};
- function preview(d){d=safe(d);const p=document.getElementById('xcsPreview');if(!p)return;p.dataset.xoxoChatTheme=d.theme;p.dataset.xoxoChatBubble=d.bubble;document.getElementById('xcsBubble').value=d.bubble;document.querySelectorAll('#xcsThemes [data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.theme===d.theme)));}
- function apply(){const chat=document.getElementById('dmChat');if(!chat)return;chat.dataset.xoxoChatTheme=saved.theme;chat.dataset.xoxoChatBubble=saved.bubble;}
- async function load(force=false){const c=client();if(!c)return;try{const {data:{user},error:ae}=await c.auth.getUser();if(ae||!user){activeUserId=null;loaded=false;saved=safe(null);apply();return;}if(loaded&&activeUserId===user.id&&!force)return;activeUserId=user.id;loaded=false;const {data,error}=await c.from('xoxo_chat_designs').select('theme,bubble').eq('user_id',user.id).maybeSingle();if(error)throw error;saved=safe(data);loaded=true;apply();}catch(e){console.warn('Chat Studio load:',e);note('Could not load your saved style. Please try again.');}}
- window.xoxoChatStudioApply=()=>{apply();load();};
- window.xoxoChatStudioChoose=theme=>{if(!themes.includes(theme))return;const p=document.getElementById('xcsPreview');preview({theme,bubble:p?.dataset.xoxoChatBubble||'match'});};
- window.xoxoChatStudioBubble=bubble=>{if(!bubbles.includes(bubble))return;const p=document.getElementById('xcsPreview');preview({theme:p?.dataset.xoxoChatTheme||'original',bubble});};
- window.xoxoChatStudioOpen=async()=>{const o=document.getElementById('xoxoChatStudioOverlay');if(!o)return;o.classList.add('open');await load();preview(saved);note('Only you see your chat appearance. Your messages stay unchanged.');o.querySelector('.xcs-close')?.focus();};
- window.xoxoChatStudioClose=()=>{document.getElementById('xoxoChatStudioOverlay')?.classList.remove('open');document.querySelector('.xoxo-chat-studio-launch')?.focus();};
- window.xoxoChatStudioReset=()=>{preview({theme:'original',bubble:'match'});note('Original XOXO selected. Save to restore the classic chat. 💜');};
- window.xoxoChatStudioSave=async()=>{const c=client(),b=document.getElementById('xcsSave'),p=document.getElementById('xcsPreview');if(!c||!b||!p)return;b.disabled=true;b.textContent='Saving…';try{const {data:{user},error:ae}=await c.auth.getUser();if(ae||!user)throw new Error('Please log in.');const next=safe({theme:p.dataset.xoxoChatTheme,bubble:p.dataset.xoxoChatBubble});const {error}=next.theme==='original'&&next.bubble==='match'?await c.from('xoxo_chat_designs').delete().eq('user_id',user.id):await c.from('xoxo_chat_designs').upsert({user_id:user.id,...next,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error)throw error;saved=next;activeUserId=user.id;loaded=true;apply();note('💜 Saved! Your chat appearance is ready.');b.textContent='Saved ✓';}catch(e){console.error('Chat Studio save:',e);note('⚠️ Could not save: '+(e.message||'Try again.'));b.textContent='Try again';}finally{b.disabled=false;setTimeout(()=>b.textContent='Save Chat Style ✨',2000);}};
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('xoxoChatStudioOverlay')?.classList.contains('open'))window.xoxoChatStudioClose();});
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>load(),{once:true});else load();
-})();
+<!-- XOXO Chat Studio removed at owner's request. Existing chat logic retains its optional hook. -->
+<script>
+window.xoxoChatStudioApply = function () {
+  const chat = document.getElementById('dmChat');
+  if (chat) {
+    delete chat.dataset.xoxoChatTheme;
+    delete chat.dataset.xoxoChatBubble;
+  }
+};
 </script>
 
 <!-- XOXO PROFILE STUDIO — STAGE 2: SAVED DESIGNS VIA SUPABASE. -->
