@@ -14245,6 +14245,21 @@ async function openPublicProfile(userId) {
                                             likes:0, comments:0, liked:false, saved:false,
                                             userId:row.user_id, profilePhoto:null, editedAt:row.edited_at || null
                                           };
+                                          // Public shared posts need the author's public avatar as well.
+                                          // Use the same public-profile RPC as the /u/ profile page.
+                                          if (post && row.user_id) {
+                                            try {
+                                              const {data: authorRows, error: authorError} = await supabaseClient.rpc(
+                                                "get_public_profile", {target_user_id:String(row.user_id)}
+                                              );
+                                              if (!authorError) {
+                                                const author = Array.isArray(authorRows) ? authorRows[0] : null;
+                                                if (author?.profile_photo) post.profilePhoto = author.profile_photo;
+                                              }
+                                            } catch (authorLookupError) {
+                                              console.warn("Shared post author photo unavailable:", authorLookupError);
+                                            }
+                                          }
                                           if (currentUser && blockedUserIds.has(String(row.user_id))) post=null;
                                           if (post && currentUser) {
                                             const existing=posts.find(p=>String(p.id)===String(postId));
@@ -14273,6 +14288,17 @@ async function openPublicProfile(userId) {
                                           <small>Made for connections, made for you. 💗</small>
                                         </aside>` : "";
                                         overlay.innerHTML=`<div class="xoxo-sp-inner">${header}<div class="xoxo-sp-post">${card}</div>${invite}</div>`;
+                                        // In a shared-post overlay, the normal in-app profile navigation
+                                        // stays behind the overlay. Open the established public /u/ URL.
+                                        overlay.querySelectorAll('.xoxo-sp-post [data-public-user-id]').forEach(el => {
+                                          const authorId = el.getAttribute('data-public-user-id');
+                                          if (!/^[0-9a-fA-F-]{36}$/.test(authorId || '')) return;
+                                          el.onclick = function(event) {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            window.location.assign('/u/' + encodeURIComponent(authorId));
+                                          };
+                                        });
                                         if (location.pathname !== `/post/${postId}`) {
                                           history.replaceState({xoxoRoute:true}, "", `/post/${postId}`);
                                         }
