@@ -116,7 +116,8 @@ function getProfileImageUrl(
     photo.startsWith("https://") ||
     photo.startsWith("http://")
   ) {
-    return `${origin}/profile-preview-image/${encodeURIComponent(userId)}?v=${encodeURIComponent(photo.startsWith("data:image/") ? String(photo.length) : (photo.split("/").pop() || "photo"))}`;
+    // Restore the direct public photo URL used by the working October 3 preview.
+    return photo;
   }
 
   return `${origin}/xoxoavenue-social.png`;
