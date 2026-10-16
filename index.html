@@ -18946,8 +18946,26 @@ function renderXoxoActivity(){
         }
       } else if (target === "messages" && typeof window.openMessagesInbox === "function") {
         await window.openMessagesInbox();
-      } else if (target === "bottleMessages" && !isLoggedIn()) {
-        window.openAuth?.("login");
+      } else if (target === "bottleMessages") {
+        // Deep links may arrive before Supabase restores the session and private
+        // access RPC completes. Wait for the existing authorization, never bypass it.
+        if (!isLoggedIn()) {
+          for (let i = 0; i < 30 && !isLoggedIn(); i++) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+        }
+        if (!isLoggedIn()) {
+          window.openAuth?.("login");
+          return;
+        }
+        if (!window.xoxoSlBetaAllowed && typeof refreshXoxoSlBetaAccess === "function") {
+          await refreshXoxoSlBetaAccess();
+        }
+        if (!window.xoxoSlBetaAllowed) {
+          console.warn("XOXO: Secret Letters access not confirmed");
+          return;
+        }
+        window.showPage?.("bottleMessages");
       } else {
         window.showPage?.(target);
       }
