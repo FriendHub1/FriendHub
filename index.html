@@ -10309,7 +10309,7 @@ async function openPublicProfile(userId) {
                                     async function sharePublicProfile(userId, username = "@User") {
                                     if (!userId) return;
                                     const language = getFriendHubLanguage();
-                                    const url = `${window.location.origin}${window.location.pathname}?profile=${encodeURIComponent(String(userId))}`;
+                                    const url = `${window.location.origin}/u/${encodeURIComponent(String(userId))}`;
                                     const cleanUsername = String(username || "@User");
                                     const shareData = {
                                     title: `${cleanUsername} · XOXO Avenue`,
@@ -10347,7 +10347,8 @@ async function openPublicProfile(userId) {
 
                                     async function openSharedProfileFromUrl() {
                                     const params = new URLSearchParams(window.location.search);
-                                    const userId = params.get("profile");
+                                    const routeMatch = window.location.pathname.match(/^\/u\/([0-9a-fA-F-]{36})\/?$/);
+                                    const userId = params.get("profile") || (routeMatch ? routeMatch[1] : null);
                                     if (!userId) return;
 
                                     await openPublicProfile(String(userId));
