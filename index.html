@@ -18587,5 +18587,71 @@ function renderXoxoActivity(){
 })();
 </script>
 
+
+<!-- XOXO Jump to Latest: lightweight, presentation-only enhancement. -->
+<style>
+  #xoxoDmJumpLatestButton {
+    position: fixed; z-index: 1050; display: none;
+    align-items: center; justify-content: center; width: 44px; height: 44px;
+    border: 1px solid rgba(238,175,255,.6); border-radius: 50%;
+    background: linear-gradient(145deg, #a43de1, #5941d9); color: #fff;
+    box-shadow: 0 5px 24px rgba(121,45,213,.45); cursor: pointer;
+    font-size: 24px; line-height: 1; padding: 0;
+  }
+  #xoxoDmJumpLatestButton:focus-visible { outline: 3px solid #ffd1f6; outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { #xoxoDmJumpLatestButton { transition: none; } }
+</style>
+<script>
+(function () {
+  'use strict';
+  let button, container, observer, pending = false;
+  function scheduleUpdate() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(function () { pending = false; update(); });
+  }
+  function update() {
+    if (!button || !container) return;
+    const rect = container.getBoundingClientRect();
+    const visible = rect.width > 0 && rect.height > 0 &&
+      rect.bottom > 0 && rect.top < window.innerHeight &&
+      getComputedStyle(container).visibility !== 'hidden' &&
+      container.getClientRects().length > 0;
+    const distance = container.scrollHeight - container.scrollTop - container.clientHeight;
+    const show = visible && distance > 240 && container.scrollHeight > container.clientHeight + 240;
+    button.style.display = show ? 'flex' : 'none';
+    if (!show) return;
+    button.style.left = Math.max(8, Math.min(window.innerWidth - 52, rect.right - 58)) + 'px';
+    button.style.top = Math.max(8, Math.min(window.innerHeight - 52, rect.bottom - 60)) + 'px';
+    const es = typeof getFriendHubLanguage === 'function' && getFriendHubLanguage() === 'es';
+    const label = es ? 'Ir al mensaje más reciente' : 'Jump to latest message';
+    button.title = label;
+    button.setAttribute('aria-label', label);
+  }
+  function init() {
+    container = document.getElementById('dmMessages');
+    if (!container || document.getElementById('xoxoDmJumpLatestButton')) return;
+    button = document.createElement('button');
+    button.id = 'xoxoDmJumpLatestButton';
+    button.type = 'button';
+    button.textContent = '↓';
+    button.setAttribute('aria-label', 'Jump to latest message');
+    document.body.appendChild(button);
+    button.addEventListener('click', function () {
+      container.scrollTo({top: container.scrollHeight, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+      scheduleUpdate();
+    });
+    container.addEventListener('scroll', scheduleUpdate, {passive:true});
+    window.addEventListener('resize', scheduleUpdate, {passive:true});
+    window.addEventListener('scroll', scheduleUpdate, {passive:true});
+    observer = new MutationObserver(scheduleUpdate);
+    observer.observe(container, {childList:true, subtree:false});
+    scheduleUpdate();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+
 </body>
                                     </html>
