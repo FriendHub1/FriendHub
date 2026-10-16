@@ -10258,7 +10258,7 @@ function xoxoBubbleImg(userId, username) {
                                     : " Like";
                                     const saved = savedPostIds.has(String(post.id));
                                     const savedClass = saved ? "saved" : "";
-                                    const saveText = saved ? "Saved" : "Save";
+                                    const saveText = getFriendHubLanguage() === "pl" ? (saved ? "Zapisano" : "Zapisz") : (saved ? "Saved" : "Save");
                                     let avatarHtml;
                                     if (post.profilePhoto) {
                                     avatarHtml =
@@ -10309,7 +10309,7 @@ function xoxoBubbleImg(userId, username) {
                                     </div></div>
                                     <span class="xs-action xoxo-post-views" title="Views" aria-label="0 views" data-view-post-id="${escapeHtmlAttribute(String(post.id))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><small>0</small></span>
                                     <button class="xs-action" title="Share" onclick="sharePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg><small>${getFriendHubLanguage() === "pl" ? "Udostępnij" : "Share"}</small></button>
-                                    <button class="xs-action xs-bookmark ${savedClass}" title="Save" onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-5-7 5V4a1 1 0 0 1 1-1Z"/></svg><small>${saved ? "Saved" : "Save"}</small></button>
+                                    <button class="xs-action xs-bookmark ${savedClass}" title="${getFriendHubLanguage() === "pl" ? (saved ? "Zapisano" : "Zapisz") : "Save"}" onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-5-7 5V4a1 1 0 0 1 1-1Z"/></svg><small>${saved ? "Saved" : "Save"}</small></button>
                                     </div>
                                     </article>
                                     `;
@@ -12058,7 +12058,7 @@ async function openPublicProfile(userId) {
                                       input.focus();
                                       input.setSelectionRange(input.value.length, input.value.length);
                                     }
-                                    if (button) button.textContent = getFriendHubLanguage() === "es" ? "Guardar" : "Save";
+                                    if (button) button.textContent = getFriendHubLanguage() === "pl" ? "Zapisz" : (getFriendHubLanguage() === "es" ? "Guardar" : "Save");
                                     setDmStatus(getFriendHubLanguage() === "es" ? "✏️ Editando mensaje" : "✏️ Editing message");
                                     }
 
