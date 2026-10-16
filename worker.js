@@ -2754,10 +2754,13 @@ export default {
      * NORMAL PAGE
      */
 
+    // Friendly UUID profile links preserve legacy ?profile=ID behavior.
+    const friendlyProfileMatch =
+      url.pathname.match(/^\/u\/([0-9a-fA-F-]{36})\/?$/);
     const profileId =
-      url.searchParams.get(
-        "profile"
-      );
+      friendlyProfileMatch
+        ? friendlyProfileMatch[1]
+        : url.searchParams.get("profile");
 
     if (!profileId) {
       const response =
@@ -2898,9 +2901,9 @@ export default {
         ),
 
       url:
-        `${url.origin}/?profile=${encodeURIComponent(
-          profileId
-        )}`,
+        friendlyProfileMatch
+          ? `${url.origin}/u/${encodeURIComponent(profileId)}`
+          : `${url.origin}/?profile=${encodeURIComponent(profileId)}`,
     };
 
     /*
