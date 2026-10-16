@@ -15708,7 +15708,9 @@ function renderXoxoAdminUsers(){
     return `<div class="xoxo-admin-card">
       <div class="xoxo-admin-card-head">
         <div>
-          <div class="xoxo-admin-card-title">${escapeHtml(u.username||"No username")}</div>
+          <div class="xoxo-admin-card-title">${hasProfile
+            ? `<button type="button" onclick="openXoxoAdminUserProfile('${id}')" title="View profile" aria-label="View profile of ${escapeHtmlAttribute(u.username||'user')}" style="font:inherit;font-weight:inherit;color:inherit;background:none;border:0;padding:0;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(186,156,255,.65);text-underline-offset:3px;">${escapeHtml(u.username||"No username")}</button>`
+            : escapeHtml(u.username||"No username")}</div>
           <div>${escapeHtml(u.email||"No email")}</div>
           ${profileBadge}
           <div class="xoxo-admin-meta">
