@@ -14418,7 +14418,8 @@ async function openPublicProfile(userId) {
                                     let sharedPostLoginPromptShown = false;
 
                                     function getFriendHubLanguage() {
-                                      return localStorage.getItem("friendhub_language") === "es" ? "es" : "en";
+                                      const language = localStorage.getItem("friendhub_language");
+                                      return language === "es" || language === "pt-BR" ? language : "en";
                                     }
 
                                     function buildSharedPostUrl(postId) {
@@ -19366,7 +19367,7 @@ function renderXoxoActivity(){
   function updateDmLabels(){
     const chat=document.getElementById("dmChat");
     if(!chat) return;
-    const selected=document.getElementById("languageSelect")?.value || localStorage.getItem("friendhub_language") || "en";
+    const selected=localStorage.getItem("friendhub_language") || document.getElementById("languageSelect")?.value || "en";
     const lang=Object.prototype.hasOwnProperty.call(labels,selected)?selected:"en";
     const t=labels[lang];
     const back=chat.querySelector(".dm-back-btn");
