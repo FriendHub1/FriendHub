@@ -5492,6 +5492,24 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
   }
 }
 </style>
+
+<style id="xoxo-support-centered-cards-v1">
+/* Center only the two support cards; preserve responsive layout and behavior. */
+#support .support-live-card,
+#support .support-contact-card {
+  box-sizing: border-box;
+  width: min(100%, 900px);
+  max-width: 900px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+@media (max-width: 700px) {
+  #support .support-live-card,
+  #support .support-contact-card {
+    width: 100%;
+  }
+}
+</style>
 </head>
                                     <body>
                                     <header>
