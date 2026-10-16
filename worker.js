@@ -116,7 +116,7 @@ function getProfileImageUrl(
     photo.startsWith("https://") ||
     photo.startsWith("http://")
   ) {
-    return `${origin}/profile-preview-image/${encodeURIComponent(userId)}`;
+    return `${origin}/profile-preview-image/${encodeURIComponent(userId)}?v=${encodeURIComponent(photo.startsWith("data:image/") ? String(photo.length) : (photo.split("/").pop() || "photo"))}`;
   }
 
   return `${origin}/xoxoavenue-social.png`;
@@ -300,6 +300,7 @@ function injectPreview(
 <meta property="og:url" content="${escapeHtml(
             metadata.url
           )}">
+<meta property="og:image:type" content="${escapeHtml(metadata.imageType || "image/jpeg")}">
 <meta property="og:site_name" content="XOXO Avenue">
 
 <meta name="twitter:card" content="summary">
@@ -2795,7 +2796,7 @@ export default {
       const image = (String(post.media_type || "").toLowerCase() === "image" && /^https:\/\//i.test(media))
         ? media
         : getProfileImageUrl(author, url.origin, post.user_id);
-      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname,type:"article"});
+      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname,type:"article",imageType:(image === media && image ? "" : "image/jpeg")});
       const headers = new Headers(transformed.headers);
       headers.set("Cache-Control","public, max-age=60");
       headers.set("X-XOXO-Worker","shared-post-preview");
