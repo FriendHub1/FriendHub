@@ -11160,7 +11160,14 @@ async function openPublicProfile(userId) {
 
                                     const presence = formatFriendHubPresence(data?.last_active_at || null);
                                     el.className = `friendhub-presence friendhub-presence-dm ${presence.online ? "online" : "offline"}`;
-                                    el.innerHTML = `<span class="friendhub-presence-dot"></span><span>${escapeHtml(presence.text)}</span>`;
+                                    const dmLang = document.getElementById("languageSelect")?.value || localStorage.getItem("friendhub_language") || "en";
+                                    let dmPresenceText = presence.text;
+                                    if (dmLang === "pt-BR") {
+                                      if (presence.online) dmPresenceText = "Online";
+                                      else if (/^offline$/i.test(String(dmPresenceText))) dmPresenceText = "Offline";
+                                      else if (/^last seen/i.test(String(dmPresenceText))) dmPresenceText = String(dmPresenceText).replace(/^last seen/i,"Visto por último");
+                                    }
+                                    el.innerHTML = `<span class="friendhub-presence-dot"></span><span>${escapeHtml(dmPresenceText)}</span>`;
                                     }
 
                                     function stopDmPresenceRefresh() {
@@ -19353,12 +19360,14 @@ function renderXoxoActivity(){
 (function(){
   const labels = {
     en: {back:"← Back", private:"Private conversation", send:"Send"},
-    es: {back:"← Volver", private:"Conversación privada", send:"Enviar"}
+    es: {back:"← Volver", private:"Conversación privada", send:"Enviar"},
+    "pt-BR": {back:"← Voltar", private:"Conversa privada", send:"Enviar"}
   };
   function updateDmLabels(){
     const chat=document.getElementById("dmChat");
     if(!chat) return;
-    const lang=document.getElementById("languageSelect")?.value==="es"?"es":"en";
+    const selected=document.getElementById("languageSelect")?.value || localStorage.getItem("friendhub_language") || "en";
+    const lang=Object.prototype.hasOwnProperty.call(labels,selected)?selected:"en";
     const t=labels[lang];
     const back=chat.querySelector(".dm-back-btn");
     const priv=chat.querySelector(".dm-chat-private");
