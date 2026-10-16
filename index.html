@@ -18842,29 +18842,27 @@ function renderXoxoActivity(){
 </script>
 
 
-<!-- XOXO FRIENDLY URL ROUTER V1 -->
+<!-- XOXO FRIENDLY URL ROUTER V2: support, secret letters, notifications, jewel box -->
 <script>
-/* Non-destructive client-side routes. Preserves existing public ?profile= and ?post= links. */
 (function () {
   "use strict";
   const routeToPage = Object.freeze({
-    "/": "home",
-    "/discover": "discover",
-    "/profile": "profile",
-    "/messages": "messages"
+    "/": "home", "/discover": "discover", "/profile": "profile",
+    "/messages": "messages", "/support": "support",
+    "/secret-letters": "bottleMessages", "/notifications": "@notifications",
+    "/jewels": "@jewels"
   });
   const pageToRoute = Object.freeze({
-    home: "/", discover: "/discover", profile: "/profile", messages: "/messages"
+    home: "/", discover: "/discover", profile: "/profile",
+    messages: "/messages", support: "/support",
+    bottleMessages: "/secret-letters"
   });
   let applyingHistory = false;
   let started = false;
-  function path() {
-    return window.location.pathname.replace(/\/+$/, "") || "/";
-  }
-  function setPath(next, replace) {
+  const path = () => location.pathname.replace(/\/+$/, "") || "/";
+  function setPath(next, replace = false) {
     if (applyingHistory || path() === next) return;
-    const url = next + window.location.search + window.location.hash;
-    window.history[replace ? "replaceState" : "pushState"]({xoxoRoute: true}, "", url);
+    history[replace ? "replaceState" : "pushState"]({xoxoRoute: true}, "", next + location.search + location.hash);
   }
   function wrapPageFunction(name) {
     const original = window[name];
@@ -18873,25 +18871,85 @@ function renderXoxoActivity(){
       const result = original.apply(this, [pageId, ...rest]);
       const active = document.getElementById(String(pageId))?.classList.contains("active");
       if (active && Object.prototype.hasOwnProperty.call(pageToRoute, String(pageId))) {
-        setPath(pageToRoute[String(pageId)], false);
+        setPath(pageToRoute[String(pageId)]);
       }
       return result;
     };
     wrapped.__xoxoRouted = true;
     window[name] = wrapped;
   }
+  function wrapNotifications() {
+    const original = window.toggleNotifications;
+    if (typeof original !== "function" || original.__xoxoRouted) return;
+    const wrapped = function(...args) {
+      const result = original.apply(this,args);
+      if (document.getElementById("notificationPanel")?.classList.contains("open")) {
+        setPath("/notifications");
+      } else if (path() === "/notifications") {
+        const current = document.querySelector(".page.active")?.id;
+        setPath(pageToRoute[current] || "/", true);
+      }
+      return result;
+    };
+    wrapped.__xoxoRouted = true;
+    window.toggleNotifications = wrapped;
+  }
+  function wrapJewelPreview() {
+    const original = window.xoxoOpenJewelPreview;
+    if (typeof original !== "function" || original.__xoxoRouted) return;
+    const wrapped = function(...args) {
+      const result = original.apply(this,args);
+      if (document.querySelector("#xjPreviewOverlay.open")) setPath("/jewels");
+      return result;
+    };
+    wrapped.__xoxoRouted = true;
+    window.xoxoOpenJewelPreview = wrapped;
+  }
+  function wrapJewelClose() {
+    const original = window.xoxoCloseJewelPreview;
+    if (typeof original !== "function" || original.__xoxoRouted) return;
+    const wrapped = function(...args) {
+      const result = original.apply(this,args);
+      if (path() === "/jewels") setPath("/profile",true);
+      return result;
+    };
+    wrapped.__xoxoRouted = true;
+    window.xoxoCloseJewelPreview = wrapped;
+  }
+  function isLoggedIn() {
+    return typeof currentUser !== "undefined" && !!currentUser;
+  }
   async function navigateToPath() {
     const target = routeToPage[path()];
     if (!target) return;
-    // Legacy shared links have priority over general section navigation.
-    const qs = new URLSearchParams(window.location.search);
+    const qs = new URLSearchParams(location.search);
     if (qs.has("profile") || qs.has("post")) return;
     applyingHistory = true;
     try {
-      if (target === "messages" && typeof window.openMessagesInbox === "function") {
+      if (target === "@notifications") {
+        if (!isLoggedIn()) { window.openAuth?.("login"); return; }
+        const panel = document.getElementById("notificationPanel");
+        if (panel && !panel.classList.contains("open")) {
+          await window.toggleNotifications?.({stopPropagation() {}});
+        }
+      } else if (target === "@jewels") {
+        if (!isLoggedIn()) { window.openAuth?.("login"); return; }
+        window.showPage?.("profile");
+        // Jewel showcase is loaded asynchronously from the member's profile.
+        for (let i = 0; i < 20; i++) {
+          const btn = document.querySelector('#xjOwnShowcase button[onclick*="xoxoOpenJewelPreview"]');
+          if (btn && typeof window.xoxoOpenJewelPreview === "function") {
+            window.xoxoOpenJewelPreview(btn);
+            break;
+          }
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
+      } else if (target === "messages" && typeof window.openMessagesInbox === "function") {
         await window.openMessagesInbox();
-      } else if (typeof window.showPage === "function") {
-        window.showPage(target);
+      } else if (target === "bottleMessages" && !isLoggedIn()) {
+        window.openAuth?.("login");
+      } else {
+        window.showPage?.(target);
       }
     } finally {
       applyingHistory = false;
@@ -18902,14 +18960,14 @@ function renderXoxoActivity(){
     started = true;
     wrapPageFunction("showPage");
     wrapPageFunction("showPageWithoutReload");
+    wrapNotifications();
+    wrapJewelPreview();
+    wrapJewelClose();
     window.addEventListener("popstate", () => { void navigateToPath(); });
-    // Wait for Supabase session restoration; no extra projects or database changes.
     const auth = typeof supabaseClient !== "undefined" ? supabaseClient.auth : null;
-    if (auth && typeof auth.getSession === "function") {
+    if (auth?.getSession) {
       auth.getSession().then(() => navigateToPath()).catch(() => navigateToPath());
-    } else {
-      void navigateToPath();
-    }
+    } else void navigateToPath();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
