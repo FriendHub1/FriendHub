@@ -5386,6 +5386,30 @@
 .xoxo-love-letter small{display:block;margin-top:15px;color:#ad6c9c}
 @media(max-width:600px){#xoxoSharedPostOverlay{padding:12px 10px 50px}.xoxo-love-letter{padding:24px 16px}}
 </style>
+<script>
+/* Shared-post direct entry: prevent the Home page from flashing during auth/RPC loading. */
+if (/^\/post\/[0-9a-fA-F-]{36}\/?$/.test(location.pathname)) {
+  document.documentElement.classList.add('xoxo-shared-post-loading');
+}
+</script>
+<style>
+html.xoxo-shared-post-loading body { visibility: hidden !important; }
+html.xoxo-shared-post-loading::before {
+  content: 'XOXO Avenue 💜';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f4fc;
+  color: #a33f83;
+  font: 700 24px/1.4 system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  html.xoxo-shared-post-loading::before { background: #19152b; color: #f2b4dd; }
+}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -14253,7 +14277,11 @@ async function openPublicProfile(userId) {
                                           history.replaceState({xoxoRoute:true}, "", `/post/${postId}`);
                                         }
                                         window.scrollTo(0,0);
-                                      } finally { xoxoSharedPostBusy=false; }
+                                      } finally {
+                                        xoxoSharedPostBusy=false;
+                                        // Reveal the fully rendered shared post (or the normal fallback on error).
+                                        document.documentElement.classList.remove('xoxo-shared-post-loading');
+                                      }
                                     }
                                     window.addEventListener("popstate", function () {
                                       if (!xoxoSharedPostId()) xoxoSharedPostClose();
@@ -14392,6 +14420,8 @@ async function openPublicProfile(userId) {
                                     try {
                                     await checkSession();
                                     } finally {
+                                    // Never leave the document hidden if startup exits before the post RPC.
+                                    document.documentElement.classList.remove('xoxo-shared-post-loading');
                                     xoxoCleanAuthUrlBeforeAnalytics();
                                     xoxoLoadUmamiAfterAuth();
                                     }
