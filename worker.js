@@ -280,7 +280,7 @@ function injectPreview(
 
     .on("head", {
       element(element) {
-        element.append(
+        element.prepend(
           `
 <meta property="og:type" content="${escapeHtml(metadata.type || "website")}">
 <meta property="og:title" content="${escapeHtml(
