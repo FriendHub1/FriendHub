@@ -2797,7 +2797,7 @@ export default {
       const image = (String(post.media_type || "").toLowerCase() === "image" && /^https:\/\//i.test(media))
         ? media
         : getProfileImageUrl(author, url.origin, post.user_id);
-      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname,type:"article",imageType:(image === media && image ? "" : "image/jpeg")});
+      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname,type:"article",imageType:/\.webp(?:[?#]|$)/i.test(image) ? "image/webp" : /\.png(?:[?#]|$)/i.test(image) ? "image/png" : "image/jpeg"});
       const headers = new Headers(transformed.headers);
       headers.set("Cache-Control","public, max-age=60");
       headers.set("X-XOXO-Worker","shared-post-preview");
@@ -2944,7 +2944,7 @@ export default {
         `${username} · XOXO Avenue`,
 
       description:
-        makeDescription(profile),
+        "Join XOXO Avenue! 💜 Meet new people, make friends, and connect with people around the world.",
 
       image:
         getProfileImageUrl(
