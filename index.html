@@ -5466,6 +5466,9 @@ html.xoxo-shared-post-loading::before {
 @media(max-width:420px){.xoxo-lang-choice{flex-wrap:nowrap}.xoxo-lang-choice select{margin-left:0}}
 
 </style>
+<style id="xoxo-polish-saved-header-f11">
+html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekcja"; }
+</style>
 </head>
                                     <body>
                                     <header>
@@ -17454,9 +17457,13 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     const startBtn = document.getElementById("supportChatStartBtn");
     if (!startBtn) return;
     if (window.xoxoSupportActiveCase?.id) {
-      startBtn.textContent = window.xoxoSupportIsOnline ? "Return to Live Chat" : "Return to conversation";
+      startBtn.textContent = localStorage.getItem('friendhub_language') === 'pl'
+        ? (window.xoxoSupportIsOnline ? "Wróć do czatu na żywo" : "Wróć do rozmowy")
+        : (window.xoxoSupportIsOnline ? "Return to Live Chat" : "Return to conversation");
     } else {
-      startBtn.textContent = window.xoxoSupportIsOnline ? "Start Live Chat" : "Leave a Message";
+      startBtn.textContent = localStorage.getItem('friendhub_language') === 'pl'
+        ? (window.xoxoSupportIsOnline ? "Rozpocznij czat na żywo" : "Zostaw wiadomość")
+        : (window.xoxoSupportIsOnline ? "Start Live Chat" : "Leave a Message");
     }
   };
 
@@ -17470,8 +17477,8 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 
     if (hasError) {
       box.classList.add("offline");
-      label.textContent = "Status unavailable";
-      message.textContent = "Live Chat status could not be checked right now. You can still contact XOXO Avenue Support by email.";
+      label.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Status niedostępny" : "Status unavailable";
+      message.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Nie udało się sprawdzić statusu czatu na żywo. Nadal możesz skontaktować się z pomocą XOXO Avenue przez e-mail." : "Live Chat status could not be checked right now. You can still contact XOXO Avenue Support by email.";
       window.xoxoSupportIsOnline = false;
       window.renderXoxoSupportButton();
       return;
@@ -17479,14 +17486,14 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
 
     if (isOnline) {
       box.classList.add("online");
-      label.textContent = window.xoxoPtLabel("Online","En línea","Online");
-      message.textContent = window.xoxoPtLabel("XOXO Avenue Support is online right now.","El soporte de XOXO Avenue está en línea ahora.","O suporte da XOXO Avenue está online agora.");
+      label.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Dostępny" : window.xoxoPtLabel("Online","En línea","Online");
+      message.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Pomoc XOXO Avenue jest teraz dostępna online." : window.xoxoPtLabel("XOXO Avenue Support is online right now.","El soporte de XOXO Avenue está en línea ahora.","O suporte da XOXO Avenue está online agora.");
       window.xoxoSupportIsOnline = true;
       window.renderXoxoSupportButton();
     } else {
       box.classList.add("offline");
-      label.textContent = "Offline";
-      message.textContent = "XOXO Avenue Support is currently offline. You can leave a message here or contact us by email.";
+      label.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Niedostępny" : "Offline";
+      message.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Pomoc XOXO Avenue jest obecnie niedostępna. Możesz zostawić wiadomość tutaj lub skontaktować się z nami przez e-mail." : "XOXO Avenue Support is currently offline. You can leave a message here or contact us by email.";
       window.xoxoSupportIsOnline = false;
       window.renderXoxoSupportButton();
     }
@@ -19856,7 +19863,19 @@ Object.assign(dict,{"No reposts yet 💜": "Ainda não há republicações 💜"
 Object.assign(dict,{"People you follow on XOXO Avenue.": "Pessoas que você segue na XOXO Avenue.", "People who follow you on XOXO Avenue.": "Pessoas que seguem você na XOXO Avenue.", "You are not following anyone yet.": "Você ainda não segue ninguém.", "You do not have any followers yet.": "Você ainda não tem seguidores.", "XOXO Avenue Support": "Suporte da XOXO Avenue", "Online": "Online", "No messages yet.": "Ainda não há mensagens.", "Could not load messages.": "Não foi possível carregar as mensagens."});
 function apply(){
  const root=document.body;if(!root)return;
- const skip='script,style,textarea,input,option,[contenteditable],.post-content,.comment-content,.post-user,.comment-user,.public-profile-username,.follow-list-name,.support-email,.dm-bubble,.dm-message,.dm-message-text,.dm-message-content,.support-chat-message,[data-support-message-id],.message-content,.message-text,.chat-bubble';
+ Object.assign(dict,{
+ "Saved Posts":"Zapisane posty",
+ "Posts you save are private and only visible to you.":"Zapisane przez Ciebie posty są prywatne i widoczne tylko dla Ciebie.",
+ "A simple place to discover people and communities.":"Proste miejsce do poznawania ludzi i odkrywania społeczności.",
+ "XOXO Avenue Support is online right now.":"Pomoc XOXO Avenue jest teraz dostępna online.",
+ "Start Live Chat":"Rozpocznij czat na żywo",
+ "Return to Live Chat":"Wróć do czatu na żywo",
+ "Return to conversation":"Wróć do rozmowy",
+ "Leave a Message":"Zostaw wiadomość",
+ "Online":"Dostępny",
+ "Offline":"Niedostępny"
+});
+const skip='script,style,textarea,input,option,[contenteditable],.post-content,.comment-content,.post-user,.comment-user,.public-profile-username,.follow-list-name,.support-email,.dm-bubble,.dm-message,.dm-message-text,.dm-message-content,.support-chat-message,[data-support-message-id],.message-content,.message-text,.chat-bubble';
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
  let node;let count=0;
  while((node=walker.nextNode())){
