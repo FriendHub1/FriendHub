@@ -18993,5 +18993,49 @@ function renderXoxoActivity(){
 })();
 </script>
 
+
+<!-- XOXO PUBLIC PROFILE HISTORY: preserve Discover and browser Back/Forward -->
+<script>
+(function () {
+  "use strict";
+  const profilePath = /^\/u\/([0-9a-fA-F-]{36})\/?$/;
+  let restoring = false;
+  function currentPath() { return location.pathname.replace(/\/+$/, "") || "/"; }
+  function profileUrl(id) { return "/u/" + encodeURIComponent(String(id)); }
+  function install() {
+    const original = window.showPageWithoutReload;
+    if (typeof original !== "function" || original.__xoxoProfileHistory) return;
+    function routedShowPageWithoutReload(pageId, ...args) {
+      const result = original.apply(this, [pageId, ...args]);
+      if (pageId === "publicProfile" && !restoring &&
+          document.getElementById("publicProfile")?.classList.contains("active")) {
+        const id = typeof currentPublicProfileUserId !== "undefined" ? currentPublicProfileUserId : null;
+        if (id && /^[0-9a-fA-F-]{36}$/.test(String(id))) {
+          const next = profileUrl(id);
+          if (currentPath() !== next) {
+            // Do not carry query strings from Discover to a public profile.
+            history.pushState({xoxoRoute:true,xoxoPublicProfile:true}, "", next);
+          }
+        }
+      }
+      return result;
+    }
+    routedShowPageWithoutReload.__xoxoProfileHistory = true;
+    window.showPageWithoutReload = routedShowPageWithoutReload;
+  }
+  window.addEventListener("popstate", async function () {
+    const match = currentPath().match(profilePath);
+    if (!match) return; // Existing router restores /discover, /messages, etc.
+    if (typeof window.openPublicProfile !== "function") return;
+    restoring = true;
+    try { await window.openPublicProfile(match[1]); }
+    catch (error) { console.error("XOXO profile history restore:", error); }
+    finally { restoring = false; }
+  });
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install);
+  else install();
+})();
+</script>
+
 </body>
                                     </html>
