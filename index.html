@@ -5469,6 +5469,7 @@ html.xoxo-shared-post-loading::before {
 <style id="xoxo-polish-saved-header-f11">
 html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekcja"; }
 </style>
+<style id="xoxo-fr-saved-label">html[lang="fr"] #saved .saved-posts-header::before{content:"🔖 Votre collection"}</style>
 </head>
                                     <body>
                                     <header>
@@ -5494,6 +5495,7 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
                                     <option value="es">&#127466;&#127480; Español</option>
 <option value="pt-BR">🇧🇷 Português (Brasil)</option>
 <option value="pl">🇵🇱 Polski</option>
+<option value="fr">🇫🇷 Français</option>
                                     </select>
                                     <button type="button" id="themeToggle" class="theme-toggle" onclick="toggleFriendHubTheme()" aria-label="Switch theme" title="Switch theme">&#127769;</button>
                                     <div class="notification-wrap" id="notificationWrap">
@@ -14432,7 +14434,7 @@ async function openPublicProfile(userId) {
 
                                     function getFriendHubLanguage() {
                                       const language = localStorage.getItem("friendhub_language");
-                                      return ["es","pt-BR","pl"].includes(language) ? language : "en";
+                                      return ["es","pt-BR","pl","fr"].includes(language) ? language : "en";
                                     }
 
                                     function buildSharedPostUrl(postId) {
@@ -14794,7 +14796,7 @@ async function openPublicProfile(userId) {
                                     const FRIENDHUB_LANGUAGE_KEY = "friendhub_language";
                                     const selectedLanguage = localStorage.getItem(FRIENDHUB_LANGUAGE_KEY) || "en";
                                     window.changeFriendHubLanguage = function (language) {
-                                    const safeLanguage = ["en", "es", "pt-BR", "pl"].includes(language) ? language : "en";
+                                    const safeLanguage = ["en", "es", "pt-BR", "pl", "fr"].includes(language) ? language : "en";
                                     localStorage.setItem(FRIENDHUB_LANGUAGE_KEY, safeLanguage);
                                     window.location.reload();
                                     };
@@ -20078,6 +20080,44 @@ roots.forEach(root=>{
  root.addEventListener('change',queue,{passive:true});
 });
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',queue,{once:true});else queue();
+})();
+</script>
+<script id="xoxo-french-phase1-lightweight">
+(function(){
+'use strict';
+if(localStorage.getItem('friendhub_language')!=='fr')return;
+document.documentElement.lang='fr';
+const dict={"Home": "Accueil", "Discover": "Découvrir", "Profile": "Profil", "Saved": "Enregistrés", "About": "À propos", "Support": "Assistance", "Notifications": "Notifications", "Messages": "Messages", "Log In": "Se connecter", "Create Account": "Créer un compte", "Log Out": "Se déconnecter", "A place to meet people": "Un endroit pour rencontrer des gens", "Meet People.": "Faites des rencontres.", "Make Friends.": "Faites-vous des amis.", "Meet People. Make Friends.": "Faites des rencontres. Faites-vous des amis.", "Meet People": "Faites des rencontres", "Make Friends": "Faites-vous des amis", "Discover people, friendships and communities based on your interests and the platforms you use.": "Découvrez des personnes, des amitiés et des communautés selon vos centres d’intérêt et les plateformes que vous utilisez.", "Discover People": "Découvrir des personnes", "Share XOXO Avenue": "Partager XOXO Avenue", "🚀 Share XOXO Avenue": "🚀 Partager XOXO Avenue", "Learn More": "En savoir plus", "Find Your Community": "Trouvez votre communauté", "Connect, chat and build real friendships.": "Rencontrez des gens, discutez et nouez de vraies amitiés.", "Explore people and communities from around the world.": "Découvrez des personnes et des communautés du monde entier.", "Find people and communities that match what you're looking for.": "Trouvez des personnes et des communautés qui correspondent à vos envies.", "A simple place to discover people and communities.": "Un endroit simple pour découvrir des personnes et des communautés.", "Search": "Rechercher", "All": "Tout", "People": "Personnes", "Communities": "Communautés", "Saved Posts": "Publications enregistrées", "Posts you save are private and only visible to you.": "Les publications enregistrées sont privées et visibles uniquement par vous.", "Your Collection": "Votre collection", "Create a post": "Créer une publication", "Create Post": "Créer une publication", "Post": "Publier", "Search people, interests, groups...": "Rechercher des personnes, des centres d’intérêt, des groupes...", "Find people": "Trouver des personnes", "Clear filters": "Effacer les filtres", "Follow": "Suivre", "Share": "Partager", "Loading...": "Chargement...", "No posts yet.": "Aucune publication pour le moment.", "Log in": "Se connecter", "Sign Up": "S’inscrire"};
+const skip='script,style,textarea,input,option,[contenteditable],.post-content,.comment-content,.post-user,.comment-user,.public-profile-username,.follow-list-name,.support-email,.dm-bubble,.dm-message,.dm-message-text,.dm-message-content';
+function apply(){
+ const root=document.body;if(!root)return;
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let node,count=0;
+ while((node=walker.nextNode())){
+  if(++count>30000)break;
+  const p=node.parentElement;if(!p||p.closest(skip))continue;
+  const original=node.nodeValue;
+  const key=original.replace(/\s+/g,' ').trim();
+  if(Object.prototype.hasOwnProperty.call(dict,key)){
+   const lead=(original.match(/^\s*/)||[''])[0];
+   const trail=(original.match(/\s*$/)||[''])[0];
+   node.nodeValue=lead+dict[key]+trail;
+  }
+ }
+ root.querySelectorAll('[placeholder],[aria-label],[title]').forEach(el=>{
+  if(el.closest(skip)&&!el.matches('input,textarea'))return;
+  for(const a of ['placeholder','aria-label','title']){
+   const v=el.getAttribute(a);
+   if(Object.prototype.hasOwnProperty.call(dict,v))el.setAttribute(a,dict[v]);
+  }
+ });
+}
+let pending;
+function schedule(){if(pending)clearTimeout(pending);pending=setTimeout(()=>{pending=null;apply();},300);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+document.addEventListener('click',schedule,{passive:true});
+document.addEventListener('change',schedule,{passive:true});
+window.addEventListener('popstate',schedule,{passive:true});
 })();
 </script>
 </body>
