@@ -11163,6 +11163,11 @@ async function openPublicProfile(userId) {
                                     el.className = `friendhub-presence friendhub-presence-dm ${presence.online ? "online" : "offline"}`;
                                     const dmLang = document.getElementById("languageSelect")?.value || localStorage.getItem("friendhub_language") || "en";
                                     let dmPresenceText = presence.text;
+                                    if (dmLang === "pl") {
+                                      if (presence.online) dmPresenceText = "Dostępny";
+                                      else if (/^offline$/i.test(String(dmPresenceText))) dmPresenceText = "Niedostępny";
+                                      else if (/^last seen/i.test(String(dmPresenceText))) dmPresenceText = String(dmPresenceText).replace(/^last seen/i,"Ostatnio widziany");
+                                    }
                                     if (dmLang === "pt-BR") {
                                       if (presence.online) dmPresenceText = "Online";
                                       else if (/^offline$/i.test(String(dmPresenceText))) dmPresenceText = "Offline";
@@ -11636,7 +11641,9 @@ async function openPublicProfile(userId) {
                                     });
 
                                     if (!messages || !messages.length) {
-                                    inbox.innerHTML = `<div class="content-card dm-empty-state"><p>${language === "es"
+                                    inbox.innerHTML = `<div class="content-card dm-empty-state"><p>${language === "pl"
+                                    ? 'Nie masz jeszcze żadnych rozmów. Otwórz profil publiczny innej osoby i wybierz <strong>Wiadomość</strong>.'
+                                    : language === "es"
                                     ? 'Todavía no tienes conversaciones. Abre el perfil público de alguien y pulsa <strong>Mensaje</strong>.'
                                     : 'You do not have any conversations yet. Open someone\'s public profile and choose <strong>Message</strong>.'}</p></div>`;
                                     return;
@@ -11818,9 +11825,9 @@ async function openPublicProfile(userId) {
                                     }
                                     if (input) {
                                     input.value = "";
-                                    input.placeholder = getFriendHubLanguage() === "pt-BR" ? "Escreva uma mensagem..." : (getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : "Write a message...");
+                                    input.placeholder = getFriendHubLanguage() === "pl" ? "Napisz wiadomość..." : (getFriendHubLanguage() === "pt-BR" ? "Escreva uma mensagem..." : (getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : "Write a message..."));
                                     const sendBtn = document.getElementById("dmSendButton");
-                                    if (sendBtn) sendBtn.textContent = getFriendHubLanguage() === "pt-BR" ? "Enviar" : (getFriendHubLanguage() === "es" ? "Enviar" : "Send");
+                                    if (sendBtn) sendBtn.textContent = getFriendHubLanguage() === "pl" ? "Wyślij" : (getFriendHubLanguage() === "pt-BR" ? "Enviar" : (getFriendHubLanguage() === "es" ? "Enviar" : "Send"));
                                     }
                                     clearDmReply();
                                     setDmStatus("");
