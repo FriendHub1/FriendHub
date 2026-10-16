@@ -18860,7 +18860,7 @@ document.addEventListener("click",e=>{if(e.target.closest(".xs-repost-trigger"))
 <script id="xs-public-likes-script">
 async function xsLoadLikes(kind){
  const extra=document.getElementById(kind==='my'?'xsMyExtra':'xsPublicExtra');if(!extra)return;
- const uid=kind==='my'?currentUser?.id:window.currentPublicProfileUserId;
+ const uid=kind==='my'?currentUser?.id:(typeof currentPublicProfileUserId!=='undefined'?currentPublicProfileUserId:null);
  extra.replaceChildren();
  if(!uid){extra.textContent='Could not identify this profile.';return}
  extra.textContent='Loading liked posts…';
