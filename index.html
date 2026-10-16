@@ -19245,5 +19245,77 @@ function renderXoxoActivity(){
 })();
 </script>
 
+
+<!-- XOXO Discover: new-posts neon bubble (non-disruptive polling) -->
+<style>
+#xoxoDiscoverNewPostsBubble{position:fixed;top:calc(88px + env(safe-area-inset-top,0px));left:50%;transform:translate(-50%,-18px) scale(.82);opacity:0;pointer-events:none;z-index:1190;display:flex;align-items:center;gap:9px;padding:12px 18px;border:2px solid #78ff94;border-radius:999px;background:linear-gradient(130deg,#102b21,#1b4430);color:#b9ffc6;font-weight:800;font-size:14px;white-space:nowrap;max-width:calc(100vw - 28px);box-shadow:0 0 13px #5aff7399,0 0 29px #48ff7270,0 10px 25px #06150baa;transition:opacity .25s,transform .35s cubic-bezier(.2,1.5,.4,1);cursor:pointer}
+#xoxoDiscoverNewPostsBubble.is-visible{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1);animation:xoxoBubbleGlow 2.5s ease-in-out infinite}
+#xoxoDiscoverNewPostsBubble:focus-visible{outline:3px solid #e5ffea;outline-offset:4px}
+@keyframes xoxoBubbleGlow{50%{box-shadow:0 0 22px #5aff73dd,0 0 40px #48ff7288,0 10px 25px #06150baa}}
+@media(prefers-reduced-motion:reduce){#xoxoDiscoverNewPostsBubble{transition:none;animation:none!important}}
+</style>
+<button id="xoxoDiscoverNewPostsBubble" type="button" aria-live="polite" aria-label="See new Discover posts">✨ <span id="xoxoDiscoverNewPostsCount">New posts!</span> ↑</button>
+<script>
+(function(){
+  'use strict';
+  const bubble=document.getElementById('xoxoDiscoverNewPostsBubble');
+  const label=document.getElementById('xoxoDiscoverNewPostsCount');
+  const discover=()=>document.getElementById('discover')?.classList.contains('active')===true;
+  let baseline=null, unseen=0, checking=false, busy=false, timer=null, hideTimer=null, activePreviously=false, identity=null;
+  function hide(){bubble.classList.remove('is-visible');clearTimeout(hideTimer)}
+  function reveal(){
+    if(!discover()||!unseen)return;
+    label.textContent=unseen===1?'1 new post!':unseen+' new posts!';
+    bubble.classList.add('is-visible');
+    clearTimeout(hideTimer);
+    hideTimer=setTimeout(hide,8500);
+  }
+  async function getLatest(){
+    if(typeof supabaseClient==='undefined'||typeof currentUser==='undefined'||!currentUser?.id)return null;
+    const {data,error}=await supabaseClient.from('posts').select('id,created_at,user_id').order('created_at',{ascending:false}).limit(30);
+    if(error)throw error;
+    const blocked=(typeof blockedUserIds!=='undefined'&&blockedUserIds instanceof Set)?blockedUserIds:new Set();
+    return (data||[]).filter(row=>!blocked.has(String(row.user_id||''))).map(row=>String(row.id));
+  }
+  async function check(){
+    if(checking||busy||!discover()||document.hidden||!currentUser?.id)return;
+    checking=true;
+    try{
+      const ids=await getLatest();
+      if(!ids)return;
+      if(baseline===null){baseline=new Set(ids);return}
+      const fresh=ids.filter(id=>!baseline.has(id));
+      if(fresh.length){unseen=Math.max(unseen,fresh.length);reveal()}
+    }catch(err){console.warn('Discover new-post check:',err)}
+    finally{checking=false}
+  }
+  async function openNew(){
+    if(busy||!discover())return;
+    busy=true;hide();
+    try{
+      if(typeof window.loadPosts==='function')await window.loadPosts();
+      baseline=new Set((await getLatest())||[]);
+      unseen=0;
+      window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+    }catch(err){console.warn('Could not load new Discover posts:',err);reveal()}
+    finally{busy=false}
+  }
+  bubble.addEventListener('click',openNew);
+  function sync(){
+    const now=discover()&&!!currentUser?.id;
+    const user=now?String(currentUser.id):null;
+    if(user!==identity){identity=user;baseline=null;unseen=0;hide()}
+    if(now&&!activePreviously){baseline=null;unseen=0;hide();check()}
+    if(!now&&activePreviously){hide();baseline=null;unseen=0}
+    activePreviously=now;
+  }
+  setInterval(()=>{sync();if(discover())check()},45000);
+  document.addEventListener('visibilitychange',()=>{sync();if(!document.hidden)check()});
+  document.addEventListener('click',()=>setTimeout(sync,80),{passive:true});
+  // The first check establishes a baseline; it never announces existing posts.
+  sync();
+})();
+</script>
+
 </body>
                                     </html>
