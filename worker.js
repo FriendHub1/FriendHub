@@ -2942,7 +2942,7 @@ export default {
         `${username} · XOXO Avenue`,
 
       description:
-        "Meet new people, make friends, and discover communities on XOXO Avenue. 💜",
+        makeDescription(profile),
 
       image:
         getProfileImageUrl(
