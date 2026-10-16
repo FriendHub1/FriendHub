@@ -243,11 +243,18 @@ function injectPreview(
   return new HTMLRewriter()
 
     .on("title", {
-      text(text) {
-        text.replace(
-          metadata.title
-        );
+      element(element) {
+        element.setInnerContent(metadata.title);
       },
+    })
+
+    // Remove generic social tags before injecting the page-specific preview.
+    // Otherwise WhatsApp can choose the original logo/title instead.
+    .on('meta[property^="og:"]', {
+      element(element) { element.remove(); },
+    })
+    .on('meta[name^="twitter:"]', {
+      element(element) { element.remove(); },
     })
 
     .on(
@@ -266,7 +273,7 @@ function injectPreview(
       element(element) {
         element.append(
           `
-<meta property="og:type" content="profile">
+<meta property="og:type" content="${escapeHtml(metadata.type || "website")}">
 <meta property="og:title" content="${escapeHtml(
             metadata.title
           )}">
@@ -2772,12 +2779,15 @@ export default {
       if (!post || !String(indexResponse.headers.get("content-type") || "").includes("text/html")) {
         return indexResponse;
       }
-      const title = String(post.username || "XOXO Avenue") + " · XOXO Avenue";
+      const author = await getPublicProfile(post.user_id);
+      const authorName = String(author?.username || post.username || "XOXO Avenue").trim();
+      const title = authorName + " on XOXO Avenue";
       const description = String(post.content || "Discover this post on XOXO Avenue.").trim().slice(0,180) || "Discover this post on XOXO Avenue.";
-      const media = String(post.media_url || "");
+      const media = String(post.media_url || "").trim();
       const image = (String(post.media_type || "").toLowerCase() === "image" && /^https:\/\//i.test(media))
-        ? media : url.origin + "/xoxoavenue-social.png";
-      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname});
+        ? media
+        : getProfileImageUrl(author, url.origin, post.user_id);
+      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname,type:"article"});
       const headers = new Headers(transformed.headers);
       headers.set("Cache-Control","public, max-age=60");
       headers.set("X-XOXO-Worker","shared-post-preview");
@@ -2923,9 +2933,7 @@ export default {
         `${username} · XOXO Avenue`,
 
       description:
-        makeDescription(
-          profile
-        ),
+        "Meet new people, make friends, and discover communities on XOXO Avenue. 💜",
 
       image:
         getProfileImageUrl(
