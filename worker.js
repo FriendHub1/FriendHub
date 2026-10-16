@@ -70,7 +70,8 @@ async function getPublicSharedPost(postId) {
     const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/get_public_shared_post", {
       method: "POST",
       headers: {apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY,
-        "Content-Type":"application/json", Accept:"application/json"},
+        "Content-Type":"application/json", Accept:"application/json",
+        "Accept-Profile":"public", "Content-Profile":"public"},
       body: JSON.stringify({target_post_id:postId})
     });
     if (!response.ok) return null;
