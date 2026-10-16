@@ -2953,6 +2953,12 @@ export default {
           profileId
         ),
 
+      imageType: /\.webp(?:[?#]|$)/i.test(String(profile.profile_photo || ""))
+        ? "image/webp"
+        : /\.png(?:[?#]|$)/i.test(String(profile.profile_photo || ""))
+          ? "image/png"
+          : "image/jpeg",
+
       url:
         friendlyProfileMatch
           ? `${url.origin}/u/${encodeURIComponent(profileId)}`
