@@ -10314,6 +10314,7 @@ function xoxoBubbleImg(userId, username) {
                                     </div></div>
                                     <span class="xs-action xoxo-post-views" title="Views" aria-label="0 views" data-view-post-id="${escapeHtmlAttribute(String(post.id))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><small>0</small></span>
                                     <button class="xs-action" title="Share" onclick="sharePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/></svg><small>${getFriendHubLanguage() === "fr" ? "Partager" : (getFriendHubLanguage() === "pl" ? "Udostępnij" : "Share")}</small></button>
+                                    <button type="button" class="xs-action xoxo-post-translate" title="Translate post" aria-label="Translate post" aria-pressed="false" data-post-translate-id="${escapeHtmlAttribute(String(post.id))}" onclick="xoxoTogglePostTranslation(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-4.5 6-4.5 9s1.5 6 4.5 9M12 3c3 3 4.5 6 4.5 9s-1.5 6-4.5 9"/></svg><small>🌐</small></button>
                                     <button class="xs-action xs-bookmark ${savedClass}" title="${getFriendHubLanguage() === "fr" ? (saved ? "Enregistré" : "Enregistrer") : (getFriendHubLanguage() === "pl" ? (saved ? "Zapisano" : "Zapisz") : "Save")}" onclick="toggleSavePost('${escapeHtmlAttribute(String(post.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-5-7 5V4a1 1 0 0 1 1-1Z"/></svg><small>${getFriendHubLanguage() === "fr" ? (saved ? "Enregistré" : "Enregistrer") : (saved ? "Saved" : "Save")}</small></button>
                                     </div>
                                     </article>
@@ -20174,6 +20175,85 @@ const frObserver=new MutationObserver(records=>{
 });
 function observeFrenchUpdates(){if(document.body)frObserver.observe(document.body,{childList:true,characterData:true,subtree:true});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',observeFrenchUpdates,{once:true});else observeFrenchUpdates();
+})();
+</script>
+
+<style id="xoxo-post-translation-style">
+.xoxo-post-translate[aria-pressed="true"]{color:#f28dff;text-shadow:0 0 10px #b34cff}
+.xoxo-post-translate[aria-busy="true"]{opacity:.55;cursor:wait}
+.xoxo-post-translation{margin:10px 0 2px;padding:12px 14px;border:1px solid #8750bd;border-radius:13px;background:rgba(116,48,160,.12);color:#f4e8ff;white-space:pre-wrap;overflow-wrap:anywhere}
+.xoxo-post-translation[hidden]{display:none!important}
+.xoxo-post-translation-toggle{display:block;margin-top:8px;background:none;border:0;padding:4px 0;color:#e4a6ff;cursor:pointer;font-size:12px;text-decoration:underline;text-underline-offset:3px}
+.xoxo-post-translation-toggle:focus-visible,.xoxo-post-translate:focus-visible{outline:2px solid #e4a6ff;outline-offset:3px}
+</style>
+<script id="xoxo-post-translation-v1">
+(function(){
+"use strict";
+const cache=new Map();
+const endpoint="https://xoxo-translate-app.paredesarixon.workers.dev/translate";
+const labels={
+  es:{original:"Ver original",loading:"Traduciendo...",error:"No se pudo traducir. Inténtalo de nuevo.",translate:"Traducir publicación"},
+  fr:{original:"Voir l’original",loading:"Traduction...",error:"Traduction impossible. Réessayez.",translate:"Traduire la publication"},
+  pl:{original:"Zobacz oryginał",loading:"Tłumaczenie...",error:"Nie udało się przetłumaczyć. Spróbuj ponownie.",translate:"Przetłumacz post"},
+  "pt-BR":{original:"Ver original",loading:"Traduzindo...",error:"Não foi possível traduzir. Tente novamente.",translate:"Traduzir publicação"},
+  en:{original:"View original",loading:"Translating...",error:"Could not translate. Please try again.",translate:"Translate post"}
+};
+const langs={es:"Spanish",en:"English",fr:"French",pl:"Polish","pt-BR":"Portuguese",it:"Italian",de:"German",nl:"Dutch",ru:"Russian",uk:"Ukrainian",tr:"Turkish",ar:"Arabic",hi:"Hindi",zh:"Chinese",ja:"Japanese",ko:"Korean",id:"Indonesian",vi:"Vietnamese",th:"Thai"};
+function uiLang(){try{return typeof getFriendHubLanguage==="function"?getFriendHubLanguage():"en";}catch(_){return "en";}}
+function words(){return labels[uiLang()]||labels.en;}
+function target(){try{return localStorage.getItem("xoxo_preferred_translation_language")||langs[uiLang()]||"English";}catch(_){return langs[uiLang()]||"English";}}
+function findPost(id){try{
+  const pool=[...(typeof posts!=="undefined"&&Array.isArray(posts)?posts:[]),...(typeof savedPosts!=="undefined"&&Array.isArray(savedPosts)?savedPosts:[])];
+  return pool.find(p=>String(p.id)===id);
+}catch(_){return null;}}
+function getText(card,id){const post=findPost(id);if(post&&typeof post.text==="string")return post.text;return card.querySelector(".post-content")?.textContent||"";}
+function hide(panel,button){panel.hidden=true;button.setAttribute("aria-pressed","false");}
+window.xoxoTogglePostTranslation=async function(button){
+ const card=button.closest("article.post");
+ if(!card)return;
+ const id=button.dataset.postTranslateId||card.dataset.postId||"";
+ const original=getText(card,id).trim();
+ if(!original)return;
+ let panel=card.querySelector(".xoxo-post-translation");
+ if(panel&&!panel.hidden){hide(panel,button);return;}
+ if(!panel){
+  panel=document.createElement("div");
+  panel.className="xoxo-post-translation";
+  panel.setAttribute("role","status");
+  const content=card.querySelector(".post-content");
+  if(!content)return;
+  content.insertAdjacentElement("afterend",panel);
+ }
+ const chosen=target();
+ const key=JSON.stringify([id,original,chosen]);
+ const cached=cache.get(key);
+ if(cached){show(cached);return;}
+ const label=words();
+ panel.textContent=label.loading;panel.hidden=false;
+ button.setAttribute("aria-busy","true");
+ button.disabled=true;
+ try{
+  const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:original,targetLanguage:chosen})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||typeof data.translation!=="string"||!data.translation.trim())throw new Error(data.error||"Translation failed");
+  cache.set(key,data.translation);
+  if(card.isConnected)show(data.translation);
+ }catch(err){
+  console.error("XOXO post translation:",err);
+  if(card.isConnected){panel.textContent=words().error;panel.hidden=false;button.setAttribute("aria-pressed","false");}
+ }finally{button.disabled=false;button.removeAttribute("aria-busy");}
+ function show(translated){
+  panel.replaceChildren();
+  const text=document.createElement("div");
+  text.textContent=translated;
+  const back=document.createElement("button");
+  back.type="button";back.className="xoxo-post-translation-toggle";
+  back.textContent=words().original;
+  back.addEventListener("click",()=>hide(panel,button));
+  panel.append(text,back);panel.hidden=false;
+  button.setAttribute("aria-pressed","true");
+ }
+};
 })();
 </script>
 </body>
