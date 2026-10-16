@@ -1,5 +1,5 @@
                 <!-- XOXO Avenue v14: regular DM photo/video only; existing temporary media history preserved. -->
-<html lang="en">
+<html lang="en" data-theme="night">
                                     <head>
                                     <meta name="google-adsense-account" content="ca-pub-5183362027645294">
                                     <meta charset="UTF-8">
@@ -11,7 +11,9 @@
                                     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
                                     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
                                     <meta name="theme-color" content="#25106f">
+                                    <script>document.documentElement.setAttribute("data-theme","night");try{localStorage.setItem("friendhubThemePreference","night")}catch(e){}</script>
                                     <meta name="apple-mobile-web-app-capable" content="yes">
+                                    <meta name="mobile-web-app-capable" content="yes">
                                     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
                                     <meta name="apple-mobile-web-app-title" content="XOXO Avenue">
                                     <script id="xoxo-ptbr-dynamic-labels">
@@ -5517,7 +5519,7 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
 <option value="pl">🇵🇱 Polski</option>
 <option value="fr">🇫🇷 Français</option>
                                     </select>
-                                    <button type="button" id="themeToggle" class="theme-toggle" onclick="toggleFriendHubTheme()" aria-label="Switch theme" title="Switch theme">&#127769;</button>
+                                    
                                     <div class="notification-wrap" id="notificationWrap">
                                     <button class="notification-bell" id="notificationBell" onclick="toggleNotifications(event)" aria-label="Notifications" title="Notifications">
                                     &#128276;
@@ -15141,38 +15143,15 @@ async function openPublicProfile(userId) {
                                     })();
                                     </script>
                                     <script>
-                                    /* XOXO Avenue automatic Day / Night theme */
+                                    /* XOXO Avenue: permanent dark theme; no day/night toggle. */
                                     (function () {
-                                      const STORAGE_KEY = "friendhubThemePreference";
-                                      function automaticTheme() {
-                                        const hour = new Date().getHours();
-                                        return (hour >= 7 && hour < 19) ? "day" : "night";
+                                      function enforceDarkTheme() {
+                                        document.documentElement.setAttribute("data-theme", "night");
+                                        try { localStorage.setItem("friendhubThemePreference", "night"); } catch (_) {}
                                       }
-                                      function savedTheme() {
-                                        const value = localStorage.getItem(STORAGE_KEY);
-                                        return value === "day" || value === "night" ? value : null;
-                                      }
-                                      function applyTheme(theme) {
-                                        const safeTheme = theme === "night" ? "night" : "day";
-                                        document.documentElement.setAttribute("data-theme", safeTheme);
-                                        const button = document.getElementById("themeToggle");
-                                        if (button) {
-                                          const isNight = safeTheme === "night";
-                                          button.innerHTML = isNight ? "&#9728;&#65039;" : "&#127769;";
-                                          button.setAttribute("aria-label", isNight ? "Switch to day mode" : "Switch to night mode");
-                                          button.setAttribute("title", isNight ? "Switch to day mode" : "Switch to night mode");
-                                        }
-                                      }
-                                      window.toggleFriendHubTheme = function () {
-                                        const current = document.documentElement.getAttribute("data-theme") || automaticTheme();
-                                        const next = current === "night" ? "day" : "night";
-                                        localStorage.setItem(STORAGE_KEY, next);
-                                        applyTheme(next);
-                                      };
-                                      applyTheme(savedTheme() || automaticTheme());
-                                      document.addEventListener("DOMContentLoaded", function () {
-                                        applyTheme(savedTheme() || automaticTheme());
-                                      });
+                                      window.toggleFriendHubTheme = enforceDarkTheme;
+                                      enforceDarkTheme();
+                                      document.addEventListener("DOMContentLoaded", enforceDarkTheme);
                                     })();
                                     </script>
 
