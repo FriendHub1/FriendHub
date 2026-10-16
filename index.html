@@ -10386,7 +10386,7 @@ async function openPublicProfile(userId) {
                                     const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : xoxoBubbleImg(profile.user_id, username);
                                     content.innerHTML = `
                                     <div class="public-profile-card">
-                                    <div class="public-profile-avatar${profile.profile_photo ? " has-photo" : ""}"${profile.profile_photo ? ` onclick="openProfilePhotoViewer('${escapeHtmlAttribute(profile.profile_photo)}')" role="button" tabindex="0" title="${getFriendHubLanguage() === "es" ? "Ver foto de perfil" : "View profile photo"}"` : ""}>${avatar}</div>
+                                    <div class="public-profile-avatar has-photo" onclick="openProfilePhotoViewer(this.querySelector('img')?.src)" onkeydown="if(event.key === 'Enter' || event.key === ' '){event.preventDefault();openProfilePhotoViewer(this.querySelector('img')?.src)}" role="button" tabindex="0" title="${getFriendHubLanguage() === "es" ? "Ver foto de perfil" : "View profile photo"}">${avatar}</div>
                                     <div class="public-profile-username">${escapeHtml(username)}</div>
                                     ${renderFriendHubPresence(presenceResult.data?.last_active_at || null, "friendhub-presence-profile")}
                                     <div class="public-profile-country">${escapeHtml(profile.country || "Country not added")}</div>
