@@ -11698,6 +11698,16 @@ async function openPublicProfile(userId) {
                                     }
 
 
+                                    /* XOXO DM clock: show the message's local send time, not a relative age. */
+                                    function formatDmClockTime(createdAt) {
+                                    if (!createdAt) return "";
+                                    const date = new Date(createdAt);
+                                    if (Number.isNaN(date.getTime())) return "";
+                                    return new Intl.DateTimeFormat(getFriendHubLanguage() === "es" ? "es-US" : "en-US", {
+                                    hour: "numeric", minute: "2-digit", hour12: true
+                                    }).format(date);
+                                    }
+
                                     function formatDmSeenTime(readAt) {
                                     if (!readAt) return "";
                                     return new Date(readAt).toLocaleTimeString(getFriendHubLanguage() === "es" ? "es-US" : "en-US", {
@@ -11896,7 +11906,7 @@ async function openPublicProfile(userId) {
                                     ${attachmentHtml}
                                     ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `${dmFormattedTextHtml(message.content)}${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
                                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
-                                    <div class="dm-time">${escapeHtml(formatPostTime(message.created_at))}</div>
+                                    <div class="dm-time">${escapeHtml(formatDmClockTime(message.created_at))}</div>
                                     ${renderDmSeenStatus(message, mine)}
                                     ${reactionsHtml}
                                     <button type="button" class="dm-reply-button" onclick="startDmReply('${escapeHtmlAttribute(String(message.id))}')" aria-label="${getFriendHubLanguage() === "es" ? "Responder al mensaje" : "Reply to message"}" title="${getFriendHubLanguage() === "es" ? "Responder" : "Reply"}">↩ Reply</button>
