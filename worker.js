@@ -2938,6 +2938,7 @@ export default {
       ).trim();
 
     const metadata = {
+      type: "profile",
       title:
         `${username} · XOXO Avenue`,
 
