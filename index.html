@@ -8154,7 +8154,7 @@ async function enforceXoxoSuspension() {
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = profile.profile_photo
                                     ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
-                                    : initial;
+                                    : xoxoBubbleImg(profile.user_id, username);
                                     const count = Math.max(1, Number(row.visit_count) || 1);
                                     const countLabel = count === 1 ? "1 visit" : `${count} visits`;
 
@@ -8669,6 +8669,23 @@ async function enforceXoxoSuspension() {
                                       if (button) { button.disabled = false; button.textContent = "🗑️ Remove Photo"; }
                                     }
                                     }
+/* XOXO Bubbles — official image avatars. Stable per user; no database changes. */
+const XOXO_BUBBLE_FILES = [
+  "/01_violeta.png", "/02_rosa.png", "/03_azul.png",
+  "/04_verde.png", "/05_dorado.png", "/06_rojo_rubi.png"
+];
+function xoxoBubbleUrl(userId, username) {
+  const key = String(userId || username || "xoxo");
+  let hash = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return XOXO_BUBBLE_FILES[(hash >>> 0) % XOXO_BUBBLE_FILES.length];
+}
+function xoxoBubbleImg(userId, username) {
+  return `<img src="${xoxoBubbleUrl(userId, username)}" alt="XOXO Bubble avatar" loading="lazy">`;
+}
                                     function updateProfileAvatar(username, photo) {
                                     const avatar =
                                     document.getElementById("profileAvatar");
@@ -8679,19 +8696,7 @@ async function enforceXoxoSuspension() {
                                     `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`;
                                     return;
                                     }
-                                    const cleanUsername =
-                                    (username || "")
-                                    .replace("@", "")
-                                    .trim();
-                                    if (cleanUsername) {
-                                    avatar.textContent =
-                                    cleanUsername
-                                    .charAt(0)
-                                    .toUpperCase();
-                                    } else {
-                                    avatar.textContent =
-                                    "";
-                                    }
+                                    avatar.innerHTML = xoxoBubbleImg(currentUser?.id, username);
                                     }
                                     function updateProfileVisibility() {
                                     const loginMessage =
@@ -9424,7 +9429,7 @@ async function enforceXoxoSuspension() {
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = profile.profile_photo
                                     ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
-                                    : initial;
+                                    : xoxoBubbleImg(profile.user_id, username);
                                     const meta = [profile.country, profile.gender_identity && profile.gender_identity !== "Prefer not to say" ? profile.gender_identity : ""]
                                     .filter(Boolean).map(escapeHtml).join(" · ");
                                     return `<div class="friend-suggestion-card">
@@ -9624,7 +9629,7 @@ async function enforceXoxoSuspension() {
                                             const initial = escapeHtml(username.replace("@","").charAt(0).toUpperCase() || "U");
                                             const avatar = profile.profile_photo
                                               ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
-                                              : initial;
+                                              : xoxoBubbleImg(profile.user_id, username);
                                             const meta = [profile.country, friendHubSearchList(profile.interests).slice(0,2).join(" · ")]
                                               .filter(Boolean).join(" · ");
                                             return `<button class="global-search-item" type="button" onclick="openGlobalSearchProfile('${escapeHtmlAttribute(String(profile.user_id))}')">
@@ -10112,7 +10117,7 @@ async function enforceXoxoSuspension() {
                                     >`;
                                     } else {
                                     avatarHtml =
-                                    initial;
+                                    xoxoBubbleImg(post.userId, post.username);
                                     }
                                     return `
                                     <article class="post" id="post-${escapeHtmlAttribute(String(post.id))}" data-post-id="${escapeHtmlAttribute(String(post.id))}">
@@ -10378,7 +10383,7 @@ async function openPublicProfile(userId) {
                                     const isBlocked = !!myBlockResult.data;
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
-                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : initial;
+                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : xoxoBubbleImg(profile.user_id, username);
                                     content.innerHTML = `
                                     <div class="public-profile-card">
                                     <div class="public-profile-avatar${profile.profile_photo ? " has-photo" : ""}"${profile.profile_photo ? ` onclick="openProfilePhotoViewer('${escapeHtmlAttribute(profile.profile_photo)}')" role="button" tabindex="0" title="${getFriendHubLanguage() === "es" ? "Ver foto de perfil" : "View profile photo"}"` : ""}>${avatar}</div>
@@ -10648,7 +10653,7 @@ async function openPublicProfile(userId) {
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = profile.profile_photo
                                     ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
-                                    : initial;
+                                    : xoxoBubbleImg(profile.user_id, username);
                                     const mutual = mutualCounts.get(id) || 0;
                                     const reason = mutual > 0
                                     ? (isSpanish ? `${mutual} ${mutual === 1 ? "conexión en común" : "conexiones en común"}` : `${mutual} mutual ${mutual === 1 ? "connection" : "connections"}`)
@@ -10803,7 +10808,7 @@ async function openPublicProfile(userId) {
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = profile.profile_photo
                                     ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
-                                    : initial;
+                                    : xoxoBubbleImg(profile.user_id, username);
                                     return `<button type="button" class="my-profile-person" onclick="openPublicProfile('${escapeHtmlAttribute(id)}')">
                                     <span class="my-profile-person-avatar">${avatar}</span>
                                     <span class="my-profile-person-info">
@@ -10839,7 +10844,7 @@ async function openPublicProfile(userId) {
                                     if (!profile) return "";
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
-                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : initial;
+                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : xoxoBubbleImg(profile.user_id, username);
                                     return `<button class="follow-list-item" onclick="closeFollowList(); openPublicProfile('${escapeHtmlAttribute(id)}')"><span class="follow-list-avatar">${avatar}</span><span><span class="follow-list-name">${escapeHtml(username)}</span><span class="follow-list-country">${escapeHtml(profile.country || "Country not added")}</span></span></button>`;
                                     }).join("") || `<div class="empty-state">No ${kind} yet.</div>`;
                                     }
@@ -11578,7 +11583,7 @@ async function openPublicProfile(userId) {
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = photo
                                     ? `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`
-                                    : initial;
+                                    : xoxoBubbleImg(conversation.userId, username);
                                     const lastContentRaw = String(conversation.lastMessage.content || "");
                                     const lastContent = parseDmGifContent(lastContentRaw)
                                     ? lastContentRaw
@@ -12186,7 +12191,7 @@ async function openPublicProfile(userId) {
                                     const avatarHtml = `<span class="dm-message-avatar"${mine ? ` aria-hidden="true"` : ` onclick="openCurrentDmPublicProfile()" role="button" tabindex="0" aria-label="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}" title="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}" style="cursor:pointer;"`}>${
                                     avatarPhoto
                                     ? `<img src="${escapeHtmlAttribute(avatarPhoto)}" alt="">`
-                                    : escapeHtml(avatarInitial)
+                                    : xoxoBubbleImg(mine ? currentUser?.id : currentDmUserId, avatarUsername)
                                     }</span>`;
                                     const reactionsHtml = renderDmReactions(message);
                                     const repliedMessage = message.reply_to_message_id
@@ -13230,7 +13235,7 @@ async function openPublicProfile(userId) {
                                     const initial = escapeHtml((username || "U").replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = actor?.profile_photo
                                     ? `<img src="${escapeHtmlAttribute(actor.profile_photo)}" alt="Profile photo">`
-                                    : initial;
+                                    : xoxoBubbleImg(item.actor_id, username);
                                     const icon = notificationTypeIcon(String(item.type || ""));
                                     const clickAction = item.type === "follow"
                                     ? `openFollowNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}', '${escapeHtmlAttribute(String(item.id || ""))}')`
@@ -13557,7 +13562,7 @@ async function openPublicProfile(userId) {
                                     );
                                     const avatar = comment.profilePhoto
                                     ? `<img src="${escapeHtmlAttribute(comment.profilePhoto)}" alt="Profile photo">`
-                                    : initial;
+                                    : xoxoBubbleImg(comment.user_id, comment.username);
                                     const canDelete = currentUser && String(comment.user_id) === String(currentUser.id);
                                     const replies = !isReply ? (repliesByParent.get(String(comment.id)) || []) : [];
                                     return `
@@ -15655,9 +15660,9 @@ function xoxoDmAvatar(id) {
   const url=user?.profile_photo || user?.avatar_url || user?.profile_photo_url || user?.photo_url;
   if(url && /^https:\/\//i.test(url)){
     const img=document.createElement("img");img.src=url;img.alt="";
-    img.referrerPolicy="no-referrer";img.onerror=()=>{img.remove();el.textContent=xoxoDmInitial(id);};
+    img.referrerPolicy="no-referrer";img.onerror=()=>{img.src=xoxoBubbleUrl(id, user?.username);};
     el.append(img);
-  }else el.textContent=xoxoDmInitial(id);
+  }else {const img=document.createElement("img");img.src=xoxoBubbleUrl(id,user?.username);img.alt="XOXO Bubble avatar";el.append(img);}
   return el;
 }
 function xoxoDmProfileButton(id) {
