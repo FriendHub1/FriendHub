@@ -65,6 +65,20 @@ async function getPublicProfile(userId) {
   }
 }
 
+async function getPublicSharedPost(postId) {
+  try {
+    const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/get_public_shared_post", {
+      method: "POST",
+      headers: {apikey: SUPABASE_KEY, Authorization: "Bearer " + SUPABASE_KEY,
+        "Content-Type":"application/json", Accept:"application/json"},
+      body: JSON.stringify({target_post_id:postId})
+    });
+    if (!response.ok) return null;
+    const rows = await response.json();
+    return Array.isArray(rows) ? rows[0] || null : null;
+  } catch(error) { console.error("XOXO shared post preview:",error); return null; }
+}
+
 function makeDescription(profile) {
   const bio = String(profile?.bio || "").trim();
 
@@ -2748,6 +2762,26 @@ export default {
       return serveProfileImage(
         userId
       );
+    }
+
+    /* PUBLIC SHARED POST: server-side social preview, without unlocking the feed. */
+    const sharedPostMatch = url.pathname.match(/^\/post\/([0-9a-fA-F-]{36})\/?$/);
+    if (sharedPostMatch) {
+      const post = await getPublicSharedPost(sharedPostMatch[1]);
+      const indexResponse = await env.ASSETS.fetch(new Request(url.origin + "/", request));
+      if (!post || !String(indexResponse.headers.get("content-type") || "").includes("text/html")) {
+        return indexResponse;
+      }
+      const title = String(post.username || "XOXO Avenue") + " · XOXO Avenue";
+      const description = String(post.content || "Discover this post on XOXO Avenue.").trim().slice(0,180) || "Discover this post on XOXO Avenue.";
+      const media = String(post.media_url || "");
+      const image = (String(post.media_type || "").toLowerCase() === "image" && /^https:\/\//i.test(media))
+        ? media : url.origin + "/xoxoavenue-social.png";
+      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname});
+      const headers = new Headers(transformed.headers);
+      headers.set("Cache-Control","public, max-age=60");
+      headers.set("X-XOXO-Worker","shared-post-preview");
+      return new Response(transformed.body,{status:transformed.status,headers});
     }
 
     /*
