@@ -5431,6 +5431,21 @@ html.xoxo-shared-post-loading::before {
   html.xoxo-shared-post-loading::before { background: #19152b; color: #f2b4dd; }
 }
 </style>
+<style id="xoxo-neon-language-style">
+.xoxo-language-studio{background:linear-gradient(140deg,#16274a,#2a1747);border:1px solid #7f50c4;border-radius:17px;padding:15px;color:#fff;margin-top:8px}
+.xoxo-lang-head{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:12px}.xoxo-lang-head small{display:block;width:100%;color:#cfb7e8}
+.xoxo-lang-panel{background:#231d44;border:1px solid #7450ad;border-radius:12px;margin:10px 0;padding:10px}
+.xoxo-lang-toggle{display:block;width:100%;background:transparent;border:0;color:#fff;font-weight:700;text-align:left;padding:6px;cursor:pointer}
+.xoxo-lang-tags{display:flex;flex-wrap:wrap;gap:6px;padding:6px 2px}.xoxo-lang-tags small{color:#bcb1d2}
+.xoxo-lang-chip{background:#6134a0;color:#fff;border-radius:30px;padding:5px 10px;font-size:12px}.xoxo-lang-chip.learning{background:#185c8d}
+.xoxo-lang-body{padding:9px 2px}.xoxo-lang-body[hidden]{display:none!important}
+.xoxo-lang-body input[type=search]{box-sizing:border-box;width:100%;padding:10px;border-radius:9px;border:1px solid #7759b1;background:#15132c;color:#fff;margin-bottom:9px}
+.xoxo-lang-choices{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.xoxo-lang-choice{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px;border-bottom:1px solid #45345f}
+.xoxo-lang-choice label{color:#fff;display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;min-width:0}
+.xoxo-lang-choice select{max-width:132px;min-width:95px;background:#31254e;color:#fff;border:1px solid #8052c5;border-radius:8px;padding:6px;font-size:12px}
+@media(max-width:420px){.xoxo-lang-choice{flex-wrap:wrap}.xoxo-lang-choice select{margin-left:auto}}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -5949,7 +5964,20 @@ html.xoxo-shared-post-loading::before {
                                     <label>
                                     Languages
                                     </label>
-                                    <div id="languagesOptions" class="option-grid"></div>
+                                    <div id="xoxoLanguageStudio" class="xoxo-language-studio">
+  <div class="xoxo-lang-head">🌎 <strong data-xlang="title">My Language World</strong><small data-xlang="subtitle">Connect beyond borders ✨</small></div>
+  <div id="xoxoLangSpoken" class="xoxo-lang-panel">
+    <button type="button" class="xoxo-lang-toggle" onclick="xoxoToggleLang('spoken')" aria-expanded="false">🗣️ <span data-xlang="spoken">Languages I speak</span> <span id="xoxoLangSpokenCount"></span> ▾</button>
+    <div id="xoxoLangSpokenTags" class="xoxo-lang-tags"></div>
+    <div id="xoxoLangSpokenBody" class="xoxo-lang-body" hidden><input id="xoxoLangSpokenSearch" type="search" autocomplete="off" placeholder="🔎 Search languages..." oninput="xoxoRenderLang('spoken')"><div id="xoxoLangSpokenChoices" class="xoxo-lang-choices"></div></div>
+  </div>
+  <div id="xoxoLangLearning" class="xoxo-lang-panel">
+    <button type="button" class="xoxo-lang-toggle" onclick="xoxoToggleLang('learning')" aria-expanded="false">📚 <span data-xlang="learning">Languages I want to learn</span> <span id="xoxoLangLearningCount"></span> ▾</button>
+    <div id="xoxoLangLearningTags" class="xoxo-lang-tags"></div>
+    <div id="xoxoLangLearningBody" class="xoxo-lang-body" hidden><input id="xoxoLangLearningSearch" type="search" autocomplete="off" placeholder="🔎 Search languages..." oninput="xoxoRenderLang('learning')"><div id="xoxoLangLearningChoices" class="xoxo-lang-choices"></div></div>
+  </div>
+  <div id="languagesOptions" class="option-grid" hidden style="display:none!important"></div>
+</div>
                                     </div>
                                     <div class="form-group">
                                     <label>
@@ -5961,7 +5989,11 @@ html.xoxo-shared-post-loading::before {
                                     <label>
                                     What are you looking for?
                                     </label>
-                                    <div id="lookingForOptions" class="option-grid"></div>
+                                    <div class="xoxo-lookingfor-picker">
+  <button type="button" id="xoxoLookingForToggle" class="xoxo-lookingfor-toggle" aria-expanded="false" aria-controls="xoxoLookingForChoices">✨ Select what you are looking for <span id="xoxoLookingForCount"></span> <span aria-hidden="true">⌄</span></button>
+  <div id="xoxoLookingForChoices" hidden><div id="lookingForOptions" class="option-grid"></div></div>
+  <div id="xoxoLookingForSelected" class="xoxo-lookingfor-selected" aria-live="polite"></div>
+</div>
                                     </div>
                                     <div class="profile-actions">
                                     <button class="btn btn-primary" onclick="saveProfile()">
@@ -8054,7 +8086,87 @@ async function enforceXoxoSuspension() {
                                     renderPosts();
                                     showPage("home");
                                     }
-                                    function renderOptionButtons() {
+                                    /* XOXO Neon Language Studio: backwards-compatible profile.languages JSON array. */
+const xoxoLangCatalog = [
+ ["English","🇺🇸","Inglés"],["Spanish","🇪🇸","Español"],["Portuguese","🇵🇹","Portugués"],["French","🇫🇷","Francés"],
+ ["German","🇩🇪","Alemán"],["Italian","🇮🇹","Italiano"],["Japanese","🇯🇵","Japonés"],["Korean","🇰🇷","Coreano"],
+ ["Chinese","🇨🇳","Chino"],["Arabic","🇸🇦","Árabe"],["Hindi","🇮🇳","Hindi"],["Russian","🇷🇺","Ruso"],
+ ["Dutch","🇳🇱","Neerlandés"],["Turkish","🇹🇷","Turco"],["Swedish","🇸🇪","Sueco"],["Polish","🇵🇱","Polaco"],
+ ["Greek","🇬🇷","Griego"],["Vietnamese","🇻🇳","Vietnamita"],["Thai","🇹🇭","Tailandés"],["Indonesian","🇮🇩","Indonesio"],
+ ["Tagalog","🇵🇭","Tagalo"],["Hebrew","🇮🇱","Hebreo"],["Other","🌐","Otro"]
+];
+const xoxoLangState = {spoken:[],learning:[]};
+const xoxoLangLevels = ["Beginner","Basic","Intermediate","Advanced","Native"];
+function xoxoLangIsEs(){return typeof getFriendHubLanguage === "function" && getFriendHubLanguage()==="es";}
+function xoxoLangText(english,spanish){return xoxoLangIsEs()?spanish:english;}
+function xoxoLangEntry(name){return xoxoLangCatalog.find(x=>x[0]===name);}
+function xoxoLangLabel(name){const e=xoxoLangEntry(name);return e?(xoxoLangIsEs()?e[2]:e[0]):name;}
+function xoxoLangLevelLabel(l){return ({Beginner:"Principiante",Basic:"Básico",Intermediate:"Intermedio",Advanced:"Avanzado",Native:"Nativo"})[l]||l;}
+function xoxoLanguageValues(){return [
+ ...xoxoLangState.spoken.map(x=>`${xoxoLangEntry(x.name)?.[1]||'🌐'} ${x.name} · ${x.level}`),
+ ...xoxoLangState.learning.map(x=>`📚 ${xoxoLangEntry(x.name)?.[1]||'🌐'} ${x.name} · ${x.level}`)
+];}
+function xoxoLoadLanguages(values){
+ xoxoLangState.spoken=[];xoxoLangState.learning=[];
+ for(const raw of (Array.isArray(values)?values:[])){
+  const v=String(raw||'');const isLearning=v.startsWith('📚');
+  const entry=xoxoLangCatalog.find(x=>v.includes(x[0])||v.includes(x[2]));
+  if(!entry)continue;
+  const match=v.match(/ · (Beginner|Basic|Intermediate|Advanced|Native)$/);
+  const target=isLearning?xoxoLangState.learning:xoxoLangState.spoken;
+  if(!target.some(x=>x.name===entry[0]))target.push({name:entry[0],level:match?.[1]||(isLearning?'Beginner':'Native')});
+ }
+ xoxoRenderLang('spoken');xoxoRenderLang('learning');
+}
+function xoxoToggleLang(kind){
+ const id=kind==='spoken'?'Spoken':'Learning';const body=document.getElementById('xoxoLang'+id+'Body');
+ if(!body)return;body.hidden=!body.hidden;
+ document.querySelector('#xoxoLang'+id+' .xoxo-lang-toggle')?.setAttribute('aria-expanded',String(!body.hidden));
+ xoxoRenderLang(kind);
+}
+function xoxoSetLang(kind,name,enabled){
+ const target=xoxoLangState[kind];const i=target.findIndex(x=>x.name===name);
+ if(enabled&&i<0)target.push({name,level:kind==='spoken'?'Native':'Beginner'});
+ if(!enabled&&i>=0)target.splice(i,1);
+ xoxoRenderLang(kind);
+}
+function xoxoSetLangLevel(kind,name,level){
+ const item=xoxoLangState[kind].find(x=>x.name===name);if(item)item.level=level;
+ xoxoRenderLang(kind);
+}
+function xoxoRenderLang(kind){
+ const id=kind==='spoken'?'Spoken':'Learning';const selected=xoxoLangState[kind];
+ const tags=document.getElementById('xoxoLang'+id+'Tags');const choices=document.getElementById('xoxoLang'+id+'Choices');
+ const search=document.getElementById('xoxoLang'+id+'Search');if(!tags||!choices)return;
+ const es=xoxoLangIsEs();
+ const subtitle=document.querySelector('[data-xlang="subtitle"]');if(subtitle)subtitle.textContent=xoxoLangText('Connect beyond borders ✨','Conecta sin fronteras ✨');
+ const title=document.querySelector('[data-xlang="title"]');if(title)title.textContent=xoxoLangText('My Language World','Mi mundo de idiomas');
+ const sp=document.querySelector('[data-xlang="spoken"]');if(sp)sp.textContent=xoxoLangText('Languages I speak','Idiomas que hablo');
+ const lr=document.querySelector('[data-xlang="learning"]');if(lr)lr.textContent=xoxoLangText('Languages I want to learn','Idiomas que quiero aprender');
+ if(search)search.placeholder=xoxoLangText('🔎 Search languages...','🔎 Buscar idiomas...');
+ tags.replaceChildren();
+ for(const item of selected){const chip=document.createElement('span');chip.className='xoxo-lang-chip '+kind;
+ chip.textContent=(xoxoLangEntry(item.name)?.[1]||'🌐')+' '+xoxoLangLabel(item.name)+' · '+(es?xoxoLangLevelLabel(item.level):item.level);tags.appendChild(chip);}
+ if(!selected.length){const empty=document.createElement('small');empty.textContent=xoxoLangText('No languages selected yet','Todavía no has seleccionado idiomas');tags.appendChild(empty);}
+ const count=document.getElementById('xoxoLang'+id+'Count');if(count)count.textContent='('+selected.length+')';
+ const query=(search?.value||'').trim().toLowerCase();choices.replaceChildren();
+ for(const lang of xoxoLangCatalog){
+  if(query&&!([lang[0],lang[2]].some(x=>x.toLowerCase().includes(query))))continue;
+  const item=selected.find(x=>x.name===lang[0]);
+  const row=document.createElement('div');row.className='xoxo-lang-choice';
+  const label=document.createElement('label');const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!!item;
+  checkbox.addEventListener('change',()=>xoxoSetLang(kind,lang[0],checkbox.checked));
+  label.append(checkbox,document.createTextNode(' '+lang[1]+' '+(es?lang[2]:lang[0])));row.appendChild(label);
+  if(item){const select=document.createElement('select');select.setAttribute('aria-label',xoxoLangText('Language level','Nivel del idioma'));
+   for(const level of xoxoLangLevels.filter(l=>kind==='spoken'||l!=='Native')){
+    const option=document.createElement('option');option.value=level;option.textContent=es?xoxoLangLevelLabel(level):level;option.selected=item.level===level;select.appendChild(option);
+   }
+   select.addEventListener('change',()=>xoxoSetLangLevel(kind,lang[0],select.value));row.appendChild(select);
+  }choices.appendChild(row);
+ }
+}
+
+function renderOptionButtons() {
                                     renderOptions(
                                     "languagesOptions",
                                     languageOptions,
@@ -8082,7 +8194,9 @@ async function enforceXoxoSuspension() {
                                     button.className =
                                     "option-btn";
                                     button.textContent =
-                                    option;
+                                    (category === "lookingFor" && typeof getFriendHubLanguage === "function" && getFriendHubLanguage() === "es")
+                                      ? ({"People with similar music taste":"Personas con gustos musicales similares", "People with similar interests":"Personas con intereses similares"}[getOptionTextWithoutEmoji(option)] ? option.replace(getOptionTextWithoutEmoji(option), {"People with similar music taste":"Personas con gustos musicales similares", "People with similar interests":"Personas con intereses similares"}[getOptionTextWithoutEmoji(option)]) : option)
+                                      : option;
                                     button.dataset.category =
                                     category;
                                     button.dataset.value =
@@ -8094,6 +8208,7 @@ async function enforceXoxoSuspension() {
                                     });
                                     }
                                     function getSelectedOptions(category) {
+                                    if (category === "languages") return xoxoLanguageValues();
                                     return [
                                     ...document.querySelectorAll(
                                     `.option-btn[data-category="${category}"].selected`
@@ -8106,6 +8221,7 @@ async function enforceXoxoSuspension() {
                                     .trim();
                                     }
                                     function setSelectedOptions(category, values) {
+                                    if (category === "languages") { xoxoLoadLanguages(values); return; }
                                     const normalizedValues = (values || []).map(getOptionTextWithoutEmoji);
                                     document.querySelectorAll(
                                     `.option-btn[data-category="${category}"]`
@@ -19563,6 +19679,89 @@ function renderXoxoActivity(){
   document.addEventListener('click',()=>setTimeout(sync,80),{passive:true});
   // The first check establishes a baseline; it never announces existing posts.
   sync();
+})();
+</script>
+
+
+<style id="xoxo-profile-compact-fixes">
+.xoxo-lookingfor-picker{display:grid;gap:12px;min-width:0}
+.xoxo-lookingfor-toggle{width:100%;min-height:48px;padding:12px 16px;border:1px solid var(--fh-border,#8044b4);border-radius:14px;background:var(--fh-surface-strong,#24183e);color:var(--fh-text,#fff);font-weight:700;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer}
+#xoxoLookingForChoices[hidden]{display:none!important}
+#xoxoLookingForChoices{max-height:280px;overflow:auto;border:1px solid var(--fh-border,#8044b4);border-radius:14px;padding:12px;background:var(--fh-surface,#17122d)}
+#xoxoLookingForChoices .option-grid{display:flex;flex-wrap:wrap;gap:8px}
+.xoxo-lookingfor-selected{display:flex;flex-wrap:wrap;gap:7px}
+.xoxo-lookingfor-selected:empty{display:none}
+.xoxo-lookingfor-chip{display:inline-block;border:1px solid var(--fh-border,#8044b4);border-radius:999px;padding:5px 10px;background:var(--fh-soft,#291b49);color:var(--fh-text,#fff);font-size:12px;max-width:100%;overflow-wrap:anywhere}
+/* Let long translated post-type labels fit inside their buttons on narrow screens. */
+.post-types{min-width:0}
+.post-types .post-type{max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:normal;text-align:center;line-height:1.35;flex:0 1 auto}
+@media(max-width:430px){.post-types .post-type{font-size:14px;padding:10px 11px}}
+</style>
+<script id="xoxo-profile-compact-and-support-es">
+(function(){
+  'use strict';
+  const byId=id=>document.getElementById(id);
+  const isEs=()=>byId('languageSelect')?.value==='es' || (typeof getFriendHubLanguage==='function' && getFriendHubLanguage()==='es');
+  const lookup={
+    'People with similar music taste':'Personas con gustos musicales similares',
+    'People with similar interests':'Personas con intereses similares'
+  };
+  const clean=s=>String(s||'').replace(/^\s*(?:[^\p{L}\p{N}]+)\s*/u,'').trim();
+  function updatePicker(){
+    const root=byId('lookingForOptions'), toggle=byId('xoxoLookingForToggle'), chosen=byId('xoxoLookingForSelected');
+    if(!root||!toggle||!chosen)return;
+    const buttons=[...root.querySelectorAll('.option-btn')];
+    const selected=buttons.filter(b=>b.classList.contains('selected'));
+    const es=isEs();
+    for(const b of buttons){
+      const original=b.dataset.value||'';
+      const bare=clean(original);
+      const label=es&&lookup[bare]?original.replace(bare,lookup[bare]):original;
+      if(b.textContent!==label)b.textContent=label;
+    }
+    const heading=es?'✨ Seleccionar lo que buscas':'✨ Select what you are looking for';
+    const count=selected.length?` (${selected.length})`:'';
+    const arrow=byId('xoxoLookingForChoices')?.hidden?'⌄':'⌃';
+    const next=`${heading}${count}  ${arrow}`;
+    if(toggle.textContent!==next)toggle.textContent=next;
+    const html=selected.map(b=>'<span class="xoxo-lookingfor-chip">'+b.textContent.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>').join('');
+    if(chosen.innerHTML!==html)chosen.innerHTML=html;
+  }
+  function updateSupport(){
+    if(!isEs())return;
+    const translate={
+      'Online':'En línea','Offline':'Desconectado','Checking status...':'Comprobando estado...',
+      'Start Live Chat':'Iniciar chat en vivo','Leave a Message':'Dejar un mensaje',
+      'Return to Live Chat':'Volver al chat en vivo','Return to conversation':'Volver a la conversación',
+      'XOXO Avenue Support is online right now.':'El soporte de XOXO Avenue está en línea ahora mismo.',
+      'XOXO Avenue Support is currently offline. You can leave a message here or contact us by email.':'El soporte de XOXO Avenue está desconectado. Puedes dejar un mensaje aquí o escribirnos por correo.',
+      'Live Chat status could not be checked right now. You can still contact XOXO Avenue Support by email.':'No se pudo comprobar el estado del chat. Puedes contactar al soporte por correo.',
+      'Status unavailable':'Estado no disponible',
+      'If you have a question, experience a problem or need assistance with your account, contact us by email.':'Si tienes una pregunta, un problema o necesitas ayuda con tu cuenta, contáctanos por correo electrónico.',
+      'Email XOXO Avenue Support':'Enviar correo al soporte de XOXO Avenue'
+    };
+    const ids=['supportLiveStatusText','supportLiveMessage','supportChatStartBtn'];
+    for(const id of ids){const el=byId(id);if(el){const key=el.textContent.trim();if(translate[key])el.textContent=translate[key];}}
+    const support=byId('support');
+    if(support){
+      for(const el of support.querySelectorAll('p,.content-card h2,.support-chat-actions button')){
+        if(el.children.length)continue;
+        const key=el.textContent.trim();if(translate[key])el.textContent=translate[key];
+      }
+    }
+  }
+  function init(){
+    const toggle=byId('xoxoLookingForToggle'), choices=byId('xoxoLookingForChoices');
+    if(toggle&&choices)toggle.addEventListener('click',()=>{choices.hidden=!choices.hidden;toggle.setAttribute('aria-expanded',String(!choices.hidden));updatePicker()});
+    byId('lookingForOptions')?.addEventListener('click',()=>queueMicrotask(updatePicker));
+    byId('languageSelect')?.addEventListener('change',()=>{setTimeout(()=>{updatePicker();updateSupport()},50)});
+    const root=byId('lookingForOptions');
+    if(root)new MutationObserver(()=>updatePicker()).observe(root,{childList:true,subtree:false,attributes:true,attributeFilter:['class']});
+    const support=byId('support');
+    if(support)new MutationObserver(()=>updateSupport()).observe(support,{subtree:true,childList:true,characterData:true});
+    updatePicker();updateSupport();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
 
