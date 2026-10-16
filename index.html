@@ -5369,6 +5369,23 @@
 }
 
 </style>
+<style>
+#xoxoSharedPostOverlay{position:fixed;inset:0;z-index:900;overflow:auto;background:var(--bg,#f8f4fc);color:var(--text,#292037);padding:18px 12px 65px;box-sizing:border-box}
+.xoxo-sp-inner{max-width:650px;margin:0 auto}
+.xoxo-sp-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+.xoxo-sp-top button{border:1px solid #c7a5dc;border-radius:999px;background:#fff;color:#7b398e;padding:10px 15px;font-weight:700;cursor:pointer}
+.xoxo-sp-top strong{color:#a33f83}
+.xoxo-sp-missing{padding:40px 20px;text-align:center;background:#fff;border-radius:18px}
+.xoxo-love-letter{box-sizing:border-box;margin:24px auto 0;padding:30px 22px;background:#fbe8f4;color:#965f86;border:1px solid #f3c4e9;border-radius:24px;text-align:center;box-shadow:0 15px 45px rgba(157,59,123,.12)}
+.xoxo-love-icon{font-size:52px;line-height:1.2;margin-bottom:10px}
+.xoxo-love-letter h2{font-size:clamp(24px,5vw,32px);line-height:1.2;color:#a33f83;margin:8px 0 14px}
+.xoxo-love-letter p{font-size:16px;line-height:1.6;margin:0 0 24px}
+.xoxo-love-letter button{display:block;width:100%;border:0;border-radius:999px;padding:15px 14px;font:inherit;font-weight:750;cursor:pointer;margin:10px 0}
+.xoxo-love-signup{background:#d958a1;color:white}
+.xoxo-love-login{background:#fff;color:#b0478c}
+.xoxo-love-letter small{display:block;margin-top:15px;color:#ad6c9c}
+@media(max-width:600px){#xoxoSharedPostOverlay{padding:12px 10px 50px}.xoxo-love-letter{padding:24px 16px}}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -14131,11 +14148,7 @@ async function openPublicProfile(userId) {
                                     }
 
                                     function buildSharedPostUrl(postId) {
-                                      const url = new URL(window.location.href);
-                                      url.search = "";
-                                      url.hash = "";
-                                      url.searchParams.set("post", String(postId));
-                                      return url.toString();
+                                      return `${window.location.origin}/post/${encodeURIComponent(String(postId))}`;
                                     }
 
                                     async function sharePost(postId) {
@@ -14173,56 +14186,75 @@ async function openPublicProfile(userId) {
                                       }
                                     }
 
-                                    async function openSharedPostFromUrl() {
-                                      const params = new URLSearchParams(window.location.search);
-                                      const postId = params.get("post");
-                                      if (!postId) return;
-
-                                      showPageWithoutReload("discover");
-
-                                      if (!currentUser && !String(postId).startsWith("sample-")) {
-                                        if (!sharedPostLoginPromptShown) {
-                                          sharedPostLoginPromptShown = true;
-                                          const language = getFriendHubLanguage();
-                                          alert(language === "es"
-                                            ? "Inicia sesión para ver esta publicación compartida."
-                                            : "Log in to view this shared post.");
-                                          openAuth("login");
-                                        }
-                                        return;
-                                      }
-
-                                      /* A shared link can be processed before the async post query has finished.
-                                         Reload once the user is authenticated, then locate the requested post. */
-                                      let target = posts.find(item => String(item.id) === String(postId));
-
-                                      if (!target && currentUser && !String(postId).startsWith("sample-")) {
-                                        await loadPosts();
-                                        target = posts.find(item => String(item.id) === String(postId));
-                                      }
-
-                                      if (!target) return;
-
-                                      renderPosts();
-
-                                      /* Give Discover/renderPosts time to place the card in the DOM. */
-                                      let attempts = 0;
-                                      const focusSharedPost = () => {
-                                        const element = document.getElementById(`post-${CSS.escape(String(postId))}`);
-                                        if (!element && attempts < 12) {
-                                          attempts += 1;
-                                          setTimeout(focusSharedPost, 100);
-                                          return;
-                                        }
-                                        if (!element) return;
-
-                                        element.scrollIntoView({ behavior: "smooth", block: "center" });
-                                        element.classList.add("shared-post-highlight");
-                                        setTimeout(() => element.classList.remove("shared-post-highlight"), 2200);
-                                      };
-
-                                      requestAnimationFrame(focusSharedPost);
+                                    /* Shared post view: one public post only, without unlocking Discover. */
+                                    let xoxoSharedPostBusy = false;
+                                    function xoxoSharedPostId() {
+                                      const match = location.pathname.match(/^\/post\/([0-9a-fA-F-]{36})\/?$/);
+                                      return match ? match[1] : new URLSearchParams(location.search).get("post");
                                     }
+                                    function xoxoSharedPostClose() {
+                                      document.getElementById("xoxoSharedPostOverlay")?.remove();
+                                    }
+                                    function xoxoSharedPostBack() {
+                                      xoxoSharedPostClose();
+                                      history.pushState({xoxoRoute:true}, "", "/discover");
+                                      showPageWithoutReload("discover");
+                                      if (!currentUser) void loadPosts();
+                                    }
+                                    async function openSharedPostFromUrl() {
+                                      const postId = xoxoSharedPostId();
+                                      if (!postId || !/^[0-9a-fA-F-]{36}$/.test(postId) || xoxoSharedPostBusy) return;
+                                      xoxoSharedPostBusy = true;
+                                      try {
+                                        // The RPC enforces public eligibility server-side.
+                                        const { data, error } = await supabaseClient.rpc("get_public_shared_post", {target_post_id:postId});
+                                        if (error) { console.error("Shared post lookup:",error); }
+                                        const row = !error && Array.isArray(data) ? data[0] : null;
+                                        let post = null;
+                                        if (row) {
+                                          let tags = [];
+                                          try { tags = row.content_tags ? JSON.parse(row.content_tags) : []; } catch {}
+                                          post = {
+                                            id:row.id, username:row.username, text:row.content || "",
+                                            type:row.post_type, tags, time:formatPostTime(row.created_at),
+                                            media:row.media_url ? {type:row.media_type || "image",src:row.media_url} : null,
+                                            likes:0, comments:0, liked:false, saved:false,
+                                            userId:row.user_id, profilePhoto:null, editedAt:row.edited_at || null
+                                          };
+                                          if (currentUser && blockedUserIds.has(String(row.user_id))) post=null;
+                                          if (post && currentUser) {
+                                            const existing=posts.find(p=>String(p.id)===String(postId));
+                                            if (existing) post=existing;
+                                          }
+                                        }
+                                        let overlay=document.getElementById("xoxoSharedPostOverlay");
+                                        if (!overlay) {
+                                          overlay=document.createElement("div");
+                                          overlay.id="xoxoSharedPostOverlay";
+                                          document.body.appendChild(overlay);
+                                        }
+                                        const es=getFriendHubLanguage()==="es";
+                                        const header=`<div class="xoxo-sp-top"><button type="button" onclick="xoxoSharedPostBack()">← ${es?"Volver a Discover":"Back to Discover"}</button><strong>XOXO Avenue 💜</strong></div>`;
+                                        const card=post ? renderPost(post) : `<div class="xoxo-sp-missing">${es?"Esta publicación no está disponible públicamente.":"This post is not publicly available."}</div>`;
+                                        const invite=!currentUser && post ? `<aside class="xoxo-love-letter">
+                                          <div class="xoxo-love-icon">💌</div>
+                                          <h2>You've found your people. ♡</h2>
+                                          <p>One post brought you here. A world of friendships is waiting for you.</p>
+                                          <button type="button" class="xoxo-love-signup" onclick="openAuth('signup')">Create Your Account ♡</button>
+                                          <button type="button" class="xoxo-love-login" onclick="openAuth('login')">I Already Have an Account</button>
+                                          <small>Made for connections, made for you. 💗</small>
+                                        </aside>` : "";
+                                        overlay.innerHTML=`<div class="xoxo-sp-inner">${header}<div class="xoxo-sp-post">${card}</div>${invite}</div>`;
+                                        if (location.pathname !== `/post/${postId}`) {
+                                          history.replaceState({xoxoRoute:true}, "", `/post/${postId}`);
+                                        }
+                                        window.scrollTo(0,0);
+                                      } finally { xoxoSharedPostBusy=false; }
+                                    }
+                                    window.addEventListener("popstate", function () {
+                                      if (!xoxoSharedPostId()) xoxoSharedPostClose();
+                                      else void openSharedPostFromUrl();
+                                    });
 
                                     function escapeHtml(value) {
                                     return String(value ?? "")
