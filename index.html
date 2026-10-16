@@ -5805,6 +5805,8 @@ html.xoxo-shared-post-loading::before {
                                     >
                                     </div>
                                     <div class="xoxo-studio-launch"><button type="button" class="xoxo-studio-open" onclick="xoxoStudioOpen()">🎨 Customize Profile <span>✨</span></button><p>Choose your colors, background, avatar frame and effects.</p></div>
+                                    <div style="text-align:center;margin:16px 0 24px;"><button type="button" class="btn btn-primary" onclick="xoxoCreatePostFromProfile()" style="max-width:320px;width:100%;font-weight:700;">✍️ Create Post</button></div>
+                                    <div id="xoxoProfilePostComposerSlot" style="margin:12px 0 22px;"></div>
                                     <div class="form-group">
                                     <label for="username">
                                     Username
@@ -7324,6 +7326,7 @@ async function enforceXoxoSuspension() {
                                     if (xoxoIsAdmin && ["discover", "profile", "saved", "messages", "publicProfile"].includes(String(pageId))) {
                                     pageId = "admin";
                                     }
+                                    if (String(pageId) !== "profile") xoxoRestorePostComposer();
                                     document.querySelectorAll(".page").forEach(page => {
                                     page.classList.remove("active");
                                     });
@@ -9148,6 +9151,30 @@ async function enforceXoxoSuspension() {
                                     /* =========================================================
                                     CREATE POST
                                     ========================================================= */
+                                    // Move the original Discover composer into the profile when requested.
+                                    function xoxoRestorePostComposer() {
+                                      const composer = document.getElementById("postComposer");
+                                      const marker = document.getElementById("xoxoPostComposerOriginalSlot");
+                                      if (composer && marker && composer.parentNode !== marker.parentNode) {
+                                        marker.parentNode.insertBefore(composer, marker.nextSibling);
+                                      }
+                                    }
+                                    function xoxoCreatePostFromProfile() {
+                                      if (!currentUser) { openAuth("login"); return; }
+                                      const composer = document.getElementById("postComposer");
+                                      const slot = document.getElementById("xoxoProfilePostComposerSlot");
+                                      if (!composer || !slot) return;
+                                      if (!document.getElementById("xoxoPostComposerOriginalSlot")) {
+                                        const marker = document.createElement("span");
+                                        marker.id = "xoxoPostComposerOriginalSlot";
+                                        marker.style.display = "none";
+                                        composer.parentNode.insertBefore(marker, composer);
+                                      }
+                                      slot.appendChild(composer);
+                                      composer.style.display = "block";
+                                      composer.scrollIntoView({behavior:"smooth",block:"center"});
+                                      document.getElementById("postText")?.focus({preventScroll:true});
+                                    }
                                     async function createPost() {
                                     if (!currentUser) {
                                     document.getElementById("loginRequiredMessage").classList.add("show");
@@ -9232,6 +9259,10 @@ async function enforceXoxoSuspension() {
                                     removePostGif();
                                     closePostGifPicker();
                                     renderPosts();
+                                    if (document.getElementById("xoxoProfilePostComposerSlot")?.contains(document.getElementById("postComposer"))) {
+                                      xoxoRestorePostComposer();
+                                      showMyProfileTab("posts");
+                                    }
                                     } catch (error) {
                                     console.error("Create post/upload error:", error);
                                     alert(error.message || "Could not create the post.");
