@@ -19261,7 +19261,8 @@ function renderXoxoActivity(){
   const bubble=document.getElementById('xoxoDiscoverNewPostsBubble');
   const label=document.getElementById('xoxoDiscoverNewPostsCount');
   const discover=()=>document.getElementById('discover')?.classList.contains('active')===true;
-  let baseline=null, unseen=0, checking=false, busy=false, timer=null, hideTimer=null, activePreviously=false, identity=null;
+  let baseline=null, unseen=0, checking=false, busy=false, hideTimer=null, activePreviously=false, identity=null;
+  let newPostIds=[];
   function hide(){bubble.classList.remove('is-visible');clearTimeout(hideTimer)}
   function reveal(){
     if(!discover()||!unseen)return;
@@ -19285,7 +19286,11 @@ function renderXoxoActivity(){
       if(!ids)return;
       if(baseline===null){baseline=new Set(ids);return}
       const fresh=ids.filter(id=>!baseline.has(id));
-      if(fresh.length){unseen=Math.max(unseen,fresh.length);reveal()}
+      if(fresh.length){
+        newPostIds=fresh;
+        unseen=Math.max(unseen,fresh.length);
+        reveal();
+      }
     }catch(err){console.warn('Discover new-post check:',err)}
     finally{checking=false}
   }
@@ -19293,10 +19298,25 @@ function renderXoxoActivity(){
     if(busy||!discover())return;
     busy=true;hide();
     try{
-      if(typeof window.loadPosts==='function')await window.loadPosts();
+      // Capture the newest announced post before refreshing the feed.
+      const targetIds=[...newPostIds];
+      if(typeof window.loadPosts!=='function')throw new Error('Discover refresh unavailable');
+      await window.loadPosts();
+      // Feed cards already carry their post UUID in data-post-id.
+      const feed=document.getElementById('feed');
+      const cards=feed ? [...feed.querySelectorAll('.post[data-post-id]')] : [];
+      const target=cards.find(card=>targetIds.includes(card.dataset.postId));
+      if(target){
+        const header=document.querySelector('header');
+        const headerHeight=header ? header.getBoundingClientRect().height : 0;
+        const top=window.scrollY+target.getBoundingClientRect().top-headerHeight-16;
+        window.scrollTo({top:Math.max(0,top),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+      }else{
+        console.info('New post is not visible in the current Discover filters; scroll position preserved.');
+      }
       baseline=new Set((await getLatest())||[]);
+      newPostIds=[];
       unseen=0;
-      window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
     }catch(err){console.warn('Could not load new Discover posts:',err);reveal()}
     finally{busy=false}
   }
@@ -19304,9 +19324,9 @@ function renderXoxoActivity(){
   function sync(){
     const now=discover()&&!!currentUser?.id;
     const user=now?String(currentUser.id):null;
-    if(user!==identity){identity=user;baseline=null;unseen=0;hide()}
-    if(now&&!activePreviously){baseline=null;unseen=0;hide();check()}
-    if(!now&&activePreviously){hide();baseline=null;unseen=0}
+    if(user!==identity){identity=user;baseline=null;unseen=0;newPostIds=[];hide()}
+    if(now&&!activePreviously){baseline=null;unseen=0;newPostIds=[];hide();check()}
+    if(!now&&activePreviously){hide();baseline=null;unseen=0;newPostIds=[]}
     activePreviously=now;
   }
   setInterval(()=>{sync();if(discover())check()},45000);
