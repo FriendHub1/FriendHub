@@ -10551,7 +10551,7 @@ async function openPublicProfile(userId) {
                                     </div>
                                     ${isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary public-profile-follow${isFollowing ? " following" : ""}" onclick="toggleFollow('${escapeHtmlAttribute(String(userId))}')">${isFollowing ? (getFriendHubLanguage() === "pl" ? "Obserwowani" : "Following") : (getFriendHubLanguage() === "pl" ? "Obserwuj" : "Follow")}</button>`}
                                     ${isOwnProfile ? "" : `<button id="publicBlockButton" class="btn public-profile-block${isBlocked ? " blocked" : ""}" onclick="toggleBlockUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">${isBlocked ? "Unblock" : "Block"}</button>`}
-                                    ${isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${window.xoxoPtLabel("Report user","Reportar usuario","Denunciar usuário")}</button>`}
+                                    ${isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${getFriendHubLanguage() === "pl" ? "Zgłoś użytkownika" : window.xoxoPtLabel("Report user","Reportar usuario","Denunciar usuário")}</button>`}
                                     ${isOwnProfile ? "" : `<button id="publicShareButton" class="btn btn-secondary" onclick="sharePublicProfile('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#128279; ${getFriendHubLanguage() === "pl" ? "Udostępnij profil" : window.xoxoPtLabel("Share profile","Compartir perfil","Compartilhar perfil")}</button>`}
                                     ${isOwnProfile || isBlocked ? "" : `<button id="publicMessageButton" class="btn public-profile-message" onclick="openDirectChat('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(profile.profile_photo || "")}')">&#128172; ${getFriendHubLanguage() === "pl" ? "Wiadomość" : (getFriendHubLanguage() === "es" ? "Mensaje" : "Message")}</button>`}
                                     <div class="public-profile-details">
@@ -10819,8 +10819,8 @@ async function openPublicProfile(userId) {
                                     <span><span class="friend-suggestion-name">${escapeHtml(username)}</span><span class="friend-suggestion-reason">${escapeHtml(reason)}</span></span>
                                     </button>
                                     <div class="friend-suggestion-actions">
-                                    <button class="btn btn-primary" type="button" onclick="followFriendSuggestion('${escapeHtmlAttribute(id)}', this)">${isSpanish ? "Seguir" : "Follow"}</button>
-                                    <button class="btn btn-secondary" type="button" onclick="openPublicProfile('${escapeHtmlAttribute(id)}')">${isSpanish ? "Perfil" : "Profile"}</button>
+                                    <button class="btn btn-primary" type="button" onclick="followFriendSuggestion('${escapeHtmlAttribute(id)}', this)">${getFriendHubLanguage() === "pl" ? "Obserwuj" : (isSpanish ? "Seguir" : "Follow")}</button>
+                                    <button class="btn btn-secondary" type="button" onclick="openPublicProfile('${escapeHtmlAttribute(id)}')">${getFriendHubLanguage() === "pl" ? "Profil" : (isSpanish ? "Perfil" : "Profile")}</button>
                                     </div>
                                     </div>`;
                                     }).join("");
@@ -11020,12 +11020,12 @@ async function openPublicProfile(userId) {
                                     function formatFriendHubPresence(lastActiveAt) {
                                     const lang = getFriendHubLanguage();
                                     if (!lastActiveAt) {
-                                    return { online: false, text: lang === "es" ? "Última conexión no disponible" : "Last seen unavailable" };
+                                    return { online: false, text: lang === "pl" ? "Ostatnia aktywność niedostępna" : (lang === "es" ? "Última conexión no disponible" : "Last seen unavailable") };
                                     }
 
                                     const last = new Date(lastActiveAt);
                                     if (Number.isNaN(last.getTime())) {
-                                    return { online: false, text: lang === "es" ? "Última conexión no disponible" : "Last seen unavailable" };
+                                    return { online: false, text: lang === "pl" ? "Ostatnia aktywność niedostępna" : (lang === "es" ? "Última conexión no disponible" : "Last seen unavailable") };
                                     }
 
                                     const now = new Date();
@@ -11033,10 +11033,10 @@ async function openPublicProfile(userId) {
                                     const online = diffMs >= 0 && diffMs <= 90000;
 
                                     if (online) {
-                                    return { online: true, text: lang === "es" ? "En línea" : "Online" };
+                                    return { online: true, text: lang === "pl" ? "Dostępny" : (lang === "es" ? "En línea" : "Online") };
                                     }
 
-                                    const time = last.toLocaleTimeString(lang === "es" ? "es-US" : "en-US", {
+                                    const time = last.toLocaleTimeString(lang === "pl" ? "pl-PL" : (lang === "es" ? "es-US" : "en-US"), {
                                     hour: "numeric",
                                     minute: "2-digit",
                                     hour12: true
@@ -11049,27 +11049,27 @@ async function openPublicProfile(userId) {
                                     if (dayDiff === 0) {
                                     return {
                                     online: false,
-                                    text: lang === "es" ? `Última conexión a las ${time}` : `Last seen at ${time}`
+                                    text: lang === "pl" ? `Ostatnio widziany o ${time}` : (lang === "es" ? `Última conexión a las ${time}` : `Last seen at ${time}`)
                                     };
                                     }
 
                                     if (dayDiff === 1) {
                                     return {
                                     online: false,
-                                    text: lang === "es" ? `Última conexión ayer a las ${time}` : `Last seen yesterday at ${time}`
+                                    text: lang === "pl" ? `Ostatnio widziany wczoraj o ${time}` : (lang === "es" ? `Última conexión ayer a las ${time}` : `Last seen yesterday at ${time}`)
                                     };
                                     }
 
-                                    const date = last.toLocaleDateString(lang === "es" ? "es-US" : "en-US", {
+                                    const date = last.toLocaleDateString(lang === "pl" ? "pl-PL" : (lang === "es" ? "es-US" : "en-US"), {
                                     month: "short",
                                     day: "numeric"
                                     });
 
                                     return {
                                     online: false,
-                                    text: lang === "es"
-                                    ? `Última conexión ${date} a las ${time}`
-                                    : `Last seen ${date} at ${time}`
+                                    text: lang === "pl"
+                                    ? `Ostatnio widziany ${date} o ${time}`
+                                    : (lang === "es" ? `Última conexión ${date} a las ${time}` : `Last seen ${date} at ${time}`)
                                     };
                                     }
 
