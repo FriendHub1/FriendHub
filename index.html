@@ -19254,6 +19254,9 @@ function renderXoxoActivity(){
 @keyframes xoxoBubbleGlow{50%{box-shadow:0 0 22px #5aff73dd,0 0 40px #48ff7288,0 10px 25px #06150baa}}
 @media(prefers-reduced-motion:reduce){#xoxoDiscoverNewPostsBubble{transition:none;animation:none!important}}
 </style>
+<style id="xoxo-new-post-focus-style">
+#discover .post.xoxo-new-post-highlight{outline:3px solid #68ff89;outline-offset:3px;box-shadow:0 0 22px rgba(74,255,114,.55),0 0 42px rgba(74,255,114,.22);transition:outline-color .4s,box-shadow .4s}
+</style>
 <button id="xoxoDiscoverNewPostsBubble" type="button" aria-live="polite" aria-label="See new Discover posts">✨ <span id="xoxoDiscoverNewPostsCount">New posts!</span> ↑</button>
 <script>
 (function(){
@@ -19298,21 +19301,25 @@ function renderXoxoActivity(){
     if(busy||!discover())return;
     busy=true;hide();
     try{
-      // Capture the newest announced post before refreshing the feed.
       const targetIds=[...newPostIds];
       if(typeof window.loadPosts!=='function')throw new Error('Discover refresh unavailable');
       await window.loadPosts();
-      // Feed cards already carry their post UUID in data-post-id.
       const feed=document.getElementById('feed');
       const cards=feed ? [...feed.querySelectorAll('.post[data-post-id]')] : [];
       const target=cards.find(card=>targetIds.includes(card.dataset.postId));
       if(target){
+        // Wait until the refreshed feed is laid out before scrolling.
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
         const header=document.querySelector('header');
         const headerHeight=header ? header.getBoundingClientRect().height : 0;
-        const top=window.scrollY+target.getBoundingClientRect().top-headerHeight-16;
-        window.scrollTo({top:Math.max(0,top),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+        const visibleHeight=Math.max(100,window.innerHeight-headerHeight);
+        const rect=target.getBoundingClientRect();
+        const desiredTop=window.scrollY+rect.top-headerHeight-Math.max(16,(visibleHeight-Math.min(rect.height,visibleHeight))/2);
+        window.scrollTo({top:Math.max(0,desiredTop),behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+        target.classList.add('xoxo-new-post-highlight');
+        setTimeout(()=>target.classList.remove('xoxo-new-post-highlight'),3500);
       }else{
-        console.info('New post is not visible in the current Discover filters; scroll position preserved.');
+        console.info('The announced post is not in the currently rendered feed.');
       }
       baseline=new Set((await getLatest())||[]);
       newPostIds=[];
@@ -19329,7 +19336,7 @@ function renderXoxoActivity(){
     if(!now&&activePreviously){hide();baseline=null;unseen=0;newPostIds=[]}
     activePreviously=now;
   }
-  setInterval(()=>{sync();if(discover())check()},45000);
+  setInterval(()=>{sync();if(discover())check()},10000);
   document.addEventListener('visibilitychange',()=>{sync();if(!document.hidden)check()});
   document.addEventListener('click',()=>setTimeout(sync,80),{passive:true});
   // The first check establishes a baseline; it never announces existing posts.
