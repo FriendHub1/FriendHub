@@ -5490,6 +5490,7 @@ html.xoxo-shared-post-loading::before {
                                     <option value="en">&#127482;&#127480; English</option>
                                     <option value="es">&#127466;&#127480; Español</option>
 <option value="pt-BR">🇧🇷 Português (Brasil)</option>
+<option value="pl">🇵🇱 Polski</option>
                                     </select>
                                     <button type="button" id="themeToggle" class="theme-toggle" onclick="toggleFriendHubTheme()" aria-label="Switch theme" title="Switch theme">&#127769;</button>
                                     <div class="notification-wrap" id="notificationWrap">
@@ -14781,7 +14782,7 @@ async function openPublicProfile(userId) {
                                     const FRIENDHUB_LANGUAGE_KEY = "friendhub_language";
                                     const selectedLanguage = localStorage.getItem(FRIENDHUB_LANGUAGE_KEY) || "en";
                                     window.changeFriendHubLanguage = function (language) {
-                                    const safeLanguage = ["en", "es", "pt-BR"].includes(language) ? language : "en";
+                                    const safeLanguage = ["en", "es", "pt-BR", "pl"].includes(language) ? language : "en";
                                     localStorage.setItem(FRIENDHUB_LANGUAGE_KEY, safeLanguage);
                                     window.location.reload();
                                     };
@@ -19876,6 +19877,47 @@ function scheduleApply(){
 document.addEventListener('click',scheduleApply,{passive:true});
 document.addEventListener('change',scheduleApply,{passive:true});
 window.addEventListener('popstate',scheduleApply,{passive:true});
+})();
+</script>
+<script id="xoxo-polish-lightweight-v1">
+(function(){
+'use strict';
+if(localStorage.getItem('friendhub_language')!=='pl')return;
+document.documentElement.lang='pl';
+const dict={"Home": "Strona główna", "Discover": "Odkrywaj", "Profile": "Profil", "Saved": "Zapisane", "About": "O nas", "Support": "Pomoc", "Notifications": "Powiadomienia", "Messages": "Wiadomości", "Log In": "Zaloguj się", "Create Account": "Utwórz konto", "Log Out": "Wyloguj się", "Settings": "Ustawienia", "Search": "Szukaj", "All": "Wszystko", "People": "Osoby", "Communities": "Społeczności", "Discover People": "Odkrywaj osoby", "Share XOXO Avenue": "Udostępnij XOXO Avenue", "Learn More": "Dowiedz się więcej", "Find Your Community": "Znajdź swoją społeczność", "People You May Know": "Osoby, które możesz znać", "Suggestions based on mutual connections.": "Propozycje na podstawie wspólnych znajomych.", "Discover people, friendships and communities based on your interests and the platforms you use.": "Odkrywaj ludzi, przyjaźnie i społeczności na podstawie swoich zainteresowań i używanych platform.", "Connect, chat and build real friendships.": "Poznawaj ludzi, rozmawiaj i buduj prawdziwe przyjaźnie.", "Explore people and communities from around the world.": "Poznawaj ludzi i społeczności z całego świata.", "Find people and communities that match what you're looking for.": "Znajdź osoby i społeczności, których szukasz.", "Find people": "Znajdź osoby", "Clear filters": "Wyczyść filtry", "Share": "Udostępnij", "Save": "Zapisz", "Add media": "Dodaj multimedia", "Create Post": "Utwórz post", "Write a post": "Napisz post", "What are you looking for?": "Czego szukasz?", "Change username": "Zmień nazwę użytkownika", "Change profile photo": "Zmień zdjęcie profilowe", "Customize Profile": "Dostosuj profil", "Choose your colors, background, avatar frame and effects.": "Wybierz kolory, tło, ramkę awatara i efekty.", "Your username is public. You can change it once every 30 days.": "Twoja nazwa użytkownika jest publiczna. Możesz ją zmienić raz na 30 dni.", "Your exact age is private and is not displayed publicly.": "Twój dokładny wiek jest prywatny i nie jest wyświetlany publicznie.", "Optional. Choose how you describe your gender.": "Opcjonalnie. Wybierz, jak określasz swoją płeć.", "Bio requirement met 💜": "Wymagania dotyczące opisu spełnione 💜", "My Posts": "Moje posty", "Following": "Obserwowani", "Followers": "Obserwujący", "Follow": "Obserwuj", "Unfollow": "Przestań obserwować", "Block": "Zablokuj", "Report user": "Zgłoś użytkownika", "Share profile": "Udostępnij profil", "Message": "Wiadomość", "Private conversation": "Prywatna rozmowa", "Online": "Online", "Offline": "Offline", "Send": "Wyślij", "Write a message": "Napisz wiadomość", "No messages yet. Say hello 👋": "Nie ma jeszcze wiadomości. Przywitaj się 👋", "Delete conversation?": "Usunąć rozmowę?", "Delete for me": "Usuń tylko u mnie", "Delete for both": "Usuń u obu osób", "Cancel": "Anuluj", "Close": "Zamknij", "Choose how you want to delete your conversation with @wenosdias1.": "Wybierz, jak chcesz usunąć rozmowę z @wenosdias1.", "The other person keeps the history. If they message you again, the chat returns from the new message.": "Druga osoba zachowa historię. Jeśli ponownie napisze, rozmowa wróci od nowej wiadomości.", "Permanently deletes the conversation for both people.": "Trwale usuwa rozmowę u obu osób.", "People you follow on XOXO Avenue.": "Osoby, które obserwujesz w XOXO Avenue.", "People who follow you on XOXO Avenue.": "Osoby, które obserwują Cię w XOXO Avenue.", "You are not following anyone yet.": "Nie obserwujesz jeszcze nikogo.", "You do not have any followers yet.": "Nikt Cię jeszcze nie obserwuje.", "No reposts yet 💜": "Nie ma jeszcze repostów 💜", "No liked posts yet ❤️": "Nie ma jeszcze polubionych postów ❤️", "No saved posts yet.": "Nie ma jeszcze zapisanych postów.", "Private conversations on XOXO Avenue.": "Prywatne rozmowy w XOXO Avenue.", "You do not have any conversations yet. Open someone's public profile and choose Message.": "Nie masz jeszcze rozmów. Otwórz profil publiczny innej osoby i wybierz Wiadomość.", "My Language World": "Mój świat języków", "Connect beyond borders ✨": "Łącz się ponad granicami ✨", "Languages I speak": "Języki, którymi mówię", "Languages I want to learn": "Języki, których chcę się nauczyć", "Languages": "Języki", "Interests": "Zainteresowania", "Looking for": "Szukam", "New friends": "Nowych znajomych", "Gaming": "Gry", "Music": "Muzyka", "Movies & TV": "Filmy i telewizja", "Books": "Książki", "Sports": "Sport", "Technology": "Technologia", "Art": "Sztuka", "Travel": "Podróże", "Food": "Jedzenie", "Photography": "Fotografia", "Psychology": "Psychologia", "Fitness": "Fitness", "Nature": "Przyroda", "Entertainment": "Rozrywka", "Other": "Inne", "Gender": "Płeć", "Sexual orientation": "Orientacja seksualna", "Man": "Mężczyzna", "Woman": "Kobieta", "Gay": "Gej", "English": "Angielski", "Spanish": "Hiszpański", "Korean": "Koreański", "Native": "Ojczysty", "Beginner": "Początkujący", "Preferred translation language": "Preferowany język tłumaczenia", "Choose the language you want message translations to use. This preference is saved on this device.": "Wybierz język tłumaczenia wiadomości. Ustawienie jest zapisywane na tym urządzeniu.", "Email Notifications": "Powiadomienia e-mail", "Danger Zone": "Strefa zagrożenia", "Delete Account": "Usuń konto", "My Jewel Collection": "Moja kolekcja klejnotów", "My Jewel Box": "Moja szkatułka na klejnoty", "Who visited my profile": "Kto odwiedził mój profil", "About XOXO Avenue": "O XOXO Avenue", "What is XOXO Avenue?": "Czym jest XOXO Avenue?", "What you can do": "Co możesz robić", "Important": "Ważne", "XOXO Avenue is a social discovery platform designed to help people discover friendships, communities and connections based on shared interests.": "XOXO Avenue to platforma społecznościowa pomagająca poznawać ludzi, znajdować przyjaźnie i społeczności o podobnych zainteresowaniach.", "Users can create posts, discover people and find WhatsApp, Telegram and Snapchat connections.": "Użytkownicy mogą tworzyć posty, poznawać ludzi i nawiązywać kontakty przez WhatsApp, Telegram i Snapchat.", "XOXO Avenue is an independent platform and is not affiliated with Snapchat, WhatsApp or Telegram.": "XOXO Avenue jest niezależną platformą i nie jest powiązana ze Snapchatem, WhatsAppem ani Telegramem.", "XOXO Avenue is designed with safety, privacy and age-appropriate interactions in mind.": "XOXO Avenue zaprojektowano z myślą o bezpieczeństwie, prywatności i kontaktach odpowiednich do wieku.", "XOXO Avenue Support": "Pomoc XOXO Avenue", "Live Chat": "Czat na żywo", "Start Live Chat": "Rozpocznij czat na żywo", "XOXO Avenue Support is online right now.": "Pomoc XOXO Avenue jest teraz dostępna online.", "Contact XOXO Avenue Support": "Skontaktuj się z pomocą XOXO Avenue", "Need help with XOXO Avenue?": "Potrzebujesz pomocy z XOXO Avenue?", "If you have a question, experience a problem or need assistance with your account, contact us by email.": "Jeśli masz pytanie, napotkasz problem lub potrzebujesz pomocy z kontem, napisz do nas e-mail.", "Email XOXO Avenue Support": "Wyślij e-mail do pomocy XOXO Avenue"};
+const skip='script,style,textarea,input,option,[contenteditable],.post-content,.comment-content,.post-user,.comment-user,.public-profile-username,.follow-list-name,.support-email,.dm-bubble,.dm-message,.dm-message-text,.dm-message-content';
+function apply(){
+ const root=document.body;if(!root)return;
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ let node,count=0;
+ while((node=walker.nextNode())){
+  if(++count>30000)break;
+  const p=node.parentElement;if(!p||p.closest(skip))continue;
+  const original=node.nodeValue;
+  const key=original.replace(/\s+/g,' ').trim();
+  if(Object.prototype.hasOwnProperty.call(dict,key)){
+   const lead=(original.match(/^\s*/)||[''])[0];
+   const trail=(original.match(/\s*$/)||[''])[0];
+   node.nodeValue=lead+dict[key]+trail;
+  }
+ }
+ root.querySelectorAll('[placeholder],[aria-label],[title]').forEach(el=>{
+  if(el.closest(skip))return;
+  for(const a of ['placeholder','aria-label','title']){
+   const v=el.getAttribute(a);
+   if(Object.prototype.hasOwnProperty.call(dict,v))el.setAttribute(a,dict[v]);
+  }
+ });
+}
+let pending;
+function schedule(){
+ if(pending)clearTimeout(pending);
+ pending=setTimeout(()=>{pending=null;apply();},300);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+document.addEventListener('click',schedule,{passive:true});
+document.addEventListener('change',schedule,{passive:true});
+window.addEventListener('popstate',schedule,{passive:true});
 })();
 </script>
 </body>
