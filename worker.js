@@ -116,7 +116,7 @@ function getProfileImageUrl(
     photo.startsWith("https://") ||
     photo.startsWith("http://")
   ) {
-    return photo;
+    return `${origin}/profile-preview-image/${encodeURIComponent(userId)}`;
   }
 
   return `${origin}/xoxoavenue-social.png`;
@@ -192,10 +192,18 @@ async function serveProfileImage(userId) {
     photo.startsWith("https://") ||
     photo.startsWith("http://")
   ) {
-    return Response.redirect(
-      photo,
-      302
-    );
+    // Serve a JPEG from our domain for social crawlers instead of a WebP redirect.
+    try {
+      const photoUrl = new URL(photo);
+      if (photoUrl.protocol !== "https:" || photoUrl.hostname !== new URL(SUPABASE_URL).hostname || !photoUrl.pathname.startsWith("/storage/v1/object/public/profile-photos/")) {
+        return new Response("Image unavailable", {status:404});
+      }
+      const img = await fetch(photo, {cf:{image:{width:600,fit:"scale-down",format:"jpeg",quality:85}}});
+      if (img.ok && (img.headers.get("content-type") || "").includes("image/jpeg")) {
+        return new Response(img.body, {headers:{"Content-Type":"image/jpeg","Cache-Control":"public, max-age=3600","X-XOXO-Worker":"profile-preview-jpeg"}});
+      }
+    } catch (error) { console.error("Preview image failed",error); }
+    return Response.redirect(photo,302);
   }
 
   const decoded =
