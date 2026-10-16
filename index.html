@@ -5470,6 +5470,26 @@ html.xoxo-shared-post-loading::before {
 html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekcja"; }
 </style>
 <style id="xoxo-fr-saved-label">html[lang="fr"] #saved .saved-posts-header::before{content:"🔖 Votre collection"}</style>
+
+<style id="xoxo-compact-header-language-v1">
+/* Compact header language selector — desktop and tablets only.
+   Existing mobile sizing is intentionally preserved. */
+@media (min-width: 701px) {
+  #languageSelect.language-select {
+    box-sizing: border-box !important;
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 28px 0 12px !important;
+    font-size: 14px !important;
+    line-height: normal !important;
+    flex: 0 0 150px !important;
+    border-radius: 9px !important;
+  }
+}
+</style>
 </head>
                                     <body>
                                     <header>
