@@ -2821,7 +2821,7 @@ export default {
       );
     }
 
-    const sharedPostImageMatch = url.pathname.match(/^\\/post-preview-image\\/([0-9a-fA-F-]{36})\\/?$/);
+    const sharedPostImageMatch = url.pathname.match(/^\/post-preview-image\/([0-9a-fA-F-]{36})\/?$/);
     if (sharedPostImageMatch) {
       return serveSharedPostImage(sharedPostImageMatch[1]);
     }
