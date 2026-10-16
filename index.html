@@ -19191,29 +19191,38 @@ function renderXoxoActivity(){
 <style>
 #xoxoDiscoverTop{position:fixed;right:clamp(16px,4vw,34px);bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:1150;width:55px;height:55px;border:1px solid #baff8b;border-radius:50%;background:linear-gradient(145deg,#b8ff44,#40fa77);color:#083519;font-size:29px;font-weight:900;display:none;align-items:center;justify-content:center;box-shadow:0 0 11px #5aff73,0 0 27px #48ff72aa,0 5px 17px #102d18aa;cursor:pointer;transition:transform .18s,box-shadow .18s}
 #xoxoDiscoverTop.is-visible{display:flex}
+#xoxoDiscoverDesktopRefresh{position:fixed;right:clamp(16px,4vw,34px);bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:1150;border:1px solid #baff8b;border-radius:999px;padding:12px 18px;background:linear-gradient(145deg,#b8ff44,#40fa77);color:#083519;font-weight:900;font-size:15px;display:none;align-items:center;gap:7px;box-shadow:0 0 11px #5aff73,0 0 27px #48ff72aa,0 5px 17px #102d18aa;cursor:pointer;transition:transform .18s,box-shadow .18s}
+#xoxoDiscoverDesktopRefresh.is-visible{display:flex}
+#xoxoDiscoverDesktopRefresh:hover{transform:translateY(-3px);box-shadow:0 0 16px #5aff73,0 0 38px #48ff72cc,0 7px 20px #102d18aa}
+#xoxoDiscoverDesktopRefresh:focus-visible{outline:3px solid #167d30;outline-offset:4px}
+#xoxoDiscoverDesktopRefresh:disabled{opacity:.6;cursor:wait}
+@media (pointer:coarse){#xoxoDiscoverDesktopRefresh{display:none!important}}
 #xoxoDiscoverTop:hover{transform:translateY(-3px);box-shadow:0 0 16px #5aff73,0 0 38px #48ff72cc,0 7px 20px #102d18aa}
 #xoxoDiscoverTop:focus-visible{outline:3px solid #167d30;outline-offset:4px}
 #xoxoDiscoverRefreshStatus{position:fixed;left:50%;top:calc(82px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:1200;padding:9px 16px;border-radius:999px;background:#13371e;color:#a7ff9a;border:1px solid #62ff7e;box-shadow:0 0 18px #4aff6680;font-weight:700;font-size:13px;display:none;pointer-events:none}
 #xoxoDiscoverRefreshStatus.is-visible{display:block}
 @media(prefers-reduced-motion:reduce){#xoxoDiscoverTop{transition:none}}
 </style>
+<button id="xoxoDiscoverDesktopRefresh" type="button" aria-label="Refresh Discover posts" title="Refresh Discover posts">↻ Refresh</button>
 <button id="xoxoDiscoverTop" type="button" aria-label="Back to top of Discover" title="Back to top of Discover">↑</button>
 <div id="xoxoDiscoverRefreshStatus" role="status" aria-live="polite"></div>
 <script>
 (function(){
   const topButton=document.getElementById('xoxoDiscoverTop');
+  const desktopRefresh=document.getElementById('xoxoDiscoverDesktopRefresh');
   const status=document.getElementById('xoxoDiscoverRefreshStatus');
   const active=()=>document.getElementById('discover')?.classList.contains('active');
   let refreshing=false, touchStart=null, statusTimer=null;
-  const update=()=>topButton.classList.toggle('is-visible',active() && window.scrollY>260);
+  const update=()=>{topButton.classList.toggle('is-visible',active() && window.scrollY>260);desktopRefresh.classList.toggle('is-visible',active());};
   const notice=(message)=>{clearTimeout(statusTimer);status.textContent=message;status.classList.add('is-visible');statusTimer=setTimeout(()=>status.classList.remove('is-visible'),1800)};
   async function refresh(){
     if(!active()||refreshing||typeof window.loadPosts!=='function')return;
-    refreshing=true;notice('↻ Refreshing Discover…');
+    refreshing=true;desktopRefresh.disabled=true;notice('↻ Refreshing Discover…');
     try{await window.loadPosts();notice('✓ Discover updated!')}
     catch(error){console.error('Discover refresh failed:',error);notice('Could not refresh. Try again.')}
-    finally{refreshing=false}
+    finally{refreshing=false;desktopRefresh.disabled=false}
   }
+  desktopRefresh.addEventListener('click',refresh);
   topButton.addEventListener('click',()=>{
     window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
   });
