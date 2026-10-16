@@ -5368,6 +5368,21 @@
   }
 }
 
+
+/* Guest public-profile invitation: keep the post count inside the pink card. */
+#publicProfile .xoxo-profile-love-letter{box-sizing:border-box;max-width:760px;width:100%;margin:20px auto 32px;padding:30px 24px;background:#fbe8f4;color:#92577c;border:1px solid #f3c4e9;border-radius:24px;text-align:center;box-shadow:0 15px 45px rgba(157,59,123,.12)}
+#publicProfile .xoxo-profile-love-count{font-size:clamp(19px,3vw,25px);font-weight:800;color:#a83d81;overflow-wrap:anywhere}
+#publicProfile .xoxo-profile-love-locked{margin:8px 0 0;color:#92577c;font-size:15px}
+#publicProfile .xoxo-profile-love-divider{height:1px;background:#edc3dd;margin:22px 0}
+#publicProfile .xoxo-profile-love-heading{font-size:clamp(23px,4vw,32px);line-height:1.25;font-weight:800;color:#a83d81;margin-bottom:14px}
+#publicProfile .xoxo-profile-love-desc{max-width:570px;margin:0 auto 24px;color:#92577c;font-size:16px;line-height:1.6}
+#publicProfile .xoxo-profile-love-signup,#publicProfile .xoxo-profile-love-login{display:block;width:100%;padding:15px 18px;border:0;border-radius:999px;font-size:16px;font-weight:800;cursor:pointer}
+#publicProfile .xoxo-profile-love-signup{background:#d74f9f;color:white;margin-bottom:12px}
+#publicProfile .xoxo-profile-love-login{background:white;color:#ae3b84;margin-bottom:18px}
+#publicProfile .xoxo-profile-love-signup:hover{background:#bd398a}
+#publicProfile .xoxo-profile-love-login:hover{background:#fff7fc}
+#publicProfile .xoxo-profile-love-letter small{display:block;color:#92577c;font-size:13px}
+@media(max-width:600px){#publicProfile .xoxo-profile-love-letter{padding:25px 16px;margin:18px auto 26px}}
 </style>
 <style>
 #xoxoSharedPostOverlay{position:fixed;inset:0;z-index:900;overflow:auto;background:var(--bg,#f8f4fc);color:var(--text,#292037);padding:18px 12px 65px;box-sizing:border-box}
@@ -10339,7 +10354,18 @@ async function openPublicProfile(userId) {
                                     const guestLoginText = getFriendHubLanguage() === "es"
                                     ? "Regístrate o inicia sesión para ver sus publicaciones."
                                     : "Sign up or log in to see their posts.";
-                                    postsContainer.innerHTML = `<div class="public-profile-guest-posts-note"><strong>${guestPostText}</strong><span>${guestLoginText}</span></div>`;
+                                    postsContainer.innerHTML = `<div class="xoxo-profile-love-letter">
+                                      <div class="xoxo-profile-love-count">${guestPostText}</div>
+                                      <p class="xoxo-profile-love-locked">${guestLoginText}</p>
+                                      <div class="xoxo-profile-love-divider"></div>
+                                      <div class="xoxo-profile-love-heading">💌 ${getFriendHubLanguage() === "es" ? "Hay mucho más por descubrir ♡" : "There's more to discover ♡"}</div>
+                                      <p class="xoxo-profile-love-desc">${getFriendHubLanguage() === "es"
+                                        ? `Descubriste el perfil de ${escapeHtml(username)}. Únete a XOXO Avenue para explorar sus publicaciones, conectar y hacer nuevas amistades.`
+                                        : `You've discovered ${escapeHtml(username)}'s profile. Join XOXO Avenue to explore their posts, connect, and make new friends.`}</p>
+                                      <button type="button" class="xoxo-profile-love-signup" onclick="openAuth('signup')">${getFriendHubLanguage() === "es" ? "Crea tu cuenta ♡" : "Create Your Account ♡"}</button>
+                                      <button type="button" class="xoxo-profile-love-login" onclick="openAuth('login')">${getFriendHubLanguage() === "es" ? "Ya tengo una cuenta" : "I Already Have an Account"}</button>
+                                      <small>${getFriendHubLanguage() === "es" ? "Tu próxima amistad podría comenzar aquí. 💗" : "Your next friendship could start here. 💗"}</small>
+                                    </div>`;
                                     }
                                     } else if (isBlocked) {
                                     if (postsContainer) postsContainer.innerHTML = '<div class="empty-state">You blocked this user. Unblock them to see their posts.</div>';
