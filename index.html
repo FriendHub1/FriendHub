@@ -5445,6 +5445,20 @@ html.xoxo-shared-post-loading::before {
 .xoxo-lang-choice label{color:#fff;display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;min-width:0}
 .xoxo-lang-choice select{max-width:132px;min-width:95px;background:#31254e;color:#fff;border:1px solid #8052c5;border-radius:8px;padding:6px;font-size:12px}
 @media(max-width:420px){.xoxo-lang-choice{flex-wrap:wrap}.xoxo-lang-choice select{margin-left:auto}}
+/* Compact language picker: override broad .form-group input/select sizing. */
+.xoxo-language-studio{padding:12px}
+.xoxo-lang-panel{padding:9px;margin:8px 0}
+.xoxo-lang-toggle{display:flex;align-items:center;gap:5px;flex-wrap:wrap;line-height:1.35;font-size:14px;min-height:32px}
+.xoxo-lang-toggle [data-xlang]{flex:1 1 155px;min-width:0}
+.xoxo-lang-tags{padding:4px 2px}
+.xoxo-lang-body{padding:6px 1px}
+.xoxo-lang-choices{gap:0;max-height:230px}
+.xoxo-lang-choice{min-height:42px;padding:6px 2px;flex-wrap:nowrap}
+.xoxo-lang-choice label{flex:1 1 auto;min-width:0;gap:9px;line-height:1.35;font-size:13px}
+.xoxo-lang-choice label input[type="checkbox"]{appearance:auto;-webkit-appearance:checkbox;display:inline-block!important;position:static!important;opacity:1!important;visibility:visible!important;flex:0 0 17px!important;width:17px!important;min-width:17px!important;max-width:17px!important;height:17px!important;min-height:17px!important;margin:0!important;padding:0!important;border-radius:4px;accent-color:#9661e8;box-shadow:none!important}
+.xoxo-lang-choice select{flex:0 0 auto;width:auto!important;max-width:115px!important;min-width:88px!important;padding:5px 7px!important;font-size:12px!important}
+@media(max-width:420px){.xoxo-lang-choice{flex-wrap:nowrap}.xoxo-lang-choice select{margin-left:0}}
+
 </style>
 </head>
                                     <body>
