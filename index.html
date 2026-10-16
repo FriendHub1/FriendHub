@@ -11519,17 +11519,17 @@ async function openPublicProfile(userId) {
                                     const meButton = document.getElementById("dmDeleteForMeButton");
                                     const bothButton = document.getElementById("dmDeleteForBothButton");
                                     const cancelButton = document.getElementById("dmDeleteCancelButton");
-                                    if (title) title.textContent = language === "es" ? "¿Eliminar conversación?" : "Delete conversation?";
-                                    if (text) text.textContent = language === "es"
-                                    ? `Elige cómo quieres eliminar tu conversación con ${dmDeleteTargetUsername}.`
-                                    : `Choose how you want to delete your conversation with ${dmDeleteTargetUsername}.`;
-                                    if (meButton) meButton.innerHTML = language === "es"
-                                    ? `Eliminar solo para mí<small>La otra persona conservará el historial. Si vuelve a escribirte, el chat reaparecerá desde el mensaje nuevo.</small>`
-                                    : `Delete for me<small>The other person keeps the history. If they message you again, the chat returns from the new message.</small>`;
-                                    if (bothButton) bothButton.innerHTML = language === "es"
-                                    ? `Eliminar para ambos<small>Elimina permanentemente la conversación para las dos personas.</small>`
-                                    : `Delete for both<small>Permanently deletes the conversation for both people.</small>`;
-                                    if (cancelButton) cancelButton.textContent = language === "es" ? "Cancelar" : "Cancel";
+                                    if (title) title.textContent = language === "pt-BR" ? "Excluir conversa?" : (language === "es" ? "¿Eliminar conversación?" : "Delete conversation?");
+                                    if (text) text.textContent = language === "pt-BR"
+                                    ? `Escolha como deseja excluir sua conversa com ${dmDeleteTargetUsername}.`
+                                    : (language === "es" ? `Elige cómo quieres eliminar tu conversación con ${dmDeleteTargetUsername}.` : `Choose how you want to delete your conversation with ${dmDeleteTargetUsername}.`);
+                                    if (meButton) meButton.innerHTML = language === "pt-BR"
+                                    ? `Excluir só para mim<small>A outra pessoa mantém o histórico. Se ela enviar outra mensagem, a conversa reaparecerá a partir da nova mensagem.</small>`
+                                    : (language === "es" ? `Eliminar solo para mí<small>La otra persona conservará el historial. Si vuelve a escribirte, el chat reaparecerá desde el mensaje nuevo.</small>` : `Delete for me<small>The other person keeps the history. If they message you again, the chat returns from the new message.</small>`);
+                                    if (bothButton) bothButton.innerHTML = language === "pt-BR"
+                                    ? `Excluir para ambos<small>Exclui permanentemente a conversa para as duas pessoas.</small>`
+                                    : (language === "es" ? `Eliminar para ambos<small>Elimina permanentemente la conversación para las dos personas.</small>` : `Delete for both<small>Permanently deletes the conversation for both people.</small>`);
+                                    if (cancelButton) cancelButton.textContent = language === "pt-BR" ? "Cancelar" : (language === "es" ? "Cancelar" : "Cancel");
                                     if (overlay) overlay.classList.add("show");
                                     }
 
@@ -11804,11 +11804,13 @@ async function openPublicProfile(userId) {
                                     const initial = String(currentDmUsername || "@User").replace(/^@/, "").trim().charAt(0).toUpperCase() || "U";
                                     avatar.innerHTML = currentDmProfilePhoto
                                       ? `<img src="${escapeHtmlAttribute(currentDmProfilePhoto)}" alt="">`
-                                      : escapeHtml(initial);
+                                      : xoxoBubbleImg(currentDmUserId, currentDmUsername);
                                     }
                                     if (input) {
                                     input.value = "";
-                                    input.placeholder = getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : "Write a message...";
+                                    input.placeholder = getFriendHubLanguage() === "pt-BR" ? "Escreva uma mensagem..." : (getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : "Write a message...");
+                                    const sendBtn = document.getElementById("dmSendButton");
+                                    if (sendBtn) sendBtn.textContent = getFriendHubLanguage() === "pt-BR" ? "Enviar" : (getFriendHubLanguage() === "es" ? "Enviar" : "Send");
                                     }
                                     clearDmReply();
                                     setDmStatus("");
@@ -12295,7 +12297,7 @@ async function openPublicProfile(userId) {
 
                                     if (!messages.length && !buzzHistory.length) {
                                     dmLastRenderedSignature = "";
-                                    container.innerHTML = `<div class="dm-no-messages">${getFriendHubLanguage() === "es" ? "Todavía no hay mensajes. Di hola 👋" : "No messages yet. Say hello 👋"}</div>`;
+                                    container.innerHTML = `<div class="dm-no-messages">${getFriendHubLanguage() === "pt-BR" ? "Ainda não há mensagens. Diga olá 👋" : (getFriendHubLanguage() === "es" ? "Todavía no hay mensajes. Di hola 👋" : "No messages yet. Say hello 👋")}</div>`;
                                     return;
                                     }
 
