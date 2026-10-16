@@ -5267,6 +5267,108 @@
 }
 
 </style>
+<style>
+
+/* XOXO — Compact mobile DM header and video bubbles, Oct 2026 */
+@media (max-width: 700px) {
+  #messages .dm-chat-header {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 7px !important;
+    padding: 9px 8px !important;
+    margin: 2px 0 9px !important;
+    border-radius: 15px !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  #messages .dm-back-btn {
+    font-size: 12px !important;
+    padding: 7px 8px !important;
+    min-height: 36px !important;
+    white-space: nowrap;
+    border-radius: 10px !important;
+  }
+  #messages .dm-chat-profile-link {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    gap: 6px !important;
+    overflow: hidden;
+  }
+  #messages .dm-chat-profile-avatar {
+    width: 31px !important;
+    height: 31px !important;
+    flex: 0 0 31px !important;
+  }
+  #messages .dm-chat-profile-text {
+    min-width: 0;
+    overflow: hidden;
+  }
+  #messages .dm-chat-username {
+    display: block;
+    font-size: 13px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #messages .friendhub-presence-dm {
+    display: block;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+    overflow-wrap: anywhere;
+  }
+  #messages .dm-chat-private {
+    display: block;
+    font-size: 10px !important;
+    line-height: 1.2 !important;
+  }
+  #messages .xoxo-chat-studio-launch,
+  #messages .dm-chat-delete-button {
+    flex: 0 0 35px !important;
+    width: 35px !important;
+    height: 35px !important;
+    min-width: 35px !important;
+    min-height: 35px !important;
+    padding: 5px !important;
+    font-size: 17px !important;
+  }
+  /* Only video bubbles: do not resize image messages or text messages. */
+  #messages .dm-row .dm-bubble:has(.dm-attachment-video) {
+    box-sizing: border-box !important;
+    width: fit-content !important;
+    max-width: min(73vw, 270px) !important;
+    padding: 7px 7px 6px !important;
+    min-height: 0 !important;
+  }
+  #messages .dm-bubble:has(.dm-attachment-video) .dm-attachment {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 4px !important;
+    padding: 0 !important;
+  }
+  #messages .dm-bubble:has(.dm-attachment-video) .dm-normal-media-button {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+  }
+  #messages .dm-bubble:has(.dm-attachment-video) .dm-attachment-video {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 270px !important;
+    object-fit: contain !important;
+  }
+  #messages .dm-bubble:has(.dm-attachment-video) .dm-time {
+    margin-top: 3px !important;
+    line-height: 1.15 !important;
+  }
+}
+
+</style>
 </head>
                                     <body>
                                     <header>
@@ -18760,6 +18862,40 @@ function renderXoxoActivity(){
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
+})();
+</script>
+
+
+<script>
+/* Translate existing DM controls without changing message logic or the language selector. */
+(function(){
+  const labels = {
+    en: {back:"← Back", private:"Private conversation", send:"Send"},
+    es: {back:"← Volver", private:"Conversación privada", send:"Enviar"}
+  };
+  function updateDmLabels(){
+    const chat=document.getElementById("dmChat");
+    if(!chat) return;
+    const lang=document.getElementById("languageSelect")?.value==="es"?"es":"en";
+    const t=labels[lang];
+    const back=chat.querySelector(".dm-back-btn");
+    const priv=chat.querySelector(".dm-chat-private");
+    const send=document.getElementById("dmSendButton");
+    if(back && back.textContent.trim()!==t.back) back.textContent=t.back;
+    if(priv && priv.textContent.trim()!==t.private) priv.textContent=t.private;
+    if(send && send.textContent.trim()!==t.send) send.textContent=t.send;
+  }
+  function init(){
+    updateDmLabels();
+    document.getElementById("languageSelect")?.addEventListener("change",updateDmLabels);
+    const chat=document.getElementById("dmChat");
+    if(chat) new MutationObserver(updateDmLabels).observe(chat,{attributes:true,attributeFilter:["style","class"]});
+    // Existing site can redraw the header on language change.
+    const header=chat?.querySelector(".dm-chat-header");
+    if(header) new MutationObserver(updateDmLabels).observe(header,{childList:true,subtree:true,characterData:true});
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init);
+  else init();
 })();
 </script>
 
