@@ -80,6 +80,45 @@ async function getPublicSharedPost(postId) {
   } catch(error) { console.error("XOXO shared post preview:",error); return null; }
 }
 
+async function serveSharedPostImage(postId) {
+  const post = await getPublicSharedPost(postId);
+  if (!post || String(post.media_type || "").toLowerCase() !== "image") {
+    return new Response("Image not available", {status:404});
+  }
+  const media = String(post.media_url || "").trim();
+  let source;
+  try {
+    source = new URL(media);
+    if (source.protocol !== "https:" ||
+        source.hostname !== new URL(SUPABASE_URL).hostname ||
+        !source.pathname.startsWith("/storage/v1/object/public/")) {
+      return new Response("Image not available", {status:404});
+    }
+  } catch (_) { return new Response("Image not available", {status:404}); }
+  try {
+    // Prefer a smaller JPEG; if Cloudflare image resizing is unavailable,
+    // return the original public image from our own domain.
+    let response = await fetch(source.href, {cf:{image:{width:600,fit:"scale-down",format:"jpeg",quality:80}}});
+    let contentType = String(response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    if (!response.ok || !contentType.startsWith("image/")) {
+      response = await fetch(source.href);
+      contentType = String(response.headers.get("content-type") || "").split(";")[0].trim().toLowerCase();
+    }
+    if (!response.ok || !contentType.startsWith("image/")) {
+      return new Response("Image unavailable", {status:502});
+    }
+    return new Response(response.body, {headers:{
+      "Content-Type":contentType,
+      "Cache-Control":"public, max-age=3600",
+      "X-Content-Type-Options":"nosniff",
+      "X-XOXO-Worker":"shared-post-image"
+    }});
+  } catch (error) {
+    console.error("XOXO shared post image:", error);
+    return new Response("Image unavailable", {status:502});
+  }
+}
+
 function makeDescription(profile) {
   const bio = String(profile?.bio || "").trim();
 
@@ -2782,6 +2821,11 @@ export default {
       );
     }
 
+    const sharedPostImageMatch = url.pathname.match(/^\\/post-preview-image\\/([0-9a-fA-F-]{36})\\/?$/);
+    if (sharedPostImageMatch) {
+      return serveSharedPostImage(sharedPostImageMatch[1]);
+    }
+
     /* PUBLIC SHARED POST: server-side social preview, without unlocking the feed. */
     const sharedPostMatch = url.pathname.match(/^\/post\/([0-9a-fA-F-]{36})\/?$/);
     if (sharedPostMatch) {
@@ -2796,9 +2840,9 @@ export default {
       const description = String(post.content || "Discover this post on XOXO Avenue.").trim().slice(0,180) || "Discover this post on XOXO Avenue.";
       const media = String(post.media_url || "").trim();
       const image = (String(post.media_type || "").toLowerCase() === "image" && /^https:\/\//i.test(media))
-        ? media
+        ? url.origin + "/post-preview-image/" + sharedPostMatch[1]
         : getProfileImageUrl(author, url.origin, post.user_id);
-      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname,type:"article",imageType:/\.webp(?:[?#]|$)/i.test(image) ? "image/webp" : /\.png(?:[?#]|$)/i.test(image) ? "image/png" : "image/jpeg"});
+      const transformed = injectPreview(indexResponse, {title,description,image,url:url.origin + url.pathname,type:"article",imageType:image.includes("/post-preview-image/") ? "image/jpeg" : /\.webp(?:[?#]|$)/i.test(image) ? "image/webp" : /\.png(?:[?#]|$)/i.test(image) ? "image/png" : "image/jpeg"});
       const headers = new Headers(transformed.headers);
       headers.set("Cache-Control","public, max-age=60");
       headers.set("X-XOXO-Worker","shared-post-preview");
