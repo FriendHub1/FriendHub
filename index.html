@@ -11835,7 +11835,7 @@ async function openPublicProfile(userId) {
                                     input.value = "";
                                     input.placeholder = getFriendHubLanguage() === "pl" ? "Napisz wiadomość..." : (getFriendHubLanguage() === "pt-BR" ? "Escreva uma mensagem..." : (getFriendHubLanguage() === "es" ? "Escribe un mensaje..." : "Write a message..."));
                                     const sendBtn = document.getElementById("dmSendButton");
-                                    if (sendBtn) sendBtn.textContent = getFriendHubLanguage() === "pl" ? "Wyślij" : (getFriendHubLanguage() === "pt-BR" ? "Enviar" : (getFriendHubLanguage() === "es" ? "Enviar" : "Send"));
+                                    if (sendBtn) sendBtn.textContent = getFriendHubLanguage() === "fr" ? "Envoyer" : (getFriendHubLanguage() === "pl" ? "Wyślij" : (getFriendHubLanguage() === "pt-BR" ? "Enviar" : (getFriendHubLanguage() === "es" ? "Enviar" : "Send")));
                                     }
                                     clearDmReply();
                                     setDmStatus("");
@@ -12073,7 +12073,7 @@ async function openPublicProfile(userId) {
                                     function clearDmEdit() {
                                     dmEditTarget = null;
                                     const button = document.getElementById("dmSendButton");
-                                    if (button) button.textContent = getFriendHubLanguage() === "es" ? "Enviar" : "Send";
+                                    if (button) button.textContent = getFriendHubLanguage() === "fr" ? "Envoyer" : (getFriendHubLanguage() === "es" ? "Enviar" : "Send");
                                     }
 
                                     function clearDmReply() {
@@ -19395,7 +19395,8 @@ function renderXoxoActivity(){
     en: {back:"← Back", private:"Private conversation", send:"Send"},
     pl: {back:"← Wróć", private:"Prywatna rozmowa", send:"Wyślij"},
     es: {back:"← Volver", private:"Conversación privada", send:"Enviar"},
-    "pt-BR": {back:"← Voltar", private:"Conversa privada", send:"Enviar"}
+    "pt-BR": {back:"← Voltar", private:"Conversa privada", send:"Enviar"},
+    fr: {back:"← Retour", private:"Conversation privée", send:"Envoyer"}
   };
   function updateDmLabels(){
     const chat=document.getElementById("dmChat");
