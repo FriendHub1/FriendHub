@@ -1,6 +1,72 @@
                 <!-- XOXO Avenue v14: regular DM photo/video only; existing temporary media history preserved. -->
 <html lang="en" data-theme="night">
                                     <head>
+                                    <!-- XOXO Analytics: consent-first, public-section-only measurement -->
+                                    <script id="xoxo-analytics-opt-in">
+(function(){
+  'use strict';
+  var id='G-X20XZQ6HY6', key='xoxo_analytics_choice_v1';
+  var allowed={home:'/',discover:'/discover',about:'/about',contact:'/contact'};
+  var loaded=false,lastPage='';
+  function choice(){try{return localStorage.getItem(key)}catch(e){return null}}
+  function save(v){try{localStorage.setItem(key,v)}catch(e){}}
+  function activePublicPage(){
+    var el=document.querySelector('.page.active');
+    if(!el||!Object.prototype.hasOwnProperty.call(allowed,el.id))return null;
+    // Avoid measuring authenticated sessions or any profile, message, support, or user-generated content.
+    if(typeof currentUser!=='undefined' && currentUser) return null;
+    if(typeof window.xoxoAnalyticsIsPrivate==='function'&&window.xoxoAnalyticsIsPrivate())return null;
+    return allowed[el.id];
+  }
+  function track(){
+    if(choice()!=='yes'||!loaded)return;
+    var page=activePublicPage();
+    if(!page||page===lastPage)return;
+    lastPage=page;
+    window.gtag('event','page_view',{page_location:location.origin+page,page_path:page,page_title:'XOXO Avenue',send_to:id});
+  }
+  function start(){
+    if(loaded||choice()!=='yes')return;
+    loaded=true;
+    window.dataLayer=window.dataLayer||[];
+    window.gtag=window.gtag||function(){window.dataLayer.push(arguments)};
+    window.gtag('js',new Date());
+    window.gtag('config',id,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false});
+    var script=document.createElement('script');script.async=true;
+    script.src='https://www.googletagmanager.com/gtag/js?id='+encodeURIComponent(id);
+    document.head.appendChild(script);
+    track();
+    var root=document.querySelector('main')||document.body;
+    new MutationObserver(function(){track()}).observe(root,{subtree:true,attributes:true,attributeFilter:['class']});
+  }
+  function close(){var el=document.getElementById('xoxo-analytics-consent');if(el)el.remove()}
+  function decide(v){
+    save(v);close();
+    // Reload when changing preferences: ensures an already loaded tag cannot continue after revocation.
+    if(loaded&&v==='no'){location.reload();return}
+    if(v==='yes')start();
+  }
+  function banner(){
+    if(choice()==='yes'){start();return}
+    if(choice()==='no'||document.getElementById('xoxo-analytics-consent'))return;
+    var el=document.createElement('div');el.id='xoxo-analytics-consent';
+    el.setAttribute('role','region');el.setAttribute('aria-label','Analytics privacy choice');
+    el.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:2147483646;max-width:620px;margin:auto;padding:16px;border-radius:16px;background:#201246;color:white;box-shadow:0 8px 35px #0008;font:14px/1.5 Arial,sans-serif';
+    var msg=document.createElement('div');
+    msg.textContent='Help improve XOXO Avenue? Allow optional Google Analytics for visits to public sections only. You can decline or change your choice in our Privacy Policy.';
+    el.appendChild(msg);
+    var actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap';
+    [['Decline','no'],['Allow analytics','yes']].forEach(function(item){
+      var btn=document.createElement('button');btn.type='button';btn.textContent=item[0];
+      btn.style.cssText='border:1px solid #aa91e9;border-radius:9px;padding:9px 14px;cursor:pointer;background:'+(item[1]==='yes'?'#a56cff':'transparent')+';color:white;font-weight:bold';
+      btn.addEventListener('click',function(){decide(item[1])});actions.appendChild(btn);
+    });
+    el.appendChild(actions);document.body.appendChild(el);
+  }
+  window.xoxoAnalyticsPrivacySettings=function(){save('');close();banner()};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',banner,{once:true});else banner();
+})();
+                                    </script>
                                     <meta name="google-adsense-account" content="ca-pub-5183362027645294">
                                     <meta charset="UTF-8">
                                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -6552,6 +6618,9 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
                                     <p>XOXO Avenue and its service providers may use cookies, browser storage and similar technologies to support sign-in sessions, security, preferences and website functionality.</p>
                                     <p>If advertising services are introduced, additional technologies may be used for ad delivery, measurement and fraud prevention. Where legally required, appropriate consent will be requested before non-essential advertising technologies are used. Browser settings may also provide controls over cookies, although disabling some technologies may affect site functionality.</p>
 
+                                    <h2>Analytics and optional measurement</h2>
+                                    <p>With your permission, XOXO Avenue uses Google Analytics to measure visits to selected public pages. Analytics is optional and is not activated before you choose to allow it. The implementation does not intentionally send private messages, profile identifiers, or URL query parameters to Google Analytics. Google may process device and usage information under its own policies. To change your choice, use the Analytics privacy settings link below.</p>
+                                    <p><button type="button" onclick="window.xoxoAnalyticsPrivacySettings &amp;&amp; window.xoxoAnalyticsPrivacySettings()" style="cursor:pointer;text-decoration:underline;background:none;border:0;color:inherit;font:inherit">Analytics privacy settings</button></p>
                                     <h2>16. Advertising Preferences and Privacy Choices</h2>
                                     <p>If Google advertising is enabled, you can learn about Google's advertising technologies at <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">Google Advertising Technologies</a> and manage certain Google ad preferences through <a href="https://myadcenter.google.com/" target="_blank" rel="noopener noreferrer">My Ad Center</a>.</p>
                                     <p>These external controls do not replace any consent or privacy options that XOXO Avenue may be legally required to provide directly.</p>
