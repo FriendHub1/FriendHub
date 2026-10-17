@@ -14437,35 +14437,37 @@ async function openPublicProfile(userId) {
                                     ========================================================= */
                                     async function shareFriendHub() {
                                       const language = getFriendHubLanguage();
-                                      const url = `${window.location.origin}${window.location.pathname}`;
+                                      const url = "https://xoxoavenue.com/";
                                       const title = "XOXO Avenue";
-                                      const text = language === "es"
-                                        ? "¡Únete a XOXO Avenue! Conoce gente, descubre comunidades y haz nuevos amigos."
-                                        : "Join me on XOXO Avenue — meet people, discover communities and make new friends!";
-
+                                      const messages = {
+                                        "es": "¡Únete a XOXO Avenue! Conoce gente, descubre comunidades y haz nuevos amigos.",
+                                        "en": "Join me on XOXO Avenue — meet people, discover communities and make new friends!",
+                                        "pt-BR": "Junte-se a mim no XOXO Avenue! Conheça novas pessoas, descubra comunidades e faça novas amizades! 💜",
+                                        "fr": "Rejoins-moi sur XOXO Avenue ! Rencontre de nouvelles personnes, découvre des communautés et fais-toi de nouveaux amis ! 💜",
+                                        "pl": "Dołącz do mnie na XOXO Avenue! Poznawaj nowych ludzi, odkrywaj społeczności i zawieraj nowe przyjaźnie! 💜"
+                                      };
+                                      const text = messages[language] || messages.en;
+                                      const fullMessage = `${text}\n${url}`;
                                       try {
                                         if (navigator.share) {
-                                          await navigator.share({ title, text, url });
+                                          // Include URL in text so share targets receive the invitation, not just the link.
+                                          await navigator.share({ title, text: fullMessage });
                                           return;
                                         }
                                       } catch (error) {
                                         if (error && error.name === "AbortError") return;
                                         console.warn("Native XOXO Avenue share failed; using copy fallback.", error);
                                       }
-
                                       try {
-                                        await navigator.clipboard.writeText(url);
-                                        alert(language === "es"
-                                          ? "Enlace de XOXO Avenue copiado."
-                                          : "XOXO Avenue link copied.");
+                                        await navigator.clipboard.writeText(fullMessage);
+                                        alert(language === "es" ? "Invitación de XOXO Avenue copiada." :
+                                              language === "pt-BR" ? "Convite do XOXO Avenue copiado." :
+                                              language === "fr" ? "Invitation XOXO Avenue copiée." :
+                                              language === "pl" ? "Zaproszenie XOXO Avenue skopiowane." :
+                                              "XOXO Avenue invitation copied.");
                                       } catch (error) {
                                         console.error("XOXO Avenue share copy error:", error);
-                                        window.prompt(
-                                          language === "es"
-                                            ? "Copia este enlace para invitar a alguien a XOXO Avenue:"
-                                            : "Copy this link to invite someone to XOXO Avenue:",
-                                          url
-                                        );
+                                        window.prompt("Copy / Copiar:", fullMessage);
                                       }
                                     }
 
