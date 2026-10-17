@@ -46,17 +46,34 @@
     if(loaded&&v==='no'){location.reload();return}
     if(v==='yes')start();
   }
+  // Consent notice translations follow the existing XOXO Avenue language preference.
+  var consentText={
+    en:{message:'Help improve XOXO Avenue? Allow optional Google Analytics for visits to public sections only. You can decline or change your choice in our Privacy Policy.',decline:'Decline',allow:'Allow analytics',settings:'Analytics privacy settings',aria:'Analytics privacy choice'},
+    es:{message:'¿Quieres ayudar a mejorar XOXO Avenue? Permite Google Analytics de forma opcional para medir las visitas a las secciones públicas. Puedes rechazarlo o cambiar tu elección en nuestra Política de privacidad.',decline:'Rechazar',allow:'Permitir Analytics',settings:'Preferencias de privacidad de Analytics',aria:'Opciones de privacidad de Analytics'},
+    fr:{message:'Vous souhaitez aider à améliorer XOXO Avenue ? Autorisez facultativement Google Analytics à mesurer les visites des sections publiques uniquement. Vous pouvez refuser ou modifier votre choix dans notre Politique de confidentialité.',decline:'Refuser',allow:'Autoriser Analytics',settings:'Préférences de confidentialité Analytics',aria:'Choix de confidentialité Analytics'},
+    pl:{message:'Chcesz pomóc ulepszyć XOXO Avenue? Możesz opcjonalnie zezwolić Google Analytics na pomiar odwiedzin wyłącznie publicznych sekcji. Możesz odmówić lub zmienić decyzję w naszej Polityce prywatności.',decline:'Odrzuć',allow:'Zezwól na Analytics',settings:'Ustawienia prywatności Analytics',aria:'Wybór prywatności Analytics'},
+    'pt-BR':{message:'Quer ajudar a melhorar o XOXO Avenue? Permita opcionalmente que o Google Analytics registre visitas apenas às seções públicas. Você pode recusar ou alterar sua escolha em nossa Política de Privacidade.',decline:'Recusar',allow:'Permitir Analytics',settings:'Preferências de privacidade do Analytics',aria:'Escolha de privacidade do Analytics'}
+  };
+  function consentLanguage(){
+    var lang='en';try{lang=localStorage.getItem('friendhub_language')||'en'}catch(e){}
+    return consentText[lang]||consentText.en;
+  }
+  function translateSettingsButton(){
+    var btn=document.getElementById('xoxo-analytics-settings-button');
+    if(btn)btn.textContent=consentLanguage().settings;
+  }
   function banner(){
     if(choice()==='yes'){start();return}
     if(choice()==='no'||document.getElementById('xoxo-analytics-consent'))return;
     var el=document.createElement('div');el.id='xoxo-analytics-consent';
-    el.setAttribute('role','region');el.setAttribute('aria-label','Analytics privacy choice');
+    var words=consentLanguage();
+    el.setAttribute('role','region');el.setAttribute('aria-label',words.aria);
     el.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:2147483646;max-width:620px;margin:auto;padding:16px;border-radius:16px;background:#201246;color:white;box-shadow:0 8px 35px #0008;font:14px/1.5 Arial,sans-serif';
     var msg=document.createElement('div');
-    msg.textContent='Help improve XOXO Avenue? Allow optional Google Analytics for visits to public sections only. You can decline or change your choice in our Privacy Policy.';
+    msg.textContent=words.message;
     el.appendChild(msg);
     var actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap';
-    [['Decline','no'],['Allow analytics','yes']].forEach(function(item){
+    [[words.decline,'no'],[words.allow,'yes']].forEach(function(item){
       var btn=document.createElement('button');btn.type='button';btn.textContent=item[0];
       btn.style.cssText='border:1px solid #aa91e9;border-radius:9px;padding:9px 14px;cursor:pointer;background:'+(item[1]==='yes'?'#a56cff':'transparent')+';color:white;font-weight:bold';
       btn.addEventListener('click',function(){decide(item[1])});actions.appendChild(btn);
@@ -64,7 +81,8 @@
     el.appendChild(actions);document.body.appendChild(el);
   }
   window.xoxoAnalyticsPrivacySettings=function(){save('');close();banner()};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',banner,{once:true});else banner();
+  function initialize(){translateSettingsButton();banner()}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initialize,{once:true});else initialize();
 })();
                                     </script>
                                     <meta name="google-adsense-account" content="ca-pub-5183362027645294">
@@ -6620,7 +6638,7 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
 
                                     <h2>Analytics and optional measurement</h2>
                                     <p>With your permission, XOXO Avenue uses Google Analytics to measure visits to selected public pages. Analytics is optional and is not activated before you choose to allow it. The implementation does not intentionally send private messages, profile identifiers, or URL query parameters to Google Analytics. Google may process device and usage information under its own policies. To change your choice, use the Analytics privacy settings link below.</p>
-                                    <p><button type="button" onclick="window.xoxoAnalyticsPrivacySettings &amp;&amp; window.xoxoAnalyticsPrivacySettings()" style="cursor:pointer;text-decoration:underline;background:none;border:0;color:inherit;font:inherit">Analytics privacy settings</button></p>
+                                    <p><button type="button" id="xoxo-analytics-settings-button" onclick="window.xoxoAnalyticsPrivacySettings &amp;&amp; window.xoxoAnalyticsPrivacySettings()" style="cursor:pointer;text-decoration:underline;background:none;border:0;color:inherit;font:inherit">Analytics privacy settings</button></p>
                                     <h2>16. Advertising Preferences and Privacy Choices</h2>
                                     <p>If Google advertising is enabled, you can learn about Google's advertising technologies at <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">Google Advertising Technologies</a> and manage certain Google ad preferences through <a href="https://myadcenter.google.com/" target="_blank" rel="noopener noreferrer">My Ad Center</a>.</p>
                                     <p>These external controls do not replace any consent or privacy options that XOXO Avenue may be legally required to provide directly.</p>
