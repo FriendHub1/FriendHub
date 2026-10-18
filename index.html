@@ -20436,6 +20436,14 @@ window.xoxoTogglePostTranslation=async function(button){
 .xoxo-avatar-crop{width:230px;height:230px;border-radius:50%;overflow:hidden;margin:18px auto;border:3px solid #d884ff;touch-action:none;cursor:grab;background:#2a164d;position:relative}
 .xoxo-avatar-crop img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;user-select:none}
 .xoxo-avatar-dialog input[type=range]{width:100%;accent-color:#d884ff}
+.xoxo-avatar-pad{display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,42px);gap:5px;justify-content:center;margin:14px auto}
+.xoxo-avatar-pad button{background:#39205d;color:#fff;border:1px solid #bb86fa;border-radius:12px;font-size:23px;touch-action:manipulation;cursor:pointer}
+.xoxo-avatar-pad button:active{background:#8651cc}
+.xoxo-avatar-pad button:nth-child(1){grid-column:2;grid-row:1}
+.xoxo-avatar-pad button:nth-child(2){grid-column:1;grid-row:2}
+.xoxo-avatar-pad button:nth-child(3){grid-column:3;grid-row:2}
+.xoxo-avatar-pad button:nth-child(4){grid-column:2;grid-row:3}
+.xoxo-avatar-hint{font-size:12px;opacity:.8;margin:4px 0}
 .xoxo-avatar-actions{display:flex;gap:10px;justify-content:center;margin-top:18px}
 .xoxo-avatar-actions button{padding:10px 17px;border-radius:12px;border:1px solid #ac7bf7;background:#3a245c;color:white;font-weight:700}
 .xoxo-avatar-actions button:last-child{background:#b66bff;color:#160a2b}
@@ -20443,8 +20451,14 @@ window.xoxoTogglePostTranslation=async function(button){
 <div id="xoxoAvatarEditor" role="dialog" aria-modal="true" aria-label="Adjust profile photo">
 <div class="xoxo-avatar-dialog"><h2>💜 Adjust your avatar</h2><p>Drag the photo to position it inside the circle.</p>
 <div class="xoxo-avatar-crop" id="xoxoAvatarCrop"><img id="xoxoAvatarCropImg" alt="Avatar preview"></div>
+<div class="xoxo-avatar-pad" aria-label="Move photo">
+<button type="button" aria-label="Move up" onclick="xoxoAvatarNudge(0,-1)">↑</button>
+<button type="button" aria-label="Move left" onclick="xoxoAvatarNudge(-1,0)">←</button>
+<button type="button" aria-label="Move right" onclick="xoxoAvatarNudge(1,0)">→</button>
+<button type="button" aria-label="Move down" onclick="xoxoAvatarNudge(0,1)">↓</button>
+</div><p class="xoxo-avatar-hint">Drag in any direction or use the arrows for fine adjustments.</p>
 <label for="xoxoAvatarZoom">Zoom</label><input id="xoxoAvatarZoom" type="range" min="1" max="3" step="0.01" value="1" oninput="xoxoAvatarSetZoom(this.value)">
-<div class="xoxo-avatar-actions"><button type="button" onclick="xoxoAvatarClose(false)">Cancel</button><button type="button" onclick="xoxoAvatarClose(true)">Apply 💜</button></div>
+<div class="xoxo-avatar-actions"><button type="button" onclick="xoxoAvatarReset()">↺ Reset</button><button type="button" onclick="xoxoAvatarClose(false)">Cancel</button><button type="button" onclick="xoxoAvatarClose(true)">Apply 💜</button></div>
 <p style="font-size:12px;opacity:.75;margin-top:12px">Your full original photo stays unchanged. Save Profile to keep your adjustment.</p></div></div>
 <script id="xoxo-avatar-editor-js">
 let xoxoAdminAvatarTarget = null;
@@ -20463,7 +20477,26 @@ async function xoxoAdminAvatarOpen(userId) {
 let xoxoAvatarDraft = null;
 let xoxoAvatarWorking = null;
 function xoxoAvatarNormalize(v){v=v&&typeof v==='object'?v:{};return {x:Math.min(100,Math.max(0,Number(v.x ?? 50))),y:Math.min(100,Math.max(0,Number(v.y ?? 50))),zoom:Math.min(3,Math.max(1,Number(v.zoom)||1))}}
-function xoxoAvatarStyle(v){const a=xoxoAvatarNormalize(v);return `object-position:${a.x}% ${a.y}%;transform:scale(${a.zoom});transform-origin:${a.x}% ${a.y}%;`}
+function xoxoAvatarStyle(v){
+ const a=xoxoAvatarNormalize(v);
+ // Center-origin translation allows movement on both axes, independent of image aspect ratio.
+ const dx=(50-a.x)*(a.zoom-1),dy=(50-a.y)*(a.zoom-1);
+ return `object-position:${a.x}% ${a.y}%;transform:translate(${dx}%,${dy}%) scale(${a.zoom});transform-origin:center center;`;
+}
+function xoxoAvatarMove(dx,dy){
+ if(!xoxoAvatarWorking)return;
+ // Without extra image area a square photo cannot be moved without leaving blank edges.
+ if(xoxoAvatarWorking.zoom<1.15){xoxoAvatarWorking.zoom=1.15;document.getElementById('xoxoAvatarZoom').value='1.15';}
+ xoxoAvatarWorking.x=Math.max(0,Math.min(100,xoxoAvatarWorking.x-dx));
+ xoxoAvatarWorking.y=Math.max(0,Math.min(100,xoxoAvatarWorking.y-dy));
+ xoxoAvatarRender();
+}
+function xoxoAvatarNudge(dx,dy){xoxoAvatarMove(dx*3,dy*3)}
+function xoxoAvatarReset(){
+ if(!xoxoAvatarWorking)return;
+ xoxoAvatarWorking={x:50,y:50,zoom:1};
+ document.getElementById('xoxoAvatarZoom').value='1';xoxoAvatarRender();
+}
 function xoxoAvatarOpen(){
  const src=selectedProfilePhoto || currentProfile?.profile_photo;
  if(!src)return;
@@ -20493,8 +20526,8 @@ async function xoxoAvatarClose(apply){
  xoxoAvatarWorking=null;
 }
 (function(){let start=null;const crop=document.getElementById('xoxoAvatarCrop');
- crop.addEventListener('pointerdown',e=>{if(!xoxoAvatarWorking)return;start={px:e.clientX,py:e.clientY,x:xoxoAvatarWorking.x,y:xoxoAvatarWorking.y};crop.setPointerCapture(e.pointerId)});
- crop.addEventListener('pointermove',e=>{if(!start||!xoxoAvatarWorking)return;const zoom=xoxoAvatarWorking.zoom;const factor=100/(230*Math.max(1,zoom));xoxoAvatarWorking.x=Math.min(100,Math.max(0,start.x-(e.clientX-start.px)*factor));xoxoAvatarWorking.y=Math.min(100,Math.max(0,start.y-(e.clientY-start.py)*factor));xoxoAvatarRender()});
+ crop.addEventListener('pointerdown',e=>{if(!xoxoAvatarWorking)return;e.preventDefault();if(xoxoAvatarWorking.zoom<1.15){xoxoAvatarWorking.zoom=1.15;document.getElementById('xoxoAvatarZoom').value='1.15';}start={px:e.clientX,py:e.clientY,x:xoxoAvatarWorking.x,y:xoxoAvatarWorking.y,id:e.pointerId};crop.setPointerCapture(e.pointerId);xoxoAvatarRender()});
+ crop.addEventListener('pointermove',e=>{if(!start||!xoxoAvatarWorking||e.pointerId!==start.id)return;e.preventDefault();const factor=100/(230*Math.max(1,xoxoAvatarWorking.zoom-1));xoxoAvatarWorking.x=Math.min(100,Math.max(0,start.x-(e.clientX-start.px)*factor));xoxoAvatarWorking.y=Math.min(100,Math.max(0,start.y-(e.clientY-start.py)*factor));xoxoAvatarRender()});
  const stop=()=>{start=null};crop.addEventListener('pointerup',stop);crop.addEventListener('pointercancel',stop);
 })();
 </script>
