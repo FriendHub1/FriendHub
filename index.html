@@ -7522,7 +7522,7 @@ async function enforceXoxoSuspension() {
                                     showRequiredProfileWelcome();
                                     return;
                                     }
-                                    if (xoxoIsAdmin && ["discover", "saved", "messages"].includes(String(pageId))) {
+                                    if (xoxoIsAdmin && ["saved", "messages"].includes(String(pageId))) {
                                     pageId = "admin";
                                     }
                                     if (String(pageId) !== "profile") xoxoRestorePostComposer();
@@ -15981,7 +15981,7 @@ function applyXoxoAdminModeUI() {
     showPage("home");
   }
   const adminButton = document.getElementById("adminNavBtn");
-  const socialNavIds = ["discoverNavBtn", "savedNavBtn", "messagesNavBtn"];
+  const socialNavIds = ["savedNavBtn", "messagesNavBtn"];
   const notificationWrap = document.getElementById("notificationWrap");
   const postComposer = document.getElementById("postComposer");
 
@@ -16001,7 +16001,7 @@ function applyXoxoAdminModeUI() {
     stopDmChatRefresh();
 
     const activePage = document.querySelector(".page.active");
-    if (activePage && ["discover", "saved", "messages"].includes(activePage.id)) {
+    if (activePage && ["saved", "messages"].includes(activePage.id)) {
       showPage("admin");
     }
   } else if (currentUser) {
