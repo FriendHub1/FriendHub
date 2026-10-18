@@ -5966,6 +5966,7 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
                                     <div class="profile-photo-section">
                                     <div id="profileAvatar" class="profile-avatar">
                                     </div>
+                                    <button type="button" id="xoxoAvatarAdjustBtn" class="btn btn-secondary" style="display:none;margin:0 auto 12px" onclick="xoxoAvatarOpen()">✂️ Adjust avatar</button>
                                     <label class="profile-photo-label" for="profilePhotoInput">
                                     Change profile photo
                                     </label>
@@ -8729,6 +8730,7 @@ function renderOptionButtons() {
 
                                     /* Profile photos are stored in Supabase Storage.
                                        The database keeps only the public URL, never the image Base64. */
+                                    if (xoxoAvatarDraft) profileData.avatar_settings = xoxoAvatarDraft;
                                     const previousProfilePhoto = currentProfile?.profile_photo || null;
                                     let savedProfilePhoto = previousProfilePhoto;
                                     if (selectedProfilePhotoFile) {
@@ -8795,6 +8797,7 @@ function renderOptionButtons() {
                                     }
                                     currentProfile =
                                     result.data;
+                                    xoxoAvatarDraft = null;
                                     xoxoProfileCheckComplete = true;
                                     xoxoProfileRequired = false;
                                     const completeProfileModal = document.getElementById("completeProfileModal");
@@ -8866,6 +8869,7 @@ function renderOptionButtons() {
                                     return;
                                     }
                                     selectedProfilePhotoFile = file;
+                                    xoxoAvatarDraft = {x:50,y:50,zoom:1};
                                     const reader = new FileReader();
                                     reader.onload = function(e) {
                                     selectedProfilePhoto = e.target.result;
@@ -8875,6 +8879,7 @@ function renderOptionButtons() {
                                     );
                                     };
                                     reader.readAsDataURL(file);
+                                    setTimeout(xoxoAvatarOpen, 120);
                                     }
 
                                     async function optimizeProfilePhoto(file) {
@@ -8936,6 +8941,7 @@ function renderOptionButtons() {
                                         .eq("user_id", currentUser.id).select().single();
                                       if (error) throw error;
                                       currentProfile = data;
+                                      xoxoAvatarDraft = null;
                                       selectedProfilePhoto = null;
                                       selectedProfilePhotoFile = null;
                                       const input = document.getElementById("profilePhotoInput");
@@ -8972,11 +8978,13 @@ function xoxoBubbleImg(userId, username) {
                                     document.getElementById("profileAvatar");
                                     const removeBtn = document.getElementById("xoxoRemoveProfilePhotoBtn");
                                     if (removeBtn) removeBtn.style.display = (photo && currentProfile?.profile_photo) ? "block" : "none";
+                                    const adjustBtn = document.getElementById("xoxoAvatarAdjustBtn");
+                                    if(adjustBtn) adjustBtn.style.display = photo ? "block" : "none";
                                     const bubbleNotice = document.getElementById("xoxoOfficialBubbleNotice");
                                     if (bubbleNotice) bubbleNotice.style.display = photo ? "none" : "block";
                                     if (photo) {
                                     avatar.innerHTML =
-                                    `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`;
+                                    `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo" style="${xoxoAvatarStyle(xoxoAvatarDraft || currentProfile?.avatar_settings)}">`;
                                     return;
                                     }
                                     avatar.innerHTML = xoxoBubbleImg(currentUser?.id, username);
@@ -10667,7 +10675,7 @@ async function openPublicProfile(userId) {
                                     const isBlocked = !!myBlockResult.data;
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
-                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : xoxoBubbleImg(profile.user_id, username);
+                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">` : xoxoBubbleImg(profile.user_id, username);
                                     content.innerHTML = `
                                     <div class="public-profile-card">
                                     <div class="public-profile-avatar has-photo" onclick="openProfilePhotoViewer(this.querySelector('img')?.src)" onkeydown="if(event.key === 'Enter' || event.key === ' '){event.preventDefault();openProfilePhotoViewer(this.querySelector('img')?.src)}" role="button" tabindex="0" title="${getFriendHubLanguage() === "pl" ? "Zobacz zdjęcie profilowe" : (getFriendHubLanguage() === "es" ? "Ver foto de perfil" : "View profile photo")}">${avatar}</div>
@@ -20412,5 +20420,50 @@ window.xoxoTogglePostTranslation=async function(button){
 };
 })();
 </script>
+
+<style id="xoxo-avatar-editor-css">
+#xoxoAvatarEditor{position:fixed;inset:0;z-index:6000;display:none;align-items:center;justify-content:center;background:#09051ce8;padding:16px}
+#xoxoAvatarEditor.open{display:flex}
+.xoxo-avatar-dialog{width:min(420px,100%);background:#1c103a;color:#fff;border:1px solid #a968ff;border-radius:22px;padding:22px;box-shadow:0 18px 60px #0009;text-align:center}
+.xoxo-avatar-crop{width:230px;height:230px;border-radius:50%;overflow:hidden;margin:18px auto;border:3px solid #d884ff;touch-action:none;cursor:grab;background:#2a164d;position:relative}
+.xoxo-avatar-crop img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;user-select:none}
+.xoxo-avatar-dialog input[type=range]{width:100%;accent-color:#d884ff}
+.xoxo-avatar-actions{display:flex;gap:10px;justify-content:center;margin-top:18px}
+.xoxo-avatar-actions button{padding:10px 17px;border-radius:12px;border:1px solid #ac7bf7;background:#3a245c;color:white;font-weight:700}
+.xoxo-avatar-actions button:last-child{background:#b66bff;color:#160a2b}
+</style>
+<div id="xoxoAvatarEditor" role="dialog" aria-modal="true" aria-label="Adjust profile photo">
+<div class="xoxo-avatar-dialog"><h2>💜 Adjust your avatar</h2><p>Drag the photo to position it inside the circle.</p>
+<div class="xoxo-avatar-crop" id="xoxoAvatarCrop"><img id="xoxoAvatarCropImg" alt="Avatar preview"></div>
+<label for="xoxoAvatarZoom">Zoom</label><input id="xoxoAvatarZoom" type="range" min="1" max="3" step="0.01" value="1" oninput="xoxoAvatarSetZoom(this.value)">
+<div class="xoxo-avatar-actions"><button type="button" onclick="xoxoAvatarClose(false)">Cancel</button><button type="button" onclick="xoxoAvatarClose(true)">Apply 💜</button></div>
+<p style="font-size:12px;opacity:.75;margin-top:12px">Your full original photo stays unchanged. Save Profile to keep your adjustment.</p></div></div>
+<script id="xoxo-avatar-editor-js">
+let xoxoAvatarDraft = null;
+let xoxoAvatarWorking = null;
+function xoxoAvatarNormalize(v){v=v&&typeof v==='object'?v:{};return {x:Math.min(100,Math.max(0,Number(v.x ?? 50))),y:Math.min(100,Math.max(0,Number(v.y ?? 50))),zoom:Math.min(3,Math.max(1,Number(v.zoom)||1))}}
+function xoxoAvatarStyle(v){const a=xoxoAvatarNormalize(v);return `object-position:${a.x}% ${a.y}%;transform:scale(${a.zoom});transform-origin:${a.x}% ${a.y}%;`}
+function xoxoAvatarOpen(){
+ const src=selectedProfilePhoto || currentProfile?.profile_photo;
+ if(!src)return;
+ xoxoAvatarWorking=xoxoAvatarNormalize(xoxoAvatarDraft || currentProfile?.avatar_settings);
+ document.getElementById('xoxoAvatarCropImg').src=src;
+ document.getElementById('xoxoAvatarZoom').value=xoxoAvatarWorking.zoom;
+ document.getElementById('xoxoAvatarEditor').classList.add('open');xoxoAvatarRender();
+}
+function xoxoAvatarRender(){if(!xoxoAvatarWorking)return;document.getElementById('xoxoAvatarCropImg').style.cssText=xoxoAvatarStyle(xoxoAvatarWorking)}
+function xoxoAvatarSetZoom(v){if(!xoxoAvatarWorking)return;xoxoAvatarWorking.zoom=Number(v);xoxoAvatarRender()}
+function xoxoAvatarClose(apply){
+ document.getElementById('xoxoAvatarEditor').classList.remove('open');
+ if(apply&&xoxoAvatarWorking){xoxoAvatarDraft={...xoxoAvatarWorking};updateProfileAvatar(document.getElementById('username').value,selectedProfilePhoto || currentProfile?.profile_photo);showProfileMessage('Avatar adjusted. Press Save Profile to save your changes.','success')}
+ xoxoAvatarWorking=null;
+}
+(function(){let start=null;const crop=document.getElementById('xoxoAvatarCrop');
+ crop.addEventListener('pointerdown',e=>{if(!xoxoAvatarWorking)return;start={px:e.clientX,py:e.clientY,x:xoxoAvatarWorking.x,y:xoxoAvatarWorking.y};crop.setPointerCapture(e.pointerId)});
+ crop.addEventListener('pointermove',e=>{if(!start||!xoxoAvatarWorking)return;const zoom=xoxoAvatarWorking.zoom;const factor=100/(230*Math.max(1,zoom));xoxoAvatarWorking.x=Math.min(100,Math.max(0,start.x-(e.clientX-start.px)*factor));xoxoAvatarWorking.y=Math.min(100,Math.max(0,start.y-(e.clientY-start.py)*factor));xoxoAvatarRender()});
+ const stop=()=>{start=null};crop.addEventListener('pointerup',stop);crop.addEventListener('pointercancel',stop);
+})();
+</script>
+
 </body>
                                     </html>
