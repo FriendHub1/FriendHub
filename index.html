@@ -5607,7 +5607,7 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
 #publicProfile .public-profile-card[data-xoxo-frame^="lux-"] .public-profile-avatar img,
 #xoxoStudioPreview[data-frame^="lux-"] #xoxoStudioAvatar img {
  position:absolute!important;top:50%!important;left:50%!important;
- transform:translate(-50%,-50%)!important;width:69%!important;height:69%!important;
+ transform:translate(-50%,-50%)!important;width:90%!important;height:90%!important;
  border-radius:50%!important;object-fit:cover!important;z-index:0!important;
 }
 #profile #profileCard[data-xoxo-frame^="lux-"] .profile-avatar::after,
@@ -20567,7 +20567,7 @@ function xoxoAvatarStyle(v){
  const a=xoxoAvatarNormalize(v);
  // object-fit:cover clips every photo to the circle; object-position controls
  // the available horizontal/vertical crop without double translations.
- return `object-fit:cover;object-position:${a.x}% ${a.y}%;transform:scale(${a.zoom});transform-origin:${a.x}% ${a.y}%;`;
+ return `object-fit:cover;object-position:${a.x}% ${a.y}%;transform:translate(${(50-a.x)*(a.zoom-1)}%,${(50-a.y)*(a.zoom-1)}%) scale(${a.zoom});transform-origin:center center;`;
 }
 function xoxoAvatarDragRange(){
  const img=document.getElementById('xoxoAvatarCropImg');
@@ -20613,7 +20613,15 @@ async function xoxoAvatarClose(apply){
  const pointers=new Map();let drag=null,pinch=null;
  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
  function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
- function setDrag(p){drag={id:p.id,px:p.x,py:p.y,x:xoxoAvatarWorking.x,y:xoxoAvatarWorking.y};pinch=null}
+ function setDrag(p){
+  // A square image at 1x has no crop margin to drag. On the first touch,
+  // create a small safe margin so all four directions work on every photo.
+  if(xoxoAvatarWorking && xoxoAvatarWorking.zoom<1.2){
+    xoxoAvatarWorking.zoom=1.2;
+    xoxoAvatarRender();
+  }
+  drag={id:p.id,px:p.x,py:p.y,x:xoxoAvatarWorking.x,y:xoxoAvatarWorking.y};pinch=null;
+}
  function setPinch(){const [a,b]=[...pointers.values()];pinch={distance:Math.max(1,distance(a,b)),zoom:xoxoAvatarWorking.zoom};drag=null}
  crop.addEventListener('pointerdown',e=>{
   if(!xoxoAvatarWorking)return;
