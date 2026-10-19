@@ -21,7 +21,10 @@ export function createRevealUploadUncertaintyGate({uploadAndSeal,markUncertain}=
    }catch(error){
     // Once a remote write may have started, fail closed on every error.
     uncertain.add(key);
-    try{await markUncertain({attemptId,senderId,reason:'upload_outcome_uncertain'});}
+    try{
+     const recorded=await markUncertain({attemptId,senderId,reason:'upload_outcome_uncertain'});
+     if(recorded!==true)throw new Error('Unconfirmed durable marker');
+    }
     catch{
      throw new Error('Upload uncertain and reconciliation recording failed');
     }
