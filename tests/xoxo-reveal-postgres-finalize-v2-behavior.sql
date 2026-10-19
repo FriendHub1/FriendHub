@@ -34,6 +34,31 @@ DO $test$ DECLARE result text; BEGIN
  '55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222',
  '33333333-3333-4333-8333-333333333333') INTO result;
  IF result<>'already_completed' THEN RAISE EXCEPTION 'Idempotency failed: %',result; END IF;
+ -- Completed replay must not succeed after object or quota binding changes.
+ UPDATE public.xoxo_reveal_upload_objects SET object_path='private/changed.webp';
+ BEGIN
+  PERFORM public.xoxo_reveal_finalize_upload_v2(
+   '11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444',
+   '55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222',
+   '33333333-3333-4333-8333-333333333333');
+  RAISE EXCEPTION 'Unexpected replay success after object reassignment';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM='Unexpected replay success after object reassignment' THEN RAISE; END IF;
+  IF SQLERRM NOT LIKE '%binding mismatch%' THEN RAISE EXCEPTION 'Wrong denial: %',SQLERRM; END IF;
+ END;
+ UPDATE public.xoxo_reveal_upload_objects SET object_path='private/photo.webp';
+ UPDATE public.xoxo_reveal_quota_reservations SET released_at=clock_timestamp();
+ BEGIN
+  PERFORM public.xoxo_reveal_finalize_upload_v2(
+   '11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444',
+   '55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222',
+   '33333333-3333-4333-8333-333333333333');
+  RAISE EXCEPTION 'Unexpected replay success after quota release';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM='Unexpected replay success after quota release' THEN RAISE; END IF;
+  IF SQLERRM NOT LIKE '%binding mismatch%' THEN RAISE EXCEPTION 'Wrong denial: %',SQLERRM; END IF;
+ END;
+ UPDATE public.xoxo_reveal_quota_reservations SET released_at=NULL;
  -- A completed attempt cannot be acknowledged if its DM was reassigned.
  UPDATE public.direct_messages
  SET recipient_id='77777777-7777-4777-8777-777777777777'
