@@ -11,7 +11,8 @@ export function createRevealPrivateStorageByteReader({
   if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||
      !objectPath.trim()||objectPath.startsWith('/')||
      objectPath.includes('..')||objectPath.includes('\\')||
-     objectPath.includes('?')||objectPath.includes('#'))
+     objectPath.includes('?')||objectPath.includes('#')||
+     objectPath.split('/').some(segment=>!segment||segment==='.'||segment==='..'))
    throw new TypeError('Invalid private Storage locator');
   const {data,error}=await storageClient.storage.from('xoxo-reveal').download(objectPath);
   if(error||!data||typeof data.arrayBuffer!=='function')
