@@ -11,8 +11,8 @@ export function createRevealTrustedObjectBindingReader({dbClient}={}){
    .select('attempt_id,sender_id,bucket_id,object_path,payload_fingerprint,expected_sha256')
    .eq('attempt_id',attemptId).maybeSingle();
   if(error||!data||data.attempt_id!==attemptId||
-     !data.sender_id||data.bucket_id!=='xoxo-reveal'||
-     typeof data.object_path!=='string'||!data.object_path||
+     typeof data.sender_id!=='string'||!data.sender_id.trim()||data.bucket_id!=='xoxo-reveal'||
+     typeof data.object_path!=='string'||!data.object_path.trim()||
      data.object_path.startsWith('/')||data.object_path.includes('..')||
      data.object_path.includes('\\')||data.object_path.includes('?')||
      data.object_path.includes('#')||
