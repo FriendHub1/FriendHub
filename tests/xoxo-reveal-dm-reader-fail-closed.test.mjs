@@ -22,3 +22,28 @@ for(const stage of ['reveal','dm','authorization']){
   });
  });
 }
+
+test('DM reader rejects malformed input before database access',async()=>{
+ let reads=0;
+ const read=createRevealTrustedRevealDmReader({
+  dbClient:{from(){reads++;throw Error('unexpected access');}},
+  verifyDmAuthorization:async()=>true
+ });
+ for(const malformed of [null,42,'text',[],{}])
+  await assert.rejects(read(malformed),TypeError);
+ assert.equal(reads,0);
+});
+test('DM reader rejects truthy non-string binding fields',async()=>{
+ for(const invalidField of ['sender_id','recipient_id','object_path','payload_fingerprint']){
+  const bad={...reveal,[invalidField]:{toString(){return 'a'.repeat(64);}}};
+  let authorized=0;
+  const read=createRevealTrustedRevealDmReader({
+   dbClient:{from(table){return {select(){return this;},eq(){return this;},
+    async maybeSingle(){return {data:table==='xoxo_reveals'?bad:dm,error:null};}
+   };}},
+   verifyDmAuthorization:async()=>{authorized++;return true;}
+  });
+  await assert.rejects(read(input),/Trusted DM binding unavailable/);
+  assert.equal(authorized,0);
+ }
+});
