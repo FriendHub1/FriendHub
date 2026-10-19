@@ -47,3 +47,17 @@ test('DM reader rejects truthy non-string binding fields',async()=>{
   assert.equal(authorized,0);
  }
 });
+
+test('DM reader rejects array-shaped persisted rows before authorization',async()=>{
+ for(const badTable of ['xoxo_reveals','direct_messages']){
+  let authorized=0;
+  const read=createRevealTrustedRevealDmReader({
+   dbClient:{from(table){return {select(){return this;},eq(){return this;},
+    async maybeSingle(){return {data:table===badTable?[]:table==='xoxo_reveals'?reveal:dm,error:null};}
+   };}},
+   verifyDmAuthorization:async()=>{authorized++;return true;}
+  });
+  await assert.rejects(read(input),/binding unavailable/);
+  assert.equal(authorized,0);
+ }
+});
