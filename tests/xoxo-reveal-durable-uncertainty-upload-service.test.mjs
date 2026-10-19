@@ -49,3 +49,21 @@ test('locally uncertain retry stays blocked when DB becomes unavailable',async()
  assert.equal(reads,1);
  assert.equal(writes,1);
 });
+
+test('parallel calls share a preflight lock and never launch duplicate writes',async()=>{
+ let releaseRead,reads=0,writes=0;
+ const blockedRead=new Promise(resolve=>{releaseRead=resolve;});
+ const client={from(){return {select(){return this;},eq(){return this;},
+  async maybeSingle(){reads++;await blockedRead;return {data:{id:'attempt',sender_id:'sender',status:'pending',upload_uncertain_at:null},error:null};}
+ };}};
+ const service=createRevealDurableUncertaintyUploadService({
+  dbClient:client,rpcClient:{rpc:async()=>({data:true})},
+  uploadAndSeal:async()=>{writes++;return {sealed:true};}
+ });
+ const first=service.run(input);
+ await assert.rejects(service.run(input),/already in flight/);
+ releaseRead();
+ assert.deepEqual(await first,{sealed:true});
+ assert.equal(reads,1);
+ assert.equal(writes,1);
+});
