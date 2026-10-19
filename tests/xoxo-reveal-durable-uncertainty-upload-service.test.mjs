@@ -82,3 +82,18 @@ test('successful upload cannot be repeated on same service despite stale DB read
  assert.equal(reads,1);
  assert.equal(writes,1);
 });
+
+test('malformed inputs are rejected before DB or privileged RPC access',async()=>{
+ let reads=0,writes=0,rpcs=0;
+ const service=createRevealDurableUncertaintyUploadService({
+  dbClient:{from(){reads++;throw Error('unexpected database access');}},
+  rpcClient:{rpc:async()=>{rpcs++;return {data:true};}},
+  uploadAndSeal:async()=>{writes++;}
+ });
+ for(const value of [null,42,'attempt',[],{}, {attemptId:'a',senderId:0}]){
+  await assert.rejects(service.run(value),TypeError);
+ }
+ assert.equal(reads,0);
+ assert.equal(writes,0);
+ assert.equal(rpcs,0);
+});
