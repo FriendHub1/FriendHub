@@ -1,0 +1,23 @@
+name: XOXO Reveal beta tests
+on:
+  push:
+    branches:
+      - feature/xoxo-reveal-studio-beta
+  pull_request:
+    paths:
+      - 'xoxo-reveal-*.mjs'
+      - 'tests/xoxo-reveal-*.test.mjs'
+      - '.github/workflows/xoxo-reveal-beta-tests.yml'
+permissions:
+  contents: read
+jobs:
+  reveal-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated Reveal tests
+        run: node --test tests/xoxo-reveal-two-phase.test.mjs
