@@ -19,7 +19,8 @@ BEGIN
   RAISE EXCEPTION 'Unauthorized';
  END IF;
  IF p_attempt_id IS NULL OR p_sender_id IS NULL OR p_claim_token IS NULL
-    OR p_writer_token IS NULL OR p_lease_seconds NOT BETWEEN 10 AND 120 THEN
+    OR p_writer_token IS NULL OR p_lease_seconds IS NULL
+    OR p_lease_seconds NOT BETWEEN 10 AND 120 THEN
   RAISE EXCEPTION 'Invalid writer claim';
  END IF;
  SELECT * INTO v_attempt FROM public.xoxo_reveal_upload_attempts
