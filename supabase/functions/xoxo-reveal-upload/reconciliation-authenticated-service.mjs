@@ -15,7 +15,8 @@ export function createRevealAuthenticatedReconciliationService({
   supabase,authorizeReviewer,readIntegrity,readTrustedFingerprint
  });
  return async function reviewWithToken({attemptId,accessToken}={}){
-  if(!attemptId||typeof accessToken!=='string'||!accessToken)
+  if(typeof attemptId!=='string'||!attemptId.trim()||
+     typeof accessToken!=='string'||!accessToken.trim())
    throw new TypeError('Review attempt and access token required');
   // Derive reviewer identity exclusively from the verified token.
   let data,error;
