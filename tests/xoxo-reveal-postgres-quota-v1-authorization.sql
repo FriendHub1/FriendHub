@@ -159,7 +159,7 @@ BEGIN
   IF v_secdef IS DISTINCT FROM true THEN
    RAISE EXCEPTION 'Quota RPC % must be SECURITY DEFINER',v_fn::regprocedure;
   END IF;
-  IF NOT ('search_path='=ANY(coalesce(v_config,ARRAY[]::text[]))) THEN
+  IF NOT EXISTS (SELECT 1 FROM unnest(coalesce(v_config,ARRAY[]::text[])) AS cfg(setting) WHERE setting IN ('search_path=', 'search_path=""')) THEN
    RAISE EXCEPTION 'Quota RPC % must use empty search_path',v_fn::regprocedure;
   END IF;
  END LOOP;
