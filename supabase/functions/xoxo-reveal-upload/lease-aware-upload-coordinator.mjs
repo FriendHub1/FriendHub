@@ -1,3 +1,4 @@
+import {RevealWriterBeginDeniedError} from './writer-begin-denied-error.mjs';
 // XOXO Reveal BETA — cooperative lease-aware upload coordinator.
 // REVIEW ONLY / NOT DEPLOYED. No timers: the trusted upload implementation
 // must call checkpoint() periodically, including after its final write.
@@ -38,7 +39,7 @@ export function createRevealLeaseAwareUploadCoordinator({
    return next;
   };
   try{
-   if(await beginWriter(identity)!==true)throw new Error('Writer begin denied');
+   if(await beginWriter(identity)!==true)throw new RevealWriterBeginDeniedError();
    await checkpoint();
    const uploaded=await uploadPrivate({...input,checkpoint});
    // A trusted uploader may schedule checkpoints without awaiting them.
