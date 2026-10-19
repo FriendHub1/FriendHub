@@ -8809,6 +8809,7 @@ function renderOptionButtons() {
                                     const previousProfilePhoto = currentProfile?.profile_photo || null;
                                     let savedProfilePhoto = previousProfilePhoto;
                                     if (selectedProfilePhotoFile) {
+                                    showProfileMessage("Uploading your photo… Please wait.", "success");
                                     try {
                                     savedProfilePhoto = await uploadProfilePhotoToStorage(selectedProfilePhotoFile);
                                     profileData.profile_photo = savedProfilePhoto;
@@ -8958,50 +8959,76 @@ function renderOptionButtons() {
                                     }
 
                                     async function optimizeProfilePhoto(file) {
-                                    const sourceUrl = URL.createObjectURL(file);
+                                    // iOS Safari may fail while decoding certain images into canvas.
+                                    // Preserve the original supported image if optimization fails.
+                                    let sourceUrl = null;
+                                    let bitmap = null;
                                     try {
-                                    const image = await new Promise((resolve, reject) => {
-                                    const img = new Image();
-                                    img.onload = () => resolve(img);
-                                    img.onerror = () => reject(new Error("Could not read that image."));
-                                    img.src = sourceUrl;
-                                    });
-                                    const maxDimension = 1024;
-                                    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
-                                    const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
-                                    const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
-                                    const canvas = document.createElement("canvas");
-                                    canvas.width = width;
-                                    canvas.height = height;
-                                    const context = canvas.getContext("2d");
-                                    if (!context) throw new Error("Could not prepare your profile photo.");
-                                    context.drawImage(image, 0, 0, width, height);
-                                    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/webp", 0.82));
-                                    if (!blob) throw new Error("Could not optimize your profile photo.");
-                                    if (blob.size > 5 * 1024 * 1024) throw new Error("Profile photo is still too large after optimization.");
-                                    return blob;
+                                      let image;
+                                      if (typeof createImageBitmap === "function") {
+                                        try { bitmap = await createImageBitmap(file); image = bitmap; } catch (_) {}
+                                      }
+                                      if (!image) {
+                                        sourceUrl = URL.createObjectURL(file);
+                                        image = await new Promise((resolve, reject) => {
+                                          const img = new Image();
+                                          img.onload = () => resolve(img);
+                                          img.onerror = () => reject(new Error("Image decoding failed"));
+                                          img.src = sourceUrl;
+                                        });
+                                      }
+                                      const originalWidth = image.naturalWidth || image.width;
+                                      const originalHeight = image.naturalHeight || image.height;
+                                      if (!originalWidth || !originalHeight) throw new Error("Invalid image dimensions");
+                                      const scale = Math.min(1, 1024 / Math.max(originalWidth, originalHeight));
+                                      const canvas = document.createElement("canvas");
+                                      canvas.width = Math.max(1, Math.round(originalWidth * scale));
+                                      canvas.height = Math.max(1, Math.round(originalHeight * scale));
+                                      const context = canvas.getContext("2d");
+                                      if (!context) throw new Error("Canvas unavailable");
+                                      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                                      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/webp", 0.82));
+                                      if (!blob || blob.size > 5 * 1024 * 1024) throw new Error("Optimization unavailable");
+                                      return { blob, contentType: "image/webp", extension: "webp" };
+                                    } catch (optimizationError) {
+                                      console.warn("Profile photo optimization unavailable; uploading original:", optimizationError);
+                                      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+                                        throw new Error("Photo processing failed. Please choose a JPG, PNG or WebP photo.");
+                                      }
+                                      if (file.size > 6 * 1024 * 1024) {
+                                        throw new Error("Photo processing failed. Try a smaller image (under 6 MB).");
+                                      }
+                                      return { blob: file, contentType: file.type, extension: file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg" };
                                     } finally {
-                                    URL.revokeObjectURL(sourceUrl);
+                                      if (bitmap && typeof bitmap.close === "function") bitmap.close();
+                                      if (sourceUrl) URL.revokeObjectURL(sourceUrl);
                                     }
                                     }
 
                                     async function uploadProfilePhotoToStorage(file) {
                                     if (!currentUser?.id) throw new Error("Please log in again before uploading a profile photo.");
-                                    const optimizedBlob = await optimizeProfilePhoto(file);
-                                    const objectPath = `${currentUser.id}/profile-${Date.now()}.webp`;
-                                    const { error: uploadError } = await supabaseClient.storage
-                                    .from("profile-photos")
-                                    .upload(objectPath, optimizedBlob, {
-                                    contentType: "image/webp",
-                                    cacheControl: "31536000",
-                                    upsert: false
-                                    });
-                                    if (uploadError) throw uploadError;
+                                    let prepared;
+                                    try { prepared = await optimizeProfilePhoto(file); }
+                                    catch (error) { throw new Error("Photo processing failed: " + (error?.message || "Unknown error")); }
+                                    const objectPath = `${currentUser.id}/profile-${Date.now()}.${prepared.extension}`;
+                                    let uploadResult;
+                                    try {
+                                      uploadResult = await supabaseClient.storage
+                                        .from("profile-photos")
+                                        .upload(objectPath, prepared.blob, {
+                                          contentType: prepared.contentType,
+                                          cacheControl: "31536000",
+                                          upsert: false
+                                        });
+                                    } catch (error) {
+                                      throw new Error("Photo upload connection failed: " + (error?.message || "Check your connection"));
+                                    }
+                                    if (uploadResult.error) throw new Error("Photo upload failed: " + uploadResult.error.message);
                                     const { data: publicUrlData } = supabaseClient.storage
-                                    .from("profile-photos")
-                                    .getPublicUrl(objectPath);
+                                      .from("profile-photos")
+                                      .getPublicUrl(objectPath);
                                     const publicUrl = publicUrlData?.publicUrl || "";
-                                    if (!publicUrl) throw new Error("Could not create the public profile photo URL.");
+                                    if (!publicUrl) throw new Error("Photo uploaded, but its public URL could not be created.");
                                     return publicUrl;
                                     }
                                     async function xoxoRemoveProfilePhoto() {
