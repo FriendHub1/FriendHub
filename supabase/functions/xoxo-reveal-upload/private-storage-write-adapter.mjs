@@ -42,8 +42,15 @@ export function createRevealWriterGatedPrivateStorageWriter({
  return async function writeWithLease({
   attemptId,senderId,writerToken,bucket,objectPath,bytes,contentType
  }={}){
-  if(!attemptId||!senderId||!writerToken)
+  if([attemptId,senderId,writerToken].some(value=>typeof value!=='string'||!value.trim()))
    throw new TypeError('Missing trusted writer identity');
+  // Validate Storage inputs before requesting a privileged writer grant.
+  if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||!objectPath||
+     objectPath.startsWith('/')||objectPath.includes('..')||
+     objectPath.includes('\\\\')||objectPath.includes('?')||objectPath.includes('#')||
+     !(bytes instanceof Uint8Array)||bytes.byteLength<1||
+     !['image/jpeg','image/png','image/webp','video/mp4','video/webm'].includes(contentType))
+   throw new TypeError('Invalid private Storage write request');
   const authorized=await authorizeActiveWriter({attemptId,senderId,writerToken});
   if(authorized!==true)
    throw new Error('Active writer authorization denied');
