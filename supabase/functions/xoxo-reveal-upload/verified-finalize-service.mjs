@@ -9,6 +9,7 @@ import {createRevealStorageIntegrityReader} from './storage-integrity-reader.mjs
 import {createRevealPrivateStorageByteReader} from './private-storage-read-adapter.mjs';
 import {createRevealTrustedAttemptReader} from './trusted-attempt-supabase-reader.mjs';
 import {createRevealTrustedRevealDmReader} from './trusted-reveal-dm-supabase-reader.mjs';
+import {createRevealAuthenticatedDmSendAuthorizer} from './authenticated-dm-send-authorization.mjs';
 import {createRevealTrustedQuotaReader} from './trusted-quota-supabase-reader.mjs';
 import {createRevealTrustedWriterReader,createRevealTrustedSealedWriterReader} from './trusted-writer-supabase-reader.mjs';
 import {createRevealTrustedObjectBindingReader} from './trusted-object-binding-supabase-reader.mjs';
@@ -122,5 +123,21 @@ export function createRevealVerifiedFinalizeWithSealedSupabase({
  return createRevealVerifiedFinalizeWithSupabaseStorage({
   rpcClient,storageClient,readAttempt,readRevealDm,readQuota,readWriter,
   resolveObjectBinding,sha256,maxBytes
+ });
+}
+
+/**
+ * REVIEW ONLY: compose a verified request-bound Auth client with the
+ * existing privileged DM policy checker. No caller-provided auth boolean.
+ * The Storage writer fence and transactional delivery blockers still apply.
+ */
+export function createRevealVerifiedFinalizeWithAuthenticatedDm({
+ authClient,dbClient,storageClient,rpcClient,sha256,maxBytes
+}={}){
+ const verifyDmAuthorization=createRevealAuthenticatedDmSendAuthorizer({
+  authClient,dbClient
+ });
+ return createRevealVerifiedFinalizeWithSealedSupabase({
+  dbClient,storageClient,rpcClient,verifyDmAuthorization,sha256,maxBytes
  });
 }
