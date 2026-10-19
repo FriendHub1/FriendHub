@@ -27,3 +27,12 @@ test('gallery input clears its value after capturing the file so the same file c
  assert.match(html,/const file=e\.target\.files\?\.\[0\]/);
  assert.match(html,/e\.target\.value=''/);
 });
+
+test('reveal slider is keyboard focusable and exposes accessible range semantics',()=>{
+ assert.match(html,/id="revealTrack" role="slider" tabindex="0"/);
+ assert.match(html,/aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"/);
+ assert.match(html,/track\.addEventListener\('keydown'/);
+ assert.match(html,/e\.key==='ArrowRight'/);
+ assert.match(html,/e\.key==='Home'/);
+ assert.match(html,/e\.key==='End'/);
+});
