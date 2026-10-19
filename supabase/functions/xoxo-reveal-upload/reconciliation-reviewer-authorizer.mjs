@@ -13,7 +13,12 @@ export function createRevealReconciliationReviewerAuthorizer({
    const {data,error}=await authClient.auth.getUser(accessToken);
    const verifiedId=data?.user?.id;
    if(error||!verifiedId||verifiedId!==reviewerId)return false;
-   return await adminLookup({userId:verifiedId})===true;
+   const isAdmin=await adminLookup({userId:verifiedId});
+   if(isAdmin!==true)return false;
+   // Revalidate the same bearer token after the privileged permission check.
+   // This narrows (but cannot eliminate) concurrent revocation races.
+   const second=await authClient.auth.getUser(accessToken);
+   return !second.error&&second.data?.user?.id===verifiedId;
   }catch{return false;}
  };
 }
