@@ -8,7 +8,7 @@ export function createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorizatio
   if(input===null||typeof input!=='object'||Array.isArray(input))
    throw new TypeError('Invalid Reveal DM input');
   const {attemptId,revealId,dmId}=input;
-  if([attemptId,revealId,dmId].some(x=>typeof x!=='string'||!x.trim()))
+  if([attemptId,revealId,dmId].some(x=>typeof x!=='string'||!(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i).test(x)))
    throw new TypeError('Invalid Reveal DM identifiers');
   let reveal,revealError;
   try{
