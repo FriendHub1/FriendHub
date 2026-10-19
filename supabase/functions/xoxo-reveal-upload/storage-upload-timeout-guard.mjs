@@ -15,14 +15,16 @@ export function createRevealStorageUploadTimeoutGuard({
   const externalSignal=input?.signal;
   if(externalSignal?.aborted)
    throw new Error('Private Storage upload aborted; reconciliation required');
+  let timer;
+  let timedOut=false;
+  let callerAborted=false;
   const onAbort=()=>{
    callerAborted=true;
    controller.abort();
   };
   externalSignal?.addEventListener?.('abort',onAbort,{once:true});
-  let timer;
-  let timedOut=false;
-  let callerAborted=false;
+  // Close the race between the initial aborted check and registration.
+  if(externalSignal?.aborted)onAbort();
   const timeout=new Promise((_,reject)=>{
    timer=setTimeoutFn(()=>{
     timedOut=true;
@@ -31,6 +33,8 @@ export function createRevealStorageUploadTimeoutGuard({
    },timeoutMs);
   });
   try{
+   if(callerAborted)
+    throw new Error('Private Storage upload aborted; reconciliation required');
    const result=await Promise.race([
     Promise.resolve().then(()=>uploadPrivate({...input,signal:controller.signal})),
     timeout
