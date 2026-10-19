@@ -11,7 +11,8 @@ export function createRevealDmSendAuthorizer({dbClient}={}){
   if(input===null||typeof input!=='object'||Array.isArray(input))
    throw new TypeError('Invalid DM authorization request');
   const {senderId,recipientId,authenticatedSenderId}=input;
-  if([senderId,recipientId,authenticatedSenderId].some(x=>typeof x!=='string'||!x.trim())||
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if([senderId,recipientId,authenticatedSenderId].some(x=>typeof x!=='string'||!uuid.test(x))||
     senderId!==authenticatedSenderId||senderId===recipientId)
    return false;
   try{
