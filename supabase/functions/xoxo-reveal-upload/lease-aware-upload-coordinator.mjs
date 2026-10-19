@@ -37,6 +37,10 @@ export function createRevealLeaseAwareUploadCoordinator({
    if(await beginWriter(identity)!==true)throw new Error('Writer begin denied');
    await checkpoint();
    const uploaded=await uploadPrivate({...input,checkpoint});
+   // A trusted uploader may schedule checkpoints without awaiting them.
+   // Drain all outstanding renewals before accepting its result.
+   await renewal;
+   if(failed)throw new Error('Writer lease already lost');
    if(uploaded?.created!==true)throw new Error('Private upload not confirmed');
    await checkpoint();
    if(failed)throw new Error('Writer lease already lost');
