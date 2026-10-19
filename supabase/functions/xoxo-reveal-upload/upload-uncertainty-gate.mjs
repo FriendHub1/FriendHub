@@ -9,11 +9,13 @@ export function createRevealUploadUncertaintyGate({uploadAndSeal,markUncertain}=
  const inFlight=new Set();
  return {
   async run(input={}){
+   if(input===null||typeof input!=='object'||Array.isArray(input))
+    throw new TypeError('Valid upload input required');
    const {attemptId,senderId}=input;
    if(!attemptId||!senderId)throw new TypeError('Missing upload identity');
    if(typeof attemptId!=='string'||typeof senderId!=='string'||!attemptId.trim()||!senderId.trim())
     throw new TypeError('Invalid upload identity');
-   const key=`${senderId}:${attemptId}`;
+   const key=JSON.stringify([senderId,attemptId]);
    if(uncertain.has(key))throw new Error('Upload requires reconciliation');
    if(inFlight.has(key))throw new Error('Upload already in flight');
    inFlight.add(key);
@@ -35,8 +37,10 @@ export function createRevealUploadUncertaintyGate({uploadAndSeal,markUncertain}=
     throw error;
    }finally{inFlight.delete(key);}
   },
-  isUncertain({attemptId,senderId}={}){
-   return uncertain.has(`${senderId}:${attemptId}`);
+  isUncertain(input={}){
+   if(input===null||typeof input!=='object'||Array.isArray(input))return false;
+   const {attemptId,senderId}=input;
+   return uncertain.has(JSON.stringify([senderId,attemptId]));
   }
  };
 }
