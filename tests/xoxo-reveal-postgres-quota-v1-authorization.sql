@@ -145,3 +145,22 @@ BEGIN
   WHERE polrelid='public.xoxo_reveal_quota_reservations'::regclass
  ) THEN RAISE EXCEPTION 'Unexpected quota table RLS policy'; END IF;
 END $rls$;
+
+-- SECURITY DEFINER RPCs must retain an empty search_path to avoid
+-- resolving attacker-controlled objects via the caller's schema.
+DO $definer$
+DECLARE v_fn oid; v_secdef boolean; v_config text[];
+BEGIN
+ FOREACH v_fn IN ARRAY ARRAY[
+  'public.xoxo_reveal_reserve_quota_v1(bigint)'::regprocedure::oid,
+  'public.xoxo_reveal_release_quota_v1(uuid,uuid)'::regprocedure::oid
+ ] LOOP
+  SELECT prosecdef,proconfig INTO v_secdef,v_config FROM pg_proc WHERE oid=v_fn;
+  IF v_secdef IS DISTINCT FROM true THEN
+   RAISE EXCEPTION 'Quota RPC % must be SECURITY DEFINER',v_fn::regprocedure;
+  END IF;
+  IF NOT ('search_path='=ANY(coalesce(v_config,ARRAY[]::text[]))) THEN
+   RAISE EXCEPTION 'Quota RPC % must use empty search_path',v_fn::regprocedure;
+  END IF;
+ END LOOP;
+END $definer$;
