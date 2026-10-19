@@ -17,7 +17,9 @@ export function createRevealUploadUncertaintyGate({uploadAndSeal,markUncertain}=
    try{
     return await uploadAndSeal(input);
    }catch(error){
-    // Fail closed on ALL uncertain upload outcomes, not just timeout.
+    // Once a remote write may have started, fail closed on every error.
+    // A failure before invocation (validation, trusted claim denial) is
+    // not automatically evidence of an uncertain Storage outcome.
     uncertain.add(key);
     try{await markUncertain({attemptId,senderId,reason:'upload_outcome_uncertain'});}
     catch{
