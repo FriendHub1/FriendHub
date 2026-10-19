@@ -20,7 +20,7 @@ test('caller abort propagates advisory signal during Storage request',async()=>{
    return {created:true};
   }
  });
- await upload({signal:controller.signal});
+ await assert.rejects(upload({signal:controller.signal}),/aborted; reconciliation required/);
  assert.equal(observed.aborted,true);
 });
 test('timeout clears timer after successful upload',async()=>{
@@ -32,4 +32,15 @@ test('timeout clears timer after successful upload',async()=>{
  });
  assert.deepEqual(await upload(),{created:true});
  assert.equal(cleared,1);
+});
+
+test('successful Storage response after caller cancellation is not accepted',async()=>{
+ const controller=new AbortController();
+ const upload=createRevealStorageUploadTimeoutGuard({
+  uploadPrivate:async()=>{
+   controller.abort();
+   return {created:true};
+  }
+ });
+ await assert.rejects(upload({signal:controller.signal}),/aborted; reconciliation required/);
 });
