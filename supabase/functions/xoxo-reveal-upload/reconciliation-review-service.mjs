@@ -20,6 +20,9 @@ export function createRevealReconciliationReviewService({
    throw new Error('Reviewer authorization expired');
   const objectBinding=await readObjectBinding({attemptId,senderId:attempt.sender_id});
   const storageEvidence=await readStorageEvidence({attemptId,senderId:attempt.sender_id,objectBinding});
+  // Never disclose reconciliation findings after a mid-read permission loss.
+  if(await authorizeReviewer({attemptId,reviewerId,accessToken})!==true)
+   throw new Error('Reviewer authorization expired');
   return decideRevealUploadReconciliation({attempt,objectBinding,storageEvidence});
  };
 }
