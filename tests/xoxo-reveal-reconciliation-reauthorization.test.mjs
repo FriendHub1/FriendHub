@@ -21,5 +21,5 @@ test('authorized reviewer can proceed to read-only classification',async()=>{
   readStorageEvidence:async()=>({state:'unavailable'})
  });
  assert.equal((await review({attemptId:'a',reviewerId:'admin',accessToken:'token'})).action,'manual_review');
- assert.equal(authorizations,2);
+ assert.equal(authorizations,3);
 });
