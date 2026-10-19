@@ -5625,10 +5625,22 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
  object-fit:cover!important;z-index:0!important;
  /* The inline avatar adjustment controls transform; do not overwrite it. */
 }
-#xoxoStudioPreview[data-frame^="lux-"] #xoxoStudioAvatar img {
- position:absolute!important;top:50%!important;left:50%!important;
- transform:translate(-50%,-50%)!important;width:90%!important;height:90%!important;
- border-radius:50%!important;object-fit:cover!important;z-index:0!important;
+/* Studio preview mirrors the saved circular crop and its zoom/position. */
+#xoxoStudioAvatar > .xoxo-avatar-photo-clip {
+ display:block;position:relative;width:100%;height:100%;overflow:hidden;border-radius:50%;
+}
+#xoxoStudioAvatar > .xoxo-avatar-photo-clip img {
+ display:block;width:100%;height:100%;object-fit:cover;
+}
+#xoxoStudioPreview[data-frame^="lux-"] #xoxoStudioAvatar .xoxo-avatar-photo-clip {
+ position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+ width:90%;height:90%;border-radius:50%;overflow:hidden;z-index:0;
+}
+#xoxoStudioPreview[data-frame^="lux-"] #xoxoStudioAvatar .xoxo-avatar-photo-clip img {
+ position:absolute!important;top:0!important;left:0!important;
+ width:100%!important;height:100%!important;border-radius:0!important;
+ object-fit:cover!important;z-index:0!important;
+ /* Preserve the image's saved inline zoom and translation. */
 }
 #profile #profileCard[data-xoxo-frame^="lux-"] .profile-avatar::after,
 #publicProfile .public-profile-card[data-xoxo-frame^="lux-"] .public-profile-avatar::after,
@@ -18628,7 +18640,7 @@ window.xoxoChatStudioApply = function () {
   const themes=['original','neon','pink','ocean','galaxy','sunset','midnight'];
   window.xoxoStudioTheme=function(theme){if(!themes.includes(theme))return;const p=document.getElementById('xoxoStudioPreview');if(!p)return;p.dataset.theme=theme;document.querySelectorAll('#xoxoStudioThemes [data-theme]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.theme===theme)));};
   window.xoxoStudioOptions=function(){const p=document.getElementById('xoxoStudioPreview');if(!p)return;p.dataset.frame=document.getElementById('xoxoStudioFrame').value;p.dataset.effects=document.getElementById('xoxoStudioEffects').checked?'on':'off';};
-  window.xoxoStudioOpen=async function(){const overlay=document.getElementById('xoxoStudioOverlay');if(!overlay)return;const input=document.getElementById('username');document.getElementById('xoxoStudioUsername').textContent=(input&&input.value.trim())||'@username';const avatar=document.getElementById('profileAvatar'),preview=document.getElementById('xoxoStudioAvatar');preview.replaceChildren();const img=avatar&&avatar.querySelector('img');if(img){const copy=document.createElement('img');copy.src=img.src;copy.alt='Profile photo';preview.appendChild(copy);}else{preview.textContent=((input&&input.value.trim())||'♡').replace('@','').slice(0,1).toUpperCase();}overlay.classList.add('xoxo-open');document.body.dataset.xoxoStudioOpen='true';xoxoStudioTheme(document.getElementById('xoxoStudioPreview').dataset.theme);xoxoStudioOptions();overlay.querySelector('.xoxo-studio-close').focus();await window.xoxoStudioLoadOwn();};
+  window.xoxoStudioOpen=async function(){const overlay=document.getElementById('xoxoStudioOverlay');if(!overlay)return;const input=document.getElementById('username');document.getElementById('xoxoStudioUsername').textContent=(input&&input.value.trim())||'@username';const avatar=document.getElementById('profileAvatar'),preview=document.getElementById('xoxoStudioAvatar');preview.replaceChildren();const img=avatar&&avatar.querySelector('img');if(img){const clip=document.createElement('span');clip.className='xoxo-avatar-photo-clip';const copy=document.createElement('img');copy.src=img.src;copy.alt='Profile photo';copy.style.cssText=img.style.cssText;clip.appendChild(copy);preview.appendChild(clip);}else{preview.textContent=((input&&input.value.trim())||'♡').replace('@','').slice(0,1).toUpperCase();}overlay.classList.add('xoxo-open');document.body.dataset.xoxoStudioOpen='true';xoxoStudioTheme(document.getElementById('xoxoStudioPreview').dataset.theme);xoxoStudioOptions();overlay.querySelector('.xoxo-studio-close').focus();await window.xoxoStudioLoadOwn();};
   window.xoxoStudioClose=function(){document.getElementById('xoxoStudioOverlay')?.classList.remove('xoxo-open');delete document.body.dataset.xoxoStudioOpen;document.querySelector('.xoxo-studio-open')?.focus();};
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.getElementById('xoxoStudioOverlay')?.classList.contains('xoxo-open'))xoxoStudioClose();});
 })();
