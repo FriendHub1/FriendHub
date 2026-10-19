@@ -67,3 +67,18 @@ test('parallel calls share a preflight lock and never launch duplicate writes',a
  assert.equal(reads,1);
  assert.equal(writes,1);
 });
+
+test('successful upload cannot be repeated on same service despite stale DB read',async()=>{
+ let reads=0,writes=0;
+ const client={from(){return {select(){return this;},eq(){return this;},
+  async maybeSingle(){reads++;return {data:{id:'attempt',sender_id:'sender',status:'pending',upload_uncertain_at:null},error:null};}
+ };}};
+ const service=createRevealDurableUncertaintyUploadService({
+  dbClient:client,rpcClient:{rpc:async()=>({data:true})},
+  uploadAndSeal:async()=>{writes++;return {sealed:true};}
+ });
+ assert.deepEqual(await service.run(input),{sealed:true});
+ await assert.rejects(service.run(input),/already completed/);
+ assert.equal(reads,1);
+ assert.equal(writes,1);
+});
