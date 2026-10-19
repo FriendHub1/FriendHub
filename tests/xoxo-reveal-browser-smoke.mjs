@@ -50,3 +50,25 @@ test('browser smoke: one-view reveal cannot be reopened after closing', async ()
   assert.match(await page.locator('#revealFeedback').textContent(),/ya no puede abrirse/);
  } finally { await browser.close(); }
 });
+
+test('browser smoke: timed reveal closes automatically and cannot reopen after expiry', async () => {
+ const browser=await chromium.launch({headless:true});
+ try {
+  const page=await browser.newPage();
+  const html=await readFile(new URL('../xoxo-reveal-studio-beta.html',import.meta.url),'utf8');
+  await page.setContent(html,{waitUntil:'load'});
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=','base64');
+  await page.locator('.choice[data-choice="5"]').click();
+  await page.locator('#file').setInputFiles({name:'timed.png',mimeType:'image/png',buffer:png});
+  await page.waitForFunction(()=>!document.querySelector('#localSend').disabled);
+  await page.locator('#localSend').click();
+  await page.locator('#revealTrack').focus();
+  await page.keyboard.press('End');
+  await page.waitForFunction(()=>document.querySelector('#revealViewer').classList.contains('open'));
+  await page.waitForFunction(()=>!document.querySelector('#revealViewer').classList.contains('open'),{timeout:8000});
+  assert.match(await page.locator('#revealFeedback').textContent(),/vista o caducada/);
+  await page.locator('#revealTrack').focus();
+  await page.keyboard.press('End');
+  assert.equal(await page.locator('#revealViewer').evaluate(el=>el.classList.contains('open')),false);
+ } finally { await browser.close(); }
+});
