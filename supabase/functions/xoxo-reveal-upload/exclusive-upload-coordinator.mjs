@@ -1,3 +1,4 @@
+import {RevealWriterBeginDeniedError} from './writer-begin-denied-error.mjs';
 // XOXO Reveal BETA — single-process exclusive upload coordinator.
 // REVIEW ONLY / NOT DEPLOYED. Local in-flight tracking is not distributed:
 // deploy only with a durable cross-instance lease and exclusive Storage writes.
@@ -18,7 +19,7 @@ export function createRevealExclusiveUploadCoordinator({
   active.add(key);
   try{
    const begun=await beginWriter({attemptId,senderId,writerToken});
-   if(begun!==true)throw new Error('Writer begin denied');
+   if(begun!==true)throw new RevealWriterBeginDeniedError();
    const uploaded=await uploadPrivate(input);
    if(uploaded?.created!==true)
     throw new Error('Private upload not confirmed');
