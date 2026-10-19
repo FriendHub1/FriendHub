@@ -49,6 +49,7 @@ export function createRevealWriterGatedPrivateStorageWriter({
      objectPath.startsWith('/')||objectPath.includes('..')||
      objectPath.includes('\\')||objectPath.includes('?')||objectPath.includes('#')||
      !(bytes instanceof Uint8Array)||bytes.byteLength<1||
+     bytes.byteLength>effectiveMaxBytes||
      !['image/jpeg','image/png','image/webp','video/mp4','video/webm'].includes(contentType))
    throw new TypeError('Invalid private Storage write request');
   const authorized=await authorizeActiveWriter({attemptId,senderId,writerToken});
