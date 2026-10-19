@@ -6,8 +6,8 @@ DECLARE s uuid:='11111111-1111-4111-8111-111111111111';
  c uuid:='66666666-6666-4666-8666-666666666666';
  x record; denied boolean;
 BEGIN
- INSERT INTO public.xoxo_reveal_upload_attempts(id,sender_id,claim_token,status,writer_state,payload_fingerprint)
- VALUES(a,s,c,'pending','sealed','fingerprint');
+ INSERT INTO public.xoxo_reveal_upload_attempts(id,sender_id,recipient_id,claim_token,status,writer_state,payload_fingerprint)
+ VALUES(a,s,r,c,'pending','sealed','fingerprint');
  INSERT INTO public.xoxo_reveal_upload_objects(attempt_id,sender_id,bucket_id,object_path,payload_fingerprint)
  VALUES(a,s,'xoxo-reveal','private/one.webp','fingerprint');
  INSERT INTO public.xoxo_reveal_quota_reservations(upload_attempt_id,sender_id) VALUES(a,s);
@@ -24,6 +24,11 @@ BEGIN
   PERFORM * FROM public.xoxo_reveal_create_linked_dm_v1(a,'77777777-7777-4777-8777-777777777777',s,r,'private/one.webp','image','once',NULL);
  EXCEPTION WHEN OTHERS THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Wrong claim token was allowed'; END IF;
+ denied:=false;
+ BEGIN
+  PERFORM * FROM public.xoxo_reveal_create_linked_dm_v1(a,c,s,'88888888-8888-4888-8888-888888888888','private/one.webp','image','once',NULL);
+ EXCEPTION WHEN OTHERS THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Wrong recipient was allowed'; END IF;
  INSERT INTO public.user_blocks(blocker_id,blocked_id) VALUES(r,s);
  denied:=false;
  BEGIN
