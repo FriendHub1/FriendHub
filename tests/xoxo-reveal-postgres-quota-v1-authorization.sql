@@ -71,3 +71,31 @@ BEGIN
 END $anon_denied$;
 RESET ROLE;
 
+
+-- Verify reserve RPC grants separately: authenticated can reserve,
+-- anonymous visitors cannot reserve.
+DO $reserve_acl$
+DECLARE v_fn oid := 'public.xoxo_reveal_reserve_quota_v1(bigint)'::regprocedure;
+BEGIN
+ IF has_function_privilege('anon',v_fn,'EXECUTE') THEN
+  RAISE EXCEPTION 'Anonymous role must not execute reserve';
+ END IF;
+ IF NOT has_function_privilege('authenticated',v_fn,'EXECUTE') THEN
+  RAISE EXCEPTION 'Authenticated role must execute reserve';
+ END IF;
+ IF EXISTS (
+  SELECT 1 FROM pg_proc p
+  CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl,acldefault('f',p.proowner))) acl
+  WHERE p.oid=v_fn AND acl.grantee=0 AND acl.privilege_type='EXECUTE'
+ ) THEN RAISE EXCEPTION 'PUBLIC must not execute reserve'; END IF;
+END $reserve_acl$;
+SET ROLE anon;
+DO $reserve_denied$
+BEGIN
+ BEGIN
+  PERFORM public.xoxo_reveal_reserve_quota_v1(1024);
+  RAISE EXCEPTION 'Anonymous role unexpectedly executed reserve';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END $reserve_denied$;
+RESET ROLE;
