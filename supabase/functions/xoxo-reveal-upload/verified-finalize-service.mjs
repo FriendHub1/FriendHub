@@ -4,6 +4,7 @@
 // authorized DM relationship and consistent attempt/recipient/quota binding.
 import {createRevealPostUploadBindingGate} from './post-upload-binding-gate.mjs';
 import {createRevealFinalizeSupabaseAdapter} from './finalize-supabase-adapter.mjs';
+import {createRevealBindingEvidenceReader} from './binding-evidence-reader.mjs';
 export function createRevealVerifiedFinalizeService({
  rpcClient,readTrustedEvidence
 }={}){
@@ -14,3 +15,17 @@ export function createRevealVerifiedFinalizeService({
 }
 // This composition does not itself implement evidence reads, Storage fencing,
 // transactional DM insertion or moderation. Never deploy as a public endpoint.
+
+/**
+ * Explicit trusted-reader composition for isolated integration tests.
+ * A server must independently implement all five authoritative readers.
+ * Do not accept evidence flags from an HTTP request.
+ */
+export function createRevealVerifiedFinalizeFromReaders({
+ rpcClient,readAttempt,readRevealDm,readStorageIntegrity,readQuota,readWriter
+}={}){
+ const readTrustedEvidence=createRevealBindingEvidenceReader({
+  readAttempt,readRevealDm,readStorageIntegrity,readQuota,readWriter
+ });
+ return createRevealVerifiedFinalizeService({rpcClient,readTrustedEvidence});
+}
