@@ -5603,8 +5603,28 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
  position:relative!important;overflow:visible!important;border:0!important;outline:none!important;
  background:transparent!important;box-shadow:none!important;isolation:isolate;
 }
-#profile #profileCard[data-xoxo-frame^="lux-"] .profile-avatar img,
-#publicProfile .public-profile-card[data-xoxo-frame^="lux-"] .public-profile-avatar img,
+/* Unframed profile avatars also keep their original full-circle appearance. */
+#profileAvatar > .xoxo-avatar-photo-clip,
+.public-profile-avatar > .xoxo-avatar-photo-clip {
+ display:block;position:relative;width:100%;height:100%;overflow:hidden;border-radius:50%;
+}
+#profileAvatar > .xoxo-avatar-photo-clip img,
+.public-profile-avatar > .xoxo-avatar-photo-clip img {
+ display:block;width:100%;height:100%;object-fit:cover;
+}
+/* Keep the frame fixed while clipping the zoomed photo to the circular opening. */
+#profile #profileCard[data-xoxo-frame^="lux-"] .profile-avatar .xoxo-avatar-photo-clip,
+#publicProfile .public-profile-card[data-xoxo-frame^="lux-"] .public-profile-avatar .xoxo-avatar-photo-clip {
+ position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+ width:90%;height:90%;border-radius:50%;overflow:hidden;z-index:0;
+}
+#profile #profileCard[data-xoxo-frame^="lux-"] .profile-avatar .xoxo-avatar-photo-clip img,
+#publicProfile .public-profile-card[data-xoxo-frame^="lux-"] .public-profile-avatar .xoxo-avatar-photo-clip img {
+ position:absolute!important;top:0!important;left:0!important;
+ width:100%!important;height:100%!important;border-radius:0!important;
+ object-fit:cover!important;z-index:0!important;
+ /* The inline avatar adjustment controls transform; do not overwrite it. */
+}
 #xoxoStudioPreview[data-frame^="lux-"] #xoxoStudioAvatar img {
  position:absolute!important;top:50%!important;left:50%!important;
  transform:translate(-50%,-50%)!important;width:90%!important;height:90%!important;
@@ -9086,7 +9106,7 @@ function xoxoBubbleImg(userId, username) {
                                     if (bubbleNotice) bubbleNotice.style.display = photo ? "none" : "block";
                                     if (photo) {
                                     avatar.innerHTML =
-                                    `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo" style="${xoxoAvatarStyle(xoxoAvatarDraft || currentProfile?.avatar_settings)}">`;
+                                    `<span class="xoxo-avatar-photo-clip"><img src="${escapeHtmlAttribute(photo)}" alt="Profile photo" style="${xoxoAvatarStyle(xoxoAvatarDraft || currentProfile?.avatar_settings)}"></span>`;
                                     return;
                                     }
                                     avatar.innerHTML = xoxoBubbleImg(currentUser?.id, username);
@@ -10784,7 +10804,7 @@ async function openPublicProfile(userId) {
                                     const isBlocked = !!myBlockResult.data;
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
-                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">` : xoxoBubbleImg(profile.user_id, username);
+                                    const avatar = profile.profile_photo ? `<span class="xoxo-avatar-photo-clip"><img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}"></span>` : xoxoBubbleImg(profile.user_id, username);
                                     content.innerHTML = `
                                     <div class="public-profile-card">
                                     <div class="public-profile-avatar has-photo" onclick="openProfilePhotoViewer(this.querySelector('img')?.src)" onkeydown="if(event.key === 'Enter' || event.key === ' '){event.preventDefault();openProfilePhotoViewer(this.querySelector('img')?.src)}" role="button" tabindex="0" title="${getFriendHubLanguage() === "pl" ? "Zobacz zdjęcie profilowe" : (getFriendHubLanguage() === "es" ? "Ver foto de perfil" : "View profile photo")}">${avatar}</div>
