@@ -10,7 +10,7 @@ export function createRevealBindingEvidenceReader({
  return async function readTrustedEvidence(ctx={}){
   const {attemptId,senderId,revealId,dmId,objectPath,payloadFingerprint}=ctx;
   if([attemptId,senderId,revealId,dmId,objectPath,payloadFingerprint]
-    .some(x=>typeof x!=='string'||!x)||
+    .some(x=>typeof x!=='string'||!x.trim())||
     !/^[a-f0-9]{64}$/.test(payloadFingerprint)||
     objectPath.startsWith('/')||objectPath.includes('..')||
     objectPath.includes('\\')||objectPath.includes('?')||objectPath.includes('#'))
