@@ -8,7 +8,10 @@ export function createRevealPostUploadBindingGate({
   throw new TypeError('Trusted evidence and finalize adapters required');
  return async function finalize({attemptId,senderId,claimToken,revealId,dmId,objectPath,payloadFingerprint}={}){
   if([attemptId,senderId,claimToken,revealId,dmId,objectPath,payloadFingerprint]
-     .some(x=>typeof x!=='string'||!x))
+     .some(x=>typeof x!=='string'||!x.trim())||
+     !/^[a-f0-9]{64}$/.test(payloadFingerprint)||
+     objectPath.startsWith('/')||objectPath.includes('..')||
+     objectPath.includes('\\')||objectPath.includes('?')||objectPath.includes('#'))
    return {ok:false,reason:'invalid_binding_context'};
   let evidence;
   try{evidence=await readTrustedEvidence({attemptId,senderId,revealId,dmId,objectPath,payloadFingerprint});}
