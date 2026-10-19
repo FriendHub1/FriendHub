@@ -10,7 +10,10 @@ export function createRevealBindingEvidenceReader({
  return async function readTrustedEvidence(ctx={}){
   const {attemptId,senderId,revealId,dmId,objectPath,payloadFingerprint}=ctx;
   if([attemptId,senderId,revealId,dmId,objectPath,payloadFingerprint]
-    .some(x=>typeof x!=='string'||!x))
+    .some(x=>typeof x!=='string'||!x)||
+    !/^[a-f0-9]{64}$/.test(payloadFingerprint)||
+    objectPath.startsWith('/')||objectPath.includes('..')||
+    objectPath.includes('\\\\')||objectPath.includes('?')||objectPath.includes('#'))
    throw new TypeError('Invalid binding identifiers');
   // Sequential reads avoid presenting this as an atomic snapshot.
   // A real finalizer must fence writers and revalidate in SQL.
