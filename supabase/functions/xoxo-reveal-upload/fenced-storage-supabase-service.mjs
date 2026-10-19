@@ -4,16 +4,19 @@
 import {createRevealWriterClaimAdapter} from './writer-claim-supabase-adapter.mjs';
 import {createRevealWriterVerificationAdapter} from './writer-verification-supabase-adapter.mjs';
 import {executeFencedRevealStorageWrite} from './fenced-storage-write-coordinator.mjs';
+import {createRevealPrivateStorageAdapter} from './private-storage-supabase-adapter.mjs';
 export function createRevealFencedStorageService({
- rpcClient,uploadPrivateObject,markNeedsReconciliation
+ rpcClient,storageClient,uploadPrivateObject,markNeedsReconciliation
 }={}){
- if(typeof uploadPrivateObject!=='function'||
-    typeof markNeedsReconciliation!=='function')
+ if(typeof markNeedsReconciliation!=='function'||
+    (typeof uploadPrivateObject!=='function'&&!storageClient))
   throw new TypeError('Trusted Storage and reconciliation adapters required');
+ const storageUpload=uploadPrivateObject??createRevealPrivateStorageAdapter({storageClient});
  const claimRpc=createRevealWriterClaimAdapter({rpcClient});
  const verifyWriter=createRevealWriterVerificationAdapter({rpcClient});
  return async function sendStorage({
-  attemptId,senderId,claimToken,writerToken,leaseSeconds=60
+  attemptId,senderId,claimToken,writerToken,leaseSeconds=60,
+  objectPath,bytes,contentType
  }={}){
   if(!claimToken||!attemptId||!senderId||!writerToken)
    return {ok:false,reason:'invalid_writer_context'};
@@ -21,7 +24,9 @@ export function createRevealFencedStorageService({
    attemptId,senderId,writerToken,
    claimWriter:()=>claimRpc({attemptId,senderId,claimToken,writerToken,leaseSeconds}),
    verifyWriter,
-   uploadPrivateObject,
+   uploadPrivateObject:({attemptId,senderId,writerToken})=>storageUpload({
+    attemptId,senderId,writerToken,objectPath,bytes,contentType
+   }),
    markNeedsReconciliation
   });
  };
