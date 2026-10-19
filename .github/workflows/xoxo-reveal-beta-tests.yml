@@ -108,3 +108,4 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_quota_REVIEW_ONLY.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-authorization.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-behavior.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-hourly-limit.sql
