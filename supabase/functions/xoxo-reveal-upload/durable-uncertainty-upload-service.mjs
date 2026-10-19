@@ -23,7 +23,16 @@ export function createRevealDurableUncertaintyUploadService({
  const preflight=createRevealDurableUncertaintyPreflight({
   readAttempt,uploadAndSeal:localGate.run
  });
- return {run:preflight,isUncertain:localGate.isUncertain};
+ // Check local state first. An uncertain attempt must remain blocked even
+ // when the DB preflight becomes temporarily unavailable.
+ return {
+  async run(input={}){
+   if(localGate.isUncertain(input))
+    throw new Error('Upload requires reconciliation');
+   return preflight(input);
+  },
+  isUncertain:localGate.isUncertain
+ };
 }
 // A read before a write is not a transaction or cross-instance mutex.
 // No live Storage write is authorized by this composition alone.
