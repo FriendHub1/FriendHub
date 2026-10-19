@@ -111,7 +111,7 @@ test('browser smoke: Escape closes viewer, returns focus and keeps once-only loc
   await page.waitForFunction(()=>document.querySelector('#revealViewer').classList.contains('open'));
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#revealViewer').evaluate(el=>el.classList.contains('open')),false);
-  assert.equal(await page.evaluate(()=>document.activeElement.id),'revealClose');
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'revealTrack');
   await page.locator('#revealTrack').focus();
   await page.keyboard.press('End');
   assert.equal(await page.locator('#revealViewer').evaluate(el=>el.classList.contains('open')),false);
