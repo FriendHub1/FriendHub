@@ -19,7 +19,7 @@ test('matching server-owned SHA-256 of actual private bytes is verified',async()
 });
 test('different bytes digest cannot be marked verified',async()=>{
  const {reader}=harness({},'c'.repeat(64));
- assert.equal((await reader(ctx)).digestVerified,false);
+ await assert.rejects(reader(ctx),/Private object digest mismatch/);
 });
 test('untrusted or mismatched binding never downloads private bytes',async()=>{
  for(const patch of [{authoritative:false},{bucket:'public'},{objectPath:'other/photo.webp'},{payloadFingerprint:'c'.repeat(64)},{expectedSha256:null}]){
