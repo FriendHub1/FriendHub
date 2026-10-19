@@ -116,3 +116,17 @@ BEGIN
  END;
 END $reserve_auth$;
 RESET ROLE;
+
+-- Browser roles must not have direct quota-table access.
+DO $table_acl$
+DECLARE v_table text := 'public.xoxo_reveal_quota_reservations';
+        v_role text; v_priv text;
+BEGIN
+ FOREACH v_role IN ARRAY ARRAY['anon','authenticated'] LOOP
+  FOREACH v_priv IN ARRAY ARRAY['SELECT','INSERT','UPDATE','DELETE','TRUNCATE','REFERENCES','TRIGGER'] LOOP
+   IF has_table_privilege(v_role,v_table,v_priv) THEN
+    RAISE EXCEPTION 'Role % has direct % privilege on quota table',v_role,v_priv;
+   END IF;
+  END LOOP;
+ END LOOP;
+END $table_acl$;
