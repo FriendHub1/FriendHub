@@ -18,8 +18,12 @@ export function createRevealReconciliationReviewService({
   let attempt;
   try{attempt=await readAttempt({attemptId});}
   catch{throw new Error('Reconciliation evidence unavailable');}
-  if(!attempt||attempt.id!==attemptId)
+  if(!attempt||attempt.id!==attemptId){
+   // Even a missing-record finding must not leak after permission revocation.
+   if(await checkAuthorization({attemptId,reviewerId,accessToken})!==true)
+    throw new Error('Reviewer authorization expired');
    return {action:'manual_review',reason:'missing_attempt'};
+  }
   // Recheck authorization before touching the private object evidence.
   if(await checkAuthorization({attemptId,reviewerId,accessToken})!==true)
    throw new Error('Reviewer authorization expired');
