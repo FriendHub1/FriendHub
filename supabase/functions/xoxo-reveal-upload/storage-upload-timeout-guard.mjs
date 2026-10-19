@@ -10,6 +10,13 @@ export function createRevealStorageUploadTimeoutGuard({
   throw new TypeError('Valid bounded upload and timeout required');
  return async function boundedUpload(input={}){
   const controller=new AbortController();
+  // Caller cancellation is advisory too; never interpret it as proof that
+  // the remote Storage operation has stopped.
+  const externalSignal=input?.signal;
+  if(externalSignal?.aborted)
+   throw new Error('Private Storage upload aborted; reconciliation required');
+  const onAbort=()=>controller.abort();
+  externalSignal?.addEventListener?.('abort',onAbort,{once:true});
   let timer;
   let timedOut=false;
   const timeout=new Promise((_,reject)=>{
@@ -26,7 +33,10 @@ export function createRevealStorageUploadTimeoutGuard({
    ]);
    if(timedOut)throw new Error('Private Storage upload timed out; reconciliation required');
    return result;
-  }finally{clearTimeoutFn(timer);}
+  }finally{
+   clearTimeoutFn(timer);
+   externalSignal?.removeEventListener?.('abort',onAbort);
+  }
  };
 }
 // Never infer that timeout cancelled the Storage operation. Do not start
