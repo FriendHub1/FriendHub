@@ -35,3 +35,15 @@ test('invalid MIME and missing bytes fail before Storage',async()=>{
 test('nonprivate bucket cannot be configured',()=>{
  assert.throws(()=>create({storageClient:{storage:{from:()=>{}}},bucket:'public'}),/Trusted private/);
 });
+
+test('direct Storage adapter rejects oversized photo and video before upload',async()=>{
+ const {upload,calls}=harness({data:{path:args.objectPath}});
+ await assert.rejects(()=>upload({...args,bytes:new Uint8Array(900*1024+1)}),/size limit/);
+ await assert.rejects(()=>upload({...args,bytes:new Uint8Array(15*1024*1024+1),contentType:'video/mp4'}),/size limit/);
+ assert.equal(calls.length,0);
+});
+test('direct Storage adapter rejects non-byte-array payloads',async()=>{
+ const {upload,calls}=harness({data:{path:args.objectPath}});
+ await assert.rejects(()=>upload({...args,bytes:{byteLength:3}}),/Invalid/);
+ assert.equal(calls.length,0);
+});
