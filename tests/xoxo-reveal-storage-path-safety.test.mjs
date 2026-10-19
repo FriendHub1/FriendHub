@@ -19,3 +19,20 @@ test('private Storage adapters reject ambiguous paths without touching Storage o
  assert.equal(storageCalls,0);
  assert.equal(authCalls,0);
 });
+
+test('private Storage adapters reject malformed input containers without side effects',async()=>{
+ let storageCalls=0,authCalls=0;
+ const storageClient={storage:{from(){storageCalls++;throw Error('unexpected Storage call');}}};
+ const read=createRevealPrivateStorageByteReader({storageClient});
+ const write=createRevealPrivateStorageCreateOnlyWriter({storageClient});
+ const gated=createRevealWriterGatedPrivateStorageWriter({
+  storageClient,authorizeActiveWriter:async()=>{authCalls++;return true;}
+ });
+ for(const input of [null,1,'text',[]]){
+  await assert.rejects(read(input),TypeError);
+  await assert.rejects(write(input),TypeError);
+  await assert.rejects(gated(input),TypeError);
+ }
+ assert.equal(storageCalls,0);
+ assert.equal(authCalls,0);
+});
