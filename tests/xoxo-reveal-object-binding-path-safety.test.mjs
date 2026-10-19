@@ -26,3 +26,28 @@ test('integrity reader rejects unsafe paths without accessing trusted dependenci
  await assert.rejects(read(null),TypeError);
  assert.equal(calls,0);
 });
+
+test('integrity verifier sanitizes dependency errors without returning success',async()=>{
+ for(const stage of ['binding','bytes','digest']){
+  const read=createRevealStorageIntegrityReader({
+   resolveObjectBinding:async()=>{
+    if(stage==='binding')throw Error('secret binding details');
+    return {authoritative:true,attemptId:'a',bucket:'xoxo-reveal',objectPath:'private/a',
+     payloadFingerprint:digest,expectedSha256:digest};
+   },
+   readPrivateBytes:async()=>{
+    if(stage==='bytes')throw Error('secret Storage details');
+    return new Uint8Array([1]);
+   },
+   sha256:async()=>{
+    if(stage==='digest')throw Error('secret hashing details');
+    return digest;
+   }
+  });
+  await assert.rejects(read({attemptId:'a',objectPath:'private/a',payloadFingerprint:digest}),error=>{
+   assert.equal(error.message.includes('secret'),false);
+   assert.match(error.message,/unavailable/);
+   return true;
+  });
+ }
+});
