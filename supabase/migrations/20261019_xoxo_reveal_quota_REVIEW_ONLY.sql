@@ -57,23 +57,28 @@ $$;
 REVOKE ALL ON FUNCTION public.xoxo_reveal_reserve_quota_v1(bigint) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.xoxo_reveal_reserve_quota_v1(bigint) TO authenticated;
 
-CREATE OR REPLACE FUNCTION public.xoxo_reveal_release_quota_v1(p_reservation_id uuid)
+-- Only trusted server credentials may refund. Browser users must never
+-- be able to refund successful uploads to evade quotas.
+CREATE OR REPLACE FUNCTION public.xoxo_reveal_release_quota_v1(
+  p_reservation_id uuid, p_sender_id uuid
+)
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = ''
-AS $$
-DECLARE v_sender uuid := auth.uid();
+AS $
 BEGIN
-  IF v_sender IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+  IF p_reservation_id IS NULL OR p_sender_id IS NULL THEN
+    RAISE EXCEPTION 'Missing reservation information';
+  END IF;
   UPDATE public.xoxo_reveal_quota_reservations
      SET released_at=clock_timestamp()
-   WHERE id=p_reservation_id AND sender_id=v_sender AND released_at IS NULL;
+   WHERE id=p_reservation_id AND sender_id=p_sender_id AND released_at IS NULL;
   RETURN FOUND;
 END;
-$$;
-REVOKE ALL ON FUNCTION public.xoxo_reveal_release_quota_v1(uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.xoxo_reveal_release_quota_v1(uuid) TO authenticated;
+$;
+REVOKE ALL ON FUNCTION public.xoxo_reveal_release_quota_v1(uuid,uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.xoxo_reveal_release_quota_v1(uuid,uuid) TO service_role;
 -- REVIEW BLOCKERS: lock namespace collisions, role/function ownership,
--- quota refund abuse (client can call release!), retry/idempotency,
+-- server refund authorization, retry/idempotency,
 -- server-only access, retention cleanup, isolation, and billing caps.
--- DO NOT APPLY until release RPC is server-restricted and independently audited.
+-- DO NOT APPLY until both RPCs are independently audited.
