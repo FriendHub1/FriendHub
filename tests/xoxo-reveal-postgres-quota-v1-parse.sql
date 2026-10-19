@@ -12,4 +12,6 @@ BEGIN
 END $roles$;
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE TABLE IF NOT EXISTS auth.users(id uuid PRIMARY KEY);
-CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $fn$ SELECT NULL::uuid $fn$;
+CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $fn$
+ SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid
+$fn$;
