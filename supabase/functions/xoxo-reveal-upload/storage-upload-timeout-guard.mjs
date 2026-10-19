@@ -32,6 +32,8 @@ export function createRevealStorageUploadTimeoutGuard({
     timeout
    ]);
    if(timedOut)throw new Error('Private Storage upload timed out; reconciliation required');
+   if(externalSignal?.aborted)
+    throw new Error('Private Storage upload aborted; reconciliation required');
    return result;
   }finally{
    clearTimeoutFn(timer);
