@@ -17,13 +17,18 @@ export function createRevealPrivateStorageByteReader({
      objectPath.includes('?')||objectPath.includes('#')||
      objectPath.split('/').some(segment=>!segment||segment==='.'||segment==='..'))
    throw new TypeError('Invalid private Storage locator');
-  const {data,error}=await storageClient.storage.from('xoxo-reveal').download(objectPath);
+  let data,error;
+  try{
+   ({data,error}=await storageClient.storage.from('xoxo-reveal').download(objectPath));
+  }catch{throw new Error('Private Storage download unavailable');}
   if(error||!data||typeof data.arrayBuffer!=='function')
    throw new Error('Private Storage download unavailable');
   // Check metadata before loading bytes; enforce the limit again afterward.
   if(typeof data.size==='number'&&data.size>maxBytes)
    throw new Error('Private Storage object exceeds byte limit');
-  const buffer=await data.arrayBuffer();
+  let buffer;
+  try{buffer=await data.arrayBuffer();}
+  catch{throw new Error('Private Storage bytes unavailable');}
   if(!(buffer instanceof ArrayBuffer)||buffer.byteLength<1||buffer.byteLength>maxBytes)
    throw new Error('Private Storage object exceeds byte limit or is empty');
   return new Uint8Array(buffer);
