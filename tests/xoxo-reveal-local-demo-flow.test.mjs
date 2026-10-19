@@ -42,3 +42,12 @@ test('reveal slider updates its accessible percentage and spoken description',()
  assert.match(html,/track\.setAttribute\('aria-valuetext'/);
  assert.match(html,/100 por ciento\. Listo para revelar/);
 });
+
+test('reset clears media sources and asynchronous handlers to prevent stale reveal callbacks',()=>{
+ assert.match(html,/img\.removeAttribute\('src'\)/);
+ assert.match(html,/img\.onload=null/);
+ assert.match(html,/video\.onloadeddata=null/);
+ assert.match(html,/video\.oncanplay=null/);
+ assert.match(html,/dragging=false/);
+ assert.match(html,/revealClock'\)\.textContent='●'/);
+});
