@@ -44,6 +44,20 @@ BEGIN
  IF v_attempt.writer_state IS DISTINCT FROM 'sealed' THEN
   RAISE EXCEPTION 'Reveal writer is not sealed';
  END IF;
+ -- Bind the reveal and DM to the locked attempt BEFORE using their
+ -- identities for permission checks. Never authorize an unrelated reveal.
+ IF NOT EXISTS (
+  SELECT 1 FROM public.xoxo_reveals r
+  JOIN public.direct_messages d ON d.id=r.dm_id
+  WHERE r.id=p_reveal_id AND r.dm_id=p_dm_id
+    AND r.upload_attempt_id=v_attempt.id
+    AND r.sender_id=v_attempt.sender_id
+    AND d.sender_id=v_attempt.sender_id
+    AND d.recipient_id=r.recipient_id
+    AND r.sender_id <> r.recipient_id
+ ) THEN
+  RAISE EXCEPTION 'Reveal/DM identity binding mismatch';
+ END IF;
  -- Recheck current DM permissions inside the finalize transaction.
  -- These relationship reads do not lock a future block INSERT; a stronger
  -- serialized delivery gate is still required before production.
