@@ -5,7 +5,7 @@ import {collectRevealUploadEvidence} from "../supabase/functions/xoxo-reveal-upl
 const attempt={id:"attempt-1",sender_id:"sender-1",request_key:"retry_request_0001",payload_fingerprint:"a".repeat(64)};
 const linked={authoritative:true,state:"present",objectPath:"sender-1/private.webp",
  reveal:{id:"reveal-1",dm_id:"dm-1",sender_id:"sender-1",recipient_id:"recipient-1",
- attempt_id:"attempt-1",payload_fingerprint:"a".repeat(64),object_path:"sender-1/private.webp"},
+ upload_attempt_id:"attempt-1",payload_fingerprint:"a".repeat(64),object_path:"sender-1/private.webp"},
  dm:{id:"dm-1",sender_id:"sender-1",recipient_id:"recipient-1"}};
 const storage={authoritative:true,state:"present",bucket:"xoxo-reveal",
  path:"sender-1/private.webp",attemptId:"attempt-1",senderId:"sender-1",fingerprint:"a".repeat(64)};
