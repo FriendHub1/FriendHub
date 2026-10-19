@@ -8,6 +8,9 @@ DO $test$
 DECLARE
  v_fn oid := 'public.xoxo_reveal_release_quota_v1(uuid,uuid)'::regprocedure;
 BEGIN
+ IF has_function_privilege('PUBLIC',v_fn,'EXECUTE') THEN
+  RAISE EXCEPTION 'PUBLIC must not execute quota refund';
+ END IF;
  IF has_function_privilege('anon',v_fn,'EXECUTE') THEN
   RAISE EXCEPTION 'anon must not execute quota refund';
  END IF;
