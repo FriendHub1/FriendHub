@@ -33,6 +33,20 @@ BEGIN
   -- Current blocks are checked again to avoid returning a successful status
   -- for a now-blocked relationship.
   IF v_attempt.reveal_id=p_reveal_id AND v_attempt.dm_id=p_dm_id THEN
+   -- A matching attempt ID alone is insufficient if linked records were
+   -- deleted or reassigned after completion.
+   IF NOT EXISTS (
+    SELECT 1 FROM public.xoxo_reveals r
+    JOIN public.direct_messages d ON d.id=r.dm_id
+    WHERE r.id=p_reveal_id AND r.dm_id=p_dm_id
+      AND r.upload_attempt_id=v_attempt.id
+      AND r.sender_id=v_attempt.sender_id
+      AND d.sender_id=r.sender_id
+      AND d.recipient_id=r.recipient_id
+      AND r.sender_id <> r.recipient_id
+   ) THEN
+    RAISE EXCEPTION 'Completed Reveal/DM binding mismatch';
+   END IF;
    IF EXISTS (
     SELECT 1 FROM public.xoxo_reveals r
     JOIN public.user_blocks b ON
