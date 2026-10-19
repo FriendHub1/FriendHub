@@ -5,7 +5,7 @@ export function createRevealTrustedQuotaReader({dbClient}={}){
  if(typeof dbClient?.from!=='function')
   throw new TypeError('Trusted quota database client required');
  return async function readQuota({attemptId,senderId}={}){
-  if([attemptId,senderId].some(x=>typeof x!=='string'||!x))
+  if([attemptId,senderId].some(x=>typeof x!=='string'||!x.trim()))
    throw new TypeError('Invalid quota identifiers');
   const {data,error}=await dbClient.from('xoxo_reveal_quota_reservations')
    .select('id,upload_attempt_id,sender_id,byte_count,released_at')
