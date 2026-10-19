@@ -23,7 +23,7 @@ export function createRevealReconciliationReaders({
            reveal.sender_id!==attempt.sender_id||
            dm.sender_id!==attempt.sender_id||
            reveal.recipient_id!==dm.recipient_id||
-           reveal.attempt_id!==attempt.id||
+           reveal.upload_attempt_id!==attempt.id||
            reveal.payload_fingerprint!==attempt.payload_fingerprint||
            !reveal.object_path||reveal.object_path!==result.objectPath)
           return unknown();
@@ -63,9 +63,8 @@ export function createRevealReconciliationReaders({
     }
   };
 }
-// REVIEW BLOCKERS: current draft Reveal/quota tables do NOT yet provide
-// immutable attempt_id / payload_fingerprint / object association columns.
-// These readers cannot be wired to actual Supabase until schema is extended,
-// unique constraints added, and trusted read consistency is reviewed.
+// REVIEW BLOCKERS: reconciliation_links draft proposes upload_attempt_id,
+// payload_fingerprint and object associations but is NOT APPLIED. Enforce
+// immutability, cross-table ownership and trusted read consistency before wiring.
 // 'absent' must mean a completed authoritative lookup, not a 404 from a
 // missing permission or an eventual-consistency timeout.
