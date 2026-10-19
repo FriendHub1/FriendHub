@@ -15,12 +15,15 @@ export function createRevealDurableUncertaintyUploadService({
  const markUncertain=createRevealUploadUncertaintyRpcMarker({rpcClient});
  // The persisted read is outside the local uncertainty gate, so a restart
  // cannot bypass an earlier attempt's durable uncertain marker.
+ const localGate=createRevealUploadUncertaintyGate({
+  uploadAndSeal,markUncertain
+ });
+ // Denied preflights never began a remote write: do not falsely mark them
+ // uncertain. Only failures after entering the local gate need a marker.
  const preflight=createRevealDurableUncertaintyPreflight({
-  readAttempt,uploadAndSeal
+  readAttempt,uploadAndSeal:localGate.run
  });
- return createRevealUploadUncertaintyGate({
-  uploadAndSeal:preflight,markUncertain
- });
+ return {run:preflight,isUncertain:localGate.isUncertain};
 }
 // A read before a write is not a transaction or cross-instance mutex.
 // No live Storage write is authorized by this composition alone.
