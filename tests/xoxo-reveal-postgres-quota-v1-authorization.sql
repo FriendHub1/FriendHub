@@ -99,3 +99,20 @@ BEGIN
  END;
 END $reserve_denied$;
 RESET ROLE;
+
+-- Effective permission check for an authenticated caller, without needing
+-- a JWT subject: an auth failure proves the RPC body was reached.
+SET ROLE authenticated;
+DO $reserve_auth$
+BEGIN
+ BEGIN
+  PERFORM public.xoxo_reveal_reserve_quota_v1(1024);
+  RAISE EXCEPTION 'Reserve unexpectedly succeeded without JWT subject';
+ EXCEPTION
+  WHEN insufficient_privilege THEN
+   RAISE EXCEPTION 'Authenticated role lacks reserve EXECUTE';
+  WHEN OTHERS THEN
+   IF SQLERRM <> 'Authentication required' THEN RAISE; END IF;
+ END;
+END $reserve_auth$;
+RESET ROLE;
