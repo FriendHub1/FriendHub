@@ -18,7 +18,9 @@ export function createRevealAuthenticatedReconciliationService({
   if(!attemptId||typeof accessToken!=='string'||!accessToken)
    throw new TypeError('Review attempt and access token required');
   // Derive reviewer identity exclusively from the verified token.
-  const {data,error}=await authClient.auth.getUser(accessToken);
+  let data,error;
+  try{({data,error}=await authClient.auth.getUser(accessToken));}
+  catch{throw new Error('Reviewer not authenticated');}
   const reviewerId=data?.user?.id;
   if(error||!reviewerId)throw new Error('Reviewer not authenticated');
   return review({attemptId,reviewerId,accessToken});
