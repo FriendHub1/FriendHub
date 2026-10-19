@@ -28,7 +28,21 @@ BEGIN
   RAISE EXCEPTION 'Invalid claim ownership';
  END IF;
  IF v_attempt.status='completed' THEN
+  -- An idempotent response acknowledges a past commit only. Never treat it
+  -- as permission to deliver bytes or re-open a previously delivered reveal.
+  -- Current blocks are checked again to avoid returning a successful status
+  -- for a now-blocked relationship.
   IF v_attempt.reveal_id=p_reveal_id AND v_attempt.dm_id=p_dm_id THEN
+   IF EXISTS (
+    SELECT 1 FROM public.xoxo_reveals r
+    JOIN public.user_blocks b ON
+      (b.blocker_id=r.sender_id AND b.blocked_id=r.recipient_id)
+      OR (b.blocker_id=r.recipient_id AND b.blocked_id=r.sender_id)
+    WHERE r.id=p_reveal_id AND r.dm_id=p_dm_id
+      AND r.upload_attempt_id=v_attempt.id AND r.sender_id=v_attempt.sender_id
+   ) THEN
+    RAISE EXCEPTION 'Current DM relationship is blocked';
+   END IF;
    RETURN 'already_completed';
   END IF;
   RAISE EXCEPTION 'Conflicting completed attempt';
