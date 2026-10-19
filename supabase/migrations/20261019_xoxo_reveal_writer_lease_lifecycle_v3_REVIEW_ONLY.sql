@@ -18,6 +18,7 @@ BEGIN
  WHERE a.id=p_attempt_id AND a.sender_id=p_sender_id FOR UPDATE;
  IF NOT FOUND OR v_row.status<>'pending'
   OR v_row.writer_state<>'idle'
+  OR v_row.upload_uncertain_at IS NOT NULL
   OR v_row.claim_token IS DISTINCT FROM p_writer_token THEN RETURN false; END IF;
  UPDATE public.xoxo_reveal_upload_attempts
  SET writer_state='writing',
@@ -41,6 +42,7 @@ BEGIN
  WHERE a.id=p_attempt_id AND a.sender_id=p_sender_id FOR UPDATE;
  IF NOT FOUND OR v_row.status<>'pending'
   OR v_row.writer_state<>'writing'
+  OR v_row.upload_uncertain_at IS NOT NULL
   OR v_row.claim_token IS DISTINCT FROM p_writer_token
   OR v_row.writer_lease_expires_at IS NULL
   OR v_row.writer_lease_expires_at<=clock_timestamp() THEN RETURN false; END IF;
