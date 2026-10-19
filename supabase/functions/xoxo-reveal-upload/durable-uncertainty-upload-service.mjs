@@ -16,7 +16,13 @@ export function createRevealDurableUncertaintyUploadService({
  // The persisted read is outside the local uncertainty gate, so a restart
  // cannot bypass an earlier attempt's durable uncertain marker.
  const localGate=createRevealUploadUncertaintyGate({
-  uploadAndSeal,markUncertain
+  async uploadAndSealVerified(input){
+   const result=await uploadAndSeal(input);
+   if(result?.created!==true||result?.sealed!==true)
+    throw new Error('Upload completion not confirmed; reconciliation required');
+   return result;
+  },
+  markUncertain
  });
  // Denied preflights never began a remote write: do not falsely mark them
  // uncertain. Only failures after entering the local gate need a marker.
@@ -44,11 +50,6 @@ export function createRevealDurableUncertaintyUploadService({
     const result=await preflight(input);
     // Even if a replica has not observed the DB commit, this instance must
     // never repeat a successful upload for the same attempt.
-    if(result?.created!==true||result?.sealed!==true){
-     // A resolved but unconfirmed Storage outcome must never be treated
-     // as successful; persist uncertainty and require reconciliation.
-     throw new Error('Upload completion not confirmed; reconciliation required');
-    }
     completed.add(key);
     return result;
    }
