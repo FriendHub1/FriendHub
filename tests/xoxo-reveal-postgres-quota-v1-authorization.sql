@@ -196,3 +196,15 @@ BEGIN
     AND coalesce(r.rolname,'')<>'authenticated'
  ) THEN RAISE EXCEPTION 'Unexpected reservation EXECUTE grantee'; END IF;
 END $reserve_grantees$;
+
+-- Verify no browser role inherits service_role in this isolated fixture.
+-- In production, role inheritance must be audited against actual Supabase roles.
+DO $inheritance$
+DECLARE v_role text;
+BEGIN
+ FOREACH v_role IN ARRAY ARRAY['anon','authenticated'] LOOP
+  IF pg_has_role(v_role,'service_role','MEMBER') THEN
+   RAISE EXCEPTION 'Browser role % is a member of service_role',v_role;
+  END IF;
+ END LOOP;
+END $inheritance$;
