@@ -18,6 +18,17 @@ BEGIN
  ) THEN
   RAISE EXCEPTION 'PUBLIC must not execute quota refund';
  END IF;
+ -- A direct GRANT to a browser role must not bypass the intended ACL.
+ IF EXISTS (
+  SELECT 1
+  FROM pg_proc p
+  CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl,acldefault('f',p.proowner))) acl
+  JOIN pg_roles r ON r.oid=acl.grantee
+  WHERE p.oid=v_fn AND r.rolname IN ('anon','authenticated')
+    AND acl.privilege_type='EXECUTE'
+ ) THEN
+  RAISE EXCEPTION 'Direct browser EXECUTE grant detected';
+ END IF;
  IF has_function_privilege('anon',v_fn,'EXECUTE') THEN
   RAISE EXCEPTION 'anon must not execute quota refund';
  END IF;
