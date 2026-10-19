@@ -110,3 +110,4 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-behavior.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-hourly-limit.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-hourly-bytes.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-daily-limit.sql
