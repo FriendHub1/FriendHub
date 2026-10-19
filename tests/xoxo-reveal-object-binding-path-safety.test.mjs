@@ -51,3 +51,15 @@ test('integrity verifier sanitizes dependency errors without returning success',
   });
  }
 });
+
+test('persisted object binding rejects malformed row and non-string digest fields',async()=>{
+ const base={attempt_id:'a',sender_id:'s',bucket_id:'xoxo-reveal',object_path:'private/a',
+  payload_fingerprint:digest,expected_sha256:digest};
+ for(const data of [[],{...base,payload_fingerprint:{toString:()=>digest}},
+  {...base,expected_sha256:{toString:()=>digest}}]){
+  const read=createRevealTrustedObjectBindingReader({dbClient:{from(){return {
+   select(){return this;},eq(){return this;},async maybeSingle(){return {data,error:null};}
+  };}}});
+  await assert.rejects(read({attemptId:'a'}),/Trusted object binding unavailable/);
+ }
+});
