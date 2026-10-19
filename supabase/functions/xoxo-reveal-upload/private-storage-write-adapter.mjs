@@ -23,8 +23,11 @@ export function createRevealPrivateStorageCreateOnlyWriter({
    throw new TypeError('Invalid private Storage upload bytes');
   if(!['image/jpeg','image/png','image/webp','video/mp4','video/webm'].includes(contentType))
    throw new TypeError('Unsupported private Storage media type');
-  const {data,error}=await storageClient.storage.from('xoxo-reveal')
-   .upload(objectPath,bytes,{contentType,upsert:false,cacheControl:'0'});
+  let data,error;
+  try{
+   ({data,error}=await storageClient.storage.from('xoxo-reveal')
+    .upload(objectPath,bytes,{contentType,upsert:false,cacheControl:'0'}));
+  }catch{throw new Error('Private Storage create-only upload failed');}
   if(error||!data)throw new Error('Private Storage create-only upload failed');
   return {objectPath,created:true};
  };
@@ -59,7 +62,9 @@ export function createRevealWriterGatedPrivateStorageWriter({
      bytes.byteLength>effectiveMaxBytes||
      !['image/jpeg','image/png','image/webp','video/mp4','video/webm'].includes(contentType))
    throw new TypeError('Invalid private Storage write request');
-  const authorized=await authorizeActiveWriter({attemptId,senderId,writerToken});
+  let authorized=false;
+  try{authorized=await authorizeActiveWriter({attemptId,senderId,writerToken});}
+  catch{throw new Error('Active writer authorization unavailable');}
   if(authorized!==true)
    throw new Error('Active writer authorization denied');
   return createOnly({bucket,objectPath,bytes,contentType});
