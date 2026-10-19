@@ -81,6 +81,8 @@ BEGIN
   RETURN FOUND;
 END;
 $$;
+-- Harden the function EXECUTE ACL, including privileges inherited from PUBLIC.
+-- Keep deployment blocked until function ownership and role inheritance are audited.
 REVOKE ALL ON FUNCTION public.xoxo_reveal_release_quota_v1(uuid,uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.xoxo_reveal_release_quota_v1(uuid,uuid) TO service_role;
 -- REVIEW BLOCKERS: lock namespace collisions, role/function ownership,
