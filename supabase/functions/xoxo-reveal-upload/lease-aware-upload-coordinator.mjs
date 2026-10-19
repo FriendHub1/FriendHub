@@ -10,14 +10,17 @@ export function createRevealLeaseAwareUploadCoordinator({
  const active=new Set();
  return async function uploadAndSeal(input={}){
   const {attemptId,senderId,writerToken}=input;
-  if(!attemptId||!senderId||!writerToken)
+  if([attemptId,senderId,writerToken].some(value=>typeof value!=='string'||!value.trim()))
    throw new TypeError('Missing trusted writer identity');
   const identity={attemptId,senderId,writerToken};
   const key=`${senderId}:${attemptId}`;
   if(active.has(key))throw new Error('Upload already in flight');
   active.add(key);
   let failed=false;
-  const checkpoint=async()=>{
+  let renewal=Promise.resolve();
+  const checkpoint=()=>{
+   // Serialize overlapping checkpoints; a failed renewal poisons the lease.
+   const next=renewal.then(async()=>{
    if(failed)throw new Error('Writer lease already lost');
    let renewed=false;
    try{renewed=await renewWriter(identity);}catch{}
@@ -26,6 +29,9 @@ export function createRevealLeaseAwareUploadCoordinator({
     throw new Error('Writer lease renewal failed');
    }
    return true;
+   });
+   renewal=next.catch(()=>{});
+   return next;
   };
   try{
    if(await beginWriter(identity)!==true)throw new Error('Writer begin denied');
