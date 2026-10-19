@@ -26,6 +26,6 @@ track.addEventListener('pointerdown',e=>{if(opened)return;dragging=true;track.se
 track.addEventListener('keydown',e=>{if(opened||used)return;let p=progress;if(e.key==='ArrowRight'||e.key==='ArrowUp')p=Math.min(1,p+.1);else if(e.key==='ArrowLeft'||e.key==='ArrowDown')p=Math.max(0,p-.1);else if(e.key==='Home')p=0;else if(e.key==='End')p=1;else return;e.preventDefault();setProgress(p);if(p===1)reveal();else feedback.textContent='Progreso: '+Math.round(p*100)+' %. Desliza hasta el 100 % para abrir.';});
 function move(e){if(!dragging)return;const rect=track.getBoundingClientRect();setProgress((e.clientX-rect.left-30)/(rect.width-60));}
 track.addEventListener('pointermove',move);track.addEventListener('pointerup',()=>{if(!dragging)return;dragging=false;if(progress>=.98){setProgress(1);reveal()}else{setProgress(0);feedback.textContent='Desliza hasta el 100 % para abrir.'}});track.addEventListener('pointercancel',()=>{dragging=false;setProgress(0)});
-el('revealClose').onclick=close;el('revealReset').onclick=reset;window.addEventListener('pagehide',()=>{clearInterval(interval);video.pause()});setProgress(0);
+el('revealClose').onclick=close;el('revealReset').onclick=reset;window.addEventListener('pagehide',()=>{clearInterval(interval);video.pause();if(typeof previewURL==='string'&&previewURL.startsWith('blob:'))URL.revokeObjectURL(previewURL)});setProgress(0);
 })();
 </script></body></html>
