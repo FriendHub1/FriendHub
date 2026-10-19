@@ -42,4 +42,13 @@ BEGIN
  EXCEPTION WHEN OTHERS THEN denied:=true; END;
  IF NOT denied THEN RAISE EXCEPTION 'Duplicate private object was allowed'; END IF;
  IF (SELECT count(*) FROM public.direct_messages)<>1 THEN RAISE EXCEPTION 'Partial DM persisted after failed duplicate'; END IF;
+ -- A different path for the SAME sealed upload attempt must also be denied.
+ INSERT INTO public.xoxo_reveal_upload_objects(attempt_id,sender_id,bucket_id,object_path,payload_fingerprint)
+ VALUES(a,s,'xoxo-reveal','private/second.webp','fingerprint');
+ denied:=false;
+ BEGIN
+  PERFORM * FROM public.xoxo_reveal_create_linked_dm_v1(a,c,s,r,'private/second.webp','image','once',NULL);
+ EXCEPTION WHEN OTHERS THEN denied:=true; END;
+ IF NOT denied THEN RAISE EXCEPTION 'Reused upload attempt was allowed with a different path'; END IF;
+ IF (SELECT count(*) FROM public.direct_messages)<>1 THEN RAISE EXCEPTION 'Reused attempt created an orphan DM'; END IF;
 END $t$;
