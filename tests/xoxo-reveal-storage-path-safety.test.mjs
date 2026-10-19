@@ -36,3 +36,20 @@ test('private Storage adapters reject malformed input containers without side ef
  assert.equal(storageCalls,0);
  assert.equal(authCalls,0);
 });
+
+test('private Storage reader sanitizes thrown download and byte conversion failures',async()=>{
+ for(const stage of ['download','bytes']){
+  const storageClient={storage:{from(){return {
+   async download(){
+    if(stage==='download')throw Error('secret storage details');
+    return {data:{size:1,async arrayBuffer(){throw Error('secret bytes details');}},error:null};
+   }
+  };}}};
+  const read=createRevealPrivateStorageByteReader({storageClient});
+  await assert.rejects(read({bucket:'xoxo-reveal',objectPath:'private/a'}),error=>{
+   assert.match(error.message,/Private Storage/);
+   assert.equal(error.message.includes('secret'),false);
+   return true;
+  });
+ }
+});
