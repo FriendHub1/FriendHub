@@ -47,6 +47,20 @@ SELECT set_config('request.jwt.claim.sub','',false);
 INSERT INTO auth.users(id) VALUES
  ('11111111-1111-4111-8111-111111111111'),
  ('22222222-2222-4222-8222-222222222222');
+-- Exercise the real reservation RPC with a valid authenticated subject.
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+DO $valid$
+DECLARE v_id uuid;
+BEGIN
+ SELECT public.xoxo_reveal_reserve_quota_v1(2048) INTO v_id;
+ IF v_id IS NULL THEN RAISE EXCEPTION 'Valid reservation returned NULL'; END IF;
+ IF NOT EXISTS (
+  SELECT 1 FROM public.xoxo_reveal_quota_reservations
+  WHERE id=v_id AND sender_id='11111111-1111-4111-8111-111111111111'
+    AND byte_count=2048 AND released_at IS NULL
+ ) THEN RAISE EXCEPTION 'Valid reservation has wrong owner or size'; END IF;
+END $valid$;
+SELECT set_config('request.jwt.claim.sub','',false);
 INSERT INTO public.xoxo_reveal_quota_reservations(id,sender_id,byte_count)
 VALUES ('33333333-3333-4333-8333-333333333333',
         '11111111-1111-4111-8111-111111111111',1024);
