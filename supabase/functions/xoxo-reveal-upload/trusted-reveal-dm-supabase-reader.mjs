@@ -30,6 +30,8 @@ export function createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorizatio
      typeof reveal.recipient_id!=='string'||!reveal.recipient_id.trim()||
      reveal.sender_id===reveal.recipient_id||
      typeof reveal.object_path!=='string'||!reveal.object_path.trim()||
+     reveal.object_path.startsWith('/')||
+     reveal.object_path.split('/').some(segment=>segment===''||segment==='.'||segment==='..')||
      typeof reveal.payload_fingerprint!=='string'||
      !/^[a-f0-9]{64}$/.test(reveal.payload_fingerprint))
    throw new Error('Trusted DM binding unavailable');
