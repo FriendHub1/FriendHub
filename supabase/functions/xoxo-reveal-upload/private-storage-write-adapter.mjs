@@ -8,7 +8,10 @@ export function createRevealPrivateStorageCreateOnlyWriter({
  if(typeof storageClient?.storage?.from!=='function'||
     !Number.isSafeInteger(maxBytes)||maxBytes<1)
   throw new TypeError('Trusted private Storage writer and byte limit required');
- return async function uploadPrivateObject({bucket,objectPath,bytes,contentType}={}){
+ return async function uploadPrivateObject(input={}){
+  if(input===null||typeof input!=='object'||Array.isArray(input))
+   throw new TypeError('Invalid private Storage write request');
+  const {bucket,objectPath,bytes,contentType}=input;
   if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||!objectPath.trim()||
      objectPath.startsWith('/')||objectPath.includes('..')||
      objectPath.includes('\\')||objectPath.includes('?')||
@@ -41,9 +44,10 @@ export function createRevealWriterGatedPrivateStorageWriter({
   throw new TypeError('Trusted active writer authorization required');
  const effectiveMaxBytes=maxBytes===undefined?15728640:maxBytes;
  const createOnly=createRevealPrivateStorageCreateOnlyWriter({storageClient,maxBytes:effectiveMaxBytes});
- return async function writeWithLease({
-  attemptId,senderId,writerToken,bucket,objectPath,bytes,contentType
- }={}){
+ return async function writeWithLease(input={}){
+  if(input===null||typeof input!=='object'||Array.isArray(input))
+   throw new TypeError('Invalid private Storage write request');
+  const {attemptId,senderId,writerToken,bucket,objectPath,bytes,contentType}=input;
   if([attemptId,senderId,writerToken].some(value=>typeof value!=='string'||!value.trim()))
    throw new TypeError('Missing trusted writer identity');
   // Validate Storage inputs before requesting a privileged writer grant.
