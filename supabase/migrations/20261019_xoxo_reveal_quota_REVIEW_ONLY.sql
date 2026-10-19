@@ -65,7 +65,7 @@ CREATE OR REPLACE FUNCTION public.xoxo_reveal_release_quota_v1(
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = ''
-AS $
+AS $$
 BEGIN
   IF p_reservation_id IS NULL OR p_sender_id IS NULL THEN
     RAISE EXCEPTION 'Missing reservation information';
@@ -75,7 +75,7 @@ BEGIN
    WHERE id=p_reservation_id AND sender_id=p_sender_id AND released_at IS NULL;
   RETURN FOUND;
 END;
-$;
+$$;
 REVOKE ALL ON FUNCTION public.xoxo_reveal_release_quota_v1(uuid,uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.xoxo_reveal_release_quota_v1(uuid,uuid) TO service_role;
 -- REVIEW BLOCKERS: lock namespace collisions, role/function ownership,
