@@ -29,11 +29,13 @@ export function createRevealDurableUncertaintyUploadService({
  // when the DB preflight becomes temporarily unavailable.
  return {
   async run(input={}){
-   if(localGate.isUncertain(input))
-    throw new Error('Upload requires reconciliation');
+   if(input===null||typeof input!=='object'||Array.isArray(input))
+    throw new TypeError('Valid upload input required');
    const {attemptId,senderId}=input;
    if([attemptId,senderId].some(v=>typeof v!=='string'||!v.trim()))
     throw new TypeError('Valid attempt identity required');
+   if(localGate.isUncertain(input))
+    throw new Error('Upload requires reconciliation');
    const key=JSON.stringify([senderId,attemptId]);
    if(completed.has(key))throw new Error('Upload already completed');
    if(preflightInFlight.has(key))throw new Error('Upload already in flight');
