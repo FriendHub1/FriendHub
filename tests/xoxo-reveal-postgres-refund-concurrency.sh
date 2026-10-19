@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
-# Disposable PostgreSQL only. Two independent sessions test row locking.
+# Disposable PostgreSQL only: deterministic two-session row lock contention.
 set -euo pipefail
 test "${PGHOST:-}" = "127.0.0.1"
 test "${PGDATABASE:-}" = "xoxo_reveal_test_ci"
 test "${PGUSER:-}" = "xoxo_test"
+workdir="$(mktemp -d)"
+export XOXO_LOCK_MARKER="$workdir/lock-acquired"
+holder=''
+cleanup() {
+ if [[ -n "$holder" ]]; then kill "$holder" 2>/dev/null || true; wait "$holder" 2>/dev/null || true; fi
+ rm -rf "$workdir"
+}
+trap cleanup EXIT
 psql -X -v ON_ERROR_STOP=1 <<'SQL'
 CREATE TABLE IF NOT EXISTS public.xoxo_refund_concurrency_fixture (
  id integer PRIMARY KEY, released boolean NOT NULL DEFAULT false
@@ -11,32 +19,38 @@ CREATE TABLE IF NOT EXISTS public.xoxo_refund_concurrency_fixture (
 INSERT INTO public.xoxo_refund_concurrency_fixture(id,released)
 VALUES (1,false) ON CONFLICT(id) DO UPDATE SET released=false;
 SQL
-# Session A holds the quota row lock while session B attempts NOWAIT.
-psql -X -v ON_ERROR_STOP=1 <<'SQL' > /tmp/xoxo-refund-lock-holder.log 2>&1 &
+# The marker is emitted by psql only AFTER acquiring the row lock.
+psql -X -v ON_ERROR_STOP=1 >"$workdir/holder.log" 2>&1 <<'SQL' &
 BEGIN;
 SELECT id FROM public.xoxo_refund_concurrency_fixture WHERE id=1 FOR UPDATE;
-SELECT pg_sleep(4);
-UPDATE public.xoxo_refund_concurrency_fixture SET released=true WHERE id=1;
+\! touch "$XOXO_LOCK_MARKER"
+SELECT pg_sleep(5);
+UPDATE public.xoxo_refund_concurrency_fixture SET released=true WHERE id=1 AND released=false;
 COMMIT;
 SQL
 holder=$!
-trap 'wait "$holder" 2>/dev/null || true' EXIT
-sleep 1
-# Lock acquisition must fail while session A owns the row.
-if psql -X -v ON_ERROR_STOP=1 <<'SQL' >/tmp/xoxo-refund-contender.log 2>&1
+ready=0
+for i in {1..100}; do
+ if [[ -f "$XOXO_LOCK_MARKER" ]]; then ready=1; break; fi
+ if ! kill -0 "$holder" 2>/dev/null; then break; fi
+ sleep 0.05
+done
+if [[ "$ready" != 1 ]]; then cat "$workdir/holder.log" >&2; echo "Lock holder never acquired lock" >&2; exit 1; fi
+# Independent session must fail NOWAIT while first transaction is active.
+if psql -X -v ON_ERROR_STOP=1 >"$workdir/contender.log" 2>&1 <<'SQL'
 BEGIN;
 SELECT id FROM public.xoxo_refund_concurrency_fixture WHERE id=1 FOR UPDATE NOWAIT;
 ROLLBACK;
 SQL
 then
- echo "ERROR: concurrent session acquired locked quota row" >&2
+ echo "ERROR: second session acquired locked quota row" >&2
  exit 1
 fi
-grep -q 'could not obtain lock on row' /tmp/xoxo-refund-contender.log
+grep -q 'could not obtain lock on row' "$workdir/contender.log"
 wait "$holder"
-trap - EXIT
-# Once committed, another session sees released=true and cannot claim an
-# active quota. This is a fixture, not the real refund SQL migration.
+holder=''
+# A duplicate refund must not update the already released reservation.
 test "$(psql -X -At -v ON_ERROR_STOP=1 -c 'SELECT released FROM public.xoxo_refund_concurrency_fixture WHERE id=1')" = 't'
+test "$(psql -X -At -v ON_ERROR_STOP=1 -c 'WITH retry AS (UPDATE public.xoxo_refund_concurrency_fixture SET released=true WHERE id=1 AND released=false RETURNING id) SELECT count(*) FROM retry')" = '0'
 psql -X -v ON_ERROR_STOP=1 -c 'DROP TABLE public.xoxo_refund_concurrency_fixture'
-echo 'Isolated concurrent quota row-lock test passed.'
+echo 'Isolated concurrent lock and duplicate-refund fixture passed.'
