@@ -53,3 +53,22 @@ test('private Storage reader sanitizes thrown download and byte conversion failu
   });
  }
 });
+
+test('private Storage writer sanitizes backend and writer authorization errors',async()=>{
+ const args={bucket:'xoxo-reveal',objectPath:'private/a',bytes:new Uint8Array([1]),contentType:'image/png'};
+ const storageClient={storage:{from(){return {async upload(){throw Error('secret upload details');}};}}};
+ const write=createRevealPrivateStorageCreateOnlyWriter({storageClient});
+ await assert.rejects(write(args),error=>{
+  assert.match(error.message,/Private Storage create-only upload failed/);
+  assert.equal(error.message.includes('secret'),false);
+  return true;
+ });
+ const gated=createRevealWriterGatedPrivateStorageWriter({
+  storageClient,authorizeActiveWriter:async()=>{throw Error('secret authorization details');}
+ });
+ await assert.rejects(gated({...args,attemptId:'a',senderId:'s',writerToken:'t'}),error=>{
+  assert.match(error.message,/Active writer authorization unavailable/);
+  assert.equal(error.message.includes('secret'),false);
+  return true;
+ });
+});
