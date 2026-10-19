@@ -21,5 +21,13 @@ BEGIN
  SELECT count(*) INTO v_count FROM public.xoxo_reveal_quota_reservations
  WHERE sender_id='77777777-7777-4777-8777-777777777777' AND released_at IS NULL;
  IF v_count<>120 THEN RAISE EXCEPTION 'Expected 120 active slots, got %',v_count; END IF;
+ IF (SELECT coalesce(sum(byte_count),0) FROM public.xoxo_reveal_quota_reservations
+     WHERE sender_id='77777777-7777-4777-8777-777777777777'
+       AND released_at IS NULL) <> 120*1024
+ THEN RAISE EXCEPTION 'Released bytes still counted in hourly quota'; END IF;
+ IF (SELECT count(*) FROM public.xoxo_reveal_quota_reservations
+     WHERE sender_id='77777777-7777-4777-8777-777777777777'
+       AND released_at IS NOT NULL) <> 1
+ THEN RAISE EXCEPTION 'Expected exactly one released reservation'; END IF;
 END $reuse$;
 SELECT set_config('request.jwt.claim.sub','',false);
