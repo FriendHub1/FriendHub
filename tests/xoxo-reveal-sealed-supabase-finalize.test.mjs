@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {createRevealVerifiedFinalizeWithSealedSupabase} from '../supabase/functions/xoxo-reveal-upload/verified-finalize-service.mjs';
 const bytes=new Uint8Array([4,5,6]),digest=createHash('sha256').update(bytes).digest('hex');
-const ctx={attemptId:'a',senderId:'s',claimToken:'t',revealId:'r',dmId:'d',objectPath:'a/p.webp',payloadFingerprint:'f'.repeat(64)};
+const ctx={attemptId:'11111111-1111-4111-8111-111111111111',senderId:'s',claimToken:'t',revealId:'22222222-2222-4222-8222-222222222222',dmId:'33333333-3333-4333-8333-333333333333',objectPath:'a/p.webp',payloadFingerprint:'f'.repeat(64)};
 function setup({writerState='sealed',authorized=true}={}){
  const calls=[];
  const rows={
-  xoxo_reveal_upload_attempts:{id:'a',sender_id:'s',payload_fingerprint:ctx.payloadFingerprint,status:'pending',writer_state:writerState},
-  xoxo_reveals:{id:'r',dm_id:'d',upload_attempt_id:'a',sender_id:'s',recipient_id:'u',object_path:ctx.objectPath,payload_fingerprint:ctx.payloadFingerprint},
-  direct_messages:{id:'d',sender_id:'s',recipient_id:'u'},
-  xoxo_reveal_quota_reservations:{id:'q',upload_attempt_id:'a',sender_id:'s',byte_count:3,released_at:null},
-  xoxo_reveal_upload_objects:{attempt_id:'a',sender_id:'s',bucket_id:'xoxo-reveal',object_path:ctx.objectPath,payload_fingerprint:ctx.payloadFingerprint,expected_sha256:digest}
+  xoxo_reveal_upload_attempts:{id:'11111111-1111-4111-8111-111111111111',sender_id:'s',payload_fingerprint:ctx.payloadFingerprint,status:'pending',writer_state:writerState},
+  xoxo_reveals:{id:'22222222-2222-4222-8222-222222222222',dm_id:'33333333-3333-4333-8333-333333333333',upload_attempt_id:'11111111-1111-4111-8111-111111111111',sender_id:'s',recipient_id:'u',object_path:ctx.objectPath,payload_fingerprint:ctx.payloadFingerprint},
+  direct_messages:{id:'33333333-3333-4333-8333-333333333333',sender_id:'s',recipient_id:'u'},
+  xoxo_reveal_quota_reservations:{id:'q',upload_attempt_id:'11111111-1111-4111-8111-111111111111',sender_id:'s',byte_count:3,released_at:null},
+  xoxo_reveal_upload_objects:{attempt_id:'11111111-1111-4111-8111-111111111111',sender_id:'s',bucket_id:'xoxo-reveal',object_path:ctx.objectPath,payload_fingerprint:ctx.payloadFingerprint,expected_sha256:digest}
  };
  const dbClient={from:table=>{calls.push(table);const q={select:()=>q,eq:()=>q,maybeSingle:async()=>({data:rows[table],error:null})};return q;}};
  const storageClient={storage:{from:()=>({download:async()=>({data:{size:bytes.length,arrayBuffer:async()=>bytes.buffer},error:null})})}};
