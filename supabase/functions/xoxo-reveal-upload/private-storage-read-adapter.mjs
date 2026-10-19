@@ -9,7 +9,7 @@ export function createRevealPrivateStorageByteReader({
   throw new TypeError('Trusted private Storage client and byte limit required');
  return async function readPrivateBytes({bucket,objectPath}={}){
   if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||
-     !objectPath||objectPath.startsWith('/')||
+     !objectPath.trim()||objectPath.startsWith('/')||
      objectPath.includes('..')||objectPath.includes('\\')||
      objectPath.includes('?')||objectPath.includes('#'))
    throw new TypeError('Invalid private Storage locator');
