@@ -8,6 +8,7 @@ on:
       - '.github/workflows/xoxo-reveal-postgres-isolated.yml'
       - 'tests/xoxo-reveal-postgres-isolated-smoke.sql'
       - 'tests/xoxo-reveal-postgres-transactional-fixture.sql'
+      - 'tests/xoxo-reveal-postgres-refund-concurrency.sh'
 jobs:
   postgres-smoke:
     runs-on: ubuntu-latest
@@ -43,4 +44,5 @@ jobs:
           test "$PGUSER" = 'xoxo_test'
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-isolated-smoke.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-transactional-fixture.sql
+          bash tests/xoxo-reveal-postgres-refund-concurrency.sh
 # No Supabase secrets, production connections, live data, or REVIEW_ONLY migrations.
