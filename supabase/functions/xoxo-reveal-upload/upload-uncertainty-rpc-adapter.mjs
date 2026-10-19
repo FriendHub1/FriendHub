@@ -4,12 +4,17 @@ export function createRevealUploadUncertaintyRpcMarker({rpcClient}={}){
  if(typeof rpcClient?.rpc!=='function')
   throw new TypeError('Privileged Supabase RPC client required');
  return async function markUncertain({attemptId,senderId,reason='upload_outcome_uncertain'}={}){
-  if(!attemptId||!senderId||reason!=='upload_outcome_uncertain')
+  if([attemptId,senderId].some(value=>typeof value!=='string'||!value.trim())||
+     reason!=='upload_outcome_uncertain')
    throw new TypeError('Invalid uncertainty marker identity');
-  const {data,error}=await rpcClient.rpc('xoxo_reveal_mark_upload_uncertain_v1',{
-   p_attempt_id:attemptId,p_sender_id:senderId,p_reason:reason
-  });
-  if(error||data!==true)throw new Error('Durable uncertainty marker rejected');
+  let response;
+  try{
+   response=await rpcClient.rpc('xoxo_reveal_mark_upload_uncertain_v1',{
+    p_attempt_id:attemptId,p_sender_id:senderId,p_reason:reason
+   });
+  }catch{throw new Error('Durable uncertainty marker unavailable');}
+  if(response?.error||response?.data!==true)
+   throw new Error('Durable uncertainty marker rejected');
   return true;
  };
 }
