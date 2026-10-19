@@ -9,7 +9,8 @@ export function createAtomicRevealMessageAdapter({rpcClient}={}){
  if(typeof rpcClient?.rpc!=="function")throw new TypeError("Trusted transactional RPC client required");
  return async function createLinkedRevealMessage(input={}){
   if(input===null||typeof input!=="object"||Array.isArray(input))throw new TypeError("Invalid linked message input");
-  const {senderId,recipientId,objectPath,mediaType,mode,seconds,durationSeconds}=input;
+  const {attemptId,claimToken,senderId,recipientId,objectPath,mediaType,mode,seconds,durationSeconds}=input;
+  if(!UUID.test(attemptId||'')||!UUID.test(claimToken||''))throw new TypeError('Missing trusted attempt claim');
   if(!UUID.test(senderId||"")||!UUID.test(recipientId||"")||senderId===recipientId)
    throw new TypeError("Invalid trusted participant IDs");
   if(typeof objectPath!=="string"||!objectPath.trim()||objectPath.startsWith("/")||
@@ -25,6 +26,7 @@ export function createAtomicRevealMessageAdapter({rpcClient}={}){
   let response;
   try{
    response=await rpcClient.rpc("xoxo_reveal_create_linked_dm_v1",{
+    p_attempt_id:attemptId,p_claim_token:claimToken,
     p_sender_id:senderId,p_recipient_id:recipientId,p_object_path:objectPath,
     p_media_type:mediaType,p_mode:mode,p_duration_seconds:mode==="timed"?seconds:null
    });
