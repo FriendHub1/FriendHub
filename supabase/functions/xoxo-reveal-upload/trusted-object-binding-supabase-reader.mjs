@@ -5,7 +5,7 @@ export function createRevealTrustedObjectBindingReader({dbClient}={}){
  if(typeof dbClient?.from!=='function')
   throw new TypeError('Trusted object binding database client required');
  return async function resolveObjectBinding({attemptId}={}){
-  if(typeof attemptId!=='string'||!attemptId)
+  if(typeof attemptId!=='string'||!attemptId.trim())
    throw new TypeError('Invalid object binding attempt');
   const {data,error}=await dbClient.from('xoxo_reveal_upload_objects')
    .select('attempt_id,sender_id,bucket_id,object_path,payload_fingerprint,expected_sha256')
