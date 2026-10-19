@@ -21,6 +21,8 @@ for(const [name,make] of [
  });
  test(name+' rejects malformed writer identity before privileged operations',async()=>{
   const run=make();
+  for(const malformed of [null,12,'invalid',[]])
+   await assert.rejects(run(malformed),TypeError);
   await assert.rejects(run({senderId:4,attemptId:'a',writerToken:'t'}),TypeError);
   await assert.rejects(run({senderId:'s',attemptId:'a',writerToken:' '}),TypeError);
  });
