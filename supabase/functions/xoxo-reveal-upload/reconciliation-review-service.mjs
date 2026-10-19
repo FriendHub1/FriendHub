@@ -26,6 +26,9 @@ export function createRevealReconciliationReviewService({
     throw new Error('Reviewer authorization expired');
    return {action:'manual_review',reason:'missing_attempt'};
   }
+  // Never use an inconsistent attempt row to select another user's object.
+  if(typeof attempt.sender_id!=='string'||!attempt.sender_id.trim())
+   throw new Error('Reconciliation evidence unavailable');
   // Recheck authorization before touching the private object evidence.
   if(await checkAuthorization({attemptId,reviewerId,accessToken})!==true)
    throw new Error('Reviewer authorization expired');
