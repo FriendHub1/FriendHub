@@ -7,7 +7,9 @@ export function createRevealReconciliationReviewerAuthorizer({
  if(typeof authClient?.auth?.getUser!=='function'||typeof adminLookup!=='function')
   throw new TypeError('Trusted auth verification and admin lookup required');
  return async function authorizeReviewer({attemptId,reviewerId,accessToken}={}){
-  if(!attemptId||!reviewerId||typeof accessToken!=='string'||!accessToken)
+  if(typeof attemptId!=='string'||!attemptId.trim()||
+     typeof reviewerId!=='string'||!reviewerId.trim()||
+     typeof accessToken!=='string'||!accessToken.trim())
    return false;
   try{
    const {data,error}=await authClient.auth.getUser(accessToken);
