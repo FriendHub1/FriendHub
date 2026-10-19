@@ -6,7 +6,7 @@ export function createRevealWriterLeaseRpcAdapter({rpcClient}={}){
  async function invoke(name,{attemptId,senderId,writerToken},extra={}){
   if([attemptId,senderId,writerToken].some(v=>typeof v!=='string'||!v.trim()))return false;
   if(extra.p_lease_seconds!==undefined&&(!Number.isSafeInteger(extra.p_lease_seconds)||
-    extra.p_lease_seconds<1||extra.p_lease_seconds>120))return false;
+    extra.p_lease_seconds<15||extra.p_lease_seconds>120))return false;
   try{
    const {data,error}=await rpcClient.rpc(name,{
     p_attempt_id:attemptId,p_sender_id:senderId,
