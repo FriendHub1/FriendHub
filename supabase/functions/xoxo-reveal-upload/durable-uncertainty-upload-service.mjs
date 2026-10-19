@@ -24,6 +24,7 @@ export function createRevealDurableUncertaintyUploadService({
   readAttempt,uploadAndSeal:localGate.run
  });
  const preflightInFlight=new Set();
+ const completed=new Set();
  // Check local state first. An uncertain attempt must remain blocked even
  // when the DB preflight becomes temporarily unavailable.
  return {
@@ -34,9 +35,16 @@ export function createRevealDurableUncertaintyUploadService({
    if([attemptId,senderId].some(v=>typeof v!=='string'||!v.trim()))
     throw new TypeError('Valid attempt identity required');
    const key=JSON.stringify([senderId,attemptId]);
+   if(completed.has(key))throw new Error('Upload already completed');
    if(preflightInFlight.has(key))throw new Error('Upload already in flight');
    preflightInFlight.add(key);
-   try{return await preflight(input);}
+   try{
+    const result=await preflight(input);
+    // Even if a replica has not observed the DB commit, this instance must
+    // never repeat a successful upload for the same attempt.
+    completed.add(key);
+    return result;
+   }
    finally{preflightInFlight.delete(key);}
   },
   isUncertain:localGate.isUncertain
