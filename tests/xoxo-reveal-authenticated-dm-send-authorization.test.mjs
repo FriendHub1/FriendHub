@@ -19,7 +19,7 @@ function setup({userId=a,authError=null,authThrows=false,blocked=false}={}){
 test('verified sender and existing conversation are authorized',async()=>{
  const {authorize,calls}=setup();
  assert.equal(await authorize({senderId:a,recipientId:b}),true);
- assert.deepEqual(calls,['auth','user_blocks','direct_messages']);
+ assert.deepEqual(calls,['auth','user_blocks','direct_messages','user_blocks']);
 });
 test('spoofed sender never reaches privileged database',async()=>{
  const {authorize,calls}=setup({userId:b});
