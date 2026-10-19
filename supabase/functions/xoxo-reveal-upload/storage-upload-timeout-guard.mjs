@@ -20,6 +20,9 @@ export function createRevealStorageUploadTimeoutGuard({
   let callerAborted=false;
   let rejectCallerAbort;
   const callerCancellation=new Promise((_,reject)=>{rejectCallerAbort=reject;});
+  // Attach a rejection handler before registering listeners: a signal may
+  // abort synchronously during registration, before Promise.race exists.
+  callerCancellation.catch(()=>{});
   const onAbort=()=>{
    callerAborted=true;
    controller.abort();
