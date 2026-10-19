@@ -51,3 +51,26 @@ test('invalid writer identity never begins a lease',async()=>{
  }
  assert.equal(begins,0);
 });
+
+test('unawaited failing checkpoint prevents sealing',async()=>{
+ let seals=0,renewals=0;
+ const coordinator=createRevealLeaseAwareUploadCoordinator({
+  beginWriter:async()=>true,
+  renewWriter:async()=>{
+   renewals++;
+   if(renewals===2){
+    await new Promise(resolve=>setImmediate(resolve));
+    return false;
+   }
+   return true;
+  },
+  uploadPrivate:async({checkpoint})=>{
+   // Intentionally fire-and-forget a checkpoint, with a rejection handler.
+   checkpoint().catch(()=>{});
+   return {created:true,objectPath:'private/object'};
+  },
+  sealWriter:async()=>{seals++;return true;}
+ });
+ await assert.rejects(coordinator(identity),/Writer lease already lost/);
+ assert.equal(seals,0);
+});
