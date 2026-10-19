@@ -16,3 +16,9 @@ test('demo labels distinguish local simulation from real messaging',()=>{
  assert.match(html,/Demostración local: no utiliza cuentas, mensajes reales ni Supabase/);
  assert.match(html,/No se ha enviado nada/);
 });
+
+test('a newly selected asset resets the consumed viewer before another mock send',()=>{
+ assert.match(html,/previewURL!==lastURL/);
+ assert.match(html,/reset\.click\(\)/);
+ assert.match(html,/send\.disabled=false/);
+});
