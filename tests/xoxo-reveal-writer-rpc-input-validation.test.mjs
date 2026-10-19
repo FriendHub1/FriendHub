@@ -14,13 +14,14 @@ test('invalid writer identity or lease duration never invokes privileged RPC',as
   assert.equal(await adapter.sealWriter(identity),false);
  }
  const identity={attemptId:'a',senderId:'s',writerToken:'t'};
- for(const lease of [0,-1,1.5,121,NaN,Infinity,'90']){
+ for(const lease of [0,-1,1,14,1.5,121,NaN,Infinity,'90']){
   assert.equal(await adapter.beginWriter(identity,lease),false);
   assert.equal(await adapter.renewWriter(identity,lease),false);
  }
  assert.equal(calls,0);
+ assert.equal(await adapter.beginWriter(identity,15),true);
  assert.equal(await adapter.beginWriter(identity,90),true);
  assert.equal(await adapter.renewWriter(identity,90),true);
  assert.equal(await adapter.sealWriter(identity),true);
- assert.equal(calls,3);
+ assert.equal(calls,4);
 });
