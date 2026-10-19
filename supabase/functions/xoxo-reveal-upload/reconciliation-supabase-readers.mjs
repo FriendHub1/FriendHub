@@ -12,13 +12,15 @@ export function createRevealReconciliationSupabaseReaders({supabase}={}){
  }
  return {
   async readAttempt({attemptId}={}){
-   if(!attemptId)throw new TypeError('Attempt ID required');
+   if(typeof attemptId!=='string'||!attemptId.trim())
+    throw new TypeError('Attempt ID required');
    return one('xoxo_reveal_upload_attempts',
     'id,sender_id,status,upload_uncertain_at,upload_uncertain_reason',
     {id:attemptId});
   },
   async readObjectBinding({attemptId,senderId}={}){
-   if(!attemptId||!senderId)throw new TypeError('Binding identity required');
+   if([attemptId,senderId].some(value=>typeof value!=='string'||!value.trim()))
+    throw new TypeError('Binding identity required');
    const data=await one('xoxo_reveal_upload_objects',
     'attempt_id,sender_id,bucket_id,object_path,expected_sha256',
     {attempt_id:attemptId,sender_id:senderId});
