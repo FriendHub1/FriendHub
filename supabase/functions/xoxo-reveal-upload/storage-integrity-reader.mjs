@@ -23,7 +23,8 @@ export function createRevealStorageIntegrityReader({resolveObjectBinding,readPri
   if(binding?.authoritative!==true||binding.attemptId!==attemptId||
      binding.bucket!=='xoxo-reveal'||binding.objectPath!==objectPath||
      binding.payloadFingerprint!==payloadFingerprint||
-     !/^[a-f0-9]{64}$/.test(binding.expectedSha256||''))
+     typeof binding.expectedSha256!=='string'||
+     !/^[a-f0-9]{64}$/.test(binding.expectedSha256))
    throw new Error('Trusted object binding unavailable');
   let bytes;
   try{bytes=await readPrivateBytes({bucket:'xoxo-reveal',objectPath});}
@@ -35,8 +36,10 @@ export function createRevealStorageIntegrityReader({resolveObjectBinding,readPri
   catch{throw new Error('Trusted digest calculation unavailable');}
   if(typeof digest!=='string'||!/^[a-f0-9]{64}$/.test(digest))
    throw new Error('Invalid trusted digest response');
+  if(digest!==binding.expectedSha256)
+   throw new Error('Private object digest mismatch');
   return {authoritative:true,objectPath,payloadFingerprint,
-   exists:true,digestVerified:digest===binding.expectedSha256};
+   exists:true,digestVerified:true};
  };
 }
 // This reader cannot fence a concurrent Storage writer or establish a
