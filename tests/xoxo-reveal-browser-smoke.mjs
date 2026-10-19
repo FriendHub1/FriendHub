@@ -72,3 +72,25 @@ test('browser smoke: timed reveal closes automatically and cannot reopen after e
   assert.equal(await page.locator('#revealViewer').evaluate(el=>el.classList.contains('open')),false);
  } finally { await browser.close(); }
 });
+
+test('browser smoke: Escape closes the reveal viewer and preserves one-view lock', async () => {
+ const browser=await chromium.launch({headless:true});
+ try {
+  const page=await browser.newPage();
+  const html=await readFile(new URL('../xoxo-reveal-studio-beta.html',import.meta.url),'utf8');
+  await page.setContent(html,{waitUntil:'load'});
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=','base64');
+  await page.locator('#file').setInputFiles({name:'escape.png',mimeType:'image/png',buffer:png});
+  await page.waitForFunction(()=>!document.querySelector('#localSend').disabled);
+  await page.locator('#localSend').click();
+  await page.locator('#revealTrack').focus();
+  await page.keyboard.press('End');
+  await page.waitForFunction(()=>document.querySelector('#revealViewer').classList.contains('open'));
+  await page.keyboard.press('Escape');
+  assert.equal(await page.locator('#revealViewer').evaluate(el=>el.classList.contains('open')),false);
+  await page.locator('#revealTrack').focus();
+  await page.keyboard.press('End');
+  assert.equal(await page.locator('#revealViewer').evaluate(el=>el.classList.contains('open')),false);
+  assert.match(await page.locator('#revealFeedback').textContent(),/ya vista o caducada/);
+ } finally { await browser.close(); }
+});
