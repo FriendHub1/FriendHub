@@ -13,8 +13,11 @@ export function createRevealAuthenticatedDmSendAuthorizer({authClient,dbClient}=
   // getUser validates the current token against Auth, unlike getSession's
   // local session cache. The auth client must be bound to this request.
   let user,error;
-  try{({data:{user}= {},error}=await authClient.auth.getUser());}
-  catch{return false;}
+  try{
+   const response=await authClient.auth.getUser();
+   user=response?.data?.user;
+   error=response?.error;
+  }catch{return false;}
   if(error||typeof user?.id!=='string'||user.id!==senderId)return false;
   return verifyPolicy({senderId,recipientId,authenticatedSenderId:user.id});
  };
