@@ -15,6 +15,9 @@ export function createRevealReconciliationReviewService({
   const attempt=await readAttempt({attemptId});
   if(!attempt||attempt.id!==attemptId)
    return {action:'manual_review',reason:'missing_attempt'};
+  // Recheck authorization before touching the private object evidence.
+  if(await authorizeReviewer({attemptId,reviewerId,accessToken})!==true)
+   throw new Error('Reviewer authorization expired');
   const objectBinding=await readObjectBinding({attemptId,senderId:attempt.sender_id});
   const storageEvidence=await readStorageEvidence({attemptId,senderId:attempt.sender_id,objectBinding});
   return decideRevealUploadReconciliation({attempt,objectBinding,storageEvidence});
