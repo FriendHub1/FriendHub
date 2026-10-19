@@ -24,7 +24,7 @@ BEGIN
   OR p_object_path LIKE '%#%'
   OR p_media_type NOT IN ('image','video')
   OR p_mode NOT IN ('once','timed','keep')
-  OR (p_mode='timed' AND p_duration_seconds IS DISTINCT FROM ALL(ARRAY[5,10,15,20]))
+  OR (p_mode='timed' AND (p_duration_seconds IS NULL OR p_duration_seconds NOT IN (5,10,15,20)))
   OR (p_mode<>'timed' AND p_duration_seconds IS NOT NULL)
  THEN RAISE EXCEPTION 'Invalid Reveal metadata'; END IF;
  -- Lock the durable attempt, not an untrusted browser-supplied object record.
