@@ -5,6 +5,8 @@
 -- SCHEMA GATE: this draft expects the full xoxo_reveals beta schema plus
 -- upload_attempt_id and payload_fingerprint (not in the base beta migration).
 -- DO NOT DEPLOY until schema and block-insert serialization are reviewed.
+-- Recipient binding requires a separately reviewed change to the upload-claim
+-- flow; legacy attempts without a recipient are intentionally rejected.
 CREATE OR REPLACE FUNCTION public.xoxo_reveal_create_linked_dm_v1(
  p_attempt_id uuid,p_claim_token uuid,p_sender_id uuid,p_recipient_id uuid,p_object_path text,
  p_media_type text,p_mode text,p_duration_seconds integer DEFAULT NULL
@@ -34,7 +36,9 @@ BEGIN
   GREATEST(p_sender_id::text,p_recipient_id::text), 0));
  -- Lock the durable attempt, not an untrusted browser-supplied object record.
  SELECT * INTO v_attempt FROM public.xoxo_reveal_upload_attempts a
- WHERE a.id=p_attempt_id AND a.claim_token=p_claim_token AND a.sender_id=p_sender_id AND a.status='pending'
+ WHERE a.id=p_attempt_id AND a.claim_token=p_claim_token
+  AND a.sender_id=p_sender_id AND a.recipient_id=p_recipient_id
+  AND a.status='pending'
   AND a.writer_state='sealed' AND a.upload_uncertain_at IS NULL
   AND EXISTS(SELECT 1 FROM public.xoxo_reveal_upload_objects o
    WHERE o.attempt_id=a.id AND o.sender_id=a.sender_id
@@ -71,6 +75,6 @@ BEGIN
 END $fn$;
 REVOKE ALL ON FUNCTION public.xoxo_reveal_create_linked_dm_v1(uuid,uuid,uuid,uuid,text,text,text,integer) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.xoxo_reveal_create_linked_dm_v1(uuid,uuid,uuid,uuid,text,text,text,integer) TO service_role;
--- RELEASE BLOCKERS: authenticated sender/recipient binding to attempt,
+-- RELEASE BLOCKERS: populate immutable recipient_id at trusted claim time,
 -- durable object identity, exact DM INSERT columns, and serialization with
 -- concurrent user_blocks inserts are NOT yet guaranteed by this draft.
