@@ -1,6 +1,7 @@
 // XOXO Reveal BETA — private Storage adapter, REVIEW ONLY / NOT DEPLOYED.
 // A trusted server must authorize the sender, object path, MIME and bytes first.
 // Never accept a user-provided bucket or service-role credential.
+import {MAX_IMAGE_BYTES,MAX_VIDEO_BYTES} from './upload-policy.mjs';
 export function createRevealPrivateStorageAdapter({
  storageClient,bucket='xoxo-reveal'
 }={}){
@@ -11,9 +12,11 @@ export function createRevealPrivateStorageAdapter({
  }={}){
   if(!attemptId||!senderId||!writerToken||
      typeof objectPath!=='string'||!objectPath||
-     !bytes||typeof bytes.byteLength!=='number'||bytes.byteLength<1||
+     !(bytes instanceof Uint8Array)||bytes.byteLength<1||
      !['image/webp','video/mp4','video/webm'].includes(contentType))
    throw new TypeError('Invalid trusted Storage upload inputs');
+  const maxBytes=contentType==='image/webp'?MAX_IMAGE_BYTES:MAX_VIDEO_BYTES;
+  if(bytes.byteLength>maxBytes)throw new TypeError('Private Storage size limit exceeded');
   // No upsert: never overwrite a private object during a retry.
   const {data,error}=await storageClient.storage.from(bucket).upload(
    objectPath,bytes,{contentType,upsert:false}
