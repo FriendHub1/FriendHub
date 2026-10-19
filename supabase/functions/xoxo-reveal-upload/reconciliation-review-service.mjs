@@ -12,7 +12,9 @@ export function createRevealReconciliationReviewService({
   try{return await authorizeReviewer(identity)===true;}catch{return false;}
  };
  return async function review({attemptId,reviewerId,accessToken}={}){
-  if(!attemptId||!reviewerId)throw new TypeError('Missing review identity');
+  if([attemptId,reviewerId,accessToken].some(value=>
+   typeof value!=='string'||!value.trim()))
+   throw new TypeError('Valid review identity and token required');
   if(await checkAuthorization({attemptId,reviewerId,accessToken})!==true)
    throw new Error('Reviewer not authorized');
   let attempt;
