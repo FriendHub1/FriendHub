@@ -5,6 +5,7 @@
 import {createRevealPostUploadBindingGate} from './post-upload-binding-gate.mjs';
 import {createRevealFinalizeSupabaseAdapter} from './finalize-supabase-adapter.mjs';
 import {createRevealBindingEvidenceReader} from './binding-evidence-reader.mjs';
+import {createRevealStorageIntegrityReader} from './storage-integrity-reader.mjs';
 export function createRevealVerifiedFinalizeService({
  rpcClient,readTrustedEvidence
 }={}){
@@ -28,4 +29,21 @@ export function createRevealVerifiedFinalizeFromReaders({
   readAttempt,readRevealDm,readStorageIntegrity,readQuota,readWriter
  });
  return createRevealVerifiedFinalizeService({rpcClient,readTrustedEvidence});
+}
+
+/**
+ * Composes the real-byte integrity verifier with independently injected,
+ * privileged database evidence readers. REVIEW ONLY / NOT DEPLOYED.
+ * No public HTTP inputs may supply expectedSha256 or evidence flags.
+ */
+export function createRevealVerifiedFinalizeWithStorage({
+ rpcClient,readAttempt,readRevealDm,readQuota,readWriter,
+ resolveObjectBinding,readPrivateBytes,sha256
+}={}){
+ const readStorageIntegrity=createRevealStorageIntegrityReader({
+  resolveObjectBinding,readPrivateBytes,sha256
+ });
+ return createRevealVerifiedFinalizeFromReaders({
+  rpcClient,readAttempt,readRevealDm,readStorageIntegrity,readQuota,readWriter
+ });
 }
