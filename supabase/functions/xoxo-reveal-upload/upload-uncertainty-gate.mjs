@@ -1,3 +1,4 @@
+import {RevealWriterBeginDeniedError} from './writer-begin-denied-error.mjs';
 // XOXO Reveal BETA — fail-closed uncertain Storage outcome gate.
 // REVIEW ONLY / NOT DEPLOYED. A timeout may leave the remote upload running.
 // Persisting uncertainty in PostgreSQL is a separate required release step.
@@ -19,7 +20,10 @@ export function createRevealUploadUncertaintyGate({uploadAndSeal,markUncertain}=
    try{
     return await uploadAndSeal(input);
    }catch(error){
-    // Once a remote write may have started, fail closed on every error.
+    // A trusted coordinator can prove this denial occurred before Storage.
+    // All other errors remain ambiguous and must be recorded as uncertain.
+    if(error instanceof RevealWriterBeginDeniedError)throw error;
+    // Once a remote write may have started, fail closed on every other error.
     uncertain.add(key);
     try{
      const recorded=await markUncertain({attemptId,senderId,reason:'upload_outcome_uncertain'});
