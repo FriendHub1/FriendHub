@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/xoxo-reveal-postgres-isolated.yml'
       - 'tests/xoxo-reveal-postgres-isolated-smoke.sql'
+      - 'tests/xoxo-reveal-postgres-transactional-fixture.sql'
 jobs:
   postgres-smoke:
     runs-on: ubuntu-latest
@@ -28,7 +29,7 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - name: Verify isolated PostgreSQL target and run smoke test
+      - name: Verify isolated PostgreSQL target and run transactional fixtures
         env:
           PGHOST: 127.0.0.1
           PGPORT: '5432'
@@ -41,5 +42,5 @@ jobs:
           test "$PGDATABASE" = 'xoxo_reveal_test_ci'
           test "$PGUSER" = 'xoxo_test'
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-isolated-smoke.sql
-# This workflow intentionally does NOT read Supabase secrets, connect to
-# production, apply any REVIEW_ONLY migrations, or access live user data.
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-transactional-fixture.sql
+# No Supabase secrets, production connections, live data, or REVIEW_ONLY migrations.
