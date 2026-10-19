@@ -34,6 +34,21 @@ DO $test$ DECLARE result text; BEGIN
  '55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222',
  '33333333-3333-4333-8333-333333333333') INTO result;
  IF result<>'already_completed' THEN RAISE EXCEPTION 'Idempotency failed: %',result; END IF;
+ INSERT INTO public.user_blocks(blocker_id,blocked_id)
+ VALUES ('66666666-6666-4666-8666-666666666666',
+         '44444444-4444-4444-8444-444444444444');
+ BEGIN
+  PERFORM public.xoxo_reveal_finalize_upload_v2(
+   '11111111-1111-4111-8111-111111111111','44444444-4444-4444-8444-444444444444',
+   '55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222',
+   '33333333-3333-4333-8333-333333333333');
+  RAISE EXCEPTION 'Unexpected idempotent success after block';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM='Unexpected idempotent success after block' THEN RAISE; END IF;
+  IF SQLERRM NOT LIKE '%blocked%' THEN RAISE EXCEPTION 'Unexpected denial: %',SQLERRM; END IF;
+ END;
+ IF (SELECT status FROM public.xoxo_reveal_upload_attempts LIMIT 1)<>'completed'
+ THEN RAISE EXCEPTION 'Block unexpectedly changed completed record'; END IF;
 END $test$;
 ROLLBACK;
 -- Blocked relationships must fail closed without marking attempt completed.
