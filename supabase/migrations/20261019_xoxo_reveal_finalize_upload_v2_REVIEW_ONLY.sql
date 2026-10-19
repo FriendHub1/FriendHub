@@ -38,6 +38,9 @@ BEGIN
  END IF;
  -- The upload coordinator must seal the writer after all Storage writes
  -- complete; finalization rejects active or never-started writers.
+ IF v_attempt.upload_uncertain_at IS NOT NULL THEN
+  RAISE EXCEPTION 'Upload outcome requires reconciliation';
+ END IF;
  IF v_attempt.writer_state IS DISTINCT FROM 'sealed' THEN
   RAISE EXCEPTION 'Reveal writer is not sealed';
  END IF;
