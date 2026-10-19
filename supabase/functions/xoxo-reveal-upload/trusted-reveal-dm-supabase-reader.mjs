@@ -5,7 +5,7 @@ export function createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorizatio
  if(typeof dbClient?.from!=='function'||typeof verifyDmAuthorization!=='function')
   throw new TypeError('Trusted DM database and authorization readers required');
  return async function readRevealDm({attemptId,revealId,dmId}={}){
-  if([attemptId,revealId,dmId].some(x=>typeof x!=='string'||!x))
+  if([attemptId,revealId,dmId].some(x=>typeof x!=='string'||!x.trim()))
    throw new TypeError('Invalid Reveal DM identifiers');
   const {data:reveal,error:revealError}=await dbClient.from('xoxo_reveals')
    .select('id,dm_id,upload_attempt_id,sender_id,recipient_id,object_path,payload_fingerprint')
