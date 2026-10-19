@@ -164,3 +164,20 @@ BEGIN
   END IF;
  END LOOP;
 END $definer$;
+
+-- Ensure service_role is the only non-owner role with an explicit
+-- refund EXECUTE grant; reject future grants to unexpected roles.
+DO $refund_grantees$
+DECLARE v_fn oid := 'public.xoxo_reveal_release_quota_v1(uuid,uuid)'::regprocedure;
+BEGIN
+ IF EXISTS (
+  SELECT 1 FROM pg_proc p
+  CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl,acldefault('f',p.proowner))) acl
+  LEFT JOIN pg_roles r ON r.oid=acl.grantee
+  WHERE p.oid=v_fn AND acl.privilege_type='EXECUTE'
+    AND acl.grantee<>p.proowner
+    AND coalesce(r.rolname,'')<>'service_role'
+ ) THEN
+  RAISE EXCEPTION 'Unexpected refund EXECUTE grantee';
+ END IF;
+END $refund_grantees$;
