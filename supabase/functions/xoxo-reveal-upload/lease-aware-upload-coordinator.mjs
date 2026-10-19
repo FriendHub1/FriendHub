@@ -9,6 +9,8 @@ export function createRevealLeaseAwareUploadCoordinator({
   throw new TypeError('Trusted lease lifecycle dependencies required');
  const active=new Set();
  return async function uploadAndSeal(input={}){
+  if(input===null||typeof input!=='object'||Array.isArray(input))
+   throw new TypeError('Valid upload input required');
   const {attemptId,senderId,writerToken}=input;
   if([attemptId,senderId,writerToken].some(value=>typeof value!=='string'||!value.trim()))
    throw new TypeError('Missing trusted writer identity');
