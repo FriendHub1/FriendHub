@@ -18,9 +18,9 @@ test('attempt evidence comes from exact attempt row',async()=>{
  assert.deepEqual(db.calls.filter(x=>x[0]==='eq'),[['eq','id','a']]);
 });
 test('binding is scoped by attempt and sender and normalized',async()=>{
- const db=client({xoxo_reveal_upload_objects:{attempt_id:'a',sender_id:'s',bucket_id:'xoxo-reveal',object_path:'a/o',expected_sha256:'digest'}});
+ const db=client({xoxo_reveal_upload_objects:{attempt_id:'a',sender_id:'s',bucket_id:'xoxo-reveal',object_path:'a/o',expected_sha256:'a'.repeat(64)}});
  const reader=createRevealReconciliationSupabaseReaders({supabase:db});
- assert.equal((await reader.readObjectBinding({attemptId:'a',senderId:'s'})).expectedSha256,'digest');
+ assert.equal((await reader.readObjectBinding({attemptId:'a',senderId:'s'})).expectedSha256,'a'.repeat(64));
  assert.deepEqual(db.calls.filter(x=>x[0]==='eq'),[['eq','attempt_id','a'],['eq','sender_id','s']]);
 });
 test('database errors fail closed',async()=>{
