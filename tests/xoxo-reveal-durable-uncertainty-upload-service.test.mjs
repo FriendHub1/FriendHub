@@ -8,7 +8,7 @@ test('persisted uncertainty prevents writes without creating a redundant marker'
  const service=createRevealDurableUncertaintyUploadService({
   dbClient:db({id:'attempt',sender_id:'sender',status:'pending',upload_uncertain_at:'now'}),
   rpcClient:{rpc:async()=>{markers++;return {data:true};}},
-  uploadAndSeal:async()=>{writes++;return {sealed:true};}
+  uploadAndSeal:async()=>{writes++;return {created:true,sealed:true};}
  });
  await assert.rejects(service.run(input),/reconciliation required/);
  assert.equal(writes,0);
@@ -58,12 +58,12 @@ test('parallel calls share a preflight lock and never launch duplicate writes',a
  };}};
  const service=createRevealDurableUncertaintyUploadService({
   dbClient:client,rpcClient:{rpc:async()=>({data:true})},
-  uploadAndSeal:async()=>{writes++;return {sealed:true};}
+  uploadAndSeal:async()=>{writes++;return {created:true,sealed:true};}
  });
  const first=service.run(input);
  await assert.rejects(service.run(input),/already in flight/);
  releaseRead();
- assert.deepEqual(await first,{sealed:true});
+ assert.deepEqual(await first,{created:true,sealed:true});
  assert.equal(reads,1);
  assert.equal(writes,1);
 });
@@ -75,9 +75,9 @@ test('successful upload cannot be repeated on same service despite stale DB read
  };}};
  const service=createRevealDurableUncertaintyUploadService({
   dbClient:client,rpcClient:{rpc:async()=>({data:true})},
-  uploadAndSeal:async()=>{writes++;return {sealed:true};}
+  uploadAndSeal:async()=>{writes++;return {created:true,sealed:true};}
  });
- assert.deepEqual(await service.run(input),{sealed:true});
+ assert.deepEqual(await service.run(input),{created:true,sealed:true});
  await assert.rejects(service.run(input),/already completed/);
  assert.equal(reads,1);
  assert.equal(writes,1);
@@ -96,4 +96,17 @@ test('malformed inputs are rejected before DB or privileged RPC access',async()=
  assert.equal(reads,0);
  assert.equal(writes,0);
  assert.equal(rpcs,0);
+});
+
+test('resolved but unconfirmed upload is marked uncertain and never cached as success',async()=>{
+ let writes=0,marks=0;
+ const service=createRevealDurableUncertaintyUploadService({
+  dbClient:db({id:'attempt',sender_id:'sender',status:'pending',upload_uncertain_at:null}),
+  rpcClient:{rpc:async()=>{marks++;return {data:true};}},
+  uploadAndSeal:async()=>{writes++;return {created:true,sealed:false};}
+ });
+ await assert.rejects(service.run(input),/completion not confirmed/);
+ await assert.rejects(service.run(input),/requires reconciliation/);
+ assert.equal(writes,1);
+ assert.equal(marks,1);
 });
