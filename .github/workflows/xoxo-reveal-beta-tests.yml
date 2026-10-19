@@ -114,3 +114,37 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-release-reuse.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-byte-release-reuse.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-cross-user-isolation.sql
+
+  isolated-postgres-finalize-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: xoxo_test
+          POSTGRES_PASSWORD: isolated_test_only
+          POSTGRES_DB: xoxo_reveal_finalize_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U xoxo_test -d xoxo_reveal_finalize_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse actual finalize v2 SQL in disposable PostgreSQL
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: xoxo_test
+          PGPASSWORD: isolated_test_only
+          PGDATABASE: xoxo_reveal_finalize_ci
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'xoxo_reveal_finalize_ci'
+          test "$PGUSER" = 'xoxo_test'
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-finalize-v2-setup.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_finalize_upload_v2_REVIEW_ONLY.sql
