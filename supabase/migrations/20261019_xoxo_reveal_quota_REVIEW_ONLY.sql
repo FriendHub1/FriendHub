@@ -70,10 +70,9 @@ BEGIN
   IF p_reservation_id IS NULL OR p_sender_id IS NULL THEN
     RAISE EXCEPTION 'Missing reservation information';
   END IF;
-  -- Fail closed unless the caller is the privileged backend role.
-  IF current_user <> 'service_role' THEN
-    RAISE EXCEPTION 'Service role required';
-  END IF;
+  -- SECURITY DEFINER changes current_user to the function owner; do not
+  -- treat current_user as proof of the invoking role. EXECUTE grants below
+  -- must be audited together with function ownership before deployment.
   -- A reservation can be released at most once. The UPDATE row lock
   -- serializes concurrent release attempts; only the winner returns true.
   UPDATE public.xoxo_reveal_quota_reservations
