@@ -33,6 +33,8 @@ export function createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorizatio
      typeof reveal.payload_fingerprint!=='string'||
      !/^[a-f0-9]{64}$/.test(reveal.payload_fingerprint))
    throw new Error('Trusted DM binding unavailable');
+  // Recheck the exact persisted identities, not a caller-supplied DM pair.
+  // The trusted authorizer must also enforce current blocks and membership.
   let authorized=false;
   try{
    authorized=await verifyDmAuthorization({
