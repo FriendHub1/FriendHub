@@ -22,3 +22,8 @@ test('a newly selected asset resets the consumed viewer before another mock send
  assert.match(html,/reset\.click\(\)/);
  assert.match(html,/send\.disabled=false/);
 });
+
+test('gallery input clears its value after capturing the file so the same file can be selected again',()=>{
+ assert.match(html,/const file=e\.target\.files\?\.\[0\]/);
+ assert.match(html,/e\.target\.value=''/);
+});
