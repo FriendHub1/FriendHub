@@ -21,3 +21,16 @@
 ## Safety decision
 
 Do not guess a table name for blocks or grant access from the UI state. Do not deploy the draft SQL or claim production readiness. A separate unresolved blocker remains: an external Storage upload may continue after a timeout or lost lease; PostgreSQL writer ownership alone cannot stop that in-flight write.
+
+## Read-only connected Supabase schema inspection (2026-10-19)
+
+Connected project: `FriendHub1's Project` (`cxosofpxfmjkrhfabrqc`), **read-only metadata inspection only**. No rows, secrets, or user messages were fetched or modified.
+
+- `public.direct_messages` exists with UUID `id`, `sender_id`, `recipient_id`, `reply_to_message_id`, `media_opened_by`; text `content`, `attachment_path`, `attachment_type`, `attachment_name`, `media_view_mode`; integer `media_view_seconds`; bigint `attachment_size`; boolean `is_read`; and relevant timestamps. Its RLS is enabled.
+- `public.user_blocks` exists with UUID `blocker_id`, `blocked_id` and `id`; RLS enabled. A trusted DM authorization check must reject blocks **in either direction**.
+- `public.message_requests` exists with UUID `sender_id`, `recipient_id` and text `status`; RLS enabled. Do not assume which statuses grant DM access without inspecting current policies.
+- `public.xoxo_admins` exists with UUID `user_id` and `created_at`; RLS enabled. The metadata listing reported zero rows, so existence of the table **does not establish** a valid current admin membership or authorize any reviewer.
+- `public.profiles` contains UUID `user_id` and `id`. Distinguish these identifiers in joins and membership checks.
+
+**Remaining audit:** inspect current RLS policy definitions, constraints and any authorization functions, then implement server-owned DM authorization against actual rules with isolated negative tests. Do not enable the admin-review RPC solely from the table name. The existing BETA `xoxo_reveals` / upload objects are still review-only and were not deployed.
+
