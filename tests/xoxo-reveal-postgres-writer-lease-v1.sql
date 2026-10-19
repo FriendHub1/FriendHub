@@ -45,6 +45,18 @@ BEGIN
   '00000000-0000-0000-0000-000000003005',60) INTO outcome;
  IF outcome<>'manual_reconciliation' THEN RAISE EXCEPTION 'Expired lease stolen: %',outcome; END IF;
  SELECT public.xoxo_reveal_claim_writer_v1(
+  '00000000-0000-0000-0000-000000003001',
+  '00000000-0000-0000-0000-000000003002',
+  '00000000-0000-0000-0000-000000003003',
+  '00000000-0000-0000-0000-000000003004',60) INTO outcome;
+ IF outcome<>'manual_reconciliation' THEN
+  RAISE EXCEPTION 'Original writer bypassed quarantine: %',outcome;
+ END IF;
+ IF EXISTS (SELECT 1 FROM public.xoxo_reveal_upload_attempts
+  WHERE id='00000000-0000-0000-0000-000000003001'
+  AND (writer_state<>'needs_reconciliation' OR writer_generation<>1))
+ THEN RAISE EXCEPTION 'Expired writer state or generation corrupted'; END IF;
+ SELECT public.xoxo_reveal_claim_writer_v1(
   '00000000-0000-0000-0000-000000003011',
   '00000000-0000-0000-0000-000000003002',
   '00000000-0000-0000-0000-000000003099',
