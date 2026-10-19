@@ -7,6 +7,10 @@ import {createRevealFinalizeSupabaseAdapter} from './finalize-supabase-adapter.m
 import {createRevealBindingEvidenceReader} from './binding-evidence-reader.mjs';
 import {createRevealStorageIntegrityReader} from './storage-integrity-reader.mjs';
 import {createRevealPrivateStorageByteReader} from './private-storage-read-adapter.mjs';
+import {createRevealTrustedAttemptReader} from './trusted-attempt-supabase-reader.mjs';
+import {createRevealTrustedRevealDmReader} from './trusted-reveal-dm-supabase-reader.mjs';
+import {createRevealTrustedQuotaReader} from './trusted-quota-supabase-reader.mjs';
+import {createRevealTrustedWriterReader} from './trusted-writer-supabase-reader.mjs';
 export function createRevealVerifiedFinalizeService({
  rpcClient,readTrustedEvidence
 }={}){
@@ -61,5 +65,26 @@ export function createRevealVerifiedFinalizeWithSupabaseStorage({
  return createRevealVerifiedFinalizeWithStorage({
   rpcClient,readAttempt,readRevealDm,readQuota,readWriter,
   resolveObjectBinding,readPrivateBytes,sha256
+ });
+}
+
+/**
+ * Composes all five trusted evidence readers for isolated server-side tests.
+ * Database, Storage and RPC clients must be privileged and never exposed to
+ * the browser. Authorization, object binding and writer fence are independent
+ * trusted server implementations, not request-provided booleans.
+ * REVIEW ONLY / NOT DEPLOYED.
+ */
+export function createRevealVerifiedFinalizeFromTrustedSupabase({
+ dbClient,storageClient,rpcClient,verifyDmAuthorization,
+ verifyWriterFence,resolveObjectBinding,sha256,maxBytes
+}={}){
+ const readAttempt=createRevealTrustedAttemptReader({dbClient});
+ const readRevealDm=createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorization});
+ const readQuota=createRevealTrustedQuotaReader({dbClient});
+ const readWriter=createRevealTrustedWriterReader({verifyWriterFence});
+ return createRevealVerifiedFinalizeWithSupabaseStorage({
+  rpcClient,storageClient,readAttempt,readRevealDm,readQuota,readWriter,
+  resolveObjectBinding,sha256,maxBytes
  });
 }
