@@ -51,3 +51,9 @@ test('reset clears media sources and asynchronous handlers to prevent stale reve
  assert.match(html,/dragging=false/);
  assert.match(html,/revealClock'\)\.textContent='●'/);
 });
+
+test('studio revokes the selected media object URL when leaving the page',()=>{
+ assert.match(html,/pagehide/);
+ assert.match(html,/previewURL\.startsWith\('blob:'\)/);
+ assert.match(html,/URL\.revokeObjectURL\(previewURL\)/);
+});
