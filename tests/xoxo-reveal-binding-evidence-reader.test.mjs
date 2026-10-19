@@ -59,7 +59,8 @@ test('malformed fingerprints and unsafe object paths fail before trusted reads',
   {objectPath:'../photo.webp'},
   {objectPath:'/private/photo.webp'},
   {objectPath:'private/photo.webp?download=1'},
-  {objectPath:'private/photo.webp#fragment'}
+  {objectPath:'private/photo.webp#fragment'},
+  {objectPath:'private\\\\photo.webp'}
  ]){
   const {reader,calls}=setup();
   await assert.rejects(()=>reader({...ctx,...changes}),/Invalid binding identifiers/);
