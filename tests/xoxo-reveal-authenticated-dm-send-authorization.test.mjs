@@ -43,3 +43,14 @@ test('malformed request is rejected before authentication',async()=>{
  await assert.rejects(authorize(null),TypeError);
  assert.deepEqual(calls,[]);
 });
+
+test('malformed authentication responses fail closed without database reads',async()=>{
+ for(const response of [null,{}, {data:null}, {data:{user:null}}, {data:{user:{id:b}}}]){
+  const calls=[];
+  const authClient={auth:{async getUser(){calls.push('auth');return response;}}};
+  const dbClient={from(){calls.push('db');throw new Error('must not query');}};
+  const authorize=createRevealAuthenticatedDmSendAuthorizer({authClient,dbClient});
+  assert.equal(await authorize({senderId:a,recipientId:b}),false);
+  assert.deepEqual(calls,['auth']);
+ }
+});
