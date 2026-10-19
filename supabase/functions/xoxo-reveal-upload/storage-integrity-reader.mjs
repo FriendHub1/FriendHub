@@ -17,16 +17,22 @@ export function createRevealStorageIntegrityReader({resolveObjectBinding,readPri
      objectPath.split('/').some(segment=>!segment||segment==='.'||segment==='..'))
    throw new TypeError('Invalid trusted Storage integrity context');
   // The binding and expected digest must come from privileged server-owned DB rows.
-  const binding=await resolveObjectBinding({attemptId});
+  let binding;
+  try{binding=await resolveObjectBinding({attemptId});}
+  catch{throw new Error('Trusted object binding unavailable');}
   if(binding?.authoritative!==true||binding.attemptId!==attemptId||
      binding.bucket!=='xoxo-reveal'||binding.objectPath!==objectPath||
      binding.payloadFingerprint!==payloadFingerprint||
      !/^[a-f0-9]{64}$/.test(binding.expectedSha256||''))
    throw new Error('Trusted object binding unavailable');
-  const bytes=await readPrivateBytes({bucket:'xoxo-reveal',objectPath});
+  let bytes;
+  try{bytes=await readPrivateBytes({bucket:'xoxo-reveal',objectPath});}
+  catch{throw new Error('Private object bytes unavailable');}
   if(!(bytes instanceof Uint8Array)||bytes.byteLength===0)
    throw new Error('Private object bytes unavailable');
-  const digest=await sha256(bytes);
+  let digest;
+  try{digest=await sha256(bytes);}
+  catch{throw new Error('Trusted digest calculation unavailable');}
   if(typeof digest!=='string'||!/^[a-f0-9]{64}$/.test(digest))
    throw new Error('Invalid trusted digest response');
   return {authoritative:true,objectPath,payloadFingerprint,
