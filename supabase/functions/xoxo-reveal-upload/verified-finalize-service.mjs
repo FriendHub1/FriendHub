@@ -10,7 +10,7 @@ import {createRevealPrivateStorageByteReader} from './private-storage-read-adapt
 import {createRevealTrustedAttemptReader} from './trusted-attempt-supabase-reader.mjs';
 import {createRevealTrustedRevealDmReader} from './trusted-reveal-dm-supabase-reader.mjs';
 import {createRevealTrustedQuotaReader} from './trusted-quota-supabase-reader.mjs';
-import {createRevealTrustedWriterReader} from './trusted-writer-supabase-reader.mjs';
+import {createRevealTrustedWriterReader,createRevealTrustedSealedWriterReader} from './trusted-writer-supabase-reader.mjs';
 import {createRevealTrustedObjectBindingReader} from './trusted-object-binding-supabase-reader.mjs';
 export function createRevealVerifiedFinalizeService({
  rpcClient,readTrustedEvidence
@@ -103,5 +103,24 @@ export function createRevealVerifiedFinalizeFromBoundSupabase({
  return createRevealVerifiedFinalizeFromTrustedSupabase({
   dbClient,storageClient,rpcClient,verifyDmAuthorization,
   verifyWriterFence,resolveObjectBinding,sha256,maxBytes
+ });
+}
+
+/**
+ * Database-backed sealed writer and object binding, with independent
+ * server-side DM authorization. Storage exclusivity remains a release blocker.
+ * REVIEW ONLY / NOT DEPLOYED.
+ */
+export function createRevealVerifiedFinalizeWithSealedSupabase({
+ dbClient,storageClient,rpcClient,verifyDmAuthorization,sha256,maxBytes
+}={}){
+ const readAttempt=createRevealTrustedAttemptReader({dbClient});
+ const readRevealDm=createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorization});
+ const readQuota=createRevealTrustedQuotaReader({dbClient});
+ const readWriter=createRevealTrustedSealedWriterReader({dbClient});
+ const resolveObjectBinding=createRevealTrustedObjectBindingReader({dbClient});
+ return createRevealVerifiedFinalizeWithSupabaseStorage({
+  rpcClient,storageClient,readAttempt,readRevealDm,readQuota,readWriter,
+  resolveObjectBinding,sha256,maxBytes
  });
 }
