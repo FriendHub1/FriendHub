@@ -51,3 +51,18 @@ test('quota or writer mismatch cannot be authoritative',async()=>{
 test('missing trusted dependency is rejected',()=>{
  assert.throws(()=>create({}),/Five trusted/);
 });
+
+test('malformed fingerprints and unsafe object paths fail before trusted reads',async()=>{
+ for(const changes of [
+  {payloadFingerprint:'invalid'},
+  {payloadFingerprint:'F'.repeat(64)},
+  {objectPath:'../photo.webp'},
+  {objectPath:'/private/photo.webp'},
+  {objectPath:'private/photo.webp?download=1'},
+  {objectPath:'private/photo.webp#fragment'}
+ ]){
+  const {reader,calls}=setup();
+  await assert.rejects(()=>reader({...ctx,...changes}),/Invalid binding identifiers/);
+  assert.deepEqual(calls,[]);
+ }
+});
