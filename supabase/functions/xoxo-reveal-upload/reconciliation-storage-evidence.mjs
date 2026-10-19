@@ -6,10 +6,16 @@ export function createRevealReconciliationStorageEvidence({
  if(typeof readIntegrity!=='function'||typeof readTrustedFingerprint!=='function')
   throw new TypeError('Trusted integrity and fingerprint readers required');
  return async function readStorageEvidence({attemptId,senderId,objectBinding}={}){
-  if(!attemptId||!senderId||objectBinding?.attemptId!==attemptId||
+  if([attemptId,senderId].some(value=>typeof value!=='string'||!value.trim())||
+     objectBinding?.attemptId!==attemptId||
      objectBinding?.senderId!==senderId||
      objectBinding?.bucketId!=='xoxo-reveal'||
-     typeof objectBinding.objectPath!=='string'||!objectBinding.objectPath)
+     typeof objectBinding.objectPath!=='string'||!objectBinding.objectPath.trim()||
+     objectBinding.objectPath.startsWith('/')||
+     objectBinding.objectPath.includes('..')||
+     objectBinding.objectPath.includes('\\')||
+     objectBinding.objectPath.includes('?')||
+     objectBinding.objectPath.includes('#'))
    return {state:'unavailable',digestMatches:false,writerQuiescent:false};
   try{
    const fingerprint=await readTrustedFingerprint({attemptId,senderId});
