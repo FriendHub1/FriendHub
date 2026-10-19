@@ -36,3 +36,9 @@ test('reveal slider is keyboard focusable and exposes accessible range semantics
  assert.match(html,/e\.key==='Home'/);
  assert.match(html,/e\.key==='End'/);
 });
+
+test('reveal slider updates its accessible percentage and spoken description',()=>{
+ assert.match(html,/track\.setAttribute\('aria-valuenow',String\(percent\)\)/);
+ assert.match(html,/track\.setAttribute\('aria-valuetext'/);
+ assert.match(html,/100 por ciento\. Listo para revelar/);
+});
