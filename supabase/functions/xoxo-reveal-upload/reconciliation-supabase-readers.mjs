@@ -14,9 +14,12 @@ export function createRevealReconciliationSupabaseReaders({supabase}={}){
   async readAttempt({attemptId}={}){
    if(typeof attemptId!=='string'||!attemptId.trim())
     throw new TypeError('Attempt ID required');
-   return one('xoxo_reveal_upload_attempts',
+   const data=await one('xoxo_reveal_upload_attempts',
     'id,sender_id,status,upload_uncertain_at,upload_uncertain_reason',
     {id:attemptId});
+   if(data&&(data.id!==attemptId||typeof data.sender_id!=='string'||!data.sender_id.trim()))
+    throw new Error('Reconciliation evidence unavailable');
+   return data;
   },
   async readObjectBinding({attemptId,senderId}={}){
    if([attemptId,senderId].some(value=>typeof value!=='string'||!value.trim()))
@@ -25,6 +28,14 @@ export function createRevealReconciliationSupabaseReaders({supabase}={}){
     'attempt_id,sender_id,bucket_id,object_path,expected_sha256',
     {attempt_id:attemptId,sender_id:senderId});
    if(!data)return null;
+   if(data.attempt_id!==attemptId||data.sender_id!==senderId||
+      data.bucket_id!=='xoxo-reveal'||
+      typeof data.object_path!=='string'||!data.object_path.trim()||
+      data.object_path.startsWith('/')||data.object_path.includes('..')||
+      data.object_path.includes('\\')||data.object_path.includes('?')||
+      data.object_path.includes('#')||
+      !/^[a-f0-9]{64}$/.test(data.expected_sha256||''))
+    throw new Error('Reconciliation evidence unavailable');
    return {attemptId:data.attempt_id,senderId:data.sender_id,
     bucketId:data.bucket_id,objectPath:data.object_path,
     expectedSha256:data.expected_sha256};
