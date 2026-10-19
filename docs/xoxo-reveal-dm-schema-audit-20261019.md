@@ -46,3 +46,13 @@ The connected database's `pg_policies` establishes:
 - `xoxo_admins` SELECT permits only a user's own membership row; the table had zero rows in the metadata listing. **Do not grant reviewer rights** until server-owned admin membership is established.
 
 **Important:** These are policy expressions observed at audit time, not an authorization RPC implementation. Next: inspect definitions/permissions for `xoxo_has_existing_dm_or_acceptance`, `sl_is_beta_tester`, `sl_users_are_matched` and decide how to safely reuse the rules in a privileged function with isolated tests. Production database was not modified.
+
+## Read-only inspection of authorization helper definitions (2026-10-19)
+
+- `xoxo_has_existing_dm_or_acceptance(p_sender uuid,p_recipient uuid)` is `STABLE SECURITY DEFINER`, uses an empty `search_path`, and returns true if a `direct_messages` row exists in either direction **or** an `accepted` `message_requests` row exists in either direction. It does **not** itself check blocks, authenticated identity, or deleted accounts.
+- `sl_is_beta_tester(p_user_id uuid)` is `STABLE SECURITY DEFINER` and checks `sl_beta_testers` membership.
+- `sl_users_are_matched(p_user_a uuid,p_user_b uuid)` is `STABLE SECURITY DEFINER`, requires `auth.uid()` to be one of the two users and an existing `sl_conversations` row with `status='matched'` in either direction. **Critical:** calling it through a privileged service-role context without the end user's JWT can yield false even for matched users. Do not blindly call this helper in service-role Reveal authorization.
+- The current `direct_messages` INSERT RLS contains an additional Secret Letters condition, but because it also requires `xoxo_has_existing_dm_or_acceptance`, the latter is the necessary permission gate for every currently permitted send. The Secret Letters clause becomes true via the same helper once that gate passes. A trusted Reveal authorization check should independently verify the authenticated sender, target recipient, both-direction blocks, and this existing-DM/accepted-request relationship; never accept a caller-supplied boolean.
+- A persisted DM row alone can establish the **historical** relationship, but cannot prove a new send is currently allowed if either user blocked the other. Server-side authorization must re-check the blocks at the point of send/finalize.
+- No live schema or function was changed. This is a snapshot of current definitions; integration remains review-only.
+
