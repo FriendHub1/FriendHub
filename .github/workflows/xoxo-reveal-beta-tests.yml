@@ -151,3 +151,18 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-finalize-v2-behavior.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-finalize-v2-denials.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-finalize-v2-relationship.sql
+
+  reveal-browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test dependency
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Run local Reveal journey in Chromium
+        run: node --test tests/xoxo-reveal-browser-smoke.mjs
