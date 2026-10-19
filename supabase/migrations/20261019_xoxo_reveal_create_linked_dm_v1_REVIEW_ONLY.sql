@@ -6,7 +6,7 @@
 -- upload_attempt_id and payload_fingerprint (not in the base beta migration).
 -- DO NOT DEPLOY until schema and block-insert serialization are reviewed.
 CREATE OR REPLACE FUNCTION public.xoxo_reveal_create_linked_dm_v1(
- p_sender_id uuid,p_recipient_id uuid,p_object_path text,
+ p_attempt_id uuid,p_claim_token uuid,p_sender_id uuid,p_recipient_id uuid,p_object_path text,
  p_media_type text,p_mode text,p_duration_seconds integer DEFAULT NULL
 ) RETURNS TABLE(reveal_id uuid,dm_id uuid)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
@@ -17,7 +17,7 @@ BEGIN
  IF auth.role() IS DISTINCT FROM 'service_role' THEN
   RAISE EXCEPTION 'Server authorization required';
  END IF;
- IF p_sender_id IS NULL OR p_recipient_id IS NULL OR p_sender_id=p_recipient_id
+ IF p_attempt_id IS NULL OR p_claim_token IS NULL OR p_sender_id IS NULL OR p_recipient_id IS NULL OR p_sender_id=p_recipient_id
   OR p_object_path IS NULL OR length(p_object_path)<1
   OR p_object_path LIKE '/%' OR p_object_path LIKE '%..%'
   OR p_object_path LIKE '%\\%' OR p_object_path LIKE '%?%'
@@ -29,7 +29,7 @@ BEGIN
  THEN RAISE EXCEPTION 'Invalid Reveal metadata'; END IF;
  -- Lock the durable attempt, not an untrusted browser-supplied object record.
  SELECT * INTO v_attempt FROM public.xoxo_reveal_upload_attempts a
- WHERE a.sender_id=p_sender_id AND a.status='pending'
+ WHERE a.id=p_attempt_id AND a.claim_token=p_claim_token AND a.sender_id=p_sender_id AND a.status='pending'
   AND a.writer_state='sealed' AND a.upload_uncertain_at IS NULL
   AND EXISTS(SELECT 1 FROM public.xoxo_reveal_upload_objects o
    WHERE o.attempt_id=a.id AND o.sender_id=a.sender_id
@@ -38,7 +38,7 @@ BEGIN
   AND EXISTS(SELECT 1 FROM public.xoxo_reveal_quota_reservations q
    WHERE q.upload_attempt_id=a.id AND q.sender_id=a.sender_id
     AND q.released_at IS NULL)
- ORDER BY a.updated_at DESC LIMIT 1 FOR UPDATE;
+ FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'No sealed and reserved upload attempt'; END IF;
  IF EXISTS(SELECT 1 FROM public.user_blocks b WHERE
    (b.blocker_id=p_sender_id AND b.blocked_id=p_recipient_id) OR
@@ -62,8 +62,8 @@ BEGIN
  RETURNING id INTO v_reveal_id;
  RETURN QUERY SELECT v_reveal_id,v_dm_id;
 END $fn$;
-REVOKE ALL ON FUNCTION public.xoxo_reveal_create_linked_dm_v1(uuid,uuid,text,text,text,integer) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.xoxo_reveal_create_linked_dm_v1(uuid,uuid,text,text,text,integer) TO service_role;
--- RELEASE BLOCKERS: authenticated sender binding to attempt/recipient,
+REVOKE ALL ON FUNCTION public.xoxo_reveal_create_linked_dm_v1(uuid,uuid,uuid,uuid,text,text,text,integer) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.xoxo_reveal_create_linked_dm_v1(uuid,uuid,uuid,uuid,text,text,text,integer) TO service_role;
+-- RELEASE BLOCKERS: authenticated sender/recipient binding to attempt,
 -- durable object identity, exact DM INSERT columns, and serialization with
 -- concurrent user_blocks inserts are NOT yet guaranteed by this draft.
