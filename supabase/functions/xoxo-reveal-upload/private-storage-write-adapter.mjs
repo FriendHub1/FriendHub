@@ -38,7 +38,8 @@ export function createRevealWriterGatedPrivateStorageWriter({
 }={}){
  if(typeof authorizeActiveWriter!=='function')
   throw new TypeError('Trusted active writer authorization required');
- const createOnly=createRevealPrivateStorageCreateOnlyWriter({storageClient,maxBytes});
+ const effectiveMaxBytes=maxBytes===undefined?15728640:maxBytes;
+ const createOnly=createRevealPrivateStorageCreateOnlyWriter({storageClient,maxBytes:effectiveMaxBytes});
  return async function writeWithLease({
   attemptId,senderId,writerToken,bucket,objectPath,bytes,contentType
  }={}){
