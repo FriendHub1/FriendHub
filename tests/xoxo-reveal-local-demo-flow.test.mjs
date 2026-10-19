@@ -5,7 +5,7 @@ const html=readFileSync(new URL('../xoxo-reveal-studio-beta.html',import.meta.ur
 test('local demo requires media before mock delivery and starts receiver card hidden',()=>{
  assert.match(html,/id="localSend"[^>]*disabled/);
  assert.match(html,/card\.hidden=true/);
- assert.match(html,/send\.disabled=!available/);
+ assert.match(html,/else if\(!available\)\{send\.disabled=true/);
 });
 test('mock delivery exposes the receiver reveal only after an explicit click',()=>{
  assert.match(html,/send\.addEventListener\('click'/);
