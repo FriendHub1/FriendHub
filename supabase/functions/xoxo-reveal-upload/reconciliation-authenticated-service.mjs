@@ -23,7 +23,8 @@ export function createRevealAuthenticatedReconciliationService({
   try{({data,error}=await authClient.auth.getUser(accessToken));}
   catch{throw new Error('Reviewer not authenticated');}
   const reviewerId=data?.user?.id;
-  if(error||!reviewerId)throw new Error('Reviewer not authenticated');
+  if(error||typeof reviewerId!=='string'||!reviewerId.trim())
+   throw new Error('Reviewer not authenticated');
   return review({attemptId,reviewerId,accessToken});
  };
 }
