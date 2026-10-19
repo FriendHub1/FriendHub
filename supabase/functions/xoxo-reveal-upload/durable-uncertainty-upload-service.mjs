@@ -23,13 +23,21 @@ export function createRevealDurableUncertaintyUploadService({
  const preflight=createRevealDurableUncertaintyPreflight({
   readAttempt,uploadAndSeal:localGate.run
  });
+ const preflightInFlight=new Set();
  // Check local state first. An uncertain attempt must remain blocked even
  // when the DB preflight becomes temporarily unavailable.
  return {
   async run(input={}){
    if(localGate.isUncertain(input))
     throw new Error('Upload requires reconciliation');
-   return preflight(input);
+   const {attemptId,senderId}=input;
+   if([attemptId,senderId].some(v=>typeof v!=='string'||!v.trim()))
+    throw new TypeError('Valid attempt identity required');
+   const key=JSON.stringify([senderId,attemptId]);
+   if(preflightInFlight.has(key))throw new Error('Upload already in flight');
+   preflightInFlight.add(key);
+   try{return await preflight(input);}
+   finally{preflightInFlight.delete(key);}
   },
   isUncertain:localGate.isUncertain
  };
