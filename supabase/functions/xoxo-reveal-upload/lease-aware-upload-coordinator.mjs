@@ -13,7 +13,7 @@ export function createRevealLeaseAwareUploadCoordinator({
   if([attemptId,senderId,writerToken].some(value=>typeof value!=='string'||!value.trim()))
    throw new TypeError('Missing trusted writer identity');
   const identity={attemptId,senderId,writerToken};
-  const key=`${senderId}:${attemptId}`;
+  const key=JSON.stringify([senderId,attemptId]);
   if(active.has(key))throw new Error('Upload already in flight');
   active.add(key);
   let failed=false;
