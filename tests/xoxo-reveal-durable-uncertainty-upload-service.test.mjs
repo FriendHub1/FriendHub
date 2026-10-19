@@ -31,3 +31,21 @@ test('post-preflight remote failure creates durable marker and blocks retry',asy
  assert.equal(markers,1);
  assert.equal(service.isUncertain(input),true);
 });
+
+test('locally uncertain retry stays blocked when DB becomes unavailable',async()=>{
+ let reads=0,writes=0;
+ const client={from(){reads++;if(reads>1)throw Error('database offline');
+  return {select(){return this;},eq(){return this;},
+   async maybeSingle(){return {data:{id:'attempt',sender_id:'sender',status:'pending',upload_uncertain_at:null},error:null};}
+  };
+ }};
+ const service=createRevealDurableUncertaintyUploadService({
+  dbClient:client,
+  rpcClient:{rpc:async()=>({data:true})},
+  uploadAndSeal:async()=>{writes++;throw Error('remote upload uncertain');}
+ });
+ await assert.rejects(service.run(input),/remote upload uncertain/);
+ await assert.rejects(service.run(input),/requires reconciliation/);
+ assert.equal(reads,1);
+ assert.equal(writes,1);
+});
