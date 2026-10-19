@@ -130,3 +130,18 @@ BEGIN
   END LOOP;
  END LOOP;
 END $table_acl$;
+
+-- The quota table must keep RLS enabled and expose no browser policies.
+DO $rls$
+DECLARE v_enabled boolean;
+BEGIN
+ SELECT relrowsecurity INTO v_enabled
+ FROM pg_class WHERE oid='public.xoxo_reveal_quota_reservations'::regclass;
+ IF v_enabled IS DISTINCT FROM true THEN
+  RAISE EXCEPTION 'Quota table RLS is disabled';
+ END IF;
+ IF EXISTS (
+  SELECT 1 FROM pg_policy
+  WHERE polrelid='public.xoxo_reveal_quota_reservations'::regclass
+ ) THEN RAISE EXCEPTION 'Unexpected quota table RLS policy'; END IF;
+END $rls$;
