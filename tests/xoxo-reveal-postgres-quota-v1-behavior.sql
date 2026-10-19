@@ -32,6 +32,12 @@ BEGIN
    IF SQLERRM <> 'Invalid upload size' THEN RAISE; END IF;
   END;
  END LOOP;
+ BEGIN
+  PERFORM public.xoxo_reveal_reserve_quota_v1(NULL::bigint);
+  RAISE EXCEPTION 'NULL size unexpectedly accepted';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM <> 'Invalid upload size' THEN RAISE; END IF;
+ END;
  IF (SELECT count(*) FROM public.xoxo_reveal_quota_reservations) <> v_before
  THEN RAISE EXCEPTION 'Invalid size changed quota reservations'; END IF;
 END $invalid$;
