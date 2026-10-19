@@ -12,7 +12,8 @@ export function createRevealPrivateStorageCreateOnlyWriter({
   if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||!objectPath.trim()||
      objectPath.startsWith('/')||objectPath.includes('..')||
      objectPath.includes('\\')||objectPath.includes('?')||
-     objectPath.includes('#'))
+     objectPath.includes('#')||
+     objectPath.split('/').some(segment=>!segment||segment==='.'||segment==='..'))
    throw new TypeError('Invalid private Storage write locator');
   if(!(bytes instanceof Uint8Array)||bytes.byteLength<1||
      bytes.byteLength>maxBytes)
@@ -49,6 +50,7 @@ export function createRevealWriterGatedPrivateStorageWriter({
   if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||!objectPath.trim()||
      objectPath.startsWith('/')||objectPath.includes('..')||
      objectPath.includes('\\')||objectPath.includes('?')||objectPath.includes('#')||
+     objectPath.split('/').some(segment=>!segment||segment==='.'||segment==='..')||
      !(bytes instanceof Uint8Array)||bytes.byteLength<1||
      bytes.byteLength>effectiveMaxBytes||
      !['image/jpeg','image/png','image/webp','video/mp4','video/webm'].includes(contentType))
