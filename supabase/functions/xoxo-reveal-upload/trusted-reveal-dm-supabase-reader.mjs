@@ -16,7 +16,7 @@ export function createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorizatio
     .select('id,dm_id,upload_attempt_id,sender_id,recipient_id,object_path,payload_fingerprint')
     .eq('id',revealId).eq('dm_id',dmId).eq('upload_attempt_id',attemptId).maybeSingle());
   }catch{throw new Error('Trusted Reveal binding unavailable');}
-  if(revealError||!reveal||reveal.id!==revealId||
+  if(revealError||!reveal||typeof reveal!=='object'||Array.isArray(reveal)||reveal.id!==revealId||
      reveal.dm_id!==dmId||reveal.upload_attempt_id!==attemptId)
    throw new Error('Trusted Reveal binding unavailable');
   let dm,dmError;
@@ -24,7 +24,7 @@ export function createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorizatio
    ({data:dm,error:dmError}=await dbClient.from('direct_messages')
     .select('id,sender_id,recipient_id').eq('id',dmId).maybeSingle());
   }catch{throw new Error('Trusted DM binding unavailable');}
-  if(dmError||!dm||dm.id!==dmId||dm.sender_id!==reveal.sender_id||
+  if(dmError||!dm||typeof dm!=='object'||Array.isArray(dm)||dm.id!==dmId||dm.sender_id!==reveal.sender_id||
      dm.recipient_id!==reveal.recipient_id||
      typeof reveal.sender_id!=='string'||!reveal.sender_id.trim()||
      typeof reveal.recipient_id!=='string'||!reveal.recipient_id.trim()||
