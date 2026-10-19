@@ -5,12 +5,16 @@
 export function createRevealStorageIntegrityReader({resolveObjectBinding,readPrivateBytes,sha256}={}){
  if([resolveObjectBinding,readPrivateBytes,sha256].some(fn=>typeof fn!=='function'))
   throw new TypeError('Trusted Storage integrity dependencies required');
- return async function readStorageIntegrity({attemptId,objectPath,payloadFingerprint}={}){
+ return async function readStorageIntegrity(input={}){
+  if(input===null||typeof input!=='object'||Array.isArray(input))
+   throw new TypeError('Invalid trusted Storage integrity context');
+  const {attemptId,objectPath,payloadFingerprint}=input;
   if(typeof attemptId!=='string'||!attemptId.trim()||
      typeof objectPath!=='string'||!objectPath.trim()||
      !/^[a-f0-9]{64}$/.test(payloadFingerprint)||
      objectPath.startsWith('/')||objectPath.includes('..')||
-     objectPath.includes('\\')||objectPath.includes('?')||objectPath.includes('#'))
+     objectPath.includes('\\')||objectPath.includes('?')||objectPath.includes('#')||
+     objectPath.split('/').some(segment=>!segment||segment==='.'||segment==='..'))
    throw new TypeError('Invalid trusted Storage integrity context');
   // The binding and expected digest must come from privileged server-owned DB rows.
   const binding=await resolveObjectBinding({attemptId});
