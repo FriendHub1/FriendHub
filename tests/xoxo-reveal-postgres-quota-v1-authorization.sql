@@ -181,3 +181,18 @@ BEGIN
   RAISE EXCEPTION 'Unexpected refund EXECUTE grantee';
  END IF;
 END $refund_grantees$;
+
+-- The reservation RPC must likewise have no unexpected explicit
+-- non-owner EXECUTE grantees besides authenticated.
+DO $reserve_grantees$
+DECLARE v_fn oid := 'public.xoxo_reveal_reserve_quota_v1(bigint)'::regprocedure;
+BEGIN
+ IF EXISTS (
+  SELECT 1 FROM pg_proc p
+  CROSS JOIN LATERAL aclexplode(COALESCE(p.proacl,acldefault('f',p.proowner))) acl
+  LEFT JOIN pg_roles r ON r.oid=acl.grantee
+  WHERE p.oid=v_fn AND acl.privilege_type='EXECUTE'
+    AND acl.grantee<>p.proowner
+    AND coalesce(r.rolname,'')<>'authenticated'
+ ) THEN RAISE EXCEPTION 'Unexpected reservation EXECUTE grantee'; END IF;
+END $reserve_grantees$;
