@@ -47,6 +47,23 @@ BEGIN
    ) THEN
     RAISE EXCEPTION 'Completed Reveal/DM binding mismatch';
    END IF;
+   IF NOT EXISTS (
+    SELECT 1 FROM public.xoxo_reveals r
+    JOIN public.direct_messages d ON d.id=r.dm_id
+    JOIN public.xoxo_reveal_upload_objects o ON o.attempt_id=v_attempt.id
+    JOIN public.xoxo_reveal_quota_reservations q ON q.upload_attempt_id=v_attempt.id
+    WHERE r.id=p_reveal_id AND r.dm_id=p_dm_id
+      AND r.upload_attempt_id=v_attempt.id
+      AND r.sender_id=v_attempt.sender_id
+      AND d.sender_id=r.sender_id AND d.recipient_id=r.recipient_id
+      AND r.payload_fingerprint=v_attempt.payload_fingerprint
+      AND o.sender_id=v_attempt.sender_id
+      AND o.payload_fingerprint=v_attempt.payload_fingerprint
+      AND o.bucket_id='xoxo-reveal' AND o.object_path=r.object_path
+      AND q.sender_id=v_attempt.sender_id AND q.released_at IS NULL
+   ) THEN
+    RAISE EXCEPTION 'Completed Reveal/object/quota binding mismatch';
+   END IF;
    IF EXISTS (
     SELECT 1 FROM public.xoxo_reveals r
     JOIN public.user_blocks b ON
