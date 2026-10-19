@@ -44,6 +44,31 @@ BEGIN
  IF v_attempt.writer_state IS DISTINCT FROM 'sealed' THEN
   RAISE EXCEPTION 'Reveal writer is not sealed';
  END IF;
+ -- Recheck current DM permissions inside the finalize transaction.
+ -- These relationship reads do not lock a future block INSERT; a stronger
+ -- serialized delivery gate is still required before production.
+ IF EXISTS (
+  SELECT 1 FROM public.user_blocks b
+  JOIN public.xoxo_reveals r ON r.id=p_reveal_id
+  WHERE (b.blocker_id=r.sender_id AND b.blocked_id=r.recipient_id)
+     OR (b.blocker_id=r.recipient_id AND b.blocked_id=r.sender_id)
+ ) THEN
+  RAISE EXCEPTION 'Current DM relationship is blocked';
+ END IF;
+ IF NOT EXISTS (
+  SELECT 1 FROM public.xoxo_reveals r
+  WHERE r.id=p_reveal_id AND (
+   EXISTS (SELECT 1 FROM public.direct_messages d
+    WHERE (d.sender_id=r.sender_id AND d.recipient_id=r.recipient_id)
+       OR (d.sender_id=r.recipient_id AND d.recipient_id=r.sender_id))
+   OR EXISTS (SELECT 1 FROM public.message_requests mr
+    WHERE mr.status='accepted' AND
+      ((mr.sender_id=r.sender_id AND mr.recipient_id=r.recipient_id)
+       OR (mr.sender_id=r.recipient_id AND mr.recipient_id=r.sender_id)))
+  )
+ ) THEN
+  RAISE EXCEPTION 'Current DM relationship is not authorized';
+ END IF;
  -- Exact attempt, fingerprint, sender, object path, and recipient binding.
  IF NOT EXISTS (
   SELECT 1
