@@ -74,3 +74,28 @@ test('unawaited failing checkpoint prevents sealing',async()=>{
  await assert.rejects(coordinator(identity),/Writer lease already lost/);
  assert.equal(seals,0);
 });
+
+test('nested checkpoint failure cannot bypass final drain',async()=>{
+ let renewals=0,seals=0;
+ const coordinator=createRevealLeaseAwareUploadCoordinator({
+  beginWriter:async()=>true,
+  renewWriter:async()=>{
+   renewals++;
+   if(renewals===2){
+    queueMicrotask(()=>pendingCheckpoint?.());
+    return true;
+   }
+   return renewals!==3;
+  },
+  uploadPrivate:async({checkpoint})=>{
+   pendingCheckpoint=()=>checkpoint().catch(()=>{});
+   checkpoint().catch(()=>{});
+   return {created:true,objectPath:'private/object'};
+  },
+  sealWriter:async()=>{seals++;return true;}
+ });
+ let pendingCheckpoint;
+ await assert.rejects(coordinator(identity),/Writer lease already lost/);
+ assert.equal(seals,0);
+ assert.equal(renewals,3);
+});
