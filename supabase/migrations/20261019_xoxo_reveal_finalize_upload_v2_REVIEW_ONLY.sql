@@ -36,6 +36,11 @@ BEGIN
  IF v_attempt.status <> 'pending' THEN
   RAISE EXCEPTION 'Attempt requires reconciliation';
  END IF;
+ -- The upload coordinator must seal the writer after all Storage writes
+ -- complete; finalization rejects active or never-started writers.
+ IF v_attempt.writer_state IS DISTINCT FROM 'sealed' THEN
+  RAISE EXCEPTION 'Reveal writer is not sealed';
+ END IF;
  -- Exact attempt, fingerprint, sender, object path, and recipient binding.
  IF NOT EXISTS (
   SELECT 1
@@ -75,6 +80,8 @@ GRANT EXECUTE ON FUNCTION public.xoxo_reveal_finalize_upload_v2(uuid,uuid,uuid,u
 COMMIT;
 -- IMPORTANT: SQL association is not proof that Storage bytes exist or match.
 -- Trusted server must verify actual Storage metadata/digest before finalize.
+-- Depends on writer_lifecycle_v2_REVIEW_ONLY.sql; SQL sealed state alone
+-- does not fence a concurrent external Storage overwrite.
 -- Quota reservation must be created atomically for this attempt; existing
 -- reserve_quota_v1 does not bind an attempt and needs a revised RPC.
 -- Storage and DB cannot commit atomically. Reconciliation still required.
