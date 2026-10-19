@@ -27,6 +27,11 @@ BEGIN
   OR (p_mode='timed' AND (p_duration_seconds IS NULL OR p_duration_seconds NOT IN (5,10,15,20)))
   OR (p_mode<>'timed' AND p_duration_seconds IS NOT NULL)
  THEN RAISE EXCEPTION 'Invalid Reveal metadata'; END IF;
+ -- Serialize linked sends for the exact sender/recipient pair across requests.
+ -- This alone does NOT serialize independent user_blocks INSERT operations.
+ PERFORM pg_advisory_xact_lock(hashtextextended(
+  LEAST(p_sender_id::text,p_recipient_id::text)||':'||
+  GREATEST(p_sender_id::text,p_recipient_id::text), 0));
  -- Lock the durable attempt, not an untrusted browser-supplied object record.
  SELECT * INTO v_attempt FROM public.xoxo_reveal_upload_attempts a
  WHERE a.id=p_attempt_id AND a.claim_token=p_claim_token AND a.sender_id=p_sender_id AND a.status='pending'
@@ -35,6 +40,8 @@ BEGIN
    WHERE o.attempt_id=a.id AND o.sender_id=a.sender_id
     AND o.bucket_id='xoxo-reveal' AND o.object_path=p_object_path
     AND o.payload_fingerprint=a.payload_fingerprint)
+  AND NOT EXISTS(SELECT 1 FROM public.xoxo_reveals existing
+   WHERE existing.upload_attempt_id=a.id)
   AND EXISTS(SELECT 1 FROM public.xoxo_reveal_quota_reservations q
    WHERE q.upload_attempt_id=a.id AND q.sender_id=a.sender_id
     AND q.released_at IS NULL)
