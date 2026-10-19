@@ -44,3 +44,20 @@ test('successful Storage response after caller cancellation is not accepted',asy
  });
  await assert.rejects(upload({signal:controller.signal}),/aborted; reconciliation required/);
 });
+
+test('caller abort remains latched even with mutable signal wrapper',async()=>{
+ const listeners=new Set();
+ const fakeSignal={
+  aborted:false,
+  addEventListener:(_name,callback)=>listeners.add(callback),
+  removeEventListener:(_name,callback)=>listeners.delete(callback)
+ };
+ const upload=createRevealStorageUploadTimeoutGuard({
+  uploadPrivate:async()=>{
+   for(const callback of listeners)callback();
+   return {created:true};
+  }
+ });
+ await assert.rejects(upload({signal:fakeSignal}),/aborted; reconciliation required/);
+ assert.equal(listeners.size,0);
+});
