@@ -28,6 +28,13 @@ export async function executeFencedRevealStorageWrite({
   catch{return {ok:false,reason:'storage_write_uncertain_and_quarantine_failed'};}
   return {ok:false,reason:'storage_write_uncertain_manual_reconciliation'};
  }
+ // Supabase Storage adapters may resolve with {data:null,error} instead
+ // of throwing. Never treat such a response as an acknowledged write.
+ if(!uploadResult||uploadResult.stored!==true){
+  try{await markNeedsReconciliation({attemptId,senderId,writerToken,reason:'storage_ack_missing'});}
+  catch{return {ok:false,reason:'storage_ack_missing_and_quarantine_failed'};}
+  return {ok:false,reason:'storage_ack_missing_manual_reconciliation'};
+ }
  // A successful Storage response still needs durable token verification.
  if(!await verify('after_upload')){
   try{await markNeedsReconciliation({attemptId,senderId,writerToken,reason:'post_upload_writer_unverified'});}
