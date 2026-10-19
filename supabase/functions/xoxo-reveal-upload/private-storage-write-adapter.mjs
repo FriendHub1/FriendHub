@@ -9,7 +9,7 @@ export function createRevealPrivateStorageCreateOnlyWriter({
     !Number.isSafeInteger(maxBytes)||maxBytes<1)
   throw new TypeError('Trusted private Storage writer and byte limit required');
  return async function uploadPrivateObject({bucket,objectPath,bytes,contentType}={}){
-  if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||!objectPath||
+  if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||!objectPath.trim()||
      objectPath.startsWith('/')||objectPath.includes('..')||
      objectPath.includes('\\')||objectPath.includes('?')||
      objectPath.includes('#'))
@@ -46,7 +46,7 @@ export function createRevealWriterGatedPrivateStorageWriter({
   if([attemptId,senderId,writerToken].some(value=>typeof value!=='string'||!value.trim()))
    throw new TypeError('Missing trusted writer identity');
   // Validate Storage inputs before requesting a privileged writer grant.
-  if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||!objectPath||
+  if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||!objectPath.trim()||
      objectPath.startsWith('/')||objectPath.includes('..')||
      objectPath.includes('\\')||objectPath.includes('?')||objectPath.includes('#')||
      !(bytes instanceof Uint8Array)||bytes.byteLength<1||
