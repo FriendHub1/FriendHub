@@ -58,4 +58,16 @@ BEGIN
  END;
 END $denied$;
 RESET ROLE;
+SET ROLE anon;
+DO $anon_denied$
+BEGIN
+ BEGIN
+  PERFORM public.xoxo_reveal_release_quota_v1(
+   '33333333-3333-4333-8333-333333333333',
+   '11111111-1111-4111-8111-111111111111');
+  RAISE EXCEPTION 'Anonymous role unexpectedly executed refund';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END $anon_denied$;
+RESET ROLE;
 
