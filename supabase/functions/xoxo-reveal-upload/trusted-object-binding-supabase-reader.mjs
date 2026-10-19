@@ -16,15 +16,17 @@ export function createRevealTrustedObjectBindingReader({dbClient}={}){
     .select('attempt_id,sender_id,bucket_id,object_path,payload_fingerprint,expected_sha256')
     .eq('attempt_id',attemptId).maybeSingle());
   }catch{throw new Error('Trusted object binding unavailable');}
-  if(error||!data||data.attempt_id!==attemptId||
+  if(error||!data||typeof data!=='object'||Array.isArray(data)||data.attempt_id!==attemptId||
      typeof data.sender_id!=='string'||!data.sender_id.trim()||data.bucket_id!=='xoxo-reveal'||
      typeof data.object_path!=='string'||!data.object_path.trim()||
      data.object_path.startsWith('/')||data.object_path.includes('..')||
      data.object_path.includes('\\')||data.object_path.includes('?')||
      data.object_path.includes('#')||
      data.object_path.split('/').some(segment=>!segment||segment==='.'||segment==='..')||
-     !/^[a-f0-9]{64}$/.test(data.payload_fingerprint||'')||
-     !/^[a-f0-9]{64}$/.test(data.expected_sha256||''))
+     typeof data.payload_fingerprint!=='string'||
+     !/^[a-f0-9]{64}$/.test(data.payload_fingerprint)||
+     typeof data.expected_sha256!=='string'||
+     !/^[a-f0-9]{64}$/.test(data.expected_sha256))
    throw new Error('Trusted object binding unavailable');
   return {authoritative:true,attemptId,bucket:data.bucket_id,
    objectPath:data.object_path,payloadFingerprint:data.payload_fingerprint,
