@@ -61,3 +61,17 @@ test('DM reader rejects array-shaped persisted rows before authorization',async(
   assert.equal(authorized,0);
  }
 });
+
+test('DM reader rejects unsafe private Storage object paths',async()=>{
+ for(const path of ['/private/a','private//a','private/../a','private/./a','private/']){
+  let authorized=0;
+  const read=createRevealTrustedRevealDmReader({
+   dbClient:{from(table){return {select(){return this;},eq(){return this;},
+    async maybeSingle(){return {data:table==='xoxo_reveals'?{...reveal,object_path:path}:dm,error:null};}
+   };}},
+   verifyDmAuthorization:async()=>{authorized++;return true;}
+  });
+  await assert.rejects(read(input),/Trusted DM binding unavailable/);
+  assert.equal(authorized,0);
+ }
+});
