@@ -15,7 +15,8 @@ BEGIN
  SELECT * INTO v_row FROM public.xoxo_reveal_upload_attempts a
   WHERE a.id=p_attempt_id AND a.sender_id=p_sender_id FOR UPDATE;
  IF NOT FOUND THEN RETURN false; END IF;
- RETURN v_row.status='pending' AND v_row.writer_state='writing'
+ RETURN v_row.status='pending' AND v_row.upload_uncertain_at IS NULL
+  AND v_row.writer_state='writing'
   AND v_row.claim_token IS NOT DISTINCT FROM p_writer_token;
 END;
 $function$;
