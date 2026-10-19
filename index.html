@@ -7020,7 +7020,16 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
       <button class="xoxo-admin-tab" data-admin-tab="posts" onclick="switchXoxoAdminTab('posts',this)">Posts</button>
       <button class="xoxo-admin-tab" data-admin-tab="activity" onclick="switchXoxoAdminTab('activity',this)">💜 Activity Monitor</button>      <button class="xoxo-admin-tab" data-admin-tab="support" onclick="switchXoxoAdminTab('support',this)">💬 Support Cases</button>
       <button class="xoxo-admin-tab" data-admin-tab="moderation" onclick="switchXoxoAdminTab('moderation',this)">🛡️ Message Moderation</button>
+      <button class="xoxo-admin-tab" data-admin-tab="magicbox" onclick="switchXoxoAdminTab('magicbox',this)">🎁 Magic Box Studio · BETA</button>
 
+    </div>
+    <div id="xoxoAdminMagicBox" class="xoxo-admin-panel">
+      <div class="xoxo-admin-card" style="padding:20px;border-radius:20px;background:linear-gradient(125deg,#24113c,#4b195b);color:#fff;">
+        <h2 style="color:#fff;margin-bottom:8px;">🎁 XOXO Magic Box Studio</h2>
+        <p style="color:#f3d7f5;margin-bottom:14px;">Taller privado del panel Admin · Prueba visual independiente. Todavía no envía mensajes ni guarda fotografías.</p>
+        <div id="xoxoMagicBoxStudioMount"></div>
+        <button type="button" class="btn btn-secondary" onclick="xoxoMagicBoxStudioClose()" style="margin-top:12px;">Cerrar taller</button>
+      </div>
     </div>
     <div id="xoxoAdminModeration" class="xoxo-admin-panel">
       <div class="xmm-wrap">
@@ -16195,12 +16204,37 @@ async function openXoxoAdminPanel() {
   await loadXoxoAdminDashboard();
 }
 
+async function xoxoMagicBoxStudioOpen(){
+  const mount=document.getElementById("xoxoMagicBoxStudioMount");
+  if(!mount)return;
+  mount.replaceChildren();
+  // Re-check the existing Supabase administrator RPC, not a username or localStorage flag.
+  if(!currentUser || !xoxoIsAdmin){mount.textContent="🔒 Admin access required.";return;}
+  try{
+    const {data,error}=await supabaseClient.rpc("is_xoxo_admin");
+    if(error || data!==true || !currentUser || !xoxoIsAdmin)throw new Error("Access denied");
+    if(!document.getElementById("xoxoAdminMagicBox")?.classList.contains("active"))return;
+    const frame=document.createElement("iframe");
+    frame.title="XOXO Magic Box visual design studio";
+    frame.src="/magic-box-gift-test.html?v=5";
+    frame.loading="lazy";
+    frame.setAttribute("referrerpolicy","same-origin");
+    frame.style.cssText="width:100%;height:min(760px,85dvh);min-height:530px;border:1px solid #c97bd8;border-radius:18px;background:#1c102d;";
+    mount.appendChild(frame);
+  }catch(e){mount.textContent="🔒 Administrator verification unavailable.";}
+}
+function xoxoMagicBoxStudioClose(){
+  const mount=document.getElementById("xoxoMagicBoxStudioMount");
+  if(mount)mount.replaceChildren();
+}
 function switchXoxoAdminTab(tab, button) {
   document.querySelectorAll(".xoxo-admin-panel").forEach(el=>el.classList.remove("active"));
   document.querySelectorAll(".xoxo-admin-tab").forEach(el=>el.classList.remove("active"));
-  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport",moderation:"xoxoAdminModeration",activity:"xoxoAdminActivity"};
+  const map={overview:"xoxoAdminOverview",users:"xoxoAdminUsers",profiles:"xoxoAdminProfiles",comments:"xoxoAdminComments",reports:"xoxoAdminReports",posts:"xoxoAdminPosts",support:"xoxoAdminSupport",moderation:"xoxoAdminModeration",activity:"xoxoAdminActivity",magicbox:"xoxoAdminMagicBox"};
   const panel=document.getElementById(map[tab]); if(panel) panel.classList.add("active");
   if(button) button.classList.add("active");
+  if(tab === "magicbox") { xoxoMagicBoxStudioOpen(); }
+  else { xoxoMagicBoxStudioClose(); }
   if(tab === "support") loadXoxoAdminSupportCases();
   if(tab === "activity") loadXoxoActivity();
   if(tab === "moderation") { loadXoxoAdminMessageStats(); loadXoxoDmReports(); loadXoxoDmConversations(); }
@@ -20811,4 +20845,4 @@ async function xoxoAvatarClose(apply){
 })();
 </script>
 </body>
-                                    </html>
+                                    </html>gr
