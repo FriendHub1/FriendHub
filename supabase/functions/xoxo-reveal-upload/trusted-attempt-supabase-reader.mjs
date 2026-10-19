@@ -4,8 +4,8 @@ export function createRevealTrustedAttemptReader({dbClient}={}){
  if(typeof dbClient?.from!=='function')
   throw new TypeError('Trusted Supabase database client required');
  return async function readAttempt({attemptId,senderId}={}){
-  if(typeof attemptId!=='string'||!attemptId||
-     typeof senderId!=='string'||!senderId)
+  if(typeof attemptId!=='string'||!attemptId.trim()||
+     typeof senderId!=='string'||!senderId.trim())
    throw new TypeError('Invalid attempt identity');
   const {data,error}=await dbClient.from('xoxo_reveal_upload_attempts')
    .select('id,sender_id,payload_fingerprint,status')
