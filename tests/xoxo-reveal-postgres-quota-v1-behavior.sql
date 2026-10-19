@@ -19,6 +19,8 @@ BEGIN
  IF (SELECT count(*) FROM public.xoxo_reveal_quota_reservations) <> v_before
  THEN RAISE EXCEPTION 'Unauthenticated reservation mutated quota'; END IF;
 END $unauth$;
+-- Set a test-only authenticated subject for the validation checks.
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
 -- Invalid sizes must be rejected before any quota row is inserted.
 DO $invalid$
 DECLARE v_size bigint; v_before bigint;
@@ -41,6 +43,7 @@ BEGIN
  IF (SELECT count(*) FROM public.xoxo_reveal_quota_reservations) <> v_before
  THEN RAISE EXCEPTION 'Invalid size changed quota reservations'; END IF;
 END $invalid$;
+SELECT set_config('request.jwt.claim.sub','',false);
 INSERT INTO auth.users(id) VALUES
  ('11111111-1111-4111-8111-111111111111'),
  ('22222222-2222-4222-8222-222222222222');
