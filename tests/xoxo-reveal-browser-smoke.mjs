@@ -28,3 +28,25 @@ test('browser smoke: select image, simulate delivery, reveal, reset and select a
   assert.deepEqual(errors,[]);
  } finally { await browser.close(); }
 });
+
+test('browser smoke: one-view reveal cannot be reopened after closing', async () => {
+ const browser=await chromium.launch({headless:true});
+ try {
+  const page=await browser.newPage();
+  const html=await readFile(new URL('../xoxo-reveal-studio-beta.html',import.meta.url),'utf8');
+  await page.setContent(html,{waitUntil:'load'});
+  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=','base64');
+  await page.locator('#file').setInputFiles({name:'once.png',mimeType:'image/png',buffer:png});
+  await page.waitForFunction(()=>!document.querySelector('#localSend').disabled);
+  await page.locator('#localSend').click();
+  await page.locator('#revealTrack').focus();
+  await page.keyboard.press('End');
+  await page.waitForFunction(()=>document.querySelector('#revealViewer').classList.contains('open'));
+  await page.locator('#revealClose').click();
+  assert.match(await page.locator('#revealFeedback').textContent(),/ya vista o caducada/);
+  await page.locator('#revealTrack').focus();
+  await page.keyboard.press('End');
+  assert.equal(await page.locator('#revealViewer').evaluate(el=>el.classList.contains('open')),false);
+  assert.match(await page.locator('#revealFeedback').textContent(),/ya no puede abrirse/);
+ } finally { await browser.close(); }
+});
