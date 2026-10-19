@@ -7,7 +7,10 @@ export function createRevealPrivateStorageByteReader({
  if(typeof storageClient?.storage?.from!=='function'||
     !Number.isSafeInteger(maxBytes)||maxBytes<1)
   throw new TypeError('Trusted private Storage client and byte limit required');
- return async function readPrivateBytes({bucket,objectPath}={}){
+ return async function readPrivateBytes(input={}){
+  if(input===null||typeof input!=='object'||Array.isArray(input))
+   throw new TypeError('Invalid private Storage locator');
+  const {bucket,objectPath}=input;
   if(bucket!=='xoxo-reveal'||typeof objectPath!=='string'||
      !objectPath.trim()||objectPath.startsWith('/')||
      objectPath.includes('..')||objectPath.includes('\\')||
