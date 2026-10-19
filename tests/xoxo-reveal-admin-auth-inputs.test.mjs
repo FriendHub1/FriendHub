@@ -14,7 +14,10 @@ test('admin lookup rejects invalid user IDs without privileged RPC',async()=>{
 });
 test('authenticated review rejects empty input before any auth or RPC call',async()=>{
  let authCalls=0,rpcCalls=0;
- const supabase={rpc:async()=>{rpcCalls++;return {data:false,error:null};}};
+ const supabase={
+  rpc:async()=>{rpcCalls++;return {data:false,error:null};},
+  from:()=>{throw new Error('Unexpected database query');}
+ };
  const authClient={auth:{getUser:async()=>{authCalls++;return {data:{user:{id:'admin'}},error:null};}}};
  const review=createRevealAuthenticatedReconciliationService({
   supabase,authClient,
