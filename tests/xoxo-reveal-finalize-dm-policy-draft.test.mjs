@@ -35,3 +35,12 @@ test('review-only SQL explicitly warns concurrent blocks are not serialized',()=
  assert.match(sql,/do not lock a future block INSERT/);
  assert.match(sql,/before production/);
 });
+
+test('attempt and DM identity are bound before current permission queries',()=>{
+ const lock=sql.indexOf('FOR UPDATE;');
+ const identity=sql.indexOf('Reveal/DM identity binding mismatch');
+ const blocks=sql.indexOf('FROM public.user_blocks b');
+ assert.ok(lock>=0&&identity>lock&&blocks>identity);
+ assert.match(sql,/r\.upload_attempt_id=v_attempt\.id/);
+ assert.match(sql,/d\.recipient_id=r\.recipient_id/);
+});
