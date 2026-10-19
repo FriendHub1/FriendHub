@@ -4,7 +4,10 @@
 export function createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorization}={}){
  if(typeof dbClient?.from!=='function'||typeof verifyDmAuthorization!=='function')
   throw new TypeError('Trusted DM database and authorization readers required');
- return async function readRevealDm({attemptId,revealId,dmId}={}){
+ return async function readRevealDm(input={}){
+  if(input===null||typeof input!=='object'||Array.isArray(input))
+   throw new TypeError('Invalid Reveal DM input');
+  const {attemptId,revealId,dmId}=input;
   if([attemptId,revealId,dmId].some(x=>typeof x!=='string'||!x.trim()))
    throw new TypeError('Invalid Reveal DM identifiers');
   let reveal,revealError;
@@ -23,9 +26,12 @@ export function createRevealTrustedRevealDmReader({dbClient,verifyDmAuthorizatio
   }catch{throw new Error('Trusted DM binding unavailable');}
   if(dmError||!dm||dm.id!==dmId||dm.sender_id!==reveal.sender_id||
      dm.recipient_id!==reveal.recipient_id||
-     !reveal.sender_id||!reveal.recipient_id||
+     typeof reveal.sender_id!=='string'||!reveal.sender_id.trim()||
+     typeof reveal.recipient_id!=='string'||!reveal.recipient_id.trim()||
      reveal.sender_id===reveal.recipient_id||
-     !reveal.object_path||!/^[a-f0-9]{64}$/.test(reveal.payload_fingerprint||''))
+     typeof reveal.object_path!=='string'||!reveal.object_path.trim()||
+     typeof reveal.payload_fingerprint!=='string'||
+     !/^[a-f0-9]{64}$/.test(reveal.payload_fingerprint))
    throw new Error('Trusted DM binding unavailable');
   let authorized=false;
   try{
