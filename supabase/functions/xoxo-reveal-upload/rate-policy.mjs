@@ -1,9 +1,9 @@
 // XOXO Reveal BETA — rate-limit decision helper, NOT DEPLOYED.
 // Caller must use an atomic, shared server-side counter (not browser state).
 export const REVEAL_RATE_POLICY=Object.freeze({
-  uploadsPerHour:12,
-  bytesPerHour:60*1024*1024,
-  uploadsPerDay:40
+  uploadsPerHour:120,
+  bytesPerHour:1200*1024*1024,
+  uploadsPerDay:600
 });
 export function checkRevealRateLimit({
   hourlyUploads,hourlyBytes,dailyUploads,incomingBytes,
