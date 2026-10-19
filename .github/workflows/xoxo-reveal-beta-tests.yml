@@ -64,3 +64,5 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-authorization.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-reservation-binding.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-rollback.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_try_lock_attempt_v1_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-attempt-lock-v1.sql
