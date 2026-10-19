@@ -24,12 +24,22 @@ export function createRevealDmSendAuthorizer({dbClient}={}){
     .or(`and(sender_id.eq.${senderId},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${senderId})`)
     .limit(1);
    if(dm.error||!Array.isArray(dm.data))return false;
-   if(dm.data.length>0)return true;
-   const accepted=await dbClient.from('message_requests').select('id')
-    .eq('status','accepted')
-    .or(`and(sender_id.eq.${senderId},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${senderId})`)
+   let permitted=dm.data.length>0;
+   if(!permitted){
+    const accepted=await dbClient.from('message_requests').select('id')
+     .eq('status','accepted')
+     .or(`and(sender_id.eq.${senderId},recipient_id.eq.${recipientId}),and(sender_id.eq.${recipientId},recipient_id.eq.${senderId})`)
+     .limit(1);
+    if(accepted.error||!Array.isArray(accepted.data))return false;
+    permitted=accepted.data.length>0;
+   }
+   if(!permitted)return false;
+   // Re-read blocks after the relationship lookup: a block created while
+   // that query was running must not be silently accepted.
+   const finalBlocks=await dbClient.from('user_blocks').select('id')
+    .or(`and(blocker_id.eq.${senderId},blocked_id.eq.${recipientId}),and(blocker_id.eq.${recipientId},blocked_id.eq.${senderId})`)
     .limit(1);
-   return !accepted.error&&Array.isArray(accepted.data)&&accepted.data.length>0;
+   return !finalBlocks.error&&Array.isArray(finalBlocks.data)&&finalBlocks.data.length===0;
   }catch{return false;}
  };
 }
