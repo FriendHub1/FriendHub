@@ -54,3 +54,11 @@ test('malformed authentication responses fail closed without database reads',asy
   assert.deepEqual(calls,['auth']);
  }
 });
+
+test('invalid identities never trigger Auth or database requests',async()=>{
+ for(const patch of [{senderId:'not-a-uuid'},{recipientId:'x,y'},{recipientId:a},{senderId:undefined}]){
+  const {authorize,calls}=setup();
+  assert.equal(await authorize({senderId:a,recipientId:b,...patch}),false);
+  assert.deepEqual(calls,[]);
+ }
+});
