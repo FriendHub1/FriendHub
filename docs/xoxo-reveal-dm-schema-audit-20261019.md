@@ -34,3 +34,15 @@ Connected project: `FriendHub1's Project` (`cxosofpxfmjkrhfabrqc`), **read-only 
 
 **Remaining audit:** inspect current RLS policy definitions, constraints and any authorization functions, then implement server-owned DM authorization against actual rules with isolated negative tests. Do not enable the admin-review RPC solely from the table name. The existing BETA `xoxo_reveals` / upload objects are still review-only and were not deployed.
 
+
+## Actual RLS policies audited read-only (2026-10-19)
+
+The connected database's `pg_policies` establishes:
+
+- `direct_messages` INSERT requires `auth.uid() = sender_id`, distinct sender/recipient, `xoxo_has_existing_dm_or_acceptance(sender_id,recipient_id)`, no `user_blocks` row in **either direction**, and the Secret Letters beta matching/previous-DM condition. This is the closest currently verified authorization rule for Reveal DM sends; **do not** replace it with a mere participant check.
+- `direct_messages` SELECT is restricted to sender or recipient. UPDATE policies permit the sender to edit and recipient to mark read.
+- `message_requests` INSERT rejects either-direction blocks and uses `sl_is_beta_tester` / `sl_users_are_matched`; SELECT permits participants.
+- `user_blocks` SELECT exposes only the blocker's own blocks to an authenticated user. Thus an ordinary browser-side query **cannot reliably detect when the other party blocked the sender**. A privileged server check is required.
+- `xoxo_admins` SELECT permits only a user's own membership row; the table had zero rows in the metadata listing. **Do not grant reviewer rights** until server-owned admin membership is established.
+
+**Important:** These are policy expressions observed at audit time, not an authorization RPC implementation. Next: inspect definitions/permissions for `xoxo_has_existing_dm_or_acceptance`, `sl_is_beta_tester`, `sl_users_are_matched` and decide how to safely reuse the rules in a privileged function with isolated tests. Production database was not modified.
