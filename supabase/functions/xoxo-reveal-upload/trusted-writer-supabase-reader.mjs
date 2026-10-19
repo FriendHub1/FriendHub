@@ -5,7 +5,7 @@ export function createRevealTrustedWriterReader({verifyWriterFence}={}){
  if(typeof verifyWriterFence!=='function')
   throw new TypeError('Trusted writer fence verifier required');
  return async function readWriter({attemptId,senderId}={}){
-  if([attemptId,senderId].some(x=>typeof x!=='string'||!x))
+  if([attemptId,senderId].some(x=>typeof x!=='string'||!x.trim()))
    throw new TypeError('Invalid writer identifiers');
   const result=await verifyWriterFence({attemptId,senderId});
   if(result?.authoritative!==true||result.attemptId!==attemptId||
