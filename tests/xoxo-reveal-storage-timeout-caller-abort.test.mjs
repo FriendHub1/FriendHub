@@ -61,3 +61,18 @@ test('caller abort remains latched even with mutable signal wrapper',async()=>{
  await assert.rejects(upload({signal:fakeSignal}),/aborted; reconciliation required/);
  assert.equal(listeners.size,0);
 });
+
+test('abort occurring during signal listener registration prevents upload',async()=>{
+ let calls=0,removed=0;
+ const signal={
+  aborted:false,
+  addEventListener(_name,callback){this.aborted=true;callback();},
+  removeEventListener(){removed++;}
+ };
+ const upload=createRevealStorageUploadTimeoutGuard({
+  uploadPrivate:async()=>{calls++;return {created:true};}
+ });
+ await assert.rejects(upload({signal}),/aborted; reconciliation required/);
+ assert.equal(calls,0);
+ assert.equal(removed,1);
+});
