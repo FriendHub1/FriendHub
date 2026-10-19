@@ -70,6 +70,8 @@ BEGIN
   IF p_reservation_id IS NULL OR p_sender_id IS NULL THEN
     RAISE EXCEPTION 'Missing reservation information';
   END IF;
+  -- A reservation can be released at most once. The UPDATE row lock
+  -- serializes concurrent release attempts; only the winner returns true.
   UPDATE public.xoxo_reveal_quota_reservations
      SET released_at=clock_timestamp()
    WHERE id=p_reservation_id AND sender_id=p_sender_id AND released_at IS NULL;
