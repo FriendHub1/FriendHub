@@ -42,7 +42,47 @@ CREATE TABLE IF NOT EXISTS public.xoxo_reveal_upload_objects (
   bucket_id text NOT NULL DEFAULT 'xoxo-reveal'
     CHECK (bucket_id='xoxo-reveal'),
   object_path text NOT NULL UNIQUE CHECK (length(object_path) BETWEEN 1 AND 1024),
-  payload_fingerprint text NOT NULL CHECK (payload_fingerprint ~ '^[0-9a-f]{64}$'),
+  payload_fingerprint text NOT NULL CHECK (payload_fingerprint ~ '^[0-9a-f]{64} timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.xoxo_reveal_upload_objects ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.xoxo_reveal_upload_objects FROM PUBLIC,anon,authenticated;
+COMMIT;
+-- CRITICAL RELEASE BLOCKERS:
+-- 1. These nullable columns are for review/backfill. Enforce NOT NULL only
+--    for newly created linked records via reviewed server-side transactions.
+-- 2. Cross-table sender/fingerprint equality is NOT enforced by these FKs.
+--    Add transactional verification and appropriate composite constraints.
+-- 3. expected_sha256 must be computed by trusted server code from actual
+--    private object bytes and protected from mutation by browser roles.
+--    Storage objects are outside PostgreSQL transactions. Verify object
+--    metadata/digest with trusted Storage reads and reconcile inconsistencies.
+-- 4. The earlier quota migration has an invalid dollar-quote terminator
+--    around xoxo_reveal_release_quota_v1; fix before any isolated SQL testing.
+-- 5. Repeated ALTER ADD CONSTRAINT is not rerunnable as written.
+-- 6. Validate permissions, existing data, indexes, function signatures,
+--    privacy, retention, cost and rollback in an isolated Supabase project.
+-- 7. No production deployment or schema modification is authorized.
+),
+  -- Server-computed digest of actual object bytes, not payload fingerprint.
+  expected_sha256 text NOT NULL CHECK (expected_sha256 ~ '^[0-9a-f]{64} timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.xoxo_reveal_upload_objects ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.xoxo_reveal_upload_objects FROM PUBLIC,anon,authenticated;
+COMMIT;
+-- CRITICAL RELEASE BLOCKERS:
+-- 1. These nullable columns are for review/backfill. Enforce NOT NULL only
+--    for newly created linked records via reviewed server-side transactions.
+-- 2. Cross-table sender/fingerprint equality is NOT enforced by these FKs.
+--    Add transactional verification and appropriate composite constraints.
+-- 3. Storage objects are outside PostgreSQL transactions. Verify object
+--    metadata/digest with trusted Storage reads and reconcile inconsistencies.
+-- 4. The earlier quota migration has an invalid dollar-quote terminator
+--    around xoxo_reveal_release_quota_v1; fix before any isolated SQL testing.
+-- 5. Repeated ALTER ADD CONSTRAINT is not rerunnable as written.
+-- 6. Validate permissions, existing data, indexes, function signatures,
+--    privacy, retention, cost and rollback in an isolated Supabase project.
+-- 7. No production deployment or schema modification is authorized.
+),
   created_at timestamptz NOT NULL DEFAULT now()
 );
 ALTER TABLE public.xoxo_reveal_upload_objects ENABLE ROW LEVEL SECURITY;
