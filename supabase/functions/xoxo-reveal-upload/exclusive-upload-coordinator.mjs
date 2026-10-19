@@ -9,9 +9,9 @@ export function createRevealExclusiveUploadCoordinator({
  const active=new Set();
  return async function uploadAndSeal(input={}){
   const {attemptId,senderId,writerToken}=input;
-  if(!attemptId||!senderId||!writerToken)
+  if([attemptId,senderId,writerToken].some(v=>typeof v!=='string'||!v.trim()))
    throw new TypeError('Missing trusted writer identity');
-  const key=`${senderId}:${attemptId}`;
+  const key=JSON.stringify([senderId,attemptId]);
   if(active.has(key))throw new Error('Upload already in flight');
   active.add(key);
   try{
