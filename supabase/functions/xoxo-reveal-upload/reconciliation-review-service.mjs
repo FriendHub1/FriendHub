@@ -12,14 +12,19 @@ export function createRevealReconciliationReviewService({
   if(!attemptId||!reviewerId)throw new TypeError('Missing review identity');
   if(await authorizeReviewer({attemptId,reviewerId,accessToken})!==true)
    throw new Error('Reviewer not authorized');
-  const attempt=await readAttempt({attemptId});
+  let attempt;
+  try{attempt=await readAttempt({attemptId});}
+  catch{throw new Error('Reconciliation evidence unavailable');}
   if(!attempt||attempt.id!==attemptId)
    return {action:'manual_review',reason:'missing_attempt'};
   // Recheck authorization before touching the private object evidence.
   if(await authorizeReviewer({attemptId,reviewerId,accessToken})!==true)
    throw new Error('Reviewer authorization expired');
-  const objectBinding=await readObjectBinding({attemptId,senderId:attempt.sender_id});
-  const storageEvidence=await readStorageEvidence({attemptId,senderId:attempt.sender_id,objectBinding});
+  let objectBinding,storageEvidence;
+  try{
+   objectBinding=await readObjectBinding({attemptId,senderId:attempt.sender_id});
+   storageEvidence=await readStorageEvidence({attemptId,senderId:attempt.sender_id,objectBinding});
+  }catch{throw new Error('Reconciliation evidence unavailable');}
   // Never disclose reconciliation findings after a mid-read permission loss.
   if(await authorizeReviewer({attemptId,reviewerId,accessToken})!==true)
    throw new Error('Reviewer authorization expired');
