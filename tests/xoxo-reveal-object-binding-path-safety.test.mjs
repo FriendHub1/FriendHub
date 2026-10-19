@@ -63,3 +63,14 @@ test('persisted object binding rejects malformed row and non-string digest field
   await assert.rejects(read({attemptId:'a'}),/Trusted object binding unavailable/);
  }
 });
+
+test('integrity reader rejects digest mismatch instead of returning authoritative evidence',async()=>{
+ const read=createRevealStorageIntegrityReader({
+  resolveObjectBinding:async()=>({authoritative:true,attemptId:'a',bucket:'xoxo-reveal',
+   objectPath:'private/a',payloadFingerprint:digest,expectedSha256:digest}),
+  readPrivateBytes:async()=>new Uint8Array([1]),
+  sha256:async()=> 'b'.repeat(64)
+ });
+ await assert.rejects(read({attemptId:'a',objectPath:'private/a',payloadFingerprint:digest}),
+  /Private object digest mismatch/);
+});
