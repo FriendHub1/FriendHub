@@ -11,6 +11,7 @@ on:
       - 'tests/xoxo-reveal-postgres-refund-concurrency.sh'
       - 'tests/xoxo-reveal-postgres-refund-v2-setup.sql'
       - 'tests/xoxo-reveal-postgres-refund-v2-behavior.sql'
+      - 'tests/xoxo-reveal-postgres-refund-v2-authorization.sql'
       - 'supabase/migrations/20261019_xoxo_reveal_release_quota_v2_REVIEW_ONLY.sql'
 jobs:
   postgres-smoke:
@@ -51,4 +52,5 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-setup.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_release_quota_v2_REVIEW_ONLY.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-behavior.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-authorization.sql
 # No Supabase secrets, production connections, live data, or REVIEW_ONLY migrations.
