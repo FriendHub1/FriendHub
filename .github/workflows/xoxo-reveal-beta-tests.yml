@@ -113,3 +113,4 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-daily-limit.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-release-reuse.sql
           psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-byte-release-reuse.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-cross-user-isolation.sql
