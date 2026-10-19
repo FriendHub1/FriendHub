@@ -12,7 +12,7 @@ CREATE SCHEMA IF NOT EXISTS auth;
 CREATE OR REPLACE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE
 AS $fn$ SELECT current_setting('request.jwt.claim.role',true) $fn$;
 CREATE TABLE public.xoxo_reveal_upload_attempts(
- id uuid PRIMARY KEY,sender_id uuid NOT NULL,claim_token uuid,status text NOT NULL,
+ id uuid PRIMARY KEY,sender_id uuid NOT NULL,recipient_id uuid NOT NULL,claim_token uuid,status text NOT NULL,
  writer_state text,upload_uncertain_at timestamptz,payload_fingerprint text,
  updated_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE public.xoxo_reveal_upload_objects(
