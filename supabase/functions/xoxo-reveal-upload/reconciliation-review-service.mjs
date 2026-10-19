@@ -8,9 +8,9 @@ export function createRevealReconciliationReviewService({
  if([readAttempt,readObjectBinding,readStorageEvidence,authorizeReviewer]
    .some(fn=>typeof fn!=='function'))
   throw new TypeError('Trusted reconciliation readers and reviewer authorization required');
- return async function review({attemptId,reviewerId}={}){
+ return async function review({attemptId,reviewerId,accessToken}={}){
   if(!attemptId||!reviewerId)throw new TypeError('Missing review identity');
-  if(await authorizeReviewer({attemptId,reviewerId})!==true)
+  if(await authorizeReviewer({attemptId,reviewerId,accessToken})!==true)
    throw new Error('Reviewer not authorized');
   const attempt=await readAttempt({attemptId});
   if(!attempt||attempt.id!==attemptId)
