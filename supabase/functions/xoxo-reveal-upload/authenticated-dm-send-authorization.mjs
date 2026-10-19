@@ -10,6 +10,10 @@ export function createRevealAuthenticatedDmSendAuthorizer({authClient,dbClient}=
   if(input===null||typeof input!=='object'||Array.isArray(input))
    throw new TypeError('Invalid DM authorization request');
   const {senderId,recipientId}=input;
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if(typeof senderId!=='string'||!uuid.test(senderId)||
+     typeof recipientId!=='string'||!uuid.test(recipientId)||
+     senderId===recipientId)return false;
   // getUser validates the current token against Auth, unlike getSession's
   // local session cache. The auth client must be bound to this request.
   let user,error;
