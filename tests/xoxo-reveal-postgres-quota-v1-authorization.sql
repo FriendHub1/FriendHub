@@ -39,3 +39,23 @@ BEGIN
   RAISE EXCEPTION 'service_role must be allowed to execute quota refund';
  END IF;
 END $test$;
+-- Verify that a browser session really cannot call the refund RPC.
+-- Use SET ROLE to test the effective permissions, not only the catalog ACL.
+DO $role_guard$
+BEGIN
+ IF current_database()<>'xoxo_reveal_quota_ci' OR current_user<>'xoxo_test'
+ THEN RAISE EXCEPTION 'Unsafe role-switch test context'; END IF;
+END $role_guard$;
+SET ROLE authenticated;
+DO $denied$
+BEGIN
+ BEGIN
+  PERFORM public.xoxo_reveal_release_quota_v1(
+   '33333333-3333-4333-8333-333333333333',
+   '11111111-1111-4111-8111-111111111111');
+  RAISE EXCEPTION 'Authenticated role unexpectedly executed refund';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+END $denied$;
+RESET ROLE;
+
