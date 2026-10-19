@@ -23,3 +23,15 @@ test('finalize draft retains server-only execution and attempt ownership',()=>{
  assert.match(sql,/v_attempt\.upload_uncertain_at IS NOT NULL/);
  assert.match(sql,/REVOKE ALL ON FUNCTION public\.xoxo_reveal_finalize_upload_v2/);
 });
+
+test('DM authorization checks occur after attempt lock but before completion update',()=>{
+ const lock=sql.indexOf('FOR UPDATE;');
+ const blocks=sql.indexOf('FROM public.user_blocks b');
+ const relationship=sql.indexOf('FROM public.message_requests mr');
+ const update=sql.indexOf('UPDATE public.xoxo_reveal_upload_attempts');
+ assert.ok(lock>=0&&blocks>lock&&relationship>blocks&&update>relationship);
+});
+test('review-only SQL explicitly warns concurrent blocks are not serialized',()=>{
+ assert.match(sql,/do not lock a future block INSERT/);
+ assert.match(sql,/before production/);
+});
