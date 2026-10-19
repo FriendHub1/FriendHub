@@ -39,4 +39,6 @@ test('two instances cannot both write when beginWriter atomically grants one own
  assert.equal(storageWrites,1);
  // Definitive pre-write denial must not poison the successful owner's attempt.
  assert.equal(markers,0);
+ // A second service cannot infer from denial that the first writer finished.
+ // It must rely on a fresh authoritative attempt-state read before retry.
 });
