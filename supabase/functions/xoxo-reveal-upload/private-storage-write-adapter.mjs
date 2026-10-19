@@ -27,3 +27,26 @@ export function createRevealPrivateStorageCreateOnlyWriter({
 }
 // RELEASE BLOCKER: service-role clients may still overwrite by other APIs.
 // Enforce exclusive writer access and Storage permissions before deployment.
+
+/**
+ * Bind create-only uploads to a trusted server-only writer lease.
+ * Authorization callback must check the durable attempt/token and writer
+ * state. This preflight is not atomic with Storage; never expose raw client.
+ */
+export function createRevealWriterGatedPrivateStorageWriter({
+ storageClient,authorizeActiveWriter,maxBytes
+}={}){
+ if(typeof authorizeActiveWriter!=='function')
+  throw new TypeError('Trusted active writer authorization required');
+ const createOnly=createRevealPrivateStorageCreateOnlyWriter({storageClient,maxBytes});
+ return async function writeWithLease({
+  attemptId,senderId,writerToken,bucket,objectPath,bytes,contentType
+ }={}){
+  if(!attemptId||!senderId||!writerToken)
+   throw new TypeError('Missing trusted writer identity');
+  const authorized=await authorizeActiveWriter({attemptId,senderId,writerToken});
+  if(authorized!==true)
+   throw new Error('Active writer authorization denied');
+  return createOnly({bucket,objectPath,bytes,contentType});
+ };
+}
