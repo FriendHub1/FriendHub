@@ -6,6 +6,7 @@ import {createRevealPostUploadBindingGate} from './post-upload-binding-gate.mjs'
 import {createRevealFinalizeSupabaseAdapter} from './finalize-supabase-adapter.mjs';
 import {createRevealBindingEvidenceReader} from './binding-evidence-reader.mjs';
 import {createRevealStorageIntegrityReader} from './storage-integrity-reader.mjs';
+import {createRevealPrivateStorageByteReader} from './private-storage-read-adapter.mjs';
 export function createRevealVerifiedFinalizeService({
  rpcClient,readTrustedEvidence
 }={}){
@@ -45,5 +46,20 @@ export function createRevealVerifiedFinalizeWithStorage({
  });
  return createRevealVerifiedFinalizeFromReaders({
   rpcClient,readAttempt,readRevealDm,readStorageIntegrity,readQuota,readWriter
+ });
+}
+
+/**
+ * Server-side Supabase Storage composition. The trusted DB binding reader
+ * must supply an independently persisted expected SHA-256. NOT DEPLOYED.
+ */
+export function createRevealVerifiedFinalizeWithSupabaseStorage({
+ rpcClient,storageClient,readAttempt,readRevealDm,readQuota,readWriter,
+ resolveObjectBinding,sha256,maxBytes
+}={}){
+ const readPrivateBytes=createRevealPrivateStorageByteReader({storageClient,maxBytes});
+ return createRevealVerifiedFinalizeWithStorage({
+  rpcClient,readAttempt,readRevealDm,readQuota,readWriter,
+  resolveObjectBinding,readPrivateBytes,sha256
  });
 }
