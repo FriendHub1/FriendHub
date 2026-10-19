@@ -11,6 +11,7 @@ import {createRevealTrustedAttemptReader} from './trusted-attempt-supabase-reade
 import {createRevealTrustedRevealDmReader} from './trusted-reveal-dm-supabase-reader.mjs';
 import {createRevealTrustedQuotaReader} from './trusted-quota-supabase-reader.mjs';
 import {createRevealTrustedWriterReader} from './trusted-writer-supabase-reader.mjs';
+import {createRevealTrustedObjectBindingReader} from './trusted-object-binding-supabase-reader.mjs';
 export function createRevealVerifiedFinalizeService({
  rpcClient,readTrustedEvidence
 }={}){
@@ -86,5 +87,21 @@ export function createRevealVerifiedFinalizeFromTrustedSupabase({
  return createRevealVerifiedFinalizeWithSupabaseStorage({
   rpcClient,storageClient,readAttempt,readRevealDm,readQuota,readWriter,
   resolveObjectBinding,sha256,maxBytes
+ });
+}
+
+/**
+ * Full trusted Supabase reader composition, including persisted object digest.
+ * Still requires independent durable writer fencing and DM authorization.
+ * REVIEW ONLY / NOT DEPLOYED.
+ */
+export function createRevealVerifiedFinalizeFromBoundSupabase({
+ dbClient,storageClient,rpcClient,verifyDmAuthorization,
+ verifyWriterFence,sha256,maxBytes
+}={}){
+ const resolveObjectBinding=createRevealTrustedObjectBindingReader({dbClient});
+ return createRevealVerifiedFinalizeFromTrustedSupabase({
+  dbClient,storageClient,rpcClient,verifyDmAuthorization,
+  verifyWriterFence,resolveObjectBinding,sha256,maxBytes
  });
 }
