@@ -34,11 +34,11 @@ BEGIN
  END IF;
  IF v_attempt.writer_state='writing' THEN
   IF v_attempt.writer_token=p_writer_token AND
-     v_attempt.writer_lease_expires_at>now() THEN
+     v_attempt.writer_lease_expires_at>clock_timestamp() THEN
    RETURN 'already_owned';
   END IF;
   -- Expired lease does NOT prove Storage has stopped writing.
-  IF v_attempt.writer_lease_expires_at<=now() OR
+  IF v_attempt.writer_lease_expires_at<=clock_timestamp() OR
      v_attempt.writer_lease_expires_at IS NULL THEN
    UPDATE public.xoxo_reveal_upload_attempts
    SET writer_state='needs_reconciliation'
@@ -50,7 +50,7 @@ BEGIN
  UPDATE public.xoxo_reveal_upload_attempts
  SET writer_state='writing',writer_token=p_writer_token,
      writer_generation=writer_generation+1,
-     writer_lease_expires_at=now()+make_interval(secs=>p_lease_seconds)
+     writer_lease_expires_at=clock_timestamp()+make_interval(secs=>p_lease_seconds)
  WHERE id=p_attempt_id;
  RETURN 'claimed';
 END $function$;
