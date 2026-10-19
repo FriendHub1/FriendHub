@@ -19,7 +19,7 @@ function setup({blocks=[],messages=[],requests=[],errorTable=null}={}){
 test('prior DM permits send when neither side blocked',async()=>{
  const {verify,calls}=setup({messages:[{id:'prior'}]});
  assert.equal(await verify(input),true);
- assert.deepEqual(calls,['user_blocks','direct_messages']);
+ assert.deepEqual(calls,['user_blocks','direct_messages','user_blocks']);
 });
 test('accepted request permits send without prior DM',async()=>{
  const {verify}=setup({requests:[{id:'accepted'}]});
@@ -48,4 +48,18 @@ test('database failure denies authorization',async()=>{
   const {verify}=setup({errorTable});
   assert.equal(await verify(input),false);
  }
+});
+
+test('block appearing during relationship lookup denies before returning',async()=>{
+ let reads=0;
+ const dbClient={from(table){
+  return {select(){return this;},or(){return this;},eq(){return this;},
+   async limit(){
+    if(table==='user_blocks')return {data:++reads===1?[]:[{id:'new-block'}],error:null};
+    return {data:[{id:'prior'}],error:null};
+   }};
+ }};
+ const verify=createRevealDmSendAuthorizer({dbClient});
+ assert.equal(await verify(input),false);
+ assert.equal(reads,2);
 });
