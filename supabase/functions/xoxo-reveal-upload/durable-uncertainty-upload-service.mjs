@@ -44,6 +44,11 @@ export function createRevealDurableUncertaintyUploadService({
     const result=await preflight(input);
     // Even if a replica has not observed the DB commit, this instance must
     // never repeat a successful upload for the same attempt.
+    if(result?.created!==true||result?.sealed!==true){
+     // A resolved but unconfirmed Storage outcome must never be treated
+     // as successful; persist uncertainty and require reconciliation.
+     throw new Error('Upload completion not confirmed; reconciliation required');
+    }
     completed.add(key);
     return result;
    }
