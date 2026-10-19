@@ -8,6 +8,8 @@ export function createRevealExclusiveUploadCoordinator({
   throw new TypeError('Trusted writer lifecycle dependencies required');
  const active=new Set();
  return async function uploadAndSeal(input={}){
+  if(input===null||typeof input!=='object'||Array.isArray(input))
+   throw new TypeError('Valid upload input required');
   const {attemptId,senderId,writerToken}=input;
   if([attemptId,senderId,writerToken].some(v=>typeof v!=='string'||!v.trim()))
    throw new TypeError('Missing trusted writer identity');
