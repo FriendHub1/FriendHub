@@ -18,7 +18,9 @@ export function createRevealLeaseAwareUploadCoordinator({
   active.add(key);
   let failed=false;
   let renewal=Promise.resolve();
+  let checkpointCount=0;
   const checkpoint=()=>{
+   checkpointCount++;
    // Serialize overlapping checkpoints; a failed renewal poisons the lease.
    const next=renewal.then(async()=>{
    if(failed)throw new Error('Writer lease already lost');
@@ -39,7 +41,13 @@ export function createRevealLeaseAwareUploadCoordinator({
    const uploaded=await uploadPrivate({...input,checkpoint});
    // A trusted uploader may schedule checkpoints without awaiting them.
    // Drain all outstanding renewals before accepting its result.
-   await renewal;
+   // Keep draining if a trusted uploader scheduled another checkpoint
+   // while the previous batch was still settling.
+   let observed=-1;
+   while(observed!==checkpointCount){
+    observed=checkpointCount;
+    await renewal;
+   }
    if(failed)throw new Error('Writer lease already lost');
    if(uploaded?.created!==true)throw new Error('Private upload not confirmed');
    await checkpoint();
