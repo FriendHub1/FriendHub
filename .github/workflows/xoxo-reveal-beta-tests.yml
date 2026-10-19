@@ -20,4 +20,4 @@ jobs:
         with:
           node-version: '22'
       - name: Run isolated Reveal tests
-        run: node --test tests/xoxo-reveal-two-phase.test.mjs
+        run: node --test tests/xoxo-reveal-*.test.mjs
