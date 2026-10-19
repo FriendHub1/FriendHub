@@ -12,7 +12,7 @@ test('timed-out upload is marked uncertain and retry is blocked',async()=>{
  let calls=0,marks=0;
  const gate=createRevealUploadUncertaintyGate({
   uploadAndSeal:async()=>{calls++;throw Error('timed out');},
-  markUncertain:async()=>{marks++;}
+  markUncertain:async()=>{marks++;return true;}
  });
  await assert.rejects(()=>gate.run(identity),/timed out/);
  assert.equal(gate.isUncertain(identity),true);
