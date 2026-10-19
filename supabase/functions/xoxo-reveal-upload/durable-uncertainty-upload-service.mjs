@@ -16,7 +16,7 @@ export function createRevealDurableUncertaintyUploadService({
  // The persisted read is outside the local uncertainty gate, so a restart
  // cannot bypass an earlier attempt's durable uncertain marker.
  const localGate=createRevealUploadUncertaintyGate({
-  async uploadAndSealVerified(input){
+  uploadAndSeal:async function uploadAndSealVerified(input){
    const result=await uploadAndSeal(input);
    if(result?.created!==true||result?.sealed!==true)
     throw new Error('Upload completion not confirmed; reconciliation required');
