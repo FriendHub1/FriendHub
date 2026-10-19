@@ -37,8 +37,6 @@ test('two instances cannot both write when beginWriter atomically grants one own
  releaseWrite();
  assert.equal((await firstRun).sealed,true);
  assert.equal(storageWrites,1);
- // Denial is currently conservatively marked uncertain by the generic gate.
- // Production must distinguish a proven pre-write rejection from an ambiguous
- // Storage outcome to avoid poisoning an otherwise valid attempt.
- assert.equal(markers,1);
+ // Definitive pre-write denial must not poison the successful owner's attempt.
+ assert.equal(markers,0);
 });
