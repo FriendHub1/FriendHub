@@ -14,7 +14,9 @@ export function createRevealDurableUncertaintyPreflight({readAttempt,uploadAndSe
   if(!attempt||attempt.id!==attemptId||attempt.sender_id!==senderId||
      attempt.status!=='pending'||attempt.upload_uncertain_at!=null)
    throw new Error('Upload blocked by durable attempt state; reconciliation required');
-  return uploadAndSeal(input);
+  // Await the guarded operation so no caller can observe an unhandled
+  // rejection outside this boundary.
+  return await uploadAndSeal(input);
  };
 }
 // Must be paired with a DB-atomic writer claim and fencing. Two processes can
