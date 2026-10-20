@@ -88,3 +88,25 @@ test('authenticated invalid media cannot reach recipient claim',async()=>{
  await assert.rejects(process({...request,claimedType:'image/png'}),/Unsupported or oversized media/);
  assert.equal(claims,0);
 });
+
+test('same retry key with changed bytes, recipient or mode cannot reuse the original claim',async()=>{
+ const seen=new Map(),steps=[];
+ const deliverReveal=createRecipientBoundDeliveryCoordinator({
+  claimUpload:async args=>{
+   steps.push('claim');
+   const existing=seen.get(args.requestKey);
+   if(existing)return existing.fingerprint===args.payloadFingerprint?{action:'wait',attemptId}:{action:'reject'};
+   seen.set(args.requestKey,{fingerprint:args.payloadFingerprint});
+   return {action:'wait',attemptId};
+  },
+  prepareSealedUpload:async()=>{throw Error('writer must not run');},
+  createLinkedMessage:async()=>{throw Error('DM must not run');}
+ });
+ const process=createRecipientBoundRequestAdapter({authClient,digest:webcrypto.subtle,deliverReveal});
+ assert.equal((await process(request)).action,'pending');
+ const changedBytes=new Uint8Array(bytes);changedBytes[14]^=1;
+ assert.equal((await process({...request,bytes:changedBytes})).action,'rejected');
+ assert.equal((await process({...request,recipientId:'77777777-7777-4777-8777-777777777777'})).action,'rejected');
+ assert.equal((await process({...request,mode:'keep'})).action,'rejected');
+ assert.deepEqual(steps,['claim','claim','claim','claim']);
+});
