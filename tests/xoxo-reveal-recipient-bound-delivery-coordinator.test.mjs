@@ -37,3 +37,18 @@ test('unsealed attempts never create a linked message',async()=>{
  await assert.rejects(deliver(input),/seal unavailable/);
  assert.equal(linked,0);
 });
+
+test('mismatched sealed recipient, fingerprint or attempt never creates a DM',async()=>{
+ for(const mismatch of [{recipientId:'99999999-9999-4999-8999-999999999999'},
+  {payloadFingerprint:'b'.repeat(64)},{attemptId:'88888888-8888-4888-8888-888888888888'},
+  {objectPath:'../outside.webp'}]){
+  let linked=0;
+  const deliver=createRecipientBoundDeliveryCoordinator({
+   claimUpload:async()=>({action:'claimed',attemptId,ownerToken}),
+   prepareSealedUpload:async()=>({objectPath:'private/sealed.webp',...mismatch}),
+   createLinkedMessage:async()=>{linked++;return {revealId,dmId};}
+  });
+  await assert.rejects(deliver(input),/Trusted sealed upload required/);
+  assert.equal(linked,0);
+ }
+});
