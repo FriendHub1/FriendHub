@@ -98,3 +98,16 @@ test('missing or malformed claim ownership never begins Storage writes',async()=
   assert.equal(writes,0);
  }
 });
+
+test('invalid requests cannot even claim an upload',async()=>{
+ for(const change of [{recipientId:input.senderId},{requestKey:'short'},{payloadFingerprint:'not-sha256'},{mediaType:'text'},{mode:'timed',durationSeconds:30},{mode:'once',durationSeconds:5}]){
+  let calls=0;
+  const deliver=createRecipientBoundDeliveryCoordinator({
+   claimUpload:async()=>{calls++;return {action:'claimed',attemptId,ownerToken};},
+   prepareSealedUpload:async()=>{calls++;},
+   createLinkedMessage:async()=>{calls++;}
+  });
+  await assert.rejects(deliver({...input,...change}),/Invalid delivery request/);
+  assert.equal(calls,0);
+ }
+});
