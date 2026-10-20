@@ -8,8 +8,11 @@ export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSeal
   throw new TypeError('Trusted server dependencies required');
  return async function deliverReveal({senderId,recipientId,requestKey,payloadFingerprint,mediaType,mode,durationSeconds=null}={}){
   const claim=await claimUpload({senderId,recipientId,requestKey,payloadFingerprint});
-  if(claim.action==='return_existing')
+  if(claim?.action==='return_existing'){
+   if(!UUID.test(claim.revealId||'')||!UUID.test(claim.dmId||''))
+    throw new Error('Invalid existing delivery identifiers');
    return {action:'already_delivered',revealId:claim.revealId,dmId:claim.dmId};
+  }
   if(claim.action==='reject')return {action:'rejected'};
   if(claim.action==='wait')return {action:'pending'};
   if(claim.action==='manual_reconciliation')return {action:'needs_reconciliation'};
