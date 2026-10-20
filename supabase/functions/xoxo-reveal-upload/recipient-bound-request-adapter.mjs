@@ -8,13 +8,14 @@ export function createRecipientBoundRequestAdapter({authClient,deliverReveal,dig
  return async function processRecipientBoundRequest({
   authorization,recipientId,requestKey,bytes,claimedType,mode,seconds=null
  }={}){
+  // Snapshot request bytes before the first await; no caller mutation can change what we validate, hash or upload.
+  const verifiedBytes=bytes instanceof Uint8Array?new Uint8Array(bytes):bytes;
   const {senderId}=await authenticateRevealSender({authorization,authClient});
-  const meta=inspectRevealUpload({bytes,claimedType,senderId,recipientId,mode,seconds});
+  const meta=inspectRevealUpload({bytes:verifiedBytes,claimedType,senderId,recipientId,mode,seconds});
   if(!/^[A-Za-z0-9_-]{16,128}$/.test(requestKey||''))
    throw new TypeError('Invalid idempotency key');
   // Bind retries to recipient, media policy and actual bytes, not a client-provided hash.
   // Copy bytes before asynchronous hashing so callers cannot mutate the buffer mid-digest.
-  const verifiedBytes=new Uint8Array(bytes);
   const binding=new TextEncoder().encode(JSON.stringify(['xoxo-reveal-v1',senderId,recipientId,meta.mime,meta.mode,meta.durationSeconds]));
   const bound=new Uint8Array(4+binding.length+verifiedBytes.length);
   new DataView(bound.buffer).setUint32(0,binding.length,false);
