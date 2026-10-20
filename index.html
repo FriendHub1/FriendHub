@@ -6051,6 +6051,17 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #xoxoAdminWhispers .xoxo-whisper-visitor-demo-emojis span{padding:8px 11px;border:1px solid #ffffff55;border-radius:14px;background:#ffffff15}
 #xoxoAdminWhispers .xoxo-whisper-visitor-demo-card small{display:block;margin-top:12px;color:#dbc9ee}
 </style>
+<style id="xoxo-whisper-explorer-css">
+#xoxoAdminWhispers .xoxo-whisper-explorer{margin-top:22px;padding:20px;border:1px solid #8053ba;border-radius:20px;background:linear-gradient(145deg,#24163c,#19162f);color:#fff}
+#xoxoAdminWhispers .xoxo-whisper-explorer-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+#xoxoAdminWhispers .xoxo-whisper-explorer-head span{font-size:11px;color:#e1c6ff}
+#xoxoAdminWhispers .xoxo-whisper-explorer p{color:#e1d7ee;font-size:13px;line-height:1.5}
+#xoxoAdminWhispers .xoxo-whisper-explorer-button{border:1px solid #c7a0fa;border-radius:12px;background:#633ba0;color:white;padding:11px 16px;cursor:pointer}
+#xoxoAdminWhispers .xoxo-whisper-explorer-button:disabled{opacity:.6;cursor:wait}
+#xoxoAdminWhispers .xoxo-whisper-explorer-result{margin-top:12px;padding:15px;border:1px solid #8053ba;border-radius:15px;background:#ffffff12}
+#xoxoAdminWhispers .xoxo-whisper-explorer-result p{font-size:17px;color:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
+#xoxoAdminWhispers .xoxo-whisper-explorer-result small{color:#e1c6ff}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -7425,6 +7436,13 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
             </div>
             <small>Preview only · These icons cannot send reactions.</small>
           </div>
+        </section>
+        <section class="xoxo-whisper-explorer" aria-label="Other members Whispers admin beta">
+          <div class="xoxo-whisper-explorer-head"><strong>🫧 Other Members' Whispers</strong><span>👑 PRIVATE ADMIN BETA</span></div>
+          <p>Read-only explorer for active Whispers belonging to other accounts. This is not visible to members or Discover. Only admins can use it.</p>
+          <button type="button" id="xoxoWhisperExplorerRefresh" class="xoxo-whisper-explorer-button">↻ Load other Whispers</button>
+          <p id="xoxoWhisperExplorerStatus" role="status" aria-live="polite">Not loaded yet.</p>
+          <div id="xoxoWhisperExplorerResults"></div>
         </section>
         <section class="xoxo-whisper-activity" aria-label="My Whisper Activity">
           <div class="xoxo-whisper-activity-header"><strong>💜 My Whisper Activity</strong><span>👑 PRIVATE BETA</span></div>
@@ -21543,6 +21561,43 @@ async function xoxoAvatarClose(apply){
   setInterval(function(){
     if(document.getElementById('xoxoAdminWhispers')?.classList.contains('active'))refreshVisitorPreview();
   },30000);
+})();
+</script>
+<script id="xoxo-whisper-explorer-script">
+(function(){
+  'use strict';
+  const button=document.getElementById('xoxoWhisperExplorerRefresh');
+  const status=document.getElementById('xoxoWhisperExplorerStatus');
+  const results=document.getElementById('xoxoWhisperExplorerResults');
+  if(!button||!status||!results)return;
+  let busy=false;
+  button.addEventListener('click',async function(){
+    if(busy)return;
+    busy=true;button.disabled=true;results.replaceChildren();status.textContent='Checking admin access...';
+    try{
+      if(typeof supabaseClient==='undefined'||typeof currentUser==='undefined'||!currentUser?.id)throw Error('Sign in as an admin first.');
+      const auth=await supabaseClient.rpc('is_xoxo_admin');
+      if(auth.error||auth.data!==true)throw Error('Admin access required.');
+      status.textContent='Loading active Whispers...';
+      const response=await supabaseClient.from('xoxo_whispers')
+        .select('id,user_id,content,expires_at,created_at')
+        .neq('user_id',currentUser.id)
+        .gt('expires_at',new Date().toISOString())
+        .order('created_at',{ascending:false}).limit(25);
+      if(response.error)throw response.error;
+      const items=response.data||[];
+      if(!items.length){status.textContent='No active Whispers from other accounts yet. This is expected while publishing remains admin-only.';return;}
+      status.textContent=items.length+' active Whisper(s) found. Read-only admin view.';
+      for(const item of items){
+        const card=document.createElement('div');card.className='xoxo-whisper-explorer-result';
+        const owner=document.createElement('small');owner.textContent='Member ID: '+item.user_id;
+        const message=document.createElement('p');message.textContent=item.content||'';
+        const expiry=document.createElement('small');expiry.textContent='Expires: '+new Date(item.expires_at).toLocaleString();
+        card.append(owner,message,expiry);results.append(card);
+      }
+    }catch(e){status.textContent='Could not load other Whispers: '+(e?.message||'Unknown error');}
+    finally{busy=false;button.disabled=false;}
+  });
 })();
 </script>
 </body>
