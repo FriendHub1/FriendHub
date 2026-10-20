@@ -49,3 +49,13 @@ test('pipeline failures return generic error without leaking backend details',as
  assert.equal(response.status,503);
  assert.doesNotMatch(await response.text(),/private-token-secret/);
 });
+
+test('invalid UUID-shaped recipient is rejected before trusted pipeline',async()=>{
+ let calls=0;
+ const handle=createRecipientBoundHttpHandler({allowedOrigin:origin,processRecipientBoundRequest:async()=>{calls++;}});
+ for(const invalid of ['zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz','22222222-2222-0222-0222-222222222222','22222222-2222-4222-8222-22222222222-']){
+  const response=await handle(request({'x-reveal-recipient':invalid}));
+  assert.equal(response.status,400);
+ }
+ assert.equal(calls,0);
+});
