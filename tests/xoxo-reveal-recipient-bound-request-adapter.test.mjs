@@ -97,3 +97,14 @@ test('bytes mutated during asynchronous authentication cannot change validated u
  assert.deepEqual(delivered.bytes,bytes);
  assert.equal(delivered.payloadFingerprint,await fingerprint());
 });
+
+test('malformed authenticated identity is rejected before digest or delivery',async()=>{
+ let hashes=0,deliveries=0;
+ const invalidAuth={auth:{getUser:async()=>({data:{user:{id:'not-a-uuid'}},error:null})}};
+ const process=createRecipientBoundRequestAdapter({authClient:invalidAuth,
+  digest:{digest:async()=>{hashes++;return new Uint8Array(32).buffer;}},
+  deliverReveal:async()=>{deliveries++;}});
+ await assert.rejects(process(input),/Invalid authenticated participants/);
+ assert.equal(hashes,0);
+ assert.equal(deliveries,0);
+});
