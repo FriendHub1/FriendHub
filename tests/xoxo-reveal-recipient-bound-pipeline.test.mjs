@@ -159,3 +159,37 @@ test('atomic RPC failure after sealing never reports delivery or retries Storage
  await assert.rejects(pipeline(input),/Atomic Reveal message creation unavailable/);
  assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2','seal','xoxo_reveal_create_linked_dm_v1']);
 });
+
+test('concurrent duplicate requests write and link only once when claim reports wait',async()=>{
+ let claimCount=0,writes=0,links=0,releaseWriter;
+ const writerGate=new Promise(resolve=>{releaseWriter=resolve;});
+ const rpcClient={rpc:async(name)=>{
+  if(name==='xoxo_reveal_claim_upload_v2'){
+   claimCount++;
+   return {data:claimCount===1
+    ?{action:'claimed',attempt_id:attempt,owner_token:owner}
+    :{action:'wait',attempt_id:attempt}};
+  }
+  links++;
+  return {data:{reveal_id:reveal,dm_id:dm}};
+ }};
+ let signalWriting;
+ const writing=new Promise(resolve=>{signalWriting=resolve;});
+ const pipeline=createRecipientBoundPipeline({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async args=>{
+   writes++;signalWriting();await writerGate;
+   return {attemptId:attempt,senderId:sender,recipientId:recipient,
+    payloadFingerprint:args.payloadFingerprint,objectPath:'private/test.webp',
+    writerState:'sealed',uploadUncertain:false};
+  }});
+ const first=pipeline(input);
+ await writing;
+ const duplicate=await pipeline(input);
+ assert.deepEqual(duplicate,{action:'pending'});
+ assert.equal(writes,1);
+ assert.equal(links,0);
+ releaseWriter();
+ assert.deepEqual(await first,{action:'delivered',revealId:reveal,dmId:dm});
+ assert.equal(writes,1);
+ assert.equal(links,1);
+});
