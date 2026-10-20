@@ -21646,6 +21646,40 @@ async function xoxoAvatarClose(apply){
   const status=document.getElementById('xoxoWhisperExplorerStatus');
   const results=document.getElementById('xoxoWhisperExplorerResults');
   if(!button||!status||!results)return;
+  // Stage 16: Admin-only BETA handoff into the existing DM composer.
+  // Never sends a message on Reply click; sending still uses sendDirectMessage().
+  async function openWhisperDmDraft(item, actionButton){
+    if(!currentUser?.id || !item?.id || !item?.user_id || item.user_id===currentUser.id) return;
+    actionButton.disabled=true;
+    const oldLabel=actionButton.textContent;
+    actionButton.textContent='Opening DM...';
+    try{
+      const admin=await supabaseClient.rpc('is_xoxo_admin');
+      if(admin.error || admin.data!==true) throw Error('Admin BETA access required.');
+      const live=await supabaseClient.from('xoxo_whispers')
+        .select('id,user_id,content,expires_at')
+        .eq('id',item.id).eq('user_id',item.user_id)
+        .gt('expires_at',new Date().toISOString()).maybeSingle();
+      if(live.error)throw live.error;
+      if(!live.data)throw Error('This Whisper is no longer active.');
+      if(typeof openDirectChat!=='function')throw Error('Direct chat is unavailable.');
+      await openDirectChat(live.data.user_id,'@Member');
+      if(String(currentDmUserId)!==String(live.data.user_id))throw Error('DM could not be opened.');
+      const input=document.getElementById('dmInput');
+      if(!input)throw Error('DM composer not found.');
+      const quote=String(live.data.content||'').replace(/\s+/g,' ').trim().slice(0,100);
+      input.value='🫧 Reply to Whisper: “'+quote+'”\n';
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.focus();
+      input.setSelectionRange(input.value.length,input.value.length);
+      // The user must write a reply and explicitly press Send.
+    }catch(error){
+      status.textContent='Could not open Whisper DM draft: '+(error?.message||'Unknown error');
+    }finally{
+      actionButton.disabled=false;
+      actionButton.textContent=oldLabel;
+    }
+  }
   let busy=false;
   button.addEventListener('click',async function(){
     if(busy)return;
@@ -21663,13 +21697,18 @@ async function xoxoAvatarClose(apply){
       if(response.error)throw response.error;
       const items=response.data||[];
       if(!items.length){status.textContent='No active Whispers from other accounts yet. This is expected while publishing remains admin-only.';return;}
-      status.textContent=items.length+' active Whisper(s) found. Read-only admin view.';
+      status.textContent=items.length+' active Whisper(s) found. Admin-only DM draft preview; nothing sends until you press Send.';
       for(const item of items){
         const card=document.createElement('div');card.className='xoxo-whisper-explorer-result';
         const owner=document.createElement('small');owner.textContent='Member ID: '+item.user_id;
         const message=document.createElement('p');message.textContent=item.content||'';
         const expiry=document.createElement('small');expiry.textContent='Expires: '+new Date(item.expires_at).toLocaleString();
-        card.append(owner,message,expiry);results.append(card);
+        const reply=document.createElement('button');
+        reply.type='button';
+        reply.className='xoxo-whisper-explorer-button';
+        reply.textContent='💬 Reply in DM · Admin BETA';
+        reply.addEventListener('click',()=>openWhisperDmDraft(item,reply));
+        card.append(owner,message,expiry,reply);results.append(card);
       }
     }catch(e){status.textContent='Could not load other Whispers: '+(e?.message||'Unknown error');}
     finally{busy=false;button.disabled=false;}
