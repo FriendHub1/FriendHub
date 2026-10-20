@@ -5943,6 +5943,16 @@ body :is(.profile-photo-viewer,.profile-photo-viewer-image,.post-media img,.post
  .comment-media img,.comment-media video){background-image:none!important}
 @media(max-width:700px){body :is(.profile-card,.content-card,.public-profile-card,.composer,.post){box-shadow:0 7px 18px #1b042c38!important}}
 </style>
+<style id="xoxo-compact-theme-menu-css">
+.auth-buttons{position:relative}
+.xoxo-header-theme-control{display:none;position:absolute;right:0;top:calc(100% + 7px);z-index:1600;text-align:right}
+body:has(#home.active) .xoxo-header-theme-control{display:block}
+.xoxo-theme-toggle{border:1px solid #b986ec;border-radius:10px;background:#301247;color:#fff;padding:6px 11px;font-size:13px;font-weight:750;white-space:nowrap;box-shadow:0 3px 10px #0003}
+.xoxo-theme-options{position:absolute;right:0;top:calc(100% + 6px);min-width:175px;padding:7px;background:#2b103e;border:1px solid #d479ed;border-radius:12px;box-shadow:0 12px 30px #0007}
+.xoxo-theme-options[hidden]{display:none!important}
+.xoxo-theme-options button{display:block;width:100%;border:0;border-radius:8px;background:transparent;color:#fff;padding:10px 12px;text-align:left;font-size:13px;font-weight:700;white-space:nowrap}
+.xoxo-theme-options button:hover,.xoxo-theme-options button[aria-pressed="true"]{background:#8236a4}
+</style>
 <script id="xoxo-dual-visual-theme-controller">
 (function(){
   'use strict';
@@ -5966,6 +5976,10 @@ body :is(.profile-photo-viewer,.profile-photo-viewer-image,.post-media img,.post
     try{localStorage.setItem(key(),value)}catch(e){}
     apply(value);
   };
+  window.xoxoCloseThemeMenu=function(){var menu=document.getElementById('xoxo-visual-theme-picker'),btn=document.getElementById('xoxo-theme-toggle');if(menu)menu.hidden=true;if(btn)btn.setAttribute('aria-expanded','false')};
+  window.xoxoToggleThemeMenu=function(event){if(event)event.stopPropagation();var menu=document.getElementById('xoxo-visual-theme-picker'),btn=document.getElementById('xoxo-theme-toggle');if(!menu)return;menu.hidden=!menu.hidden;if(btn)btn.setAttribute('aria-expanded',String(!menu.hidden))};
+  document.addEventListener('click',function(event){var control=document.getElementById('xoxo-header-theme-control');if(control&&!control.contains(event.target))window.xoxoCloseThemeMenu()});
+  document.addEventListener('keydown',function(event){if(event.key==='Escape')window.xoxoCloseThemeMenu()});
   window.xoxoRefreshVisualTheme=function(){apply(read())};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',window.xoxoRefreshVisualTheme,{once:true});
   else window.xoxoRefreshVisualTheme();
@@ -6034,6 +6048,13 @@ body :is(.profile-photo-viewer,.profile-photo-viewer-image,.post-media img,.post
                                     <button class="btn btn-secondary" id="logoutBtn" onclick="logout()" style="display:none;">
                                     Log Out
                                     </button>
+                                    <div id="xoxo-header-theme-control" class="xoxo-header-theme-control">
+                                      <button type="button" id="xoxo-theme-toggle" class="xoxo-theme-toggle" aria-expanded="false" aria-controls="xoxo-visual-theme-picker" onclick="window.xoxoToggleThemeMenu(event)">🎨 Theme</button>
+                                      <div id="xoxo-visual-theme-picker" class="xoxo-theme-options" role="group" aria-label="Website appearance" hidden>
+                                        <button type="button" id="xoxo-theme-original" onclick="window.xoxoChooseVisualTheme('original');window.xoxoCloseThemeMenu()" aria-pressed="true">💜 Original</button>
+                                        <button type="button" id="xoxo-theme-neon" onclick="window.xoxoChooseVisualTheme('neon');window.xoxoCloseThemeMenu()" aria-pressed="false">⚡ Neon Nights</button>
+                                      </div>
+                                    </div>
                                     </div>
                                     </div>
                                     </header>
@@ -6041,11 +6062,6 @@ body :is(.profile-photo-viewer,.profile-photo-viewer-image,.post-media img,.post
                                     <section id="home" class="page active">
                                     <div class="hero">
                                     <div class="container hero-content">
-<div id="xoxo-visual-theme-picker" role="group" aria-label="Website appearance" style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:9px;margin:0 auto 24px;position:relative;z-index:2">
-  <span style="font-weight:800">🎨 Theme</span>
-  <button type="button" id="xoxo-theme-original" class="btn btn-secondary" onclick="window.xoxoChooseVisualTheme('original')" aria-pressed="true">💜 Original</button>
-  <button type="button" id="xoxo-theme-neon" class="btn btn-secondary" onclick="window.xoxoChooseVisualTheme('neon')" aria-pressed="false">⚡ Neon Nights</button>
-</div>
 
                                     <div class="hero-badge">
                                     A place to meet people
