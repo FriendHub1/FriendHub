@@ -6,6 +6,13 @@ const senderId='11111111-1111-4111-8111-111111111111',recipientId='22222222-2222
 const authClient={auth:{getUser:async token=>({data:{user:{id:senderId}},error:null})}};
 const bytes=Uint8Array.from([82,73,70,70,0,0,0,0,87,69,66,80,1,2,3]);
 const input={authorization:'Bearer valid.token',recipientId,requestKey:'stable_request_key_123',bytes,claimedType:'image/webp',mode:'once'};
+const fingerprint=async({sender=senderId,recipient=recipientId,mime='image/webp',mode='once',seconds=null,data=bytes}={})=>{
+ const binding=new TextEncoder().encode(JSON.stringify(['xoxo-reveal-v1',sender,recipient,mime,mode,seconds]));
+ const bound=new Uint8Array(4+binding.length+data.length);
+ new DataView(bound.buffer).setUint32(0,binding.length,false);
+ bound.set(binding,4);bound.set(data,4+binding.length);
+ return Buffer.from(await webcrypto.subtle.digest('SHA-256',bound)).toString('hex');
+};
 test('authenticates and hashes verified bytes before calling delivery coordinator',async()=>{
  let args;
  const process=createRecipientBoundRequestAdapter({authClient,digest:webcrypto.subtle,deliverReveal:async x=>{args=x;return {action:'pending'};}});
@@ -17,7 +24,7 @@ test('authenticates and hashes verified bytes before calling delivery coordinato
  assert.notEqual(args.bytes,bytes);
  assert.deepEqual(args.bytes,bytes);
  assert.match(args.payloadFingerprint,/^[0-9a-f]{64}$/);
- const expected=Buffer.from(await webcrypto.subtle.digest('SHA-256',bytes)).toString('hex');
+ const expected=await fingerprint();
  assert.equal(args.payloadFingerprint,expected);
 });
 test('unauthenticated, malformed or invalid media never reaches delivery',async()=>{
@@ -61,6 +68,16 @@ test('hash and delivered bytes use an immutable snapshot when caller mutates ori
  await pending;
  assert.notEqual(received.bytes,source);
  assert.equal(received.bytes[received.bytes.length-1],bytes[bytes.length-1]);
- const expected=Buffer.from(await webcrypto.subtle.digest('SHA-256',bytes)).toString('hex');
+ const expected=await fingerprint();
  assert.equal(received.payloadFingerprint,expected);
+});
+
+test('fingerprint binds recipient and mode to prevent cross-recipient replay',async()=>{
+ const hashes=[];
+ const process=createRecipientBoundRequestAdapter({authClient,digest:webcrypto.subtle,deliverReveal:async x=>{hashes.push(x.payloadFingerprint);return {action:'pending'};}});
+ await process(input);
+ await process({...input,recipientId:'33333333-3333-4333-8333-333333333333'});
+ await process({...input,mode:'keep'});
+ assert.equal(new Set(hashes).size,3);
+ assert.equal(hashes[0],await fingerprint());
 });
