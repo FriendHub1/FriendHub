@@ -108,3 +108,17 @@ test('malformed authenticated identity is rejected before digest or delivery',as
  assert.equal(hashes,0);
  assert.equal(deliveries,0);
 });
+
+test('oversized or malformed bodies are rejected before authentication or hashing',async()=>{
+ let authCalls=0,hashCalls=0,deliveryCalls=0;
+ const auth={auth:{getUser:async()=>{authCalls++;return {data:{user:{id:senderId}},error:null};}}};
+ const process=createRecipientBoundRequestAdapter({authClient:auth,
+  digest:{digest:async()=>{hashCalls++;return new Uint8Array(32).buffer;}},
+  deliverReveal:async()=>{deliveryCalls++;}});
+ for(const body of [null,new Uint8Array(0),new Uint8Array(15*1024*1024+1),'not bytes']){
+  await assert.rejects(process({...input,bytes:body}),/Invalid or oversized upload bytes/);
+ }
+ assert.equal(authCalls,0);
+ assert.equal(hashCalls,0);
+ assert.equal(deliveryCalls,0);
+});
