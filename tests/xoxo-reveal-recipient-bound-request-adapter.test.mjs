@@ -14,7 +14,8 @@ test('authenticates and hashes verified bytes before calling delivery coordinato
  assert.equal(args.recipientId,recipientId);
  assert.equal(args.mediaType,'image');
  assert.equal(args.mime,'image/webp');
- assert.equal(args.bytes,bytes);
+ assert.notEqual(args.bytes,bytes);
+ assert.deepEqual(args.bytes,bytes);
  assert.match(args.payloadFingerprint,/^[0-9a-f]{64}$/);
  const expected=Buffer.from(await webcrypto.subtle.digest('SHA-256',bytes)).toString('hex');
  assert.equal(args.payloadFingerprint,expected);
