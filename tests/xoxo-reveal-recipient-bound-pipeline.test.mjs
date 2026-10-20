@@ -193,3 +193,32 @@ test('concurrent duplicate requests write and link only once when claim reports 
  assert.equal(writes,1);
  assert.equal(links,1);
 });
+
+test('recipient-bound idempotency rejects replay to a different recipient without Storage writes',async()=>{
+ const fingerprints=new Map();
+ let writes=0,links=0;
+ const rpcClient={rpc:async(name,args)=>{
+  if(name==='xoxo_reveal_claim_upload_v2'){
+   const key=args.p_request_key;
+   const previous=fingerprints.get(key);
+   if(previous && (previous.recipient!==args.p_recipient_id||previous.fingerprint!==args.p_payload_fingerprint))
+    return {data:{action:'reject',attempt_id:attempt}};
+   fingerprints.set(key,{recipient:args.p_recipient_id,fingerprint:args.p_payload_fingerprint});
+   return {data:{action:'claimed',attempt_id:attempt,owner_token:owner}};
+  }
+  links++;
+  return {data:{reveal_id:reveal,dm_id:dm}};
+ }};
+ const pipeline=createRecipientBoundPipeline({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async args=>{
+   writes++;
+   return {attemptId:attempt,senderId:sender,recipientId:args.recipientId,
+    payloadFingerprint:args.payloadFingerprint,objectPath:'private/test.webp',
+    writerState:'sealed',uploadUncertain:false};
+  }});
+ assert.equal((await pipeline(input)).action,'delivered');
+ const secondRecipient='77777777-7777-4777-8777-777777777777';
+ assert.deepEqual(await pipeline({...input,recipientId:secondRecipient}),{action:'rejected'});
+ assert.equal(writes,1);
+ assert.equal(links,1);
+});
