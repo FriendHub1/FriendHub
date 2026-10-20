@@ -6039,6 +6039,18 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #xoxoAdminWhispers .xoxo-whisper-activity-item small{color:#cbb9df}
 #xoxoAdminWhispers .xoxo-whisper-activity-refresh{margin-top:15px;background:#6939a2;color:white;border:1px solid #a677df;padding:10px 16px;border-radius:12px;cursor:pointer}
 </style>
+<style id="xoxo-whisper-visitor-demo-style">
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo{margin-top:22px;padding:20px;border-radius:20px;background:linear-gradient(135deg,#1d173b,#2e1950);border:1px solid #7950af;color:#fff}
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo-heading{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo-heading span{font-size:11px;letter-spacing:.04em;color:#d8baff}
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo-info{margin:9px 0 17px;font-size:13px;color:#ddd0ed}
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo-card{border:1px solid #8856cc;border-radius:20px;padding:19px;background:radial-gradient(circle at top right,#9b4c9c66,transparent 52%),linear-gradient(130deg,#4a237a,#282451)}
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo-top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px;color:#f0d8ff}
+#xoxoAdminWhispers #xoxoVisitorWhisperText{font-size:19px;line-height:1.5;color:white;white-space:pre-wrap;overflow-wrap:anywhere;margin:20px 0}
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo-emojis{display:flex;gap:9px;flex-wrap:wrap}
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo-emojis span{padding:8px 11px;border:1px solid #ffffff55;border-radius:14px;background:#ffffff15}
+#xoxoAdminWhispers .xoxo-whisper-visitor-demo-card small{display:block;margin-top:12px;color:#dbc9ee}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -7400,6 +7412,18 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
             <button type="button" data-xoxo-whisper-emoji="😍" aria-pressed="false" disabled>😍</button>
             <button type="button" data-xoxo-whisper-emoji="🔥" aria-pressed="false" disabled>🔥</button>
             <small id="xoxoWhisperReactionStatus" role="status" aria-live="polite">Publish a whisper to test reactions privately.</small>
+          </div>
+        </section>
+        <section class="xoxo-whisper-visitor-demo" aria-label="Visitor profile whisper preview">
+          <div class="xoxo-whisper-visitor-demo-heading"><strong>🫧 Visitor Profile Preview</strong><span>👑 ADMIN ONLY · SIMULATION</span></div>
+          <p class="xoxo-whisper-visitor-demo-info">Preview how your own Whisper would look to another member after launch. This does not open profiles, query other users, or save visitor reactions.</p>
+          <div class="xoxo-whisper-visitor-demo-card">
+            <div class="xoxo-whisper-visitor-demo-top"><span>🫧 Whisper on profile</span><span id="xoxoVisitorWhisperRemaining">Not published</span></div>
+            <p id="xoxoVisitorWhisperText">Publish a Whisper to see its visitor preview.</p>
+            <div class="xoxo-whisper-visitor-demo-emojis" aria-label="Visual-only visitor reaction examples">
+              <span>💜</span><span>❤️</span><span>😂</span><span>😍</span><span>🔥</span>
+            </div>
+            <small>Preview only · These icons cannot send reactions.</small>
           </div>
         </section>
         <section class="xoxo-whisper-activity" aria-label="My Whisper Activity">
@@ -21491,6 +21515,34 @@ async function xoxoAvatarClose(apply){
  const previous=window.xoxoWhisperPreviewRefresh;
  window.xoxoWhisperPreviewRefresh=function(){if(typeof previous==='function')previous();refresh();};
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+})();
+</script>
+<script id="xoxo-whisper-visitor-demo-script">
+(function(){
+  'use strict';
+  function refreshVisitorPreview(){
+    const message=document.getElementById('xoxoVisitorWhisperText');
+    const timer=document.getElementById('xoxoVisitorWhisperRemaining');
+    if(!message||!timer)return;
+    const w=typeof xoxoAdminWhisperActive!=='undefined'?xoxoAdminWhisperActive:null;
+    const ms=w?new Date(w.expires_at).getTime()-Date.now():0;
+    if(!w||!Number.isFinite(ms)||ms<=0){
+      message.textContent='Publish a Whisper to see its visitor preview.';
+      timer.textContent='Not published';
+      return;
+    }
+    message.textContent=w.content;
+    timer.textContent='⏳ '+Math.floor(ms/3600000)+'h '+Math.floor((ms%3600000)/60000)+'m left';
+  }
+  const previous=window.xoxoWhisperPreviewRefresh;
+  window.xoxoWhisperPreviewRefresh=function(){
+    if(typeof previous==='function')previous();
+    refreshVisitorPreview();
+  };
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)refreshVisitorPreview()});
+  setInterval(function(){
+    if(document.getElementById('xoxoAdminWhispers')?.classList.contains('active'))refreshVisitorPreview();
+  },30000);
 })();
 </script>
 </body>
