@@ -81,3 +81,19 @@ test('fingerprint binds recipient and mode to prevent cross-recipient replay',as
  assert.equal(new Set(hashes).size,3);
  assert.equal(hashes[0],await fingerprint());
 });
+
+test('bytes mutated during asynchronous authentication cannot change validated upload',async()=>{
+ const source=Uint8Array.from(bytes);
+ let releaseAuth;
+ const gate=new Promise(resolve=>{releaseAuth=resolve;});
+ const slowAuth={auth:{getUser:async()=>{await gate;return {data:{user:{id:senderId}},error:null};}}};
+ let delivered;
+ const process=createRecipientBoundRequestAdapter({authClient:slowAuth,digest:webcrypto.subtle,
+  deliverReveal:async x=>{delivered=x;return {action:'pending'};}});
+ const pending=process({...input,bytes:source});
+ source[source.length-1]^=255;
+ releaseAuth();
+ await pending;
+ assert.deepEqual(delivered.bytes,bytes);
+ assert.equal(delivered.payloadFingerprint,await fingerprint());
+});
