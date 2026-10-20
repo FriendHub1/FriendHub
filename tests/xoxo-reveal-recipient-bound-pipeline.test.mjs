@@ -140,3 +140,22 @@ test('atomic RPC error after sealed Storage never reports success or retries wri
  await assert.rejects(pipeline(input),/Atomic Reveal message creation unavailable/);
  assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2','seal','xoxo_reveal_create_linked_dm_v1']);
 });
+
+test('atomic RPC failure after sealing never reports delivery or retries Storage',async()=>{
+ const calls=[];
+ const rpcClient={rpc:async name=>{
+  calls.push(name);
+  if(name==='xoxo_reveal_claim_upload_v2')
+   return {data:{action:'claimed',attempt_id:attempt,owner_token:owner}};
+  throw new Error('database unavailable');
+ }};
+ const pipeline=createRecipientBoundPipeline({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async args=>{
+   calls.push('seal');
+   return {attemptId:attempt,senderId:sender,recipientId:recipient,
+    payloadFingerprint:args.payloadFingerprint,objectPath:'private/test.webp',
+    writerState:'sealed',uploadUncertain:false};
+  }});
+ await assert.rejects(pipeline(input),/Atomic Reveal message creation unavailable/);
+ assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2','seal','xoxo_reveal_create_linked_dm_v1']);
+});
