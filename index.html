@@ -6012,7 +6012,20 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #admin .xoxo-whispers-beta-actions{display:flex;gap:10px;flex-wrap:wrap}
 #admin #xoxoAdminWhisperDelete[hidden]{display:none!important}
 </style>
-<style id="xoxo-whispers-no-edit">#xoxoAdminWhisperSave[hidden]{display:none!important}#xoxoAdminWhisperInput[readonly]{opacity:.88;cursor:default}</style></head>
+<style id="xoxo-whispers-no-edit">#xoxoAdminWhisperSave[hidden]{display:none!important}#xoxoAdminWhisperInput[readonly]{opacity:.88;cursor:default}</style><style id="xoxo-whispers-admin-preview-css">
+#xoxoAdminWhispers .xoxo-whisper-preview{margin-top:24px;padding:22px;border:1px solid #6949a3;border-radius:20px;background:linear-gradient(145deg,#211540,#11172f);color:#f8f3ff}
+#xoxoAdminWhispers .xoxo-whisper-preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#xoxoAdminWhispers .xoxo-whisper-preview-head span{font-size:11px;letter-spacing:.06em;color:#e7caff}
+#xoxoAdminWhispers .xoxo-whisper-preview-note{font-size:13px;color:#c6b7df;margin:8px 0 18px}
+#xoxoAdminWhispers .xoxo-whisper-preview-bubble{position:relative;min-height:128px;border:1px solid #7b4dd0;border-radius:22px;padding:25px;background:radial-gradient(circle at 95% 5%,#7b3ed766,transparent 42%),linear-gradient(135deg,#3b1a70,#19193b);box-shadow:0 12px 28px #08081955}
+#xoxoAdminWhispers .xoxo-whisper-preview-mark{position:absolute;right:18px;top:14px;font-size:25px}
+#xoxoAdminWhispers #xoxoWhisperPreviewText{font-size:19px;line-height:1.5;color:white;overflow-wrap:anywhere;white-space:pre-wrap;padding-right:30px}
+#xoxoAdminWhispers .xoxo-whisper-preview-timer{display:block;margin-top:14px;color:#e3c6ff;font-size:12px}
+#xoxoAdminWhispers .xoxo-whisper-preview-reactions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+#xoxoAdminWhispers .xoxo-whisper-preview-reactions>span{border:1px solid #7554a0;border-radius:14px;padding:8px 11px;background:#ffffff12}
+#xoxoAdminWhispers .xoxo-whisper-preview-reactions small{display:block;width:100%;color:#c6b7df}
+</style>
+</head>
                                     <body>
                                     <header>
                                     <div class="container nav">
@@ -7358,6 +7371,20 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
           <button type="button" class="btn btn-secondary" id="xoxoAdminWhisperDelete" onclick="xoxoAdminWhisperDelete()" hidden>Delete whisper</button>
         </div>
         <p id="xoxoAdminWhisperStatus" role="status" aria-live="polite"></p>
+        <section class="xoxo-whisper-preview" aria-label="Private Whisper preview">
+          <div class="xoxo-whisper-preview-head"><strong>🫧 Whisper Preview</strong><span>👑 ADMIN ONLY</span></div>
+          <p class="xoxo-whisper-preview-note">This is how your whisper could appear to other members after launch. Private preview only.</p>
+          <div class="xoxo-whisper-preview-bubble">
+            <span class="xoxo-whisper-preview-mark">🫧</span>
+            <p id="xoxoWhisperPreviewText">Publish a whisper to preview it here.</p>
+            <span id="xoxoWhisperPreviewTimer" class="xoxo-whisper-preview-timer">Not published</span>
+          </div>
+          <div class="xoxo-whisper-preview-reactions" aria-label="Future reactions preview">
+            <span>💜</span><span>❤️</span><span>😂</span><span>😍</span><span>🔥</span>
+            <small>Reaction buttons are a visual preview; they do not send or save reactions yet.</small>
+          </div>
+        </section>
+
       </div>
     </div>
     <div id="xoxoAdminMagicBox" class="xoxo-admin-panel">
@@ -16657,7 +16684,7 @@ function switchXoxoAdminTab(tab, button) {
   if(button) button.classList.add("active");
   if(tab === "magicbox") { xoxoMagicBoxStudioOpen(); }
   else { xoxoMagicBoxStudioClose(); }
-  if(tab === "whispers") xoxoAdminWhisperLoad();
+  if(tab === "whispers") { xoxoAdminWhisperLoad().then(xoxoWhisperPreviewRefresh); }
   if(tab === "support") loadXoxoAdminSupportCases();
   if(tab === "activity") loadXoxoActivity();
   if(tab === "moderation") { loadXoxoAdminMessageStats(); loadXoxoDmReports(); loadXoxoDmConversations(); }
@@ -21299,6 +21326,32 @@ async function xoxoAvatarClose(apply){
     if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(box);
     update();
   });
+})();
+</script>
+
+<script id="xoxo-whispers-admin-preview-v1">
+(function(){
+  'use strict';
+  function refresh(){
+    const text=document.getElementById('xoxoWhisperPreviewText');
+    const timer=document.getElementById('xoxoWhisperPreviewTimer');
+    if(!text||!timer)return;
+    const whisper=typeof xoxoAdminWhisperActive!=='undefined' ? xoxoAdminWhisperActive : null;
+    if(!whisper || new Date(whisper.expires_at).getTime()<=Date.now()){
+      text.textContent='Publish a whisper to preview it here.';
+      timer.textContent='Not published';
+      return;
+    }
+    text.textContent=whisper.content;
+    const remaining=Math.max(0,Math.floor((new Date(whisper.expires_at).getTime()-Date.now())/1000));
+    const hours=Math.floor(remaining/3600), minutes=Math.floor((remaining%3600)/60);
+    timer.textContent=remaining ? '⏳ '+hours+'h '+minutes+'m remaining' : 'Expired';
+  }
+  window.xoxoWhisperPreviewRefresh=refresh;
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)refresh()});
+  setInterval(function(){
+    if(document.getElementById('xoxoAdminWhispers')?.classList.contains('active'))refresh();
+  },30000);
 })();
 </script>
 </body>
