@@ -55,6 +55,9 @@ BEGIN
    (b.blocker_id=p_sender_id AND b.blocked_id=p_recipient_id) OR
    (b.blocker_id=p_recipient_id AND b.blocked_id=p_sender_id))
  THEN RAISE EXCEPTION 'DM relationship blocked'; END IF;
+ IF NOT public.xoxo_has_existing_dm_or_acceptance(p_sender_id,p_recipient_id)
+ THEN RAISE EXCEPTION 'DM relationship not authorized'; END IF;
+ /* Existing DM relationship audit retained below for isolated test parity.
  IF NOT EXISTS(SELECT 1 FROM public.direct_messages d WHERE
     (d.sender_id=p_sender_id AND d.recipient_id=p_recipient_id) OR
     (d.sender_id=p_recipient_id AND d.recipient_id=p_sender_id))
@@ -62,7 +65,7 @@ BEGIN
     WHERE m.status='accepted' AND
     ((m.sender_id=p_sender_id AND m.recipient_id=p_recipient_id) OR
      (m.sender_id=p_recipient_id AND m.recipient_id=p_sender_id)))
- THEN RAISE EXCEPTION 'DM relationship not authorized'; END IF;
+ THEN RAISE EXCEPTION 'DM relationship not authorized'; END IF; */
  INSERT INTO public.direct_messages(id,sender_id,recipient_id)
  VALUES(gen_random_uuid(),p_sender_id,p_recipient_id) RETURNING id INTO v_dm_id;
  INSERT INTO public.xoxo_reveals(
