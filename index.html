@@ -6690,7 +6690,10 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     
                                     <button type="button" class="dm-chat-delete-button" onclick="openDmDeleteOptions()" title="Delete conversation" aria-label="Delete conversation">🗑️</button>
                                     </div>
+                                    <div class="xoxo-dm-scroll-wrap">
                                     <div id="dmMessages" class="dm-messages"></div>
+                                    <button id="xoxoDmScrollDown" class="xoxo-dm-scroll-down" type="button" aria-label="Ir al mensaje más reciente" title="Ir al mensaje más reciente" hidden onclick="xoxoDmGoToBottom()">↓</button>
+                                    </div>
                                     <div id="dmReplyPreview" class="dm-reply-preview" style="display:none;"></div>
                                     <form id="dmForm" class="dm-composer" onsubmit="sendDirectMessage(event)">
                                     <input id="dmMediaInput" type="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="handleDmMediaSelected(event)">
@@ -21163,6 +21166,40 @@ async function xoxoAvatarClose(apply){
  var oldOpen=window.xoxoStudioOpen;if(typeof oldOpen==='function')window.xoxoStudioOpen=async function(){var result=await oldOpen.apply(this,arguments);sync();return result;};
  var oldLoad=window.xoxoStudioLoadOwn;if(typeof oldLoad==='function')window.xoxoStudioLoadOwn=async function(){var result=await oldLoad.apply(this,arguments);sync();return result;};
  document.addEventListener('DOMContentLoaded',sync);
+})();
+</script>
+<style id="xoxo-dm-scroll-down-style">
+.xoxo-dm-scroll-wrap{position:relative;min-width:0}
+.xoxo-dm-scroll-down{position:absolute;right:16px;bottom:16px;z-index:12;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:linear-gradient(135deg,#9a38d0,#e445b7);color:#fff;font-size:24px;font-weight:800;line-height:1;box-shadow:0 5px 18px #0006;cursor:pointer;display:grid;place-items:center;transition:transform .15s,opacity .15s}
+.xoxo-dm-scroll-down:hover{transform:translateY(2px)}
+.xoxo-dm-scroll-down[hidden]{display:none!important}
+</style>
+<script id="xoxo-dm-scroll-down-script">
+(function(){
+  function update(){
+    const box=document.getElementById('dmMessages');
+    const button=document.getElementById('xoxoDmScrollDown');
+    if(!box||!button)return;
+    const distance=box.scrollHeight-box.scrollTop-box.clientHeight;
+    button.hidden=!(box.scrollHeight>box.clientHeight+65&&distance>100);
+    const names={en:'Jump to latest message',es:'Ir al mensaje más reciente','pt-BR':'Ir para a mensagem mais recente',fr:'Aller au dernier message',pl:'Przejdź do najnowszej wiadomości'};
+    const lang=localStorage.getItem('friendhub_language')||'en';
+    button.setAttribute('aria-label',names[lang]||names.en);
+    button.title=names[lang]||names.en;
+  }
+  window.xoxoDmGoToBottom=function(){
+    const box=document.getElementById('dmMessages');
+    if(box)box.scrollTo({top:box.scrollHeight,behavior:'smooth'});
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    const box=document.getElementById('dmMessages');
+    if(!box)return;
+    box.addEventListener('scroll',update,{passive:true});
+    const observer=new MutationObserver(function(){requestAnimationFrame(update)});
+    observer.observe(box,{childList:true,subtree:true});
+    if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(box);
+    update();
+  });
 })();
 </script>
 </body>
