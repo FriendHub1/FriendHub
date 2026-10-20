@@ -23,9 +23,10 @@ export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSeal
    sealed.objectPath.startsWith('/')||sealed.objectPath.includes('..')||
    sealed.objectPath.includes('?')||sealed.objectPath.includes('#')||
    sealed.objectPath.includes('\\\\')||
-   (sealed.attemptId!==undefined&&sealed.attemptId!==claim.attemptId)||
-   (sealed.recipientId!==undefined&&sealed.recipientId!==recipientId)||
-   (sealed.payloadFingerprint!==undefined&&sealed.payloadFingerprint!==payloadFingerprint))
+   sealed.attemptId!==claim.attemptId||
+   sealed.senderId!==senderId||sealed.recipientId!==recipientId||
+   sealed.payloadFingerprint!==payloadFingerprint||
+   sealed.writerState!=='sealed'||sealed.uploadUncertain!==false)
    throw new Error('Trusted sealed upload required');
   const result=await createLinkedMessage({
    attemptId:claim.attemptId,claimToken:claim.ownerToken,
