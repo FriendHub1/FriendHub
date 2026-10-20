@@ -13,10 +13,10 @@ export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSeal
     throw new Error('Invalid existing delivery identifiers');
    return {action:'already_delivered',revealId:claim.revealId,dmId:claim.dmId};
   }
-  if(claim.action==='reject')return {action:'rejected'};
-  if(claim.action==='wait')return {action:'pending'};
-  if(claim.action==='manual_reconciliation')return {action:'needs_reconciliation'};
-  if(claim.action!=='claimed'||!claim.attemptId||!claim.ownerToken)
+  if(claim?.action==='reject')return {action:'rejected'};
+  if(claim?.action==='wait')return {action:'pending'};
+  if(claim?.action==='manual_reconciliation')return {action:'needs_reconciliation'};
+  if(claim?.action!=='claimed'||!UUID.test(claim.attemptId||'')||!UUID.test(claim.ownerToken||''))
    throw new Error('Invalid claim state');
   // Never start another write when an existing attempt is pending or uncertain.
   const sealed=await prepareSealedUpload({
