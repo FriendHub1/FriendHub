@@ -24,7 +24,7 @@ export function createRecipientBoundHttpHandler({allowedOrigin,processRecipientB
   const mode=request.headers.get('x-reveal-mode');
   const secondsHeader=request.headers.get('x-reveal-seconds');
   const seconds=secondsHeader===null?null:Number(secondsHeader);
-  if(!/^[0-9a-f-]{36}$/i.test(recipientId||'')||
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(recipientId||'')||
      !/^[A-Za-z0-9_-]{16,128}$/.test(requestKey||'')||
      !['once','timed','keep'].includes(mode)||
      (mode==='timed'?![5,10,15,20].includes(seconds):secondsHeader!==null))
