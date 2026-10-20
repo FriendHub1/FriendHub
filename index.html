@@ -5701,7 +5701,7 @@ html[lang="pl"] #saved .saved-posts-header::before { content: "🔖 Twoja kolekc
 #publicProfile .public-profile-card .public-profile-avatar {transition:opacity .12s ease-out;}
 @media(prefers-reduced-motion:reduce){#profileCard .profile-avatar,#publicProfile .public-profile-card .public-profile-avatar{transition:none!important;}}
 </style>
-<style id="xoxo-neon-nights-visual-only">
+<style id="xoxo-neon-nights-visual-only" media="not all">
 /* XOXO NEON NIGHTS — VISUAL SKIN ONLY | No HTML/JS/application changes */
 :root{--nn-bg:#100520;--nn-panel:#211039;--nn-pink:#ff28bd;--nn-violet:#ab43ff;--nn-cyan:#41e8ff;--nn-text:#fff7ff;--nn-muted:#e8c9f3}
 body{background:radial-gradient(ellipse at 10% 15%,#67146b 0,transparent 35%),radial-gradient(ellipse at 90% 30%,#25145e 0,transparent 35%),#100520!important;color:var(--nn-text)!important}
@@ -5755,7 +5755,7 @@ select option{background:#210d38!important;color:#fff!important}
 
 </style>
 
-<style id="xoxo-neon-nights-purple-pink-refinement">
+<style id="xoxo-neon-nights-purple-pink-refinement" media="not all">
 /* Final visual overrides only: preserve existing markup and application behavior. */
 html,body{background:#1d082b!important;background-image:radial-gradient(ellipse at 0% 38%,#5a126c 0%,transparent 48%),radial-gradient(ellipse at 100% 55%,#701353 0%,transparent 49%),linear-gradient(125deg,#190724,#2b0a40 52%,#240a34)!important;background-attachment:fixed!important;color:#fff1fc!important}
 .page,.page.active,main,#app,.app-container{background-color:transparent!important}
@@ -5814,7 +5814,7 @@ footer,.footer,.site-footer{
 </style>
 
 
-<style id="xoxo-neon-highlight-icon-strip-fix">
+<style id="xoxo-neon-highlight-icon-strip-fix" media="not all">
 /* HOME: replace long glowing emoji strips with centered compact neon icon tiles */
 #home .features.xoxo-home-highlights .xoxo-highlight-grid .xoxo-highlight-card{
  display:flex!important;flex-direction:column!important;align-items:center!important;
@@ -5861,7 +5861,7 @@ footer,.footer,.site-footer{
 </style>
 
 <!-- Neon Nights: continuous page background; visual styles only -->
-<style id="xoxo-neon-continuous-background-fix">
+<style id="xoxo-neon-continuous-background-fix" media="not all">
 html { background:#21092f !important; min-height:100%; }
 body {
  min-height:100vh !important;
@@ -5886,7 +5886,7 @@ body main:has(> .page){
 </style>
 
 <!-- XOXO Neon Nights: unified cards across all sections; CSS only -->
-<style id="xoxo-neon-nights-unified-panels">
+<style id="xoxo-neon-nights-unified-panels" media="not all">
 :root{
  --nn-unified-panel:linear-gradient(135deg,#50135e 0%,#351047 48%,#5d175d 100%);
  --nn-unified-inner:linear-gradient(140deg,#481153 0%,#2d0c40 65%,#49114f 100%);
@@ -5943,6 +5943,34 @@ body :is(.profile-photo-viewer,.profile-photo-viewer-image,.post-media img,.post
  .comment-media img,.comment-media video){background-image:none!important}
 @media(max-width:700px){body :is(.profile-card,.content-card,.public-profile-card,.composer,.post){box-shadow:0 7px 18px #1b042c38!important}}
 </style>
+<script id="xoxo-dual-visual-theme-controller">
+(function(){
+  'use strict';
+  var neonIds=['xoxo-neon-nights-visual-only','xoxo-neon-nights-purple-pink-refinement','xoxo-neon-highlight-icon-strip-fix','xoxo-neon-continuous-background-fix','xoxo-neon-nights-unified-panels'];
+  var prefix='xoxo_visual_theme_v1_';
+  function userId(){
+    try { return (typeof currentUser!=='undefined' && currentUser && currentUser.id) ? currentUser.id : null; } catch(e) { return null; }
+  }
+  function key(){return prefix+(userId()||'guest')}
+  function read(){try{return localStorage.getItem(key())==='neon'?'neon':'original'}catch(e){return 'original'}}
+  function apply(value){
+    var neon=value==='neon';
+    for(var i=0;i<neonIds.length;i++){var style=document.getElementById(neonIds[i]);if(style)style.media=neon?'all':'not all'}
+    document.documentElement.setAttribute('data-xoxo-visual',neon?'neon':'original');
+    var original=document.getElementById('xoxo-theme-original'),night=document.getElementById('xoxo-theme-neon');
+    if(original){original.setAttribute('aria-pressed',String(!neon));original.style.outline=neon?'':'2px solid currentColor';original.style.outlineOffset='2px'}
+    if(night){night.setAttribute('aria-pressed',String(neon));night.style.outline=neon?'2px solid currentColor':'';night.style.outlineOffset=neon?'2px':''}
+  }
+  window.xoxoChooseVisualTheme=function(value){
+    if(value!=='original'&&value!=='neon')return;
+    try{localStorage.setItem(key(),value)}catch(e){}
+    apply(value);
+  };
+  window.xoxoRefreshVisualTheme=function(){apply(read())};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',window.xoxoRefreshVisualTheme,{once:true});
+  else window.xoxoRefreshVisualTheme();
+})();
+</script>
 </head>
                                     <body>
                                     <header>
@@ -6013,6 +6041,12 @@ body :is(.profile-photo-viewer,.profile-photo-viewer-image,.post-media img,.post
                                     <section id="home" class="page active">
                                     <div class="hero">
                                     <div class="container hero-content">
+<div id="xoxo-visual-theme-picker" role="group" aria-label="Website appearance" style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:9px;margin:0 auto 24px;position:relative;z-index:2">
+  <span style="font-weight:800">🎨 Theme</span>
+  <button type="button" id="xoxo-theme-original" class="btn btn-secondary" onclick="window.xoxoChooseVisualTheme('original')" aria-pressed="true">💜 Original</button>
+  <button type="button" id="xoxo-theme-neon" class="btn btn-secondary" onclick="window.xoxoChooseVisualTheme('neon')" aria-pressed="false">⚡ Neon Nights</button>
+</div>
+
                                     <div class="hero-badge">
                                     A place to meet people
                                     </div>
@@ -8231,6 +8265,7 @@ async function enforceXoxoSuspension() {
                                     (event, session) => {
                                     const authUser = session?.user || null;
                                     currentUser = authUser;
+                                    if (window.xoxoRefreshVisualTheme) window.xoxoRefreshVisualTheme();
                                     updateAuthUI();
 
                                     /* IMPORTANT: do not await Supabase calls inside onAuthStateChange.
