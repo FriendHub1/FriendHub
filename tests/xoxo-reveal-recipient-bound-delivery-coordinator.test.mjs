@@ -8,7 +8,7 @@ test('claimed upload seals before atomic linked DM delivery',async()=>{
  const calls=[];
  const deliver=createRecipientBoundDeliveryCoordinator({
   claimUpload:async x=>{calls.push('claim');assert.equal(x.recipientId,input.recipientId);return {action:'claimed',attemptId,ownerToken};},
-  prepareSealedUpload:async x=>{calls.push('seal');assert.equal(x.claimToken,ownerToken);return {objectPath:'private/sealed.webp'};},
+  prepareSealedUpload:async x=>{calls.push('seal');assert.equal(x.claimToken,ownerToken);return {objectPath:'private/sealed.webp',attemptId,senderId:input.senderId,recipientId:input.recipientId,payloadFingerprint:input.payloadFingerprint,writerState:'sealed',uploadUncertain:false};},
   createLinkedMessage:async x=>{calls.push('link');assert.equal(x.objectPath,'private/sealed.webp');assert.equal(x.recipientId,input.recipientId);return {revealId,dmId};}
  });
  assert.deepEqual(await deliver(input),{action:'delivered',revealId,dmId});
@@ -47,6 +47,19 @@ test('mismatched sealed recipient, fingerprint or attempt never creates a DM',as
    claimUpload:async()=>({action:'claimed',attemptId,ownerToken}),
    prepareSealedUpload:async()=>({objectPath:'private/sealed.webp',...mismatch}),
    createLinkedMessage:async()=>{linked++;return {revealId,dmId};}
+  });
+  await assert.rejects(deliver(input),/Trusted sealed upload required/);
+  assert.equal(linked,0);
+ }
+});
+
+test('mismatched or uncertain sealed evidence cannot create a DM',async()=>{
+ for(const override of [{recipientId:input.senderId},{payloadFingerprint:'b'.repeat(64)},{writerState:'writing'},{uploadUncertain:true},{attemptId:ownerToken}]){
+  let linked=0;
+  const deliver=createRecipientBoundDeliveryCoordinator({
+   claimUpload:async()=>({action:'claimed',attemptId,ownerToken}),
+   prepareSealedUpload:async()=>({objectPath:'private/sealed.webp',attemptId,senderId:input.senderId,recipientId:input.recipientId,payloadFingerprint:input.payloadFingerprint,writerState:'sealed',uploadUncertain:false,...override}),
+   createLinkedMessage:async()=>{linked++;}
   });
   await assert.rejects(deliver(input),/Trusted sealed upload required/);
   assert.equal(linked,0);
