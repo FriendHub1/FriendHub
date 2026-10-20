@@ -2,6 +2,7 @@
 // This is NOT a public endpoint and never performs Storage operations itself.
 // prepareSealedUpload MUST verify writer ownership, persist the private object,
 // reserve quota and seal the attempt before returning the trusted object path.
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSealedUpload,createLinkedMessage}={}){
  if([claimUpload,prepareSealedUpload,createLinkedMessage].some(fn=>typeof fn!=='function'))
   throw new TypeError('Trusted server dependencies required');
@@ -33,6 +34,8 @@ export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSeal
    senderId,recipientId,objectPath:sealed.objectPath,mediaType,mode,
    seconds:mode==='timed'?durationSeconds:null,durationSeconds:mode==='timed'?durationSeconds:null
   });
+  if(!UUID.test(result?.revealId||'')||!UUID.test(result?.dmId||''))
+   throw new Error('Atomic delivery returned invalid identifiers');
   return {action:'delivered',revealId:result.revealId,dmId:result.dmId};
  };
 }
