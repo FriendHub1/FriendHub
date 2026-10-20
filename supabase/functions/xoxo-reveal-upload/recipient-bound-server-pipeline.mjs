@@ -5,7 +5,7 @@
 import {createRecipientBoundRequestAdapter} from './recipient-bound-request-adapter.mjs';
 import {createRecipientBoundClaimAdapter} from './recipient-bound-claim-adapter.mjs';
 import {createRecipientBoundDeliveryCoordinator} from './recipient-bound-delivery-coordinator.mjs';
-import {createTransactionalLinkedMessageAdapter} from './transactional-linked-message-adapter.mjs';
+import {createAtomicRevealMessageAdapter} from './transactional-linked-message-adapter.mjs';
 
 export function createRecipientBoundServerPipeline({
  authClient,rpcClient,prepareSealedUpload,digest
@@ -13,7 +13,7 @@ export function createRecipientBoundServerPipeline({
  if(typeof prepareSealedUpload!=='function')
   throw new TypeError('Trusted sealed-upload implementation required');
  const claimUpload=createRecipientBoundClaimAdapter({rpcClient});
- const createLinkedMessage=createTransactionalLinkedMessageAdapter({rpcClient});
+ const createLinkedMessage=createAtomicRevealMessageAdapter({rpcClient});
  const deliverReveal=createRecipientBoundDeliveryCoordinator({
   claimUpload,prepareSealedUpload,createLinkedMessage
  });
