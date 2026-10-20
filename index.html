@@ -6062,6 +6062,23 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #xoxoAdminWhispers .xoxo-whisper-explorer-result p{font-size:17px;color:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
 #xoxoAdminWhispers .xoxo-whisper-explorer-result small{color:#e1c6ff}
 </style>
+<style id="xoxo-whisper-two-person-simulator-css">
+#xoxoAdminWhispers .xoxo-whisper-two-person-simulator{margin-top:22px;padding:20px;border:1px solid #9465ce;border-radius:20px;background:linear-gradient(145deg,#271746,#151b3b);color:#fff}
+#xoxoAdminWhispers .xoxo-whisper-sim-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#xoxoAdminWhispers .xoxo-whisper-sim-heading span{font-size:11px;color:#e7ccff}
+#xoxoAdminWhispers .xoxo-whisper-sim-note,#xoxoAdminWhispers .xoxo-whisper-sim-status{font-size:13px;color:#e2d5f5;line-height:1.5}
+#xoxoAdminWhispers .xoxo-whisper-sim-roles,#xoxoAdminWhispers .xoxo-whisper-sim-actions,#xoxoAdminWhispers .xoxo-whisper-sim-reactions{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
+#xoxoAdminWhispers .xoxo-whisper-two-person-simulator button{border:1px solid #b693ea;border-radius:12px;background:#59358a;color:#fff;padding:9px 13px;cursor:pointer}
+#xoxoAdminWhispers .xoxo-whisper-two-person-simulator button[aria-pressed="true"]{background:#e3b9ff;color:#241039;font-weight:700}
+#xoxoAdminWhispers .xoxo-whisper-two-person-simulator button:disabled{opacity:.5;cursor:not-allowed}
+#xoxoAdminWhispers .xoxo-whisper-two-person-simulator textarea,#xoxoAdminWhispers .xoxo-whisper-sim-reply{width:100%;box-sizing:border-box;background:#15112b;color:#fff;border:1px solid #9272bc;border-radius:12px;padding:12px}
+#xoxoAdminWhispers .xoxo-whisper-two-person-simulator label{display:block;margin-top:10px;font-size:13px}
+#xoxoAdminWhispers .xoxo-whisper-sim-card{padding:15px;margin-top:12px;border:1px solid #8053ba;border-radius:15px;background:#ffffff0b}
+#xoxoAdminWhispers .xoxo-whisper-sim-card p{color:#fff;font-size:17px;overflow-wrap:anywhere;white-space:pre-wrap}
+#xoxoAdminWhispers .xoxo-whisper-sim-card small{color:#d9c8ed}
+#xoxoAdminWhispers .xoxo-whisper-sim-thread{font-size:13px;margin-top:12px;border-top:1px solid #ffffff35;padding-top:10px}
+#xoxoAdminWhispers .xoxo-whisper-sim-thread div{margin:7px 0;overflow-wrap:anywhere}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -7443,6 +7460,24 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
           <button type="button" id="xoxoWhisperExplorerRefresh" class="xoxo-whisper-explorer-button">↻ Load other Whispers</button>
           <p id="xoxoWhisperExplorerStatus" role="status" aria-live="polite">Not loaded yet.</p>
           <div id="xoxoWhisperExplorerResults"></div>
+        </section>
+        <section class="xoxo-whisper-two-person-simulator" aria-label="Two-person Whisper simulator">
+          <div class="xoxo-whisper-sim-heading"><strong>🫧 Two-Person Whisper Simulator</strong><span>👑 ADMIN ONLY · FICTIONAL DATA</span></div>
+          <p class="xoxo-whisper-sim-note">Test two fictional members without creating accounts. Nothing here is sent to Supabase, DMs, notifications, or real users. Simulation resets on page reload.</p>
+          <div class="xoxo-whisper-sim-roles" role="group" aria-label="Choose fictional member">
+            <button type="button" data-xws-role="luna" aria-pressed="true">🌙 Luna (demo)</button>
+            <button type="button" data-xws-role="sol" aria-pressed="false">☀️ Sol (demo)</button>
+          </div>
+          <p id="xwsRoleStatus" class="xoxo-whisper-sim-status" aria-live="polite"></p>
+          <label for="xwsMessage">Your simulated Whisper (max 100 characters)</label>
+          <textarea id="xwsMessage" maxlength="100" rows="2" placeholder="Write a demo Whisper..."></textarea>
+          <div class="xoxo-whisper-sim-actions">
+            <button type="button" id="xwsPublish">🫧 Publish in simulator</button>
+            <button type="button" id="xwsDelete">Delete simulated Whisper</button>
+            <button type="button" id="xwsReset">↺ Reset demo</button>
+          </div>
+          <div id="xwsFeed" class="xoxo-whisper-sim-feed" aria-live="polite"></div>
+          <p id="xwsFeedback" class="xoxo-whisper-sim-status" role="status"></p>
         </section>
         <section class="xoxo-whisper-activity" aria-label="My Whisper Activity">
           <div class="xoxo-whisper-activity-header"><strong>💜 My Whisper Activity</strong><span>👑 PRIVATE BETA</span></div>
@@ -21598,6 +21633,100 @@ async function xoxoAvatarClose(apply){
     }catch(e){status.textContent='Could not load other Whispers: '+(e?.message||'Unknown error');}
     finally{busy=false;button.disabled=false;}
   });
+})();
+</script>
+<script id="xoxo-whisper-two-person-simulator-script">
+(function(){
+  'use strict';
+  const root=document.querySelector('#xoxoAdminWhispers .xoxo-whisper-two-person-simulator');
+  if(!root)return;
+  const names={luna:'🌙 Luna',sol:'☀️ Sol'};
+  const state={role:'luna',whispers:{luna:null,sol:null},reactions:{luna:{},sol:{}},replies:{luna:[],sol:[]}};
+  const byId=id=>root.querySelector('#'+id);
+  const other=role=>role==='luna'?'sol':'luna';
+  const now=()=>Date.now();
+  const valid=role=>state.whispers[role]&&state.whispers[role].expires>now();
+  const feedback=msg=>{byId('xwsFeedback').textContent=msg;};
+  function el(tag,cls,content){
+    const node=document.createElement(tag);
+    if(cls)node.className=cls;
+    if(content!==undefined)node.textContent=content;
+    return node;
+  }
+  function button(label,fn){
+    const b=el('button','',label);b.type='button';b.addEventListener('click',fn);return b;
+  }
+  function render(){
+    const role=state.role;
+    root.querySelectorAll('[data-xws-role]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.xwsRole===role)));
+    byId('xwsRoleStatus').textContent='Acting as '+names[role]+' (fictional). You can react and reply only to the other fictional member.';
+    byId('xwsPublish').disabled=!!valid(role);
+    byId('xwsDelete').disabled=!state.whispers[role];
+    byId('xwsMessage').disabled=!!valid(role);
+    byId('xwsMessage').placeholder=valid(role)?'Delete your simulated Whisper before publishing another.':'Write a demo Whisper...';
+    const feed=byId('xwsFeed');feed.replaceChildren();
+    for(const owner of ['luna','sol']){
+      const w=state.whispers[owner];
+      const card=el('article','xoxo-whisper-sim-card');
+      card.append(el('strong','',names[owner]+' · DEMO'));
+      if(!valid(owner)){
+        card.append(el('p','',w?'Whisper expired (simulation).':'No simulated Whisper yet.'));
+        feed.append(card);continue;
+      }
+      card.append(el('p','',w.content));
+      const minutes=Math.ceil((w.expires-now())/60000);
+      card.append(el('small','',`⏳ ${Math.floor(minutes/60)}h ${minutes%60}m left · Not a real publication`));
+      const bar=el('div','xoxo-whisper-sim-reactions');
+      const chosen=state.reactions[owner][other(owner)];
+      for(const emoji of ['💜','❤️','😂','😍','🔥']){
+        const b=button(emoji+(chosen===emoji?' ✓':''),()=>{
+          if(role===owner){feedback('Switch to the other fictional member to react.');return;}
+          if(!valid(owner)){feedback('That demo Whisper has expired.');render();return;}
+          state.reactions[owner][role]=state.reactions[owner][role]===emoji?null:emoji;
+          feedback('Demo reaction updated. No real notification was sent.');render();
+        });
+        b.disabled=role===owner;b.setAttribute('aria-pressed',String(chosen===emoji));bar.append(b);
+      }
+      card.append(bar);
+      const thread=el('div','xoxo-whisper-sim-thread');
+      thread.append(el('strong','','Simulated replies ('+state.replies[owner].length+')'));
+      for(const reply of state.replies[owner])thread.append(el('div','',names[reply.author]+': '+reply.content));
+      if(role!==owner){
+        const input=el('input','xoxo-whisper-sim-reply');
+        input.type='text';input.maxLength=200;input.placeholder='Reply as '+names[role]+' (demo only)';
+        const send=button('Send demo reply',()=>{
+          const value=input.value.trim();
+          if(!value||!valid(owner))return;
+          state.replies[owner].push({author:role,content:value});
+          feedback('Simulated reply added. No DM was sent.');render();
+        });
+        input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send.click();}});
+        thread.append(input,send);
+      }
+      card.append(thread);feed.append(card);
+    }
+  }
+  root.querySelectorAll('[data-xws-role]').forEach(b=>b.addEventListener('click',()=>{
+    state.role=b.dataset.xwsRole;byId('xwsMessage').value='';feedback('');render();
+  }));
+  byId('xwsPublish').addEventListener('click',()=>{
+    const role=state.role,content=byId('xwsMessage').value.trim();
+    if(valid(role)){feedback('Delete your current demo Whisper before publishing another.');return;}
+    if(!content||content.length>100){feedback('Enter 1–100 characters.');return;}
+    state.whispers[role]={content,expires:now()+86400000};
+    state.reactions[role]={};state.replies[role]=[];
+    byId('xwsMessage').value='';
+    feedback('Demo Whisper published locally. No data was saved to Supabase.');render();
+  });
+  byId('xwsDelete').addEventListener('click',()=>{
+    const role=state.role;state.whispers[role]=null;state.reactions[role]={};state.replies[role]=[];
+    feedback('Demo Whisper deleted locally.');render();
+  });
+  byId('xwsReset').addEventListener('click',()=>{
+    for(const role of ['luna','sol']){state.whispers[role]=null;state.reactions[role]={};state.replies[role]=[];}
+    state.role='luna';byId('xwsMessage').value='';feedback('Simulation reset.');render();
+  });
+  render();
 })();
 </script>
 </body>
