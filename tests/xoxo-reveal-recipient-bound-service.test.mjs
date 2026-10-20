@@ -34,3 +34,47 @@ test('composition requires trusted seal and rejects bad media before any RPC',as
  const process=createRecipientBoundRevealService({authClient,rpcClient,digest:webcrypto.subtle,prepareSealedUpload:async()=>{throw Error('should not seal');}});
  await assert.rejects(process({...input,claimedType:'image/png'}),/Unsupported or oversized media/);
 });
+
+test('real composition replays a completed claim without Storage writes or duplicate DM RPC',async()=>{
+ const calls=[];
+ const rpcClient={rpc:async name=>{
+  calls.push(name);
+  if(name==='xoxo_reveal_claim_upload_v2')
+   return {data:{action:'return_existing',attempt_id:attemptId,reveal_id:revealId,dm_id:dmId},error:null};
+  throw Error('Unexpected duplicate DM RPC');
+ }};
+ const process=createRecipientBoundRevealService({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async()=>{throw Error('Replay must never upload');}});
+ assert.deepEqual(await process(input),{action:'already_delivered',revealId,dmId});
+ assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2']);
+});
+
+test('real composition waits on in-flight claim without Storage or DM creation',async()=>{
+ const calls=[];
+ const rpcClient={rpc:async name=>{
+  calls.push(name);
+  if(name==='xoxo_reveal_claim_upload_v2')
+   return {data:{action:'wait',attempt_id:attemptId},error:null};
+  throw Error('Unexpected DM RPC');
+ }};
+ const process=createRecipientBoundRevealService({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async()=>{throw Error('Wait must never upload');}});
+ assert.deepEqual(await process(input),{action:'pending'});
+ assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2']);
+});
+
+test('real composition rejects uncertain seal before atomic DM RPC',async()=>{
+ const calls=[];
+ const rpcClient={rpc:async name=>{
+  calls.push(name);
+  if(name==='xoxo_reveal_claim_upload_v2')
+   return {data:{action:'claimed',attempt_id:attemptId,owner_token:ownerToken},error:null};
+  throw Error('Unsealed upload must never create a DM');
+ }};
+ const process=createRecipientBoundRevealService({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async args=>({attemptId,senderId,recipientId,
+   payloadFingerprint:args.payloadFingerprint,writerState:'writing',
+   uploadUncertain:true,objectPath:'private/sealed.webp'})});
+ await assert.rejects(process(input),/Trusted sealed upload required/);
+ assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2']);
+});
