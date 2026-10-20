@@ -6022,7 +6022,9 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #xoxoAdminWhispers #xoxoWhisperPreviewText{font-size:19px;line-height:1.5;color:white;overflow-wrap:anywhere;white-space:pre-wrap;padding-right:30px}
 #xoxoAdminWhispers .xoxo-whisper-preview-timer{display:block;margin-top:14px;color:#e3c6ff;font-size:12px}
 #xoxoAdminWhispers .xoxo-whisper-preview-reactions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
-#xoxoAdminWhispers .xoxo-whisper-preview-reactions>span{border:1px solid #7554a0;border-radius:14px;padding:8px 11px;background:#ffffff12}
+#xoxoAdminWhispers .xoxo-whisper-preview-reactions>button{border:1px solid #7554a0;border-radius:14px;padding:8px 11px;background:#ffffff12;color:#fff;cursor:pointer;font-size:17px}
+#xoxoAdminWhispers .xoxo-whisper-preview-reactions>button[aria-pressed="true"]{border-color:#f6b3ff;background:#8543be;box-shadow:0 0 0 2px #dba9ff44}
+#xoxoAdminWhispers .xoxo-whisper-preview-reactions>button:disabled{opacity:.45;cursor:not-allowed}
 #xoxoAdminWhispers .xoxo-whisper-preview-reactions small{display:block;width:100%;color:#c6b7df}
 </style>
 </head>
@@ -7379,9 +7381,13 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
             <p id="xoxoWhisperPreviewText">Publish a whisper to preview it here.</p>
             <span id="xoxoWhisperPreviewTimer" class="xoxo-whisper-preview-timer">Not published</span>
           </div>
-          <div class="xoxo-whisper-preview-reactions" aria-label="Future reactions preview">
-            <span>💜</span><span>❤️</span><span>😂</span><span>😍</span><span>🔥</span>
-            <small>Reaction buttons are a visual preview; they do not send or save reactions yet.</small>
+          <div class="xoxo-whisper-preview-reactions" aria-label="Private BETA reactions">
+            <button type="button" data-xoxo-whisper-emoji="💜" aria-pressed="false" disabled>💜</button>
+            <button type="button" data-xoxo-whisper-emoji="❤️" aria-pressed="false" disabled>❤️</button>
+            <button type="button" data-xoxo-whisper-emoji="😂" aria-pressed="false" disabled>😂</button>
+            <button type="button" data-xoxo-whisper-emoji="😍" aria-pressed="false" disabled>😍</button>
+            <button type="button" data-xoxo-whisper-emoji="🔥" aria-pressed="false" disabled>🔥</button>
+            <small id="xoxoWhisperReactionStatus" role="status" aria-live="polite">Publish a whisper to test reactions privately.</small>
           </div>
         </section>
 
@@ -16659,6 +16665,7 @@ async function xoxoAdminWhisperSave() {
     const result = await supabaseClient.from('xoxo_whispers').insert({user_id:currentUser.id,content});
     if (result.error) throw result.error;
     await xoxoAdminWhisperLoad();
+    if (typeof xoxoWhisperPreviewRefresh === 'function') xoxoWhisperPreviewRefresh();
   } catch (error) { xoxoAdminWhisperStatus('Cannot save: '+error.message,true); }
   finally { xoxoAdminWhisperBusy=false; if(btn) btn.disabled=false; }
 }
@@ -16672,6 +16679,7 @@ async function xoxoAdminWhisperDelete() {
     if(error) throw error;
     xoxoAdminWhisperActive=null;
     await xoxoAdminWhisperLoad();
+    if (typeof xoxoWhisperPreviewRefresh === 'function') xoxoWhisperPreviewRefresh();
   } catch(error) { xoxoAdminWhisperStatus('Cannot delete: '+error.message,true); }
   finally { xoxoAdminWhisperBusy=false; }
 }
@@ -21352,6 +21360,70 @@ async function xoxoAvatarClose(apply){
   setInterval(function(){
     if(document.getElementById('xoxoAdminWhispers')?.classList.contains('active'))refresh();
   },30000);
+})();
+</script>
+
+<script id="xoxo-whispers-private-reactions-v1">
+(function(){
+  'use strict';
+  const emojis=['💜','❤️','😂','😍','🔥'];
+  let currentId=null, selected=null, busy=false, requestSeq=0;
+  const buttons=()=>Array.from(document.querySelectorAll('#xoxoAdminWhispers [data-xoxo-whisper-emoji]'));
+  const status=(message,error=false)=>{const el=document.getElementById('xoxoWhisperReactionStatus');if(el){el.textContent=message;el.style.color=error?'#ff9da8':'#c6b7df';}};
+  function draw(){
+    const active=typeof xoxoAdminWhisperActive!=='undefined' ? xoxoAdminWhisperActive : null;
+    const valid=!!active && new Date(active.expires_at).getTime()>Date.now();
+    buttons().forEach(button=>{
+      const emoji=button.dataset.xoxoWhisperEmoji;
+      button.disabled=!valid||busy;
+      button.setAttribute('aria-pressed',String(valid&&emoji===selected));
+      button.title=valid?(emoji===selected?'Remove reaction':'React with '+emoji):'Publish a whisper first';
+    });
+    return valid?active:null;
+  }
+  async function load(){
+    const seq=++requestSeq;
+    const whisper=draw();
+    if(!whisper){currentId=null;selected=null;draw();status('Publish a whisper to test reactions privately.');return;}
+    if(currentId!==whisper.id){selected=null;currentId=whisper.id;draw();}
+    if(typeof xoxoAdminWhisperAuthorize!=='function'||!await xoxoAdminWhisperAuthorize())return;
+    const {data,error}=await supabaseClient.from('xoxo_whisper_reactions')
+      .select('emoji').eq('whisper_id',whisper.id).eq('user_id',currentUser.id).maybeSingle();
+    if(seq!==requestSeq||currentId!==whisper.id)return;
+    if(error){status('Cannot load reactions: '+error.message,true);return;}
+    selected=data?.emoji||null;
+    draw();
+    status(selected?'Your saved reaction: '+selected+' · Click it again to remove it.':'Choose one emoji to save your private BETA reaction.');
+  }
+  async function react(emoji){
+    if(busy||!emojis.includes(emoji))return;
+    const whisper=draw();
+    if(!whisper||!currentUser||!await xoxoAdminWhisperAuthorize())return;
+    busy=true;draw();status('Saving reaction...');
+    try{
+      let result;
+      if(selected===emoji){
+        result=await supabaseClient.from('xoxo_whisper_reactions').delete()
+          .eq('whisper_id',whisper.id).eq('user_id',currentUser.id);
+      }else{
+        result=await supabaseClient.from('xoxo_whisper_reactions').upsert(
+          {whisper_id:whisper.id,user_id:currentUser.id,emoji},
+          {onConflict:'whisper_id,user_id'}
+        );
+      }
+      if(result.error)throw result.error;
+      selected=selected===emoji?null:emoji;
+      status(selected?'Reaction saved: '+selected+' 💜':'Reaction removed. 💜');
+    }catch(error){status('Cannot save reaction: '+error.message,true);}
+    finally{busy=false;draw();}
+  }
+  document.addEventListener('click',event=>{
+    const button=event.target.closest?.('#xoxoAdminWhispers [data-xoxo-whisper-emoji]');
+    if(button)react(button.dataset.xoxoWhisperEmoji);
+  });
+  const previous=window.xoxoWhisperPreviewRefresh;
+  window.xoxoWhisperPreviewRefresh=function(){if(typeof previous==='function')previous();load();};
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
 })();
 </script>
 </body>
