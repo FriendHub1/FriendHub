@@ -59,3 +59,13 @@ test('invalid UUID-shaped recipient is rejected before trusted pipeline',async()
  }
  assert.equal(calls,0);
 });
+
+test('HTTP never announces delivery or replay with invalid server identifiers',async()=>{
+ for(const action of ['delivered','already_delivered']){
+  const handle=createRecipientBoundHttpHandler({allowedOrigin:origin,
+   processRecipientBoundRequest:async()=>({action,revealId:'invalid',dmId:'66666666-6666-4666-8666-666666666666',objectPath:'private/secret'})});
+  const response=await handle(request());
+  assert.equal(response.status,503);
+  assert.deepEqual(await response.json(),{error:'Reveal upload unavailable'});
+ }
+});
