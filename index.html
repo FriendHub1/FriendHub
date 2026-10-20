@@ -6079,6 +6079,15 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #xoxoAdminWhispers .xoxo-whisper-sim-thread{font-size:13px;margin-top:12px;border-top:1px solid #ffffff35;padding-top:10px}
 #xoxoAdminWhispers .xoxo-whisper-sim-thread div{margin:7px 0;overflow-wrap:anywhere}
 </style>
+<style id="xoxo-whisper-sim-notifications-css">
+#xoxoAdminWhispers .xoxo-whisper-sim-notification-box{margin:20px 0;padding:16px;border:1px solid #9b71d2;border-radius:16px;background:#21153f}
+#xoxoAdminWhispers .xoxo-whisper-sim-notification-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#xoxoAdminWhispers #xwsUnreadCount{font-size:12px;color:#ebcaff}
+#xoxoAdminWhispers .xoxo-whisper-sim-notification{padding:12px;margin:9px 0;border-radius:12px;border:1px solid #76549f;background:#ffffff08;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+#xoxoAdminWhispers .xoxo-whisper-sim-unread{background:#8653b83b;border-color:#bd89f4}
+#xoxoAdminWhispers .xoxo-whisper-sim-notification span{flex:1;min-width:160px;overflow-wrap:anywhere}
+#xoxoAdminWhispers .xoxo-whisper-sim-notification small{color:#d9c8ef}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -7475,6 +7484,14 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
             <button type="button" id="xwsPublish">🫧 Publish in simulator</button>
             <button type="button" id="xwsDelete">Delete simulated Whisper</button>
             <button type="button" id="xwsReset">↺ Reset demo</button>
+          </div>
+          <div class="xoxo-whisper-sim-notification-box">
+            <div class="xoxo-whisper-sim-notification-heading">
+              <strong>🔔 Demo Notifications <span id="xwsUnreadCount" aria-live="polite">0 unread</span></strong>
+              <button type="button" id="xwsMarkRead">✓ Mark all as read</button>
+            </div>
+            <p class="xoxo-whisper-sim-note">Only notifications for the currently selected fictional member appear here. They stay inside this browser tab.</p>
+            <div id="xwsNotifications" aria-live="polite"></div>
           </div>
           <div id="xwsFeed" class="xoxo-whisper-sim-feed" aria-live="polite"></div>
           <p id="xwsFeedback" class="xoxo-whisper-sim-status" role="status"></p>
@@ -21641,7 +21658,7 @@ async function xoxoAvatarClose(apply){
   const root=document.querySelector('#xoxoAdminWhispers .xoxo-whisper-two-person-simulator');
   if(!root)return;
   const names={luna:'🌙 Luna',sol:'☀️ Sol'};
-  const state={role:'luna',whispers:{luna:null,sol:null},reactions:{luna:{},sol:{}},replies:{luna:[],sol:[]}};
+  const state={role:'luna',whispers:{luna:null,sol:null},reactions:{luna:{},sol:{}},replies:{luna:[],sol:[]},notifications:{luna:[],sol:[]},nextNotificationId:1};
   const byId=id=>root.querySelector('#'+id);
   const other=role=>role==='luna'?'sol':'luna';
   const now=()=>Date.now();
@@ -21656,8 +21673,30 @@ async function xoxoAvatarClose(apply){
   function button(label,fn){
     const b=el('button','',label);b.type='button';b.addEventListener('click',fn);return b;
   }
+  function notify(recipient,sender,kind,details){
+    if(recipient===sender)return;
+    state.notifications[recipient].unshift({
+      id:state.nextNotificationId++,sender,kind,details,read:false,created:now()
+    });
+  }
+  function renderNotifications(){
+    const role=state.role,items=state.notifications[role];
+    const unread=items.filter(item=>!item.read).length;
+    byId('xwsUnreadCount').textContent=unread+' unread';
+    byId('xwsMarkRead').disabled=unread===0;
+    const list=byId('xwsNotifications');list.replaceChildren();
+    if(!items.length){list.append(el('p','xoxo-whisper-sim-note','No demo notifications for '+names[role]+' yet.'));return;}
+    for(const item of items.slice(0,30)){
+      const entry=el('div','xoxo-whisper-sim-notification'+(item.read?'':' xoxo-whisper-sim-unread'));
+      entry.append(el('span','',names[item.sender]+' '+item.kind+' '+item.details));
+      entry.append(el('small','',item.read?'Read':'● Unread'));
+      if(!item.read)entry.append(button('Mark read',()=>{item.read=true;renderNotifications();}));
+      list.append(entry);
+    }
+  }
   function render(){
     const role=state.role;
+    renderNotifications();
     root.querySelectorAll('[data-xws-role]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.xwsRole===role)));
     byId('xwsRoleStatus').textContent='Acting as '+names[role]+' (fictional). You can react and reply only to the other fictional member.';
     byId('xwsPublish').disabled=!!valid(role);
@@ -21682,8 +21721,11 @@ async function xoxoAvatarClose(apply){
         const b=button(emoji+(chosen===emoji?' ✓':''),()=>{
           if(role===owner){feedback('Switch to the other fictional member to react.');return;}
           if(!valid(owner)){feedback('That demo Whisper has expired.');render();return;}
-          state.reactions[owner][role]=state.reactions[owner][role]===emoji?null:emoji;
-          feedback('Demo reaction updated. No real notification was sent.');render();
+          const old=state.reactions[owner][role];
+          const next=old===emoji?null:emoji;
+          state.reactions[owner][role]=next;
+          if(next)notify(owner,role,'reacted to your Whisper:',next);
+          feedback(next?'Demo reaction saved and local notification created.':'Demo reaction removed. No new notification.');render();
         });
         b.disabled=role===owner;b.setAttribute('aria-pressed',String(chosen===emoji));bar.append(b);
       }
@@ -21698,7 +21740,8 @@ async function xoxoAvatarClose(apply){
           const value=input.value.trim();
           if(!value||!valid(owner))return;
           state.replies[owner].push({author:role,content:value});
-          feedback('Simulated reply added. No DM was sent.');render();
+          notify(owner,role,'replied to your Whisper:',value.slice(0,100));
+          feedback('Simulated reply added and local notification created. No DM was sent.');render();
         });
         input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send.click();}});
         thread.append(input,send);
@@ -21715,16 +21758,23 @@ async function xoxoAvatarClose(apply){
     if(!content||content.length>100){feedback('Enter 1–100 characters.');return;}
     state.whispers[role]={content,expires:now()+86400000};
     state.reactions[role]={};state.replies[role]=[];
+    state.notifications[role]=[];
     byId('xwsMessage').value='';
     feedback('Demo Whisper published locally. No data was saved to Supabase.');render();
   });
   byId('xwsDelete').addEventListener('click',()=>{
     const role=state.role;state.whispers[role]=null;state.reactions[role]={};state.replies[role]=[];
-    feedback('Demo Whisper deleted locally.');render();
+    state.notifications[role]=[];
+    feedback('Demo Whisper deleted locally; its demo notifications were cleared.');render();
   });
   byId('xwsReset').addEventListener('click',()=>{
-    for(const role of ['luna','sol']){state.whispers[role]=null;state.reactions[role]={};state.replies[role]=[];}
+    for(const role of ['luna','sol']){state.whispers[role]=null;state.reactions[role]={};state.replies[role]=[];state.notifications[role]=[];}
+    state.nextNotificationId=1;
     state.role='luna';byId('xwsMessage').value='';feedback('Simulation reset.');render();
+  });
+  byId('xwsMarkRead').addEventListener('click',()=>{
+    for(const item of state.notifications[state.role])item.read=true;
+    feedback('Demo notifications marked as read.');renderNotifications();
   });
   render();
 })();
