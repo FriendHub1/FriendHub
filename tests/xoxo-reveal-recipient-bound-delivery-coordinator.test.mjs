@@ -45,7 +45,7 @@ test('mismatched sealed recipient, fingerprint or attempt never creates a DM',as
   let linked=0;
   const deliver=createRecipientBoundDeliveryCoordinator({
    claimUpload:async()=>({action:'claimed',attemptId,ownerToken}),
-   prepareSealedUpload:async()=>({objectPath:'private/sealed.webp',...mismatch}),
+   prepareSealedUpload:async()=>({objectPath:'private/sealed.webp',attemptId,senderId:input.senderId,recipientId:input.recipientId,payloadFingerprint:input.payloadFingerprint,writerState:'sealed',uploadUncertain:false,...mismatch}),
    createLinkedMessage:async()=>{linked++;return {revealId,dmId};}
   });
   await assert.rejects(deliver(input),/Trusted sealed upload required/);
