@@ -85,3 +85,16 @@ test('malformed replay identifiers never report already delivered',async()=>{
  await assert.rejects(deliver(input),/Invalid existing delivery identifiers/);
  assert.equal(writes,0);
 });
+
+test('missing or malformed claim ownership never begins Storage writes',async()=>{
+ for(const claimResult of [null,{}, {action:'claimed',attemptId:'bad',ownerToken},{action:'claimed',attemptId,ownerToken:'bad'}]){
+  let writes=0;
+  const deliver=createRecipientBoundDeliveryCoordinator({
+   claimUpload:async()=>claimResult,
+   prepareSealedUpload:async()=>{writes++;},
+   createLinkedMessage:async()=>{writes++;}
+  });
+  await assert.rejects(deliver(input),/Invalid claim state/);
+  assert.equal(writes,0);
+ }
+});
