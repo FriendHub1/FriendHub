@@ -13907,6 +13907,13 @@ async function openPublicProfile(userId) {
                                     const cameraButton = document.getElementById("dmCameraButton");
                                     const content = input ? input.value.trim() : "";
                                     const attachment = dmSelectedAttachment?.file || null;
+                                    const whisperGuard = window.xoxoWhisperDmDraftGuard;
+                                    if (whisperGuard && String(currentDmUserId) === whisperGuard.recipientId
+                                        && content === whisperGuard.contextOnly && !attachment) {
+                                      setDmStatus("Write your reply below the Whisper before sending.", true);
+                                      if (input) input.focus();
+                                      return;
+                                    }
 
                                     if (dmEditTarget?.id) {
                                     if (!content) {
@@ -21663,12 +21670,21 @@ async function xoxoAvatarClose(apply){
       if(live.error)throw live.error;
       if(!live.data)throw Error('This Whisper is no longer active.');
       if(typeof openDirectChat!=='function')throw Error('Direct chat is unavailable.');
-      await openDirectChat(live.data.user_id,'@Member');
+      // Resolve the real member identity rather than displaying a placeholder.
+      const member=await supabaseClient.from('profiles')
+        .select('username,profile_photo').eq('user_id',live.data.user_id).maybeSingle();
+      if(member.error)throw member.error;
+      if(!member.data?.username)throw Error('Recipient profile is unavailable.');
+      const displayName=String(member.data.username).startsWith('@')
+        ? String(member.data.username) : '@'+String(member.data.username);
+      await openDirectChat(live.data.user_id,displayName,member.data.profile_photo||'');
       if(String(currentDmUserId)!==String(live.data.user_id))throw Error('DM could not be opened.');
       const input=document.getElementById('dmInput');
       if(!input)throw Error('DM composer not found.');
       const quote=String(live.data.content||'').replace(/\s+/g,' ').trim().slice(0,100);
       input.value='🫧 Reply to Whisper: “'+quote+'”\n';
+      // Do not allow a context-only message to be sent accidentally.
+      window.xoxoWhisperDmDraftGuard={recipientId:String(live.data.user_id),contextOnly:input.value.trim()};
       input.dispatchEvent(new Event('input',{bubbles:true}));
       input.focus();
       input.setSelectionRange(input.value.length,input.value.length);
