@@ -6012,7 +6012,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #admin .xoxo-whispers-beta-actions{display:flex;gap:10px;flex-wrap:wrap}
 #admin #xoxoAdminWhisperDelete[hidden]{display:none!important}
 </style>
-</head>
+<style id="xoxo-whispers-no-edit">#xoxoAdminWhisperSave[hidden]{display:none!important}#xoxoAdminWhisperInput[readonly]{opacity:.88;cursor:default}</style></head>
                                     <body>
                                     <header>
                                     <div class="container nav">
@@ -16609,12 +16609,12 @@ async function xoxoAdminWhisperLoad() {
   const save = document.getElementById('xoxoAdminWhisperSave');
   const del = document.getElementById('xoxoAdminWhisperDelete');
   const expiry = document.getElementById('xoxoAdminWhisperExpires');
-  if (input) input.value = data?.content || '';
-  if (save) save.textContent = data ? '💜 Save Changes' : '🫧 Publish Whisper';
+  if (input) { input.value = data?.content || ''; input.readOnly = !!data; input.setAttribute('aria-readonly', data ? 'true' : 'false'); }
+  if (save) { save.textContent = '🫧 Publish Whisper'; save.hidden = !!data; }
   if (del) del.hidden = !data;
   if (expiry) expiry.textContent = data ? 'Expires: '+new Date(data.expires_at).toLocaleString() : '';
   xoxoAdminWhisperCount();
-  xoxoAdminWhisperStatus(data ? 'Your private BETA whisper is active. 💜' : 'Ready for a private BETA whisper. 🫧');
+  xoxoAdminWhisperStatus(data ? 'Your whisper is live and cannot be edited. Delete it to publish a new one. 💜' : 'Ready for a private BETA whisper. 🫧');
 }
 async function xoxoAdminWhisperSave() {
   if (xoxoAdminWhisperBusy || !await xoxoAdminWhisperAuthorize()) return;
@@ -16624,17 +16624,12 @@ async function xoxoAdminWhisperSave() {
   const btn = document.getElementById('xoxoAdminWhisperSave');
   if (btn) btn.disabled = true;
   try {
-    let result;
-    if (xoxoAdminWhisperActive) {
-      result = await supabaseClient.from('xoxo_whispers').update({content})
-        .eq('id',xoxoAdminWhisperActive.id).eq('user_id',currentUser.id);
-    } else {
-      // A UNIQUE(user_id) constraint also covers expired rows. Delete old row first.
-      const old = await supabaseClient.from('xoxo_whispers').delete()
-        .eq('user_id',currentUser.id).lte('expires_at',new Date().toISOString());
-      if (old.error) throw old.error;
-      result = await supabaseClient.from('xoxo_whispers').insert({user_id:currentUser.id,content});
-    }
+    if (xoxoAdminWhisperActive) throw new Error('Whispers cannot be edited. Delete your current whisper to post another.');
+    // Remove the owner's expired whisper, if any, before publishing a new one.
+    const old = await supabaseClient.from('xoxo_whispers').delete()
+      .eq('user_id',currentUser.id).lte('expires_at',new Date().toISOString());
+    if (old.error) throw old.error;
+    const result = await supabaseClient.from('xoxo_whispers').insert({user_id:currentUser.id,content});
     if (result.error) throw result.error;
     await xoxoAdminWhisperLoad();
   } catch (error) { xoxoAdminWhisperStatus('Cannot save: '+error.message,true); }
