@@ -2,6 +2,7 @@
 // Not a public endpoint. No direct Storage operations or production deployment.
 import {authenticateRevealSender} from './authenticate.mjs';
 import {inspectRevealUpload} from './upload-policy.mjs';
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function createRecipientBoundRequestAdapter({authClient,deliverReveal,digest=globalThis.crypto?.subtle}={}){
  if(typeof deliverReveal!=='function'||typeof digest?.digest!=='function')
   throw new TypeError('Trusted delivery and SHA-256 required');
@@ -11,6 +12,8 @@ export function createRecipientBoundRequestAdapter({authClient,deliverReveal,dig
   // Snapshot request bytes before the first await; no caller mutation can change what we validate, hash or upload.
   const verifiedBytes=bytes instanceof Uint8Array?new Uint8Array(bytes):bytes;
   const {senderId}=await authenticateRevealSender({authorization,authClient});
+  if(!UUID.test(senderId||'')||!UUID.test(recipientId||''))
+   throw new Error('Invalid authenticated participants');
   const meta=inspectRevealUpload({bytes:verifiedBytes,claimedType,senderId,recipientId,mode,seconds});
   if(!/^[A-Za-z0-9_-]{16,128}$/.test(requestKey||''))
    throw new TypeError('Invalid idempotency key');
