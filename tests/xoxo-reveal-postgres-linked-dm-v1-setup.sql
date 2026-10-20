@@ -27,3 +27,14 @@ CREATE TABLE public.xoxo_reveals(
  payload_fingerprint text,media_type text,mode text,duration_seconds integer);
 CREATE TABLE public.user_blocks(blocker_id uuid,blocked_id uuid);
 CREATE TABLE public.message_requests(sender_id uuid,recipient_id uuid,status text);
+
+-- Mirror the audited production helper's existing-DM-or-accepted-request gate.
+CREATE OR REPLACE FUNCTION public.xoxo_has_existing_dm_or_acceptance(p_sender uuid,p_recipient uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $fn$
+ SELECT EXISTS(SELECT 1 FROM public.direct_messages d WHERE
+  (d.sender_id=p_sender AND d.recipient_id=p_recipient) OR
+  (d.sender_id=p_recipient AND d.recipient_id=p_sender))
+ OR EXISTS(SELECT 1 FROM public.message_requests m WHERE m.status='accepted' AND
+  ((m.sender_id=p_sender AND m.recipient_id=p_recipient) OR
+   (m.sender_id=p_recipient AND m.recipient_id=p_sender)))
+$fn$;
