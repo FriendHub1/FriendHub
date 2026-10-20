@@ -67,3 +67,29 @@ test('invalid authentication cannot reach privileged RPC or Storage',async()=>{
 test('composition fails closed without trusted Storage writer',()=>{
  assert.throws(()=>createRecipientBoundPipeline({authClient,rpcClient:{rpc:async()=>{}}}),/Trusted sealed Storage writer required/);
 });
+
+test('pending claim through real RPC chain cannot upload or insert DM',async()=>{
+ const calls=[];
+ const rpcClient={rpc:async name=>{calls.push(name);return {data:{action:'wait',attempt_id:attempt}};}};
+ const pipeline=createRecipientBoundPipeline({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async()=>{calls.push('seal');throw Error('must not write');}});
+ assert.deepEqual(await pipeline(input),{action:'pending'});
+ assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2']);
+});
+
+test('uncertain Storage writer through real RPC chain cannot create DM',async()=>{
+ const calls=[];
+ const rpcClient={rpc:async name=>{
+  calls.push(name);
+  if(name!=='xoxo_reveal_claim_upload_v2')throw Error('DM must not be inserted');
+  return {data:{action:'claimed',attempt_id:attempt,owner_token:owner}};
+ }};
+ const pipeline=createRecipientBoundPipeline({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async args=>({
+   attemptId:attempt,senderId:sender,recipientId:recipient,
+   payloadFingerprint:args.payloadFingerprint,objectPath:'private/test.webp',
+   writerState:'writing',uploadUncertain:true
+  })});
+ await assert.rejects(pipeline(input),/Trusted sealed upload required/);
+ assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2']);
+});
