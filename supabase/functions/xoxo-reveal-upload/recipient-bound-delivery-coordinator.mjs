@@ -7,6 +7,12 @@ export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSeal
  if([claimUpload,prepareSealedUpload,createLinkedMessage].some(fn=>typeof fn!=='function'))
   throw new TypeError('Trusted server dependencies required');
  return async function deliverReveal({senderId,recipientId,requestKey,payloadFingerprint,mediaType,mode,durationSeconds=null}={}){
+  if(!UUID.test(senderId||'')||!UUID.test(recipientId||'')||senderId===recipientId||
+     !/^[A-Za-z0-9_-]{16,128}$/.test(requestKey||'')||
+     !/^[0-9a-f]{64}$/.test(payloadFingerprint||'')||
+     !['image','video'].includes(mediaType)||!['once','timed','keep'].includes(mode)||
+     (mode==='timed'?![5,10,15,20].includes(durationSeconds):durationSeconds!==null))
+   throw new TypeError('Invalid delivery request');
   const claim=await claimUpload({senderId,recipientId,requestKey,payloadFingerprint});
   if(claim?.action==='return_existing'){
    if(!UUID.test(claim.revealId||'')||!UUID.test(claim.dmId||''))
