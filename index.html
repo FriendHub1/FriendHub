@@ -6071,6 +6071,9 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #xoxoAdminWhispers .xoxo-whisper-two-person-simulator button{border:1px solid #b693ea;border-radius:12px;background:#59358a;color:#fff;padding:9px 13px;cursor:pointer}
 #xoxoAdminWhispers .xoxo-whisper-two-person-simulator button[aria-pressed="true"]{background:#e3b9ff;color:#241039;font-weight:700}
 #xoxoAdminWhispers .xoxo-whisper-two-person-simulator button:disabled{opacity:.5;cursor:not-allowed}
+#xoxoAdminWhispers .xoxo-whisper-sim-composer:not([hidden]){display:grid;gap:9px;margin-top:12px;padding:13px;border:1px solid #9b78d1;border-radius:14px;background:#201335}
+#xoxoAdminWhispers .xoxo-whisper-sim-reply-context{font-size:13px;color:#e5d3ff;overflow-wrap:anywhere;white-space:pre-wrap}
+#xoxoAdminWhispers .xoxo-whisper-sim-composer[hidden]{display:none}
 #xoxoAdminWhispers .xoxo-whisper-two-person-simulator textarea,#xoxoAdminWhispers .xoxo-whisper-sim-reply{width:100%;box-sizing:border-box;background:#15112b;color:#fff;border:1px solid #9272bc;border-radius:12px;padding:12px}
 #xoxoAdminWhispers .xoxo-whisper-two-person-simulator label{display:block;margin-top:10px;font-size:13px}
 #xoxoAdminWhispers .xoxo-whisper-sim-card{padding:15px;margin-top:12px;border:1px solid #8053ba;border-radius:15px;background:#ffffff0b}
@@ -21750,17 +21753,30 @@ async function xoxoAvatarClose(apply){
       thread.append(el('strong','','Simulated replies ('+state.replies[owner].length+')'));
       for(const reply of state.replies[owner])thread.append(el('div','',names[reply.author]+': '+reply.content));
       if(role!==owner){
+        // Instagram-style BETA: Reply opens a composer; it never sends on click.
+        // This is fictional, local-only and cannot access real DMs or Supabase.
+        const openReply=button('💬 Reply to Whisper',()=>{
+          openReply.hidden=true;
+          composer.hidden=false;
+          input.focus();
+        });
+        const composer=el('div','xoxo-whisper-sim-composer');
+        composer.hidden=true;
+        const context=el('div','xoxo-whisper-sim-reply-context',
+          '🫧 Replying to '+names[owner]+"'s Whisper: "+w.content);
         const input=el('input','xoxo-whisper-sim-reply');
-        input.type='text';input.maxLength=200;input.placeholder='Reply as '+names[role]+' (demo only)';
+        input.type='text';input.maxLength=200;input.placeholder='Write a demo reply as '+names[role]+'...';
         const send=button('Send demo reply',()=>{
           const value=input.value.trim();
           if(!value||!valid(owner))return;
           state.replies[owner].push({author:role,content:value});
           notify(owner,role,'replied to your Whisper:',value.slice(0,100));
-          feedback('Simulated reply added and local notification created. No DM was sent.');render();
+          feedback('Demo reply sent locally. No real DM or notification was sent.');render();
         });
-        input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();send.click();}});
-        thread.append(input,send);
+        const cancel=button('Cancel',()=>{composer.hidden=true;openReply.hidden=false;input.value='';});
+        input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();send.click();}});
+        composer.append(context,input,send,cancel);
+        thread.append(openReply,composer);
       }
       card.append(thread);feed.append(card);
     }
