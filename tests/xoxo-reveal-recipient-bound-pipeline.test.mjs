@@ -93,3 +93,50 @@ test('uncertain Storage writer through real RPC chain cannot create DM',async()=
  await assert.rejects(pipeline(input),/Trusted sealed upload required/);
  assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2']);
 });
+
+test('same request key with changed media is rejected by claim and never writes',async()=>{
+ const seen=new Map();
+ let writes=0,links=0;
+ const rpcClient={rpc:async(name,args)=>{
+  if(name==='xoxo_reveal_claim_upload_v2'){
+   const key=args.p_request_key,fp=args.p_payload_fingerprint;
+   if(seen.has(key)&&seen.get(key)!==fp)
+    return {data:{action:'reject',attempt_id:attempt}};
+   seen.set(key,fp);
+   return {data:{action:'claimed',attempt_id:attempt,owner_token:owner}};
+  }
+  links++;
+  return {data:{reveal_id:reveal,dm_id:dm}};
+ }};
+ const pipeline=createRecipientBoundPipeline({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async args=>{
+   writes++;
+   return {attemptId:attempt,senderId:sender,recipientId:recipient,
+    payloadFingerprint:args.payloadFingerprint,objectPath:'private/test.webp',
+    writerState:'sealed',uploadUncertain:false};
+  }});
+ assert.equal((await pipeline(input)).action,'delivered');
+ const changed=Uint8Array.from([...bytes,99]);
+ assert.deepEqual(await pipeline({...input,bytes:changed}),{action:'rejected'});
+ assert.equal(writes,1);
+ assert.equal(links,1);
+});
+
+test('atomic RPC error after sealed Storage never reports success or retries writing',async()=>{
+ const calls=[];
+ const rpcClient={rpc:async name=>{
+  calls.push(name);
+  if(name==='xoxo_reveal_claim_upload_v2')
+   return {data:{action:'claimed',attempt_id:attempt,owner_token:owner}};
+  return {error:{message:'simulated transaction rollback'}};
+ }};
+ const pipeline=createRecipientBoundPipeline({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async args=>{
+   calls.push('seal');
+   return {attemptId:attempt,senderId:sender,recipientId:recipient,
+    payloadFingerprint:args.payloadFingerprint,objectPath:'private/test.webp',
+    writerState:'sealed',uploadUncertain:false};
+  }});
+ await assert.rejects(pipeline(input),/Atomic Reveal message creation unavailable/);
+ assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2','seal','xoxo_reveal_create_linked_dm_v1']);
+});
