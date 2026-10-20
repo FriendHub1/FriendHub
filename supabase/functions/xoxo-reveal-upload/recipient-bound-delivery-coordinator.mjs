@@ -32,7 +32,7 @@ export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSeal
   if(!sealed||typeof sealed.objectPath!=='string'||!sealed.objectPath.trim()||
    sealed.objectPath.startsWith('/')||sealed.objectPath.includes('..')||
    sealed.objectPath.includes('?')||sealed.objectPath.includes('#')||
-   sealed.objectPath.includes('\\\\')||
+   sealed.objectPath.includes('\\')||
    sealed.attemptId!==claim.attemptId||
    sealed.senderId!==senderId||sealed.recipientId!==recipientId||
    sealed.payloadFingerprint!==payloadFingerprint||
