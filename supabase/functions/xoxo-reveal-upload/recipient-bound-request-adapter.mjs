@@ -12,10 +12,15 @@ export function createRecipientBoundRequestAdapter({authClient,deliverReveal,dig
   const meta=inspectRevealUpload({bytes,claimedType,senderId,recipientId,mode,seconds});
   if(!/^[A-Za-z0-9_-]{16,128}$/.test(requestKey||''))
    throw new TypeError('Invalid idempotency key');
-  // Bind retries to the actual validated bytes, not a client-provided hash.
+  // Bind retries to recipient, media policy and actual bytes, not a client-provided hash.
   // Copy bytes before asynchronous hashing so callers cannot mutate the buffer mid-digest.
   const verifiedBytes=new Uint8Array(bytes);
-  const hash=await digest.digest('SHA-256',verifiedBytes);
+  const binding=new TextEncoder().encode(JSON.stringify(['xoxo-reveal-v1',senderId,recipientId,meta.mime,meta.mode,meta.durationSeconds]));
+  const bound=new Uint8Array(4+binding.length+verifiedBytes.length);
+  new DataView(bound.buffer).setUint32(0,binding.length,false);
+  bound.set(binding,4);
+  bound.set(verifiedBytes,4+binding.length);
+  const hash=await digest.digest('SHA-256',bound);
   const payloadFingerprint=Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
   if(!/^[0-9a-f]{64}$/.test(payloadFingerprint))throw new Error('Invalid server digest');
   return deliverReveal({senderId,recipientId,requestKey,payloadFingerprint,
