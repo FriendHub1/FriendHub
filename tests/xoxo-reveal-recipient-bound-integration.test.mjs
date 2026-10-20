@@ -62,3 +62,29 @@ test('uncertain seal cannot reach atomic DM creation through authenticated reque
  await assert.rejects(process(request),/Trusted sealed upload required/);
  assert.equal(links,0);
 });
+
+test('pending, rejected and uncertain claims never touch the private writer',async()=>{
+ for(const action of ['wait','reject','manual_reconciliation']){
+  const steps=[];
+  const deliverReveal=createRecipientBoundDeliveryCoordinator({
+   claimUpload:async()=>{steps.push('claim');return {action,attemptId};},
+   prepareSealedUpload:async()=>{steps.push('write');throw Error('unexpected upload');},
+   createLinkedMessage:async()=>{steps.push('link');throw Error('unexpected DM');}
+  });
+  const process=createRecipientBoundRequestAdapter({authClient,digest:webcrypto.subtle,deliverReveal});
+  const result=await process(request);
+  assert.equal(result.action,action==='wait'?'pending':action==='reject'?'rejected':'needs_reconciliation');
+  assert.deepEqual(steps,['claim']);
+ }
+});
+test('authenticated invalid media cannot reach recipient claim',async()=>{
+ let claims=0;
+ const deliverReveal=createRecipientBoundDeliveryCoordinator({
+  claimUpload:async()=>{claims++;return {action:'wait',attemptId};},
+  prepareSealedUpload:async()=>{throw Error('unexpected upload');},
+  createLinkedMessage:async()=>{throw Error('unexpected DM');}
+ });
+ const process=createRecipientBoundRequestAdapter({authClient,digest:webcrypto.subtle,deliverReveal});
+ await assert.rejects(process({...request,claimedType:'image/png'}),/Unsupported or oversized media/);
+ assert.equal(claims,0);
+});
