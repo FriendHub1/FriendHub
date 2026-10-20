@@ -74,3 +74,14 @@ test('invalid atomic linked identifiers cannot be reported as delivered',async()
  });
  await assert.rejects(deliver(input),/Atomic delivery returned invalid identifiers/);
 });
+
+test('malformed replay identifiers never report already delivered',async()=>{
+ let writes=0;
+ const deliver=createRecipientBoundDeliveryCoordinator({
+  claimUpload:async()=>({action:'return_existing',attemptId,revealId:'bad',dmId}),
+  prepareSealedUpload:async()=>{writes++;},
+  createLinkedMessage:async()=>{writes++;}
+ });
+ await assert.rejects(deliver(input),/Invalid existing delivery identifiers/);
+ assert.equal(writes,0);
+});
