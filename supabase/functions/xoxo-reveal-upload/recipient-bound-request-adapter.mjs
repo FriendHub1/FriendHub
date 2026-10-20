@@ -13,10 +13,12 @@ export function createRecipientBoundRequestAdapter({authClient,deliverReveal,dig
   if(!/^[A-Za-z0-9_-]{16,128}$/.test(requestKey||''))
    throw new TypeError('Invalid idempotency key');
   // Bind retries to the actual validated bytes, not a client-provided hash.
-  const hash=await digest.digest('SHA-256',bytes);
+  // Copy bytes before asynchronous hashing so callers cannot mutate the buffer mid-digest.
+  const verifiedBytes=new Uint8Array(bytes);
+  const hash=await digest.digest('SHA-256',verifiedBytes);
   const payloadFingerprint=Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('');
   if(!/^[0-9a-f]{64}$/.test(payloadFingerprint))throw new Error('Invalid server digest');
   return deliverReveal({senderId,recipientId,requestKey,payloadFingerprint,
-   bytes,mime:meta.mime,mediaType:meta.mediaType,mode:meta.mode,durationSeconds:meta.durationSeconds});
+   bytes:verifiedBytes,mime:meta.mime,mediaType:meta.mediaType,mode:meta.mode,durationSeconds:meta.durationSeconds});
  };
 }
