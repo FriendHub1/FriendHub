@@ -65,3 +65,12 @@ test('mismatched or uncertain sealed evidence cannot create a DM',async()=>{
   assert.equal(linked,0);
  }
 });
+
+test('invalid atomic linked identifiers cannot be reported as delivered',async()=>{
+ const deliver=createRecipientBoundDeliveryCoordinator({
+  claimUpload:async()=>({action:'claimed',attemptId,ownerToken}),
+  prepareSealedUpload:async()=>({objectPath:'private/sealed.webp',attemptId,senderId:input.senderId,recipientId:input.recipientId,payloadFingerprint:input.payloadFingerprint,writerState:'sealed',uploadUncertain:false}),
+  createLinkedMessage:async()=>({revealId:'invalid',dmId})
+ });
+ await assert.rejects(deliver(input),/Atomic delivery returned invalid identifiers/);
+});
