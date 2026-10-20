@@ -6137,6 +6137,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     <button class="notification-tab" type="button" data-notification-filter="mention" onclick="setNotificationFilter('mention', this); event.stopPropagation();">@ Mentions</button>
                                     <button class="notification-tab" type="button" data-notification-filter="dm" onclick="setNotificationFilter('dm', this); event.stopPropagation();">✉️ Messages</button>
                                     </div>
+                                    <div id="xoxoWhisperBellBetaNotice" hidden role="status" style="padding:8px 12px;font-size:12px;color:var(--fh-muted,#667085);"></div>
                                     <div class="notification-list" id="notificationList">
                                     <div class="notification-empty">No notifications yet.</div>
                                     </div>
@@ -14121,6 +14122,8 @@ async function openPublicProfile(userId) {
                                     if (type === "follow") return "👤";
                                     if (type === "mention") return "@";
                                     if (type === "dm") return "✉️";
+                                    if (type === "whisper_reaction") return "🫧";
+                                    if (type === "whisper_reply") return "💬";
                                     return "🔔";
                                     }
                                     function setNotificationFilter(filter, button) {
@@ -14184,7 +14187,9 @@ async function openPublicProfile(userId) {
                                     ? `<img src="${escapeHtmlAttribute(actor.profile_photo)}" alt="Profile photo">`
                                     : xoxoBubbleImg(item.actor_id, username);
                                     const icon = notificationTypeIcon(String(item.type || ""));
-                                    const clickAction = item.type === "follow"
+                                    const clickAction = (item.type === "whisper_reaction" || item.type === "whisper_reply")
+                                    ? `openWhisperNotificationBeta('${escapeHtmlAttribute(String(item.id || ""))}')`
+                                    : item.type === "follow"
                                     ? `openFollowNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}', '${escapeHtmlAttribute(String(item.id || ""))}')`
                                     : item.type === "dm"
                                     ? `openDmNotification('${escapeHtmlAttribute(String(item.actor_id || ""))}', '${escapeHtmlAttribute(String(item.id || ""))}')`
@@ -14222,6 +14227,17 @@ async function openPublicProfile(userId) {
                                     : item
                                     );
                                     renderNotifications();
+                                    }
+
+                                    // BETA: safe fallback until verified Whisper deep links are implemented.
+                                    // Never interpret a Whisper notification as a post notification.
+                                    async function openWhisperNotificationBeta(notificationId) {
+                                    await markNotificationAsRead(notificationId);
+                                    const notice = document.getElementById("xoxoWhisperBellBetaNotice");
+                                    if (notice) {
+                                      notice.textContent = "🫧 Whisper notification marked as read. Opening a Whisper from the bell is not enabled in private BETA yet.";
+                                      notice.hidden = false;
+                                    }
                                     }
 
                                     async function openDmNotification(actorId, notificationId) {
