@@ -222,3 +222,34 @@ test('recipient-bound idempotency rejects replay to a different recipient withou
  assert.equal(writes,1);
  assert.equal(links,1);
 });
+
+test('cross-recipient replay cannot reuse sealed media or insert a DM',async()=>{
+ const calls=[];
+ const otherRecipient='77777777-7777-4777-8777-777777777777';
+ const rpcClient={rpc:async(name,args)=>{
+  calls.push(name);
+  if(name==='xoxo_reveal_claim_upload_v2'){
+   assert.equal(args.p_recipient_id,otherRecipient);
+   return {data:{action:'claimed',attempt_id:attempt,owner_token:owner}};
+  }
+  throw Error('DM must never be created');
+ }};
+ const pipeline=createRecipientBoundPipeline({authClient,rpcClient,digest:webcrypto.subtle,
+  prepareSealedUpload:async args=>({
+   attemptId:attempt,senderId:sender,recipientId:recipient,
+   payloadFingerprint:args.payloadFingerprint,objectPath:'private/test.webp',
+   writerState:'sealed',uploadUncertain:false
+  })});
+ await assert.rejects(pipeline({...input,recipientId:otherRecipient}),/Trusted sealed upload required/);
+ assert.deepEqual(calls,['xoxo_reveal_claim_upload_v2']);
+});
+
+test('server-side byte digest failure cannot create a claim or write media',async()=>{
+ let calls=0;
+ const pipeline=createRecipientBoundPipeline({authClient,
+  rpcClient:{rpc:async()=>{calls++;throw Error('unexpected RPC');}},
+  digest:{digest:async()=>{throw Error('SHA-256 unavailable');}},
+  prepareSealedUpload:async()=>{calls++;}});
+ await assert.rejects(pipeline(input),/SHA-256 unavailable/);
+ assert.equal(calls,0);
+});
