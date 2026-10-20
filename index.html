@@ -7498,8 +7498,8 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
             <div id="xwsNotifications" aria-live="polite"></div>
           </div>
           <div class="xoxo-whisper-sim-routing" style="padding:14px;margin:12px 0;border:1px solid #a785dc;border-radius:14px;background:rgba(132,77,193,.12)">
-            <strong>💬 Stage 14 · Direct Whisper Reply (fictional only)</strong>
-            <p class="xoxo-whisper-sim-note">Reply opens a direct-message-style composer. No approval or message request is required in this demo. No real DM or notification is sent.</p>
+            <strong>💬 Stage 15 · DM handoff preview (fictional only)</strong>
+            <p class="xoxo-whisper-sim-note">Reply previews the Whisper context and the intended DM handoff. This is an isolated simulation: it does not open a real conversation, change DM permissions, or send real messages.</p>
             <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="xwsBlocked"> Simulate blocked users (prevent reply)</label>
           </div>
           <div id="xwsFeed" class="xoxo-whisper-sim-feed" aria-live="polite"></div>
@@ -21765,6 +21765,7 @@ async function xoxoAvatarClose(apply){
           openReply.hidden=true;
           context.textContent='🫧 Direct Message · Replying to '+names[owner]+"'s Whisper: "+w.content;
           send.textContent='Send demo DM';
+          handoff.textContent='🔒 Preview only · Recipient: '+names[owner]+' · Whisper context: '+w.content+' · Actual integration will reuse openDirectChat() and sendDirectMessage() after permissions are verified.';
           composer.hidden=false;
           input.focus();
         });
@@ -21772,6 +21773,7 @@ async function xoxoAvatarClose(apply){
         composer.hidden=true;
         const context=el('div','xoxo-whisper-sim-reply-context',
           '🫧 Direct Message · Replying to '+names[owner]+"'s Whisper: "+w.content);
+        const handoff=el('p','xoxo-whisper-sim-note','🔒 Preview only · No real DM will be opened.');
         const input=el('input','xoxo-whisper-sim-reply');
         input.type='text';input.maxLength=200;input.placeholder='Write a demo reply as '+names[role]+'...';
         const send=button('Send demo reply',()=>{
@@ -21783,7 +21785,7 @@ async function xoxoAvatarClose(apply){
         });
         const cancel=button('Cancel',()=>{composer.hidden=true;openReply.hidden=false;input.value='';});
         input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();send.click();}});
-        composer.append(context,input,send,cancel);
+        composer.append(context,handoff,input,send,cancel);
         thread.append(openReply,composer);
       }
       card.append(thread);feed.append(card);
