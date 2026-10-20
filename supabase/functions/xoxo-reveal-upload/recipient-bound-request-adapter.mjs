@@ -1,7 +1,7 @@
 // XOXO Reveal BETA — authenticated recipient-bound request adapter, REVIEW ONLY.
 // Not a public endpoint. No direct Storage operations or production deployment.
 import {authenticateRevealSender} from './authenticate.mjs';
-import {inspectRevealUpload} from './upload-policy.mjs';
+import {inspectRevealUpload,MAX_VIDEO_BYTES} from './upload-policy.mjs';
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function createRecipientBoundRequestAdapter({authClient,deliverReveal,digest=globalThis.crypto?.subtle}={}){
  if(typeof deliverReveal!=='function'||typeof digest?.digest!=='function')
@@ -9,8 +9,11 @@ export function createRecipientBoundRequestAdapter({authClient,deliverReveal,dig
  return async function processRecipientBoundRequest({
   authorization,recipientId,requestKey,bytes,claimedType,mode,seconds=null
  }={}){
+  // Reject oversized or malformed inputs before allocating a defensive copy or authenticating.
+  if(!(bytes instanceof Uint8Array)||bytes.byteLength===0||bytes.byteLength>MAX_VIDEO_BYTES)
+   throw new TypeError('Invalid or oversized upload bytes');
   // Snapshot request bytes before the first await; no caller mutation can change what we validate, hash or upload.
-  const verifiedBytes=bytes instanceof Uint8Array?new Uint8Array(bytes):bytes;
+  const verifiedBytes=new Uint8Array(bytes);
   const {senderId}=await authenticateRevealSender({authorization,authClient});
   if(!UUID.test(senderId||'')||!UUID.test(recipientId||''))
    throw new Error('Invalid authenticated participants');
