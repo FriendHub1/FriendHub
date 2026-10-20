@@ -65,6 +65,12 @@ BEGIN
  ) VALUES(gen_random_uuid(),v_dm_id,v_attempt.id,p_sender_id,p_recipient_id,
   p_object_path,v_attempt.payload_fingerprint,p_media_type,p_mode,p_duration_seconds)
  RETURNING id INTO v_reveal_id;
+ -- Commit the idempotency result in the SAME transaction as DM + Reveal.
+ UPDATE public.xoxo_reveal_upload_attempts
+ SET status='completed',reveal_id=v_reveal_id,dm_id=v_dm_id,
+     updated_at=clock_timestamp()
+ WHERE id=v_attempt.id AND status='pending' AND claim_token=p_claim_token;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Upload completion race'; END IF;
  RETURN QUERY SELECT v_reveal_id,v_dm_id;
 END $fn$;
 REVOKE ALL ON FUNCTION public.xoxo_reveal_create_linked_dm_v1(uuid,uuid,uuid,uuid,text,text,text,integer) FROM PUBLIC,anon,authenticated;
