@@ -41,3 +41,25 @@ test('invalid digest never reaches delivery',async()=>{
  await assert.rejects(process(input),/Invalid server digest/);
  assert.equal(calls,0);
 });
+
+test('hash and delivered bytes use an immutable snapshot when caller mutates original',async()=>{
+ const source=Uint8Array.from(bytes);
+ let release;
+ const gate=new Promise(resolve=>{release=resolve;});
+ let received;
+ const digest={digest:async(algorithm,snapshot)=>{
+  await gate;
+  return webcrypto.subtle.digest(algorithm,snapshot);
+ }};
+ const process=createRecipientBoundRequestAdapter({authClient,digest,deliverReveal:async args=>{received=args;return {action:'pending'};}});
+ const pending=process({...input,bytes:source});
+ // Allow authentication and validation to reach the digest before mutation.
+ await new Promise(resolve=>setImmediate(resolve));
+ source[source.length-1]^=255;
+ release();
+ await pending;
+ assert.notEqual(received.bytes,source);
+ assert.equal(received.bytes[received.bytes.length-1],bytes[bytes.length-1]);
+ const expected=Buffer.from(await webcrypto.subtle.digest('SHA-256',bytes)).toString('hex');
+ assert.equal(received.payloadFingerprint,expected);
+});
