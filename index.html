@@ -7497,6 +7497,16 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
             <p class="xoxo-whisper-sim-note">Only notifications for the currently selected fictional member appear here. They stay inside this browser tab.</p>
             <div id="xwsNotifications" aria-live="polite"></div>
           </div>
+          <div class="xoxo-whisper-sim-routing" style="padding:14px;margin:12px 0;border:1px solid #a785dc;border-radius:14px;background:rgba(132,77,193,.12)">
+            <strong>🔐 Stage 13 · DM routing test (fictional only)</strong>
+            <p class="xoxo-whisper-sim-note">Choose a simulated relationship. No real conversation, request, notification, or database write occurs.</p>
+            <label for="xwsDmAccess">Simulated conversation status</label>
+            <select id="xwsDmAccess" style="display:block;width:100%;margin:6px 0 10px;padding:8px;border-radius:9px">
+              <option value="existing">Existing DM / accepted request → Direct Message</option>
+              <option value="new">No existing DM → Message Request</option>
+            </select>
+            <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="xwsBlocked"> Simulate blocked users (prevent reply)</label>
+          </div>
           <div id="xwsFeed" class="xoxo-whisper-sim-feed" aria-live="polite"></div>
           <p id="xwsFeedback" class="xoxo-whisper-sim-status" role="status"></p>
         </section>
@@ -21677,7 +21687,7 @@ async function xoxoAvatarClose(apply){
   const root=document.querySelector('#xoxoAdminWhispers .xoxo-whisper-two-person-simulator');
   if(!root)return;
   const names={luna:'🌙 Luna',sol:'☀️ Sol'};
-  const state={role:'luna',whispers:{luna:null,sol:null},reactions:{luna:{},sol:{}},replies:{luna:[],sol:[]},notifications:{luna:[],sol:[]},nextNotificationId:1};
+  const state={role:'luna',whispers:{luna:null,sol:null},reactions:{luna:{},sol:{}},replies:{luna:[],sol:[]},notifications:{luna:[],sol:[]},nextNotificationId:1,dmAccess:'existing',blocked:false};
   const byId=id=>root.querySelector('#'+id);
   const other=role=>role==='luna'?'sol':'luna';
   const now=()=>Date.now();
@@ -21751,27 +21761,30 @@ async function xoxoAvatarClose(apply){
       card.append(bar);
       const thread=el('div','xoxo-whisper-sim-thread');
       thread.append(el('strong','','Simulated replies ('+state.replies[owner].length+')'));
-      for(const reply of state.replies[owner])thread.append(el('div','',names[reply.author]+': '+reply.content));
+      for(const reply of state.replies[owner])thread.append(el('div','',names[reply.author]+' ['+(reply.route==='new'?'request':'DM')+' demo]: '+reply.content));
       if(role!==owner){
         // Instagram-style BETA: Reply opens a composer; it never sends on click.
         // This is fictional, local-only and cannot access real DMs or Supabase.
         const openReply=button('💬 Reply to Whisper',()=>{
+          if(state.blocked){feedback('🔒 Simulated block: replying is not permitted. No message was sent.');return;}
           openReply.hidden=true;
+          context.textContent='🫧 '+(state.dmAccess==='existing'?'Direct Message':'Message Request')+' · Replying to '+names[owner]+"'s Whisper: "+w.content;
+          send.textContent=state.dmAccess==='existing'?'Send demo DM':'Send demo request';
           composer.hidden=false;
           input.focus();
         });
         const composer=el('div','xoxo-whisper-sim-composer');
         composer.hidden=true;
         const context=el('div','xoxo-whisper-sim-reply-context',
-          '🫧 Replying to '+names[owner]+"'s Whisper: "+w.content);
+          '🫧 '+(state.dmAccess==='existing'?'Direct Message':'Message Request')+' · Replying to '+names[owner]+"'s Whisper: "+w.content);
         const input=el('input','xoxo-whisper-sim-reply');
         input.type='text';input.maxLength=200;input.placeholder='Write a demo reply as '+names[role]+'...';
         const send=button('Send demo reply',()=>{
           const value=input.value.trim();
-          if(!value||!valid(owner))return;
-          state.replies[owner].push({author:role,content:value});
+          if(!value||!valid(owner)||state.blocked){if(state.blocked)feedback('🔒 Blocked in this simulation. Nothing sent.');return;}
+          state.replies[owner].push({author:role,content:value,route:state.dmAccess});
           notify(owner,role,'replied to your Whisper:',value.slice(0,100));
-          feedback('Demo reply sent locally. No real DM or notification was sent.');render();
+          feedback(state.dmAccess==='existing'?'Demo DM composed and sent locally. No real DM was sent.':'Demo message request composed and sent locally. No real request was sent.');render();
         });
         const cancel=button('Cancel',()=>{composer.hidden=true;openReply.hidden=false;input.value='';});
         input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();send.click();}});
@@ -21781,6 +21794,8 @@ async function xoxoAvatarClose(apply){
       card.append(thread);feed.append(card);
     }
   }
+  byId('xwsDmAccess').addEventListener('change',e=>{state.dmAccess=e.target.value;feedback('Demo routing updated. No real permissions changed.');render();});
+  byId('xwsBlocked').addEventListener('change',e=>{state.blocked=e.target.checked;feedback(state.blocked?'Demo block enabled. Replies are disabled.':'Demo block disabled.');render();});
   root.querySelectorAll('[data-xws-role]').forEach(b=>b.addEventListener('click',()=>{
     state.role=b.dataset.xwsRole;byId('xwsMessage').value='';feedback('');render();
   }));
@@ -21801,7 +21816,7 @@ async function xoxoAvatarClose(apply){
   });
   byId('xwsReset').addEventListener('click',()=>{
     for(const role of ['luna','sol']){state.whispers[role]=null;state.reactions[role]={};state.replies[role]=[];state.notifications[role]=[];}
-    state.nextNotificationId=1;
+    state.nextNotificationId=1;state.dmAccess='existing';state.blocked=false;byId('xwsDmAccess').value='existing';byId('xwsBlocked').checked=false;
     state.role='luna';byId('xwsMessage').value='';feedback('Simulation reset.');render();
   });
   byId('xwsMarkRead').addEventListener('click',()=>{
