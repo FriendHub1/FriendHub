@@ -53,3 +53,30 @@ test('untrusted seal cannot create a DM through the composed request pipeline',a
  await assert.rejects(process(request),/Trusted sealed upload required/);
  assert.equal(linked,0);
 });
+
+test('pending and reconciliation states never reach Storage or DM insertion',async()=>{
+ for(const [action,expected] of [['wait','pending'],['manual_reconciliation','needs_reconciliation'],['reject','rejected']]){
+  const calls=[];
+  const deliverReveal=createRecipientBoundDeliveryCoordinator({
+   claimUpload:async()=>{calls.push('claim');return {action,attemptId};},
+   prepareSealedUpload:async()=>{calls.push('seal');throw Error('must not upload');},
+   createLinkedMessage:async()=>{calls.push('link');throw Error('must not link');}
+  });
+  const process=createRecipientBoundRequestAdapter({authClient,digest:webcrypto.subtle,deliverReveal});
+  assert.equal((await process(request)).action,expected);
+  assert.deepEqual(calls,['claim']);
+ }
+});
+
+test('uncertain sealed upload never reaches DM insertion through authenticated pipeline',async()=>{
+ let linked=0;
+ const deliverReveal=createRecipientBoundDeliveryCoordinator({
+  claimUpload:async()=>({action:'claimed',attemptId,ownerToken}),
+  prepareSealedUpload:async args=>({objectPath:'private/reveal.webp',attemptId,senderId,recipientId,
+   payloadFingerprint:args.payloadFingerprint,writerState:'sealed',uploadUncertain:true}),
+  createLinkedMessage:async()=>{linked++;}
+ });
+ const process=createRecipientBoundRequestAdapter({authClient,digest:webcrypto.subtle,deliverReveal});
+ await assert.rejects(process(request),/Trusted sealed upload required/);
+ assert.equal(linked,0);
+});
