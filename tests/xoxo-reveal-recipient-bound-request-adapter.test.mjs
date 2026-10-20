@@ -34,3 +34,10 @@ test('different media bytes produce different retry fingerprints',async()=>{
  await process({...input,bytes:Uint8Array.from([...bytes,4])});
  assert.notEqual(hashes[0],hashes[1]);
 });
+
+test('invalid digest never reaches delivery',async()=>{
+ let calls=0;
+ const process=createRecipientBoundRequestAdapter({authClient,digest:{digest:async()=>new Uint8Array([1,2,3]).buffer},deliverReveal:async()=>{calls++;}});
+ await assert.rejects(process(input),/Invalid server digest/);
+ assert.equal(calls,0);
+});
