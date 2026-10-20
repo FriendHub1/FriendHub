@@ -1,6 +1,7 @@
 // XOXO Reveal BETA — recipient-bound HTTP adapter, REVIEW ONLY / NOT DEPLOYED.
 // Must NOT be exposed until real sealed writer, rate limits and DB migrations are reviewed.
 import {validateUploadRequest,readBoundedUploadBody} from './http-boundary.mjs';
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const reply=(status,body,origin,allowedOrigin)=>{
  const headers={'content-type':'application/json','cache-control':'no-store','x-content-type-options':'nosniff','vary':'origin'};
  if(origin===allowedOrigin)headers['access-control-allow-origin']=allowedOrigin;
@@ -35,6 +36,9 @@ export function createRecipientBoundHttpHandler({allowedOrigin,processRecipientB
     authorization:request.headers.get('authorization'),recipientId,requestKey,bytes,
     claimedType:request.headers.get('content-type'),mode,seconds
    });
+   if(['delivered','already_delivered'].includes(result?.action)&&
+      (!UUID.test(result?.revealId||'')||!UUID.test(result?.dmId||'')))
+    throw new Error('Invalid delivery result');
    if(result?.action==='delivered')return reply(201,{action:'delivered',revealId:result.revealId,dmId:result.dmId},origin,allowedOrigin);
    if(result?.action==='already_delivered')return reply(200,{action:'already_delivered',revealId:result.revealId,dmId:result.dmId},origin,allowedOrigin);
    if(result?.action==='pending')return reply(202,{action:'pending'},origin,allowedOrigin);
