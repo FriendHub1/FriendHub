@@ -6,7 +6,7 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSealedUpload,createLinkedMessage}={}){
  if([claimUpload,prepareSealedUpload,createLinkedMessage].some(fn=>typeof fn!=='function'))
   throw new TypeError('Trusted server dependencies required');
- return async function deliverReveal({senderId,recipientId,requestKey,payloadFingerprint,mediaType,mode,durationSeconds=null}={}){
+ return async function deliverReveal({senderId,recipientId,requestKey,payloadFingerprint,mediaType,mode,durationSeconds=null,bytes,mime}={}){
   if(!UUID.test(senderId||'')||!UUID.test(recipientId||'')||senderId===recipientId||
      !/^[A-Za-z0-9_-]{16,128}$/.test(requestKey||'')||
      !/^[0-9a-f]{64}$/.test(payloadFingerprint||'')||
@@ -27,7 +27,7 @@ export function createRecipientBoundDeliveryCoordinator({claimUpload,prepareSeal
   // Never start another write when an existing attempt is pending or uncertain.
   const sealed=await prepareSealedUpload({
    attemptId:claim.attemptId,claimToken:claim.ownerToken,
-   senderId,recipientId,payloadFingerprint,mediaType,mode,durationSeconds
+   senderId,recipientId,payloadFingerprint,mediaType,mode,durationSeconds,bytes,mime
   });
   if(!sealed||typeof sealed.objectPath!=='string'||!sealed.objectPath.trim()||
    sealed.objectPath.startsWith('/')||sealed.objectPath.includes('..')||
