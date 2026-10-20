@@ -38,6 +38,10 @@ BEGIN
  DELETE FROM public.user_blocks;
  SELECT * INTO x FROM public.xoxo_reveal_create_linked_dm_v1(a,c,s,r,'private/one.webp','image','once',NULL);
  IF x.reveal_id IS NULL OR x.dm_id IS NULL THEN RAISE EXCEPTION 'Missing linked IDs'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.xoxo_reveal_upload_attempts
+  WHERE id=a AND status='completed' AND reveal_id=x.reveal_id AND dm_id=x.dm_id)
+ THEN RAISE EXCEPTION 'Upload attempt not atomically completed'; END IF;
+
  IF (SELECT count(*) FROM public.xoxo_reveals WHERE dm_id=x.dm_id)<>1
   OR (SELECT count(*) FROM public.direct_messages WHERE id=x.dm_id)<>1
  THEN RAISE EXCEPTION 'Linked records missing'; END IF;
