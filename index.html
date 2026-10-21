@@ -12589,6 +12589,11 @@ async function openPublicProfile(userId) {
                                     }
                                     if (!userId || String(userId) === String(currentUser.id)) return;
 
+                                    // A Whisper draft must not follow the user into a different conversation.
+                                    if (window.xoxoWhisperDmDraftGuard &&
+                                        window.xoxoWhisperDmDraftGuard.recipientId !== String(userId)) {
+                                      window.xoxoWhisperDmDraftGuard = null;
+                                    }
                                     currentDmUserId = String(userId);
                                     currentDmUsername = username || "@User";
                                     currentDmProfilePhoto = profilePhoto || null;
@@ -13908,8 +13913,8 @@ async function openPublicProfile(userId) {
                                     const content = input ? input.value.trim() : "";
                                     const attachment = dmSelectedAttachment?.file || null;
                                     const whisperGuard = window.xoxoWhisperDmDraftGuard;
-                                    if (whisperGuard && String(currentDmUserId) === whisperGuard.recipientId
-                                        && content === whisperGuard.contextOnly && !attachment) {
+                                    if (!dmEditTarget?.id && whisperGuard && String(currentDmUserId) === whisperGuard.recipientId
+                                        && content.replace(/\s+/g, ' ').trim() === whisperGuard.contextOnly.replace(/\s+/g, ' ').trim() && !attachment) {
                                       setDmStatus("Write your reply below the Whisper before sending.", true);
                                       if (input) input.focus();
                                       return;
@@ -14042,6 +14047,9 @@ async function openPublicProfile(userId) {
                                     console.error("DM notification error:", notificationError);
                                     }
 
+                                    if (window.xoxoWhisperDmDraftGuard?.recipientId === String(currentDmUserId)) {
+                                      window.xoxoWhisperDmDraftGuard = null;
+                                    }
                                     if (input) input.value = "";
                                     resetDmFormatting();
                                     clearDmAttachment();
@@ -21671,7 +21679,7 @@ async function xoxoAvatarClose(apply){
       if(!live.data)throw Error('This Whisper is no longer active.');
       if(typeof openDirectChat!=='function')throw Error('Direct chat is unavailable.');
       // Resolve the real member identity rather than displaying a placeholder.
-      const member=await supabaseClient.from('profiles')
+      const member=await supabaseClient.from('friendhub_public_profiles')
         .select('username,profile_photo').eq('user_id',live.data.user_id).maybeSingle();
       if(member.error)throw member.error;
       if(!member.data?.username)throw Error('Recipient profile is unavailable.');
