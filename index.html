@@ -12757,7 +12757,12 @@ async function openPublicProfile(userId) {
                                     if (!userId || String(userId) === String(currentUser.id)) return;
 
                                     currentDmUserId = String(userId);
-                                    currentDmUsername = username || "@User";
+                                    // Private BETA exception: resolve the admin label only for the
+                                    // explicitly authorized tester, never for other site members.
+                                    const xoxoWhisperPrivateAdminDm =
+                                      String(currentUser.id) === "469c2cac-c0d8-4fcd-8b63-12468bed20ee" &&
+                                      currentDmUserId === "d9ea1914-fdba-465c-9700-5e640ff48763";
+                                    currentDmUsername = xoxoWhisperPrivateAdminDm ? "@XOXOAdmin" : (username || "@User");
                                     currentDmProfilePhoto = profilePhoto || null;
 
                                     openMessagesPage();
