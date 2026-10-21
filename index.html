@@ -6334,7 +6334,14 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     <h1>Discover</h1>
                                     <p>Find people and communities that match what you're looking for.</p>
                                     </div>
-                                    <div id="friendSuggestionsSection" class="friend-suggestions-section" style="display:none;">
+                                    <!-- XOXO Whispers BETA: Discover placement, restricted to two testers -->
+<section id="xoxoDiscoverWhispers" class="xoxo-dw" hidden aria-label="XOXO Whispers BETA">
+  <div class="xoxo-dw-heading"><div><h2>🫧 XOXO Whispers <small>BETA</small></h2><p>Pequeñas notas, grandes conexiones 💜</p></div><button type="button" id="xoxoDwRefresh">↻</button></div>
+  <div id="xoxoDwCards" class="xoxo-dw-cards"></div>
+  <div class="xoxo-dw-compose"><textarea id="xoxoDwInput" maxlength="100" rows="2" placeholder="¿Qué estás pensando? 🫧"></textarea><div class="xoxo-dw-actions"><span id="xoxoDwCount">0/100</span><button type="button" id="xoxoDwPublish">Publicar 🫧</button><button type="button" id="xoxoDwDelete" hidden>Eliminar mi Whisper</button></div></div>
+  <p id="xoxoDwStatus" class="xoxo-dw-status" role="status"></p>
+</section>
+<div id="friendSuggestionsSection" class="friend-suggestions-section" style="display:none;">
                                     <div class="friend-suggestions-heading">
                                     <div>
                                     <h2>People You May Know</h2>
@@ -22352,6 +22359,146 @@ publish.addEventListener('click',()=>act('publish'));
 del.addEventListener('click',()=>act('delete'));
 sync();
 setInterval(sync,1500);
+})();
+</script>
+<style id="xoxo-discover-whispers-beta-css">
+#xoxoDiscoverWhispers[hidden]{display:none!important}
+#xoxoDiscoverWhispers{margin:0 0 24px;padding:19px 18px 14px;border:1px solid #b565e67d;border-radius:22px;background:linear-gradient(120deg,#28113d,#151b36 65%,#23143b);color:#fff;box-shadow:0 12px 36px #110a2440}
+.xoxo-dw-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.xoxo-dw-heading h2{font-size:19px;margin:0;color:#fff}.xoxo-dw-heading small{font-size:10px;border:1px solid #ec91f7;border-radius:30px;padding:3px 7px;color:#ffbaf3;vertical-align:middle}
+.xoxo-dw-heading p{font-size:12px;margin:5px 0 0;color:#d5bfea}
+#xoxoDwRefresh{background:#ffffff18;border:1px solid #ffffff40;border-radius:50%;color:#fff;width:36px;height:36px;cursor:pointer}
+.xoxo-dw-cards{display:flex;gap:20px;overflow-x:auto;padding:20px 3px 12px;scrollbar-width:thin}
+.xoxo-dw-card{flex:0 0 120px;min-width:0;text-align:center;display:flex;align-items:center;flex-direction:column}
+.xoxo-dw-bubble{position:relative;display:grid;place-items:center;max-width:116px;width:100%;min-height:40px;padding:8px 7px;border-radius:15px;font-size:11px;font-weight:700;line-height:1.3;overflow-wrap:anywhere;color:#210d32;background:linear-gradient(135deg,#fface0,#fb65b7);box-shadow:0 0 15px #f66fd066}
+.xoxo-dw-card:nth-child(3n+2) .xoxo-dw-bubble{background:linear-gradient(135deg,#9ae9ff,#65b8ff);box-shadow:0 0 15px #65b8ff66}
+.xoxo-dw-card:nth-child(3n) .xoxo-dw-bubble{background:linear-gradient(135deg,#dfb3ff,#a77cf7);box-shadow:0 0 15px #a77cf766}
+.xoxo-dw-bubble:after{content:"";position:absolute;width:11px;height:11px;bottom:-5px;left:calc(50% - 6px);background:inherit;transform:rotate(45deg)}
+.xoxo-dw-person{border:0;background:transparent;color:white;display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:12px;cursor:pointer;max-width:100%}
+.xoxo-dw-avatar{height:57px;width:57px;border-radius:50%;border:2px solid #e69aff;background:linear-gradient(145deg,#753ba5,#28346c);display:grid;place-items:center;font-size:25px;overflow:hidden}
+.xoxo-dw-avatar img{width:100%;height:100%;object-fit:cover}
+.xoxo-dw-person strong{font-size:12px;max-width:115px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xoxo-dw-timer{font-size:10px;color:#d4bde9;margin-top:3px}
+.xoxo-dw-reactions{display:flex;justify-content:center;gap:3px;flex-wrap:wrap;margin-top:6px}
+.xoxo-dw-reactions button{border:1px solid #bd82ec66;border-radius:20px;background:#ffffff13;color:white;font-size:11px;padding:4px 5px;cursor:pointer}
+.xoxo-dw-reactions button:disabled{opacity:.5}
+.xoxo-dw-reply{margin-top:7px;font-size:11px;color:#fff;background:#9c47c755;border:1px solid #b78ae6;border-radius:12px;padding:5px 7px;cursor:pointer}
+.xoxo-dw-compose{border-top:1px solid #b485e044;padding-top:12px}
+#xoxoDwInput{box-sizing:border-box;width:100%;background:#0e1126;color:white;border:1px solid #9867cc;border-radius:12px;padding:10px;font:inherit;font-size:13px;resize:vertical}
+.xoxo-dw-actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;margin-top:7px}
+.xoxo-dw-actions span{font-size:11px;color:#d6bcea}
+.xoxo-dw-actions button{border:1px solid #d59cff;background:#7939b3;color:white;border-radius:12px;padding:8px 12px;cursor:pointer;font-size:12px}
+.xoxo-dw-status{font-size:12px;color:#d8c5ef;margin:7px 0 0}
+@media(max-width:520px){#xoxoDiscoverWhispers{padding:14px 12px}.xoxo-dw-cards{gap:12px}.xoxo-dw-card{flex-basis:106px}.xoxo-dw-bubble{max-width:101px}}
+</style>
+<script id="xoxo-discover-whispers-beta-script">
+(function(){
+'use strict';
+const ADMIN='d9ea1914-fdba-465c-9700-5e640ff48763',TESTER='469c2cac-c0d8-4fcd-8b63-12468bed20ee';
+const allowed=new Set([ADMIN,TESTER]), emojis=['💜','❤️','😂','😍','🔥'];
+const root=document.getElementById('xoxoDiscoverWhispers');
+if(!root)return;
+const $=id=>document.getElementById(id),cards=$('xoxoDwCards'),status=$('xoxoDwStatus'),input=$('xoxoDwInput');
+let owner=null,loading=false,lastUser='',lastRefresh=0;
+const uid=()=>typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
+const client=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
+const say=s=>{status.textContent=s};
+function profileLabel(id,profile){return id===ADMIN?'@XOXOAdmin':profile?.username?('@'+String(profile.username).replace(/^@/,'')):'@okirri'}
+function make(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
+async function refresh(){
+ const id=uid(),sb=client();if(!allowed.has(id)||!sb||loading)return;
+ loading=true;lastRefresh=Date.now();say('Cargando Whispers…');
+ try{
+  const r=await sb.from('xoxo_whispers').select('id,user_id,content,expires_at,created_at').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(30);
+  if(r.error)throw r.error;
+  const rows=(r.data||[]).filter(w=>allowed.has(String(w.user_id)));
+  owner=rows.find(w=>String(w.user_id)===id)||null;
+  const [pr,rr]=await Promise.all([
+   sb.from('profiles').select('user_id,username,profile_photo').in('user_id',[ADMIN,TESTER]),
+   rows.length?sb.from('xoxo_whisper_reactions').select('whisper_id,emoji').in('whisper_id',rows.map(w=>w.id)):Promise.resolve({data:[]})
+  ]);
+  const profiles=new Map((pr.data||[]).map(p=>[String(p.user_id),p]));
+  const totals=new Map();
+  for(const x of rr.data||[]){const k=String(x.whisper_id);if(!totals.has(k))totals.set(k,new Map());const m=totals.get(k);m.set(x.emoji,(m.get(x.emoji)||0)+1)}
+  cards.replaceChildren();
+  if(!rows.length)cards.append(make('p','xoxo-dw-status','Todavía no hay Whispers activos. ¡Publica el primero! 🫧'));
+  for(const w of rows){
+   const person=profiles.get(String(w.user_id)),isOwn=String(w.user_id)===id;
+   const card=make('article','xoxo-dw-card'),bubble=make('div','xoxo-dw-bubble',w.content||'');
+   const user=make('button','xoxo-dw-person'),avatar=make('span','xoxo-dw-avatar'),name=make('strong','',profileLabel(String(w.user_id),person));
+   user.type='button';user.title='Ver perfil';
+   if(person?.profile_photo){const img=make('img');img.src=person.profile_photo;img.alt='';avatar.append(img)}else avatar.textContent='🫧';
+   user.append(avatar,name);
+   user.addEventListener('click',()=>{if(typeof openPublicProfile==='function')openPublicProfile(w.user_id)});
+   const minutes=Math.max(0,Math.ceil((new Date(w.expires_at).getTime()-Date.now())/60000));
+   const timer=make('small','xoxo-dw-timer',minutes>=60?Math.ceil(minutes/60)+'h restantes':minutes+'m restantes');
+   const reactions=make('div','xoxo-dw-reactions');
+   if(!isOwn)for(const emoji of emojis){
+    const count=totals.get(String(w.id))?.get(emoji)||0;
+    const b=make('button','',emoji+(count?' '+count:''));b.type='button';b.title='Reaccionar '+emoji;
+    b.addEventListener('click',async()=>{b.disabled=true;try{
+      const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
+      if(live.error||!live.data)throw Error('Este Whisper ya expiró.');
+      const result=await sb.from('xoxo_whisper_reactions').insert({whisper_id:w.id,user_id:id,emoji});
+      if(result.error)throw result.error;
+      await refresh();
+    }catch(e){say('Reacción: '+(e.message||'No disponible'));b.disabled=false}});
+    reactions.append(b);
+   }else{
+    for(const [emoji,count] of totals.get(String(w.id))||[])reactions.append(make('span','xoxo-dw-timer',emoji+' '+count));
+   }
+   card.append(bubble,user,timer,reactions);
+   if(!isOwn){const reply=make('button','xoxo-dw-reply','💬 Responder');reply.type='button';
+    reply.addEventListener('click',async()=>{reply.disabled=true;try{
+     const live=await sb.from('xoxo_whispers').select('id,user_id,content,expires_at').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
+     if(live.error||!live.data)throw Error('El Whisper ya expiró.');
+     if(typeof openDirectChat!=='function')throw Error('El chat no está disponible.');
+     await openDirectChat(w.user_id,profileLabel(String(w.user_id),person),person?.profile_photo||'');
+     if(String(currentDmUserId)!==String(w.user_id))throw Error('No se abrió el chat.');
+     const dm=$('dmInput');if(!dm)throw Error('No se encontró el mensaje privado.');
+     dm.value='🫧 Reply to Whisper: “'+String(w.content||'').replace(/\s+/g,' ').slice(0,100)+'”\n';
+     window.xoxoWhisperDmDraftGuard={recipientId:String(w.user_id),whisperId:String(w.id),expiresAt:String(w.expires_at),contextOnly:dm.value.trim()};
+     dm.dispatchEvent(new Event('input',{bubbles:true}));dm.focus();
+    }catch(e){say('Respuesta: '+(e.message||'No disponible'))}finally{reply.disabled=false}});
+    card.append(reply);
+   }
+   cards.append(card);
+  }
+  input.readOnly=!!owner;input.value=owner?.content||'';$('xoxoDwPublish').hidden=!!owner;$('xoxoDwDelete').hidden=!owner;
+  $('xoxoDwCount').textContent=Array.from(input.value).length+'/100';
+  say(rows.length+' Whisper(s) activo(s) · Solo dos cuentas BETA');
+ }catch(e){say('No se pudieron cargar Whispers: '+(e.message||'Error'))}
+ finally{loading=false}
+}
+async function act(kind){
+ const id=uid(),sb=client();if(!allowed.has(id)||!sb)return;
+ const button=$(kind==='publish'?'xoxoDwPublish':'xoxoDwDelete');button.disabled=true;
+ try{
+  if(kind==='publish'){
+   const value=input.value.trim();if(!value||Array.from(value).length>100)throw Error('Escribe de 1 a 100 caracteres.');
+   if(owner)throw Error('Ya tienes un Whisper activo.');
+   const clean=await sb.from('xoxo_whispers').delete().eq('user_id',id).lte('expires_at',new Date().toISOString());
+   if(clean.error)throw clean.error;
+   const r=await sb.from('xoxo_whispers').insert({user_id:id,content:value});if(r.error)throw r.error;
+  }else{
+   if(!owner||!confirm('¿Eliminar tu Whisper?'))return;
+   const r=await sb.from('xoxo_whispers').delete().eq('id',owner.id).eq('user_id',id);if(r.error)throw r.error;
+  }
+  await refresh();
+ }catch(e){say('No se pudo guardar: '+(e.message||'Error'))}finally{button.disabled=false}
+}
+$('xoxoDwRefresh').addEventListener('click',refresh);
+$('xoxoDwPublish').addEventListener('click',()=>act('publish'));
+$('xoxoDwDelete').addEventListener('click',()=>act('delete'));
+input.addEventListener('input',()=>{$('xoxoDwCount').textContent=Array.from(input.value).length+'/100'});
+function sync(){
+ const id=uid(),yes=allowed.has(id);
+ root.hidden=!yes;
+ if(!yes){lastUser='';return}
+ if(id!==lastUser){lastUser=id;refresh()}
+ else if(Date.now()-lastRefresh>60000&&document.getElementById('discover')?.classList.contains('active'))refresh();
+}
+sync();setInterval(sync,2000);
 })();
 </script>
 </body>
