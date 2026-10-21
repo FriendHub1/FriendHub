@@ -22552,11 +22552,7 @@ async function refresh(){
     reply.addEventListener('click',async()=>{reply.disabled=true;try{
      const live=await sb.from('xoxo_whispers').select('id,user_id,content,expires_at').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
      if(live.error||!live.data)throw Error('El Whisper ya expiró.');
-     if(typeof openDirectChat!=='function')throw Error('El chat no está disponible.');
-     await openDirectChat(w.user_id,profileLabel(String(w.user_id),person),person?.profile_photo||'');
-     if(String(currentDmUserId)!==String(w.user_id))throw Error('No se abrió el chat.');
-     const dm=$('dmInput');if(!dm)throw Error('No se encontró el mensaje privado.');
-     window.xoxoPrepareWhisperDmReply(w);
+     await window.xoxoOpenWhisperQuickReply(live.data,profileLabel(String(w.user_id),person));
     }catch(e){say('Respuesta: '+(e.message||'No disponible'))}finally{reply.disabled=false}});
     card.append(reply);
    }
@@ -22714,5 +22710,80 @@ visibility();setInterval(visibility,2000);
 #xoxoWhisperComposerPreview .xoxo-wcp-head button{background:#49246a;border:1px solid #8e5fb5;border-radius:9px;color:white;cursor:pointer;padding:3px 9px}
 #xoxoWhisperComposerPreview .xoxo-wcp-bubble{width:fit-content;max-width:100%;padding:10px 13px;border-radius:16px 16px 16px 5px;color:#261032;font-size:14px;font-weight:650;overflow-wrap:anywhere;white-space:pre-wrap}
 </style>
+
+<style id="xoxo-whisper-quick-reply-css">
+.xoxo-wqr-backdrop{position:fixed;inset:0;z-index:2147483500;background:rgba(7,5,23,.78);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;backdrop-filter:blur(5px)}
+.xoxo-wqr-dialog{width:min(430px,100%);max-height:calc(100dvh - 32px);overflow:auto;box-sizing:border-box;background:linear-gradient(150deg,#291448,#141b38);border:1px solid #c786f7;border-radius:24px;box-shadow:0 24px 70px #000a;color:white;padding:20px}
+.xoxo-wqr-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+.xoxo-wqr-top strong{font-size:17px}
+.xoxo-wqr-close{border:1px solid #ab7bd0;background:#442260;color:white;border-radius:11px;padding:7px 12px;cursor:pointer}
+.xoxo-wqr-quote{border-radius:17px 17px 17px 5px;padding:14px 15px;color:#21112c;font-weight:750;overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:0 0 20px #bc74f64d}
+.xoxo-wqr-who{font-size:12px;color:#dcc5ef;margin:10px 0}
+.xoxo-wqr-input{display:block;width:100%;min-height:95px;resize:vertical;box-sizing:border-box;border:1px solid #a46dd9;border-radius:13px;background:#110f27;color:white;padding:12px;font:inherit;font-size:14px;margin-top:14px}
+.xoxo-wqr-input:focus{outline:2px solid #aa71fa;outline-offset:1px}
+.xoxo-wqr-footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+.xoxo-wqr-submit{background:linear-gradient(100deg,#fc249d,#8136ed);color:white;border:0;border-radius:13px;padding:12px 20px;font-weight:800;cursor:pointer}
+.xoxo-wqr-submit:disabled{opacity:.55;cursor:wait}
+.xoxo-wqr-error{color:#ffbed2;font-size:12px;margin-top:8px;white-space:pre-wrap}
+.xoxo-wqr-toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:2147483550;background:#24173c;border:1px solid #d49aff;color:white;padding:15px 20px;border-radius:16px;box-shadow:0 12px 36px #0009;font-weight:750;max-width:calc(100vw - 32px);text-align:center}
+</style>
+<script id="xoxo-whisper-quick-reply-script">
+(function(){
+'use strict';
+const ADMIN='d9ea1914-fdba-465c-9700-5e640ff48763',TESTER='469c2cac-c0d8-4fcd-8b63-12468bed20ee';
+let active=null;
+function node(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
+function toast(){const t=node('div','xoxo-wqr-toast','✓ ¡Tu respuesta fue enviada! 💜');t.setAttribute('role','status');document.body.append(t);setTimeout(()=>t.remove(),3000)}
+window.xoxoOpenWhisperQuickReply=async function(whisper,username){
+ const sender=typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
+ if(![ADMIN,TESTER].includes(sender)||!whisper?.id||![ADMIN,TESTER].includes(String(whisper.user_id))||String(whisper.user_id)===sender)throw Error('Esta respuesta solo está disponible en BETA.');
+ if(active)active.remove();
+ const shade=node('div','xoxo-wqr-backdrop'),dialog=node('section','xoxo-wqr-dialog');
+ shade.setAttribute('role','presentation');dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label','Responder a un Whisper');
+ const top=node('div','xoxo-wqr-top'),title=node('strong','','💌 Responder al Whisper');
+ const close=node('button','xoxo-wqr-close','✕');close.type='button';close.setAttribute('aria-label','Cerrar');top.append(title,close);
+ const palette=[['#fface0','#fb65b7'],['#9ae9ff','#65b8ff'],['#dfb3ff','#a77cf7']];
+ const quote=node('div','xoxo-wqr-quote',String(whisper.content||'').slice(0,100));
+ // Reuse the Discover bubble palette for a consistent neon appearance.
+ const ix=String(whisper.user_id)===ADMIN?1:0;
+ quote.style.background='linear-gradient(135deg,'+palette[ix].join(',')+')';
+ const who=node('p','xoxo-wqr-who','Para '+String(username||'este usuario'));
+ const input=node('textarea','xoxo-wqr-input');input.placeholder='Escribe tu respuesta... 💜';input.maxLength=1800;input.setAttribute('aria-label','Tu respuesta al Whisper');
+ const footer=node('div','xoxo-wqr-footer'),count=node('small','','0 / 1800'),send=node('button','xoxo-wqr-submit','Enviar respuesta 💜');send.type='button';
+ const error=node('p','xoxo-wqr-error','');error.setAttribute('role','alert');footer.append(count,send);
+ dialog.append(top,quote,who,input,footer,error);shade.append(dialog);document.body.append(shade);active=shade;
+ const cancel=()=>{if(active===shade)active=null;shade.remove()};
+ close.addEventListener('click',cancel);
+ shade.addEventListener('click',e=>{if(e.target===shade&&!send.disabled)cancel()});
+ input.addEventListener('input',()=>{count.textContent=input.value.length+' / 1800';error.textContent=''});
+ const escape=e=>{if(e.key==='Escape'&&!send.disabled){cancel();document.removeEventListener('keydown',escape)}};
+ document.addEventListener('keydown',escape);
+ input.focus();
+ send.addEventListener('click',async()=>{
+  const text=input.value.trim();
+  if(!text){error.textContent='Escribe tu respuesta antes de enviarla.';input.focus();return}
+  if(send.disabled)return;
+  send.disabled=true;send.textContent='Enviando…';error.textContent='';
+  try{
+   const db=typeof supabaseClient!=='undefined'?supabaseClient:null;
+   if(!db||typeof currentUser==='undefined'||String(currentUser?.id)!==sender)throw Error('Tu sesión cambió. Inicia sesión nuevamente.');
+   const now=new Date().toISOString();
+   const live=await db.from('xoxo_whispers').select('id,user_id,content,expires_at').eq('id',whisper.id).eq('user_id',whisper.user_id).gt('expires_at',now).maybeSingle();
+   if(live.error)throw live.error;
+   if(!live.data)throw Error('Este Whisper ya expiró.');
+   const blocks=await db.from('user_blocks').select('id').eq('blocker_id',sender).eq('blocked_id',whisper.user_id).maybeSingle();
+   if(blocks.error)throw blocks.error;
+   if(blocks.data)throw Error('No puedes enviar mensajes a alguien que tienes bloqueado.');
+   const quoteText=String(live.data.content||'').replace(/\s+/g,' ').slice(0,100);
+   const payload={sender_id:sender,recipient_id:String(whisper.user_id),whisper_id:String(whisper.id),content:'🫧 Reply to Whisper: “'+quoteText+'”\n'+text};
+   const result=await db.from('direct_messages').insert(payload);
+   if(result.error)throw result.error;
+   document.removeEventListener('keydown',escape);
+   cancel();toast();
+  }catch(e){error.textContent='No se pudo enviar: '+(e?.message||'Error inesperado');send.disabled=false;send.textContent='Enviar respuesta 💜'}
+ });
+};
+})();
+</script>
 </body>
                                     </html>gr
