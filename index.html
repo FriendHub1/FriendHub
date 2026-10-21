@@ -22238,11 +22238,12 @@ async function refresh(){
          if(!live.data||String(live.data.user_id)===TESTER)throw Error('El susurro ya no está disponible.');
          const member=await supabaseClient.from('profiles').select('username,profile_photo').eq('user_id',live.data.user_id).maybeSingle();
          if(member.error)throw member.error;
-         if(!member.data?.username)throw Error('No se encontró el perfil del destinatario.');
+         // A valid Whisper author can have a profile hidden by RLS (notably admin).
+         // Use the verified Whisper author UUID to open DM; profile data is optional.
          if(typeof openDirectChat!=='function')throw Error('El chat no está disponible.');
-         const display=String(member.data.username);
+         const display=String(member.data?.username||'Whispers member');
          panel.hidden=true;launch.setAttribute('aria-expanded','false');
-         await openDirectChat(live.data.user_id,display.startsWith('@')?display:'@'+display,member.data.profile_photo||'');
+         await openDirectChat(live.data.user_id,display.startsWith('@')?display:'@'+display,member.data?.profile_photo||'');
          if(String(currentDmUserId)!==String(live.data.user_id))throw Error('No se abrió el chat.');
          const dm=document.getElementById('dmInput');
          if(!dm)throw Error('No se encontró el campo de mensaje.');
