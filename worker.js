@@ -2690,6 +2690,43 @@ async function handleAdminEmailRecipients(request, env) {
  * ==========================================
  */
 
+
+/* XOXO PUBLIC SEO ROUTES V2 - Only five known public pages. */
+const XOXO_PUBLIC_SEO = Object.freeze({"/about": ["About XOXO Avenue | Our Community", "Learn about XOXO Avenue, our community and how we help people connect."], "/discover": ["Discover | XOXO Avenue", "Explore public posts and discover people and communities on XOXO Avenue."], "/privacy": ["Privacy Policy | XOXO Avenue", "Read the XOXO Avenue Privacy Policy and learn how information is handled."], "/terms": ["Terms of Service | XOXO Avenue", "Read the terms and conditions for using XOXO Avenue."], "/guidelines": ["Community Guidelines | XOXO Avenue", "Read the community rules and safety guidelines for XOXO Avenue."]});
+async function xoxoServePublicSeoRoute(request, env, url) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return null;
+  const route = url.pathname.replace(/\/+$/, '') || '/';
+  const meta = XOXO_PUBLIC_SEO[route];
+  if (!meta || url.searchParams.has('profile') || url.searchParams.has('post')) return null;
+  const response = await env.ASSETS.fetch(new Request(url.origin + '/', request));
+  if (!response.ok || !String(response.headers.get('content-type') || '').includes('text/html')) return response;
+  const canonical = 'https://xoxoavenue.com' + route;
+  const image = 'https://xoxoavenue.com/xoxoavenue-social.png';
+  const transformed = new HTMLRewriter()
+    .on('title', {element(el) {el.setInnerContent(meta[0]);}})
+    .on('meta[name="description"]', {element(el) {el.setAttribute('content',meta[1]);}})
+    .on('link[rel="canonical"]', {element(el) {el.remove();}})
+    .on('meta[property^="og:"]', {element(el) {el.remove();}})
+    .on('meta[name^="twitter:"]', {element(el) {el.remove();}})
+    .on('head', {element(el) {el.append(
+      '<link rel="canonical" href="' + canonical + '">' +
+      '<meta property="og:type" content="website">' +
+      '<meta property="og:title" content="' + escapeHtml(meta[0]) + '">' +
+      '<meta property="og:description" content="' + escapeHtml(meta[1]) + '">' +
+      '<meta property="og:url" content="' + canonical + '">' +
+      '<meta property="og:image" content="' + image + '">' +
+      '<meta name="twitter:card" content="summary">' +
+      '<meta name="twitter:title" content="' + escapeHtml(meta[0]) + '">' +
+      '<meta name="twitter:description" content="' + escapeHtml(meta[1]) + '">',
+      {html:true});}})
+    .transform(response);
+  const headers = new Headers(transformed.headers);
+  headers.set('X-XOXO-Worker','public-seo-route');
+  headers.set('Cache-Control','public, max-age=60');
+  return new Response(transformed.body,{status:transformed.status,statusText:transformed.statusText,headers});
+}
+/* END XOXO PUBLIC SEO ROUTES V2 */
+
 export default {
   async scheduled(controller, env, ctx) {
     // Keep existing profile reminders on the original hourly schedule only.
@@ -2732,11 +2769,12 @@ export default {
     if (url.pathname === "/sitemap.xml") {
       const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://xoxoavenue.com/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
+  <url><loc>https://xoxoavenue.com/</loc></url>
+  <url><loc>https://xoxoavenue.com/about</loc></url>
+  <url><loc>https://xoxoavenue.com/discover</loc></url>
+  <url><loc>https://xoxoavenue.com/privacy</loc></url>
+  <url><loc>https://xoxoavenue.com/terms</loc></url>
+  <url><loc>https://xoxoavenue.com/guidelines</loc></url>
 </urlset>`;
 
       return new Response(sitemap, {
@@ -2887,6 +2925,9 @@ export default {
       friendlyProfileMatch
         ? friendlyProfileMatch[1]
         : url.searchParams.get("profile");
+
+    const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
+    if (publicSeoResponse) return publicSeoResponse;
 
     if (!profileId) {
       const response =
