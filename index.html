@@ -22678,12 +22678,13 @@ async function load(){
     profileLink.setAttribute('aria-label','Ver perfil de '+labelFor(userId));
     const avatar=element('span','xmw-detail-avatar');
     const photo=person?.profile_photo;
-    if(photo && /^https?:\/\//i.test(String(photo))){
-     const img=element('img','');img.src=photo;img.alt='Foto de '+labelFor(userId);
-     img.loading='lazy';img.referrerPolicy='no-referrer';
-     img.onerror=()=>{img.remove();avatar.textContent='👤'};
-     avatar.append(img);
-    }else avatar.textContent='👤';
+    const bubble=typeof xoxoBubbleUrl==='function'?xoxoBubbleUrl(userId,person?.username):'/01_violeta.png';
+    const img=element('img','');
+    img.src=photo||bubble;
+    img.alt=photo?'Foto de '+labelFor(userId):'XOXO Bubble de '+labelFor(userId);
+    img.loading='lazy';
+    img.onerror=()=>{if(img.src!==new URL(bubble,location.href).href){img.onerror=null;img.src=bubble}else{img.remove();avatar.textContent='🫧'}};
+    avatar.append(img);
     const name=element('strong','',labelFor(userId));
     profileLink.append(avatar,name);
     info.append(profileLink);
