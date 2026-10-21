@@ -6124,6 +6124,12 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
   }
 })();
 </script>
+<style id="xoxo-whisper-dm-replies-beta-css">
+.xoxo-dm-whisper-context{margin:2px 0 9px;max-width:280px}
+.xoxo-dm-whisper-label{font-size:11px;font-weight:700;color:#f5b4ff;margin:0 0 5px}
+.xoxo-dm-whisper-quote{border-radius:16px 16px 16px 5px;padding:12px 13px;color:#261032;font-size:13px;line-height:1.4;font-weight:650;overflow-wrap:anywhere;box-shadow:0 4px 16px #0003;border:1px solid #ffffff70}
+@media(max-width:480px){.xoxo-dm-whisper-context{max-width:min(230px,70vw)}}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -13091,7 +13097,7 @@ async function openPublicProfile(userId) {
                                     const activeChatUserId = String(currentDmUserId);
                                     let { data, error } = await supabaseClient
                                     .from("direct_messages")
-                                    .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, edited_at, attachment_path, attachment_type, attachment_name, attachment_size, reply_to_message_id, media_view_mode, media_view_seconds, media_opened_at, media_opened_by")
+                                    .select("id, created_at, sender_id, recipient_id, content, is_read, read_at, edited_at, attachment_path, attachment_type, attachment_name, attachment_size, reply_to_message_id, whisper_id, media_view_mode, media_view_seconds, media_opened_at, media_opened_by")
                                     .or(`and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentDmUserId}),and(sender_id.eq.${currentDmUserId},recipient_id.eq.${currentUser.id})`)
                                     .order("created_at", { ascending: true });
 
@@ -13280,6 +13286,20 @@ async function openPublicProfile(userId) {
                                     }
                                     }
 
+                                    function renderXoxoWhisperDmContext(message) {
+                                    // Original quote is stored with the DM, so it survives Whisper expiry.
+                                    const raw = String(message.content || "");
+                                    const match = raw.match(/^🫧 Reply to Whisper: “([^”]*)”/);
+                                    const quote = match ? match[1] : "Whisper 🫧";
+                                    const seed = String(message.whisper_id || "").split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+                                    const palettes = [
+                                      ["#fface0","#fb65b7"], ["#9ae9ff","#65b8ff"],
+                                      ["#c8a2ff","#8759ed"], ["#b6ffdb","#5adcb5"],
+                                      ["#ffe9a2","#ffad64"]
+                                    ];
+                                    const colors = palettes[seed % palettes.length];
+                                    return `<div class="xoxo-dm-whisper-context"><div class="xoxo-dm-whisper-label">🫧 ${getFriendHubLanguage()==="es" ? "Respuesta a un Whisper" : "Whisper reply"}</div><div class="xoxo-dm-whisper-quote" style="background:linear-gradient(135deg,${colors[0]},${colors[1]})">${escapeHtml(quote)}</div></div>`;
+                                    }
                                     async function renderDirectMessages(messages) {
                                     const container = document.getElementById("dmMessages");
                                     const buzzHistory = await loadDmBuzzHistory();
@@ -13317,7 +13337,7 @@ async function openPublicProfile(userId) {
                                     });
 
                                     const renderSignature = messages.map(message =>
-                                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.edited_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${message.reply_to_message_id || ""}:${message.media_view_mode || "normal"}:${message.media_view_seconds || ""}:${message.media_opened_at || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
+                                    `${message.id}:${message.is_read ? 1 : 0}:${message.read_at || ""}:${message.edited_at || ""}:${message.attachment_path || ""}:${message.content || ""}:${message.reply_to_message_id || ""}:${message.whisper_id || ""}:${message.media_view_mode || "normal"}:${message.media_view_seconds || ""}:${message.media_opened_at || ""}:${(message._dmReactions || []).map(r => `${r.user_id}:${r.emoji}`).sort().join(",")}`
                                     ).join("|") + "||buzz:" + buzzHistory.map(b => `${b.id}:${b.sender_id}:${b.created_at}`).join(",");
 
                                     if (renderSignature === dmLastRenderedSignature) return;
@@ -13351,8 +13371,9 @@ async function openPublicProfile(userId) {
                                     ${mine ? "" : avatarHtml}
                                     <div class="dm-bubble">
                                     ${replyHtml}
+                                    ${message.whisper_id ? renderXoxoWhisperDmContext(message) : ""}
                                     ${attachmentHtml}
-                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `${dmFormattedTextHtml(message.content)}${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
+                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `${dmFormattedTextHtml(message.whisper_id ? String(message.content).replace(/^🫧 Reply to Whisper: “[^”]*”\s*/, "") : message.content)}${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
                                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
                                     <div class="dm-time">${escapeHtml(formatDmClockTime(message.created_at))}</div>
                                     ${renderDmSeenStatus(message, mine)}
@@ -22628,16 +22649,18 @@ async function load(){
   const tally=new Map();
   for(const x of reactions.data||[])tally.set(x.emoji,(tally.get(x.emoji)||0)+1);
   const views=await sb.from('xoxo_whisper_views').select('viewer_id').eq('whisper_id',w.id);
+  const dmReplies=await sb.from('direct_messages').select('id').eq('whisper_id',w.id).eq('recipient_id',id);
   const stats=element('div','xmw-stats');
   const st=element('div','xmw-stat');st.append(element('strong','',reactions.error?'—':String((reactions.data||[]).length)),element('small','','Reacciones recibidas'));stats.append(st);
   const view=element('div','xmw-stat');view.append(element('strong','',views.error?'—':String(new Set((views.data||[]).map(x=>x.viewer_id)).size)),element('small','','Vistas únicas'));stats.append(view);
-  const dm=element('div','xmw-stat');dm.append(element('strong','','—'),element('small','','Respuestas por DM · aún no vinculadas'));stats.append(dm);
+  const dm=element('div','xmw-stat');dm.append(element('strong','',dmReplies.error?'—':String((dmReplies.data||[]).length)),element('small','','Respuestas por DM'));stats.append(dm);
   area.append(stats);
   const list=element('div','xmw-reactions');
   for(const [emoji,count] of tally)list.append(element('span','',emoji+' '+count));
   if(tally.size)area.append(list);
   if(reactions.error)area.append(element('p','xmw-note-caption','No fue posible consultar las reacciones: '+reactions.error.message));
   if(views.error)area.append(element('p','xmw-note-caption','No fue posible consultar las vistas: '+views.error.message));
+  if(dmReplies.error)area.append(element('p','xmw-note-caption','No fue posible consultar respuestas DM: '+dmReplies.error.message));
   const history=rows.filter(item=>item.id!==w.id);
   if(history.length){
    area.append(element('h3','','Whispers anteriores'));
