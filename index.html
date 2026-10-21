@@ -22633,22 +22633,70 @@ async function load(){
   area.append(element('div','xmw-note',w.content||''));
   const expires=new Date(w.expires_at).getTime();
   area.append(element('p','xmw-note-caption',expires>Date.now()?'Activo · Expira '+new Date(w.expires_at).toLocaleString():'Expirado · '+new Date(w.expires_at).toLocaleString()));
-  const reactions=await sb.from('xoxo_whisper_reactions').select('emoji,user_id').eq('whisper_id',w.id);
-  const tally=new Map();
-  for(const x of reactions.data||[])tally.set(x.emoji,(tally.get(x.emoji)||0)+1);
-  const views=await sb.from('xoxo_whisper_views').select('viewer_id').eq('whisper_id',w.id);
-  const dmReplies=await sb.from('direct_messages').select('id').eq('whisper_id',w.id).eq('recipient_id',id);
+  const reactions=await sb.from('xoxo_whisper_reactions').select('emoji,user_id,created_at').eq('whisper_id',w.id);
+  const views=await sb.from('xoxo_whisper_views').select('viewer_id,viewed_at').eq('whisper_id',w.id);
+  const dmReplies=await sb.from('direct_messages').select('id,sender_id,content,created_at').eq('whisper_id',w.id).eq('recipient_id',id).order('created_at',{ascending:false});
+  const allIds=[...new Set([...(reactions.data||[]).map(x=>x.user_id),...(views.data||[]).map(x=>x.viewer_id),...(dmReplies.data||[]).map(x=>x.sender_id)].filter(Boolean))];
+  const names=new Map();
+  if(allIds.length){
+   const people=await sb.from('profiles').select('user_id,username,profile_photo').in('user_id',allIds);
+   for(const person of people.data||[])names.set(person.user_id,person);
+  }
+  const labelFor=userId=>{const n=names.get(userId)?.username;return n?'@'+String(n).replace(/^@/,''):'Usuario'};
+  const timeFor=date=>date?new Date(date).toLocaleString():'';
   const stats=element('div','xmw-stats');
-  const st=element('div','xmw-stat');st.append(element('strong','',reactions.error?'—':String((reactions.data||[]).length)),element('small','','Reacciones recibidas'));stats.append(st);
-  const view=element('div','xmw-stat');view.append(element('strong','',views.error?'—':String(new Set((views.data||[]).map(x=>x.viewer_id)).size)),element('small','','Vistas únicas'));stats.append(view);
-  const dm=element('div','xmw-stat');dm.append(element('strong','',dmReplies.error?'—':String((dmReplies.data||[]).length)),element('small','','Respuestas por DM'));stats.append(dm);
-  area.append(stats);
-  const list=element('div','xmw-reactions');
-  for(const [emoji,count] of tally)list.append(element('span','',emoji+' '+count));
-  if(tally.size)area.append(list);
-  if(reactions.error)area.append(element('p','xmw-note-caption','No fue posible consultar las reacciones: '+reactions.error.message));
-  if(views.error)area.append(element('p','xmw-note-caption','No fue posible consultar las vistas: '+views.error.message));
-  if(dmReplies.error)area.append(element('p','xmw-note-caption','No fue posible consultar respuestas DM: '+dmReplies.error.message));
+  const detail=element('section','xmw-details');
+  detail.setAttribute('aria-live','polite');
+  const sections=[
+   {type:'reactions',label:'Reacciones recibidas',rows:reactions.data||[],error:reactions.error},
+   {type:'views',label:'Vistas únicas',rows:views.data||[],error:views.error},
+   {type:'replies',label:'Respuestas por DM',rows:dmReplies.data||[],error:dmReplies.error}
+  ];
+  const countFor=entry=>entry.error?'—':String(entry.type==='views'?new Set(entry.rows.map(x=>x.viewer_id)).size:entry.rows.length);
+  const buttons=[];
+  function showDetails(type){
+   const entry=sections.find(x=>x.type===type);if(!entry)return;
+   buttons.forEach(b=>{const active=b.dataset.type===type;b.setAttribute('aria-pressed',String(active));b.classList.toggle('xmw-selected',active)});
+   detail.replaceChildren(element('h4','',entry.label));
+   if(entry.error){detail.append(element('p','xmw-note-caption','No se pudo consultar esta actividad: '+entry.error.message));return}
+   if(!entry.rows.length){detail.append(element('p','xmw-note-caption',type==='reactions'?'Todavía no hay reacciones 💜':type==='views'?'Todavía nadie ha abierto este Whisper 🫧':'Todavía no hay respuestas a este Whisper 💌'));return}
+   const unique=type==='views'?[...new Map(entry.rows.map(x=>[x.viewer_id,x])).values()]:entry.rows;
+   for(const record of unique){
+    const userId=type==='views'?record.viewer_id:type==='reactions'?record.user_id:record.sender_id;
+    const person=names.get(userId);
+    const line=element('div','xmw-detail-row');
+    const info=element('div','xmw-detail-person');
+    const name=element('strong','',labelFor(userId));
+    info.append(name);
+    if(type==='reactions')info.append(element('span','',record.emoji||'💜'));
+    if(type==='replies'){
+     const raw=String(record.content||'');
+     const body=raw.replace(/^🫧 Reply to Whisper: “[^\n]*”\n/,'').trim();
+     info.append(element('p','xmw-detail-message',body||'Respuesta a tu Whisper'));
+    }
+    const date=type==='views'?record.viewed_at:record.created_at;
+    info.append(element('small','xmw-note-caption',timeFor(date)));
+    line.append(info);
+    if(type==='replies'){
+     const open=element('button','xmw-detail-open','Abrir DM ↗');
+     open.type='button';
+     open.addEventListener('click',async()=>{
+      if(typeof openDirectChat==='function')await openDirectChat(userId,labelFor(userId),person?.profile_photo||'');
+     });
+     line.append(open);
+    }
+    detail.append(line);
+   }
+  }
+  for(const entry of sections){
+   const b=element('button','xmw-stat');
+   b.type='button';b.dataset.type=entry.type;b.setAttribute('aria-pressed','false');
+   b.append(element('strong','',countFor(entry)),element('small','',entry.label));
+   b.addEventListener('click',()=>showDetails(entry.type));
+   buttons.push(b);stats.append(b);
+  }
+  area.append(stats,detail);
+  showDetails('views');
   const history=rows.filter(item=>item.id!==w.id);
   if(history.length){
    area.append(element('h3','','Whispers anteriores'));
@@ -22785,5 +22833,19 @@ window.xoxoOpenWhisperQuickReply=async function(whisper,username){
 };
 })();
 </script>
+
+<style id="xoxo-my-whispers-interactive-css">
+button.xmw-stat{font:inherit;color:inherit;text-align:left;cursor:pointer;transition:border-color .2s,background .2s}
+button.xmw-stat:hover,button.xmw-stat:focus-visible,button.xmw-stat.xmw-selected{border-color:#ec8df8;background:#9c52e02b;outline-offset:2px}
+.xmw-details{background:#ffffff0b;border:1px solid #a77bdb5c;border-radius:17px;padding:15px;margin:8px 0 18px;color:#f5e8ff}
+.xmw-details h4{margin:0 0 12px;font-size:16px}
+.xmw-detail-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid #ffffff21;min-width:0}
+.xmw-detail-person{display:flex;flex-direction:column;gap:5px;min-width:0;overflow-wrap:anywhere}
+.xmw-detail-person strong{font-size:14px}
+.xmw-detail-person span{font-size:21px}
+.xmw-detail-message{white-space:pre-wrap;overflow-wrap:anywhere;margin:2px 0;font-size:13px}
+.xmw-detail-open{border:1px solid #ca8aff;border-radius:11px;padding:8px 11px;background:#69309e;color:white;cursor:pointer;flex-shrink:0;font-size:12px}
+@media(max-width:420px){.xmw-stats{gap:7px}.xmw-stat{min-width:0;padding:9px 7px}.xmw-stat small{font-size:10px}.xmw-stat strong{font-size:20px}}
+</style>
 </body>
                                     </html>gr
