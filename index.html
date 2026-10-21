@@ -22935,5 +22935,80 @@ button.xmw-stat:hover,button.xmw-stat:focus-visible,button.xmw-stat.xmw-selected
 .xmw-detail-avatar{width:42px;height:42px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;background:#633b85;border:2px solid #ce8cf6;overflow:hidden;font-size:22px}
 .xmw-detail-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 </style>
+
+<script id="xoxo-whispers-i18n-five-languages">
+(function(){
+'use strict';
+const codes=['en','es','pt','fr','pl'];
+const strings={"Pequeñas notas, grandes conexiones 💜": ["Little notes, big connections 💜", "Pequeñas notas, grandes conexiones 💜", "Pequenas notas, grandes conexões 💜", "Petites notes, grandes connexions 💜", "Małe notatki, wielkie znajomości 💜"], "Publicar 🫧": ["Publish 🫧", "Publicar 🫧", "Publicar 🫧", "Publier 🫧", "Opublikuj 🫧"], "Eliminar mi Whisper": ["Delete my Whisper", "Eliminar mi susurro", "Excluir meu sussurro", "Supprimer mon murmure", "Usuń mój szept"], "¿Qué estás pensando? 🫧": ["What's on your mind? 🫧", "¿Qué estás pensando? 🫧", "No que você está pensando? 🫧", "À quoi penses-tu ? 🫧", "O czym myślisz? 🫧"], "Tu Whisper activo": ["Your active Whisper", "Tu susurro activo", "Seu sussurro ativo", "Ton murmure actif", "Twój aktywny szept"], "Tu Whisper más reciente": ["Your latest Whisper", "Tu susurro más reciente", "Seu sussurro mais recente", "Ton dernier murmure", "Twój ostatni szept"], "Reacciones recibidas": ["Reactions received", "Reacciones recibidas", "Reações recebidas", "Réactions reçues", "Otrzymane reakcje"], "Vistas únicas": ["Unique views", "Vistas únicas", "Visualizações únicas", "Vues uniques", "Unikalne wyświetlenia"], "Respuestas por DM": ["DM replies", "Respuestas por DM", "Respostas por DM", "Réponses par message privé", "Odpowiedzi w DM"], "Abrir DM ↗": ["Open DM ↗", "Abrir DM ↗", "Abrir DM ↗", "Ouvrir les MP ↗", "Otwórz DM ↗"], "↻ Actualizar actividad": ["↻ Refresh activity", "↻ Actualizar actividad", "↻ Atualizar atividade", "↻ Actualiser l’activité", "↻ Odśwież aktywność"], "Whispers anteriores": ["Previous Whispers", "Susurros anteriores", "Sussurros anteriores", "Murmures précédents", "Poprzednie szepty"], "Responder": ["Reply", "Responder", "Responder", "Répondre", "Odpowiedz"], "Reaccionar": ["React", "Reaccionar", "Reagir", "Réagir", "Zareaguj"], "💌 Responder al Whisper": ["💌 Reply to Whisper", "💌 Responder al susurro", "💌 Responder ao sussurro", "💌 Répondre au murmure", "💌 Odpowiedz na szept"], "Enviar respuesta 💜": ["Send reply 💜", "Enviar respuesta 💜", "Enviar resposta 💜", "Envoyer la réponse 💜", "Wyślij odpowiedź 💜"], "Enviando…": ["Sending…", "Enviando…", "Enviando…", "Envoi…", "Wysyłanie…"], "✓ ¡Tu respuesta fue enviada! 💜": ["✓ Your reply was sent! 💜", "✓ ¡Tu respuesta fue enviada! 💜", "✓ Sua resposta foi enviada! 💜", "✓ Ta réponse a été envoyée ! 💜", "✓ Twoja odpowiedź została wysłana! 💜"], "Escribe tu respuesta... 💜": ["Write your reply... 💜", "Escribe tu respuesta... 💜", "Escreva sua resposta... 💜", "Écris ta réponse... 💜", "Napisz odpowiedź... 💜"], "Cargando tu actividad…": ["Loading your activity…", "Cargando tu actividad…", "Carregando sua atividade…", "Chargement de ton activité…", "Ładowanie aktywności…"], "Usuario": ["User", "Usuario", "Usuário", "Utilisateur", "Użytkownik"], "Activo · Expira ": ["Active · Expires ", "Activo · Expira ", "Ativo · Expira ", "Actif · Expire ", "Aktywny · Wygasa "], "Expirado · ": ["Expired · ", "Expirado · ", "Expirado · ", "Expiré · ", "Wygasł · "], "Expiró: ": ["Expired: ", "Expiró: ", "Expirou: ", "Expiré : ", "Wygasł: "], "Para ": ["To ", "Para ", "Para ", "À ", "Do "], "Mostrar u ocultar Whispers": ["Show or hide Whispers", "Mostrar u ocultar susurros", "Mostrar ou ocultar sussurros", "Afficher ou masquer les murmures", "Pokaż lub ukryj szepty"], "Todavía no hay reacciones 💜": ["No reactions yet 💜", "Todavía no hay reacciones 💜", "Ainda não há reações 💜", "Pas encore de réactions 💜", "Brak reakcji 💜"], "Todavía nadie ha abierto este Whisper 🫧": ["Nobody has viewed this Whisper yet 🫧", "Todavía nadie ha abierto este susurro 🫧", "Ninguém viu este sussurro ainda 🫧", "Personne n’a encore vu ce murmure 🫧", "Nikt jeszcze nie zobaczył tego szeptu 🫧"], "Todavía no hay respuestas a este Whisper 💌": ["No replies to this Whisper yet 💌", "Todavía no hay respuestas a este susurro 💌", "Ainda não há respostas a este sussurro 💌", "Pas encore de réponses à ce murmure 💌", "Brak odpowiedzi na ten szept 💌"], "Aún no tienes Whispers guardados. Crea uno desde Discover 🫧": ["No saved Whispers yet. Create one in Discover 🫧", "Aún no tienes susurros guardados. Crea uno en Discover 🫧", "Você ainda não tem sussurros salvos. Crie um no Discover 🫧", "Aucun murmure enregistré. Crée-en un dans Découvrir 🫧", "Nie masz jeszcze zapisanych szeptów. Utwórz jeden w Odkrywaj 🫧"], "El historial aparecerá aquí solo si los Whispers anteriores siguen almacenados. Los eliminados automáticamente no se pueden recuperar.": ["History appears here only while earlier Whispers remain stored. Automatically deleted Whispers cannot be recovered.", "El historial aparecerá aquí solo si los susurros anteriores siguen almacenados. Los eliminados automáticamente no se pueden recuperar.", "O histórico aparece aqui apenas enquanto os sussurros anteriores estiverem armazenados. Os excluídos automaticamente não podem ser recuperados.", "L’historique apparaît uniquement si les anciens murmures sont conservés. Ceux supprimés automatiquement ne peuvent pas être récupérés.", "Historia pojawia się tylko wtedy, gdy wcześniejsze szepty są nadal przechowywane. Automatycznie usuniętych nie można odzyskać."]};
+const lookup=new Map();
+for(const [key,values] of Object.entries(strings)){
+ lookup.set(key,values);
+ for(const v of values)lookup.set(v,values);
+}
+function lang(){
+ let value='en';
+ try{value=localStorage.getItem('friendhub_language')||document.documentElement.lang||'en'}catch(_){}
+ value=String(value).toLowerCase();
+ return value.startsWith('pt')?'pt':value.startsWith('fr')?'fr':value.startsWith('pl')?'pl':value.startsWith('es')?'es':'en';
+}
+function translate(value){
+ const exact=lookup.get(value);
+ if(exact)return exact[codes.indexOf(lang())];
+ for(const [key,values] of Object.entries(strings)){
+  if(key.endsWith(' ')&&value.startsWith(key))return values[codes.indexOf(lang())]+value.slice(key.length);
+ }
+ return value;
+}
+const selectors=['#xoxoDiscoverWhispers','#xoxoMyWhispersContent','.xoxo-wqr-dialog','#xoxoWhisperReplySuccessToast'];
+let working=false;
+function apply(){
+ if(working)return;
+ working=true;
+ try{
+  const tab=document.querySelector('[data-my-profile-tab="whispers"]');
+  if(tab){
+   const text=tab.textContent||'';
+   if(text.trim()==='My Whispers'||text.trim()==='Mis susurros'||text.trim()==='Meus sussurros'||text.trim()==='Mes murmures'||text.trim()==='Moje szepty'){
+    const values=['My Whispers','Mis susurros','Meus sussurros','Mes murmures','Moje szepty'];
+    tab.textContent=values[codes.indexOf(lang())];
+   }
+  }
+  for(const sel of selectors){
+   const root=document.querySelector(sel);if(!root)continue;
+   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+   let node;
+   while((node=walker.nextNode())){
+    const parent=node.parentElement;
+    if(!parent||parent.closest('.xmw-note,.xmw-detail-message,.xoxo-wqr-quote,.xoxo-dw-note,.xoxo-dw-bubble,textarea,input'))continue;
+    const original=node.nodeValue;
+    const trimmed=original.trim();
+    if(!trimmed)continue;
+    const next=translate(trimmed);
+    if(next!==trimmed)node.nodeValue=original.replace(trimmed,next);
+   }
+   for(const el of root.querySelectorAll('[placeholder],[title],[aria-label]')){
+    for(const attr of ['placeholder','title','aria-label']){
+     const value=el.getAttribute(attr);
+     if(value){const next=translate(value);if(next!==value)el.setAttribute(attr,next)}
+    }
+   }
+  }
+ }finally{working=false}
+}
+let scheduled=false;
+function schedule(){
+ if(scheduled)return;
+ scheduled=true;
+ requestAnimationFrame(()=>{scheduled=false;apply()});
+}
+const obs=new MutationObserver(schedule);
+obs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:false});
+window.addEventListener('storage',schedule);
+document.addEventListener('change',e=>{if(e.target?.id==='languageSelect')setTimeout(schedule,0)},true);
+window.xoxoTranslateWhisperUI=schedule;
+schedule();
+})();
+</script>
 </body>
                                     </html>gr
