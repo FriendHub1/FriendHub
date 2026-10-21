@@ -21859,6 +21859,25 @@ async function xoxoAvatarClose(apply){
   },30000);
 })();
 </script>
+<style id="xoxo-whispers-neon-notes-preview-v1">
+/* Private BETA: Instagram Notes-inspired layout; public access remains unchanged. */
+#xoxoWhisperExplorerResults{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:22px 15px;padding:20px 3px}
+#xoxoWhisperExplorerResults .xoxo-whisper-explorer-result{min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:10px 5px 15px;border:0;background:transparent;box-shadow:none;color:var(--fh-text,#fff)}
+#xoxoWhisperExplorerResults .xoxo-note-bubble{position:relative;display:grid;place-items:center;width:100%;max-width:128px;min-height:54px;padding:9px 9px;border:1px solid #ffffff66;border-radius:18px;color:#160b28;font-weight:750;font-size:11px;line-height:1.35;overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:0 0 17px #ec5fd866,0 12px 28px #09041766}
+#xoxoWhisperExplorerResults .xoxo-note-bubble::after{content:"";position:absolute;bottom:-9px;left:calc(50% - 9px);width:17px;height:17px;transform:rotate(45deg);background:inherit;border-right:1px solid #ffffff66;border-bottom:1px solid #ffffff66}
+#xoxoWhisperExplorerResults .xoxo-note-color-0{background:linear-gradient(145deg,#ff8fd3,#ff5fae)}
+#xoxoWhisperExplorerResults .xoxo-note-color-1{background:linear-gradient(145deg,#79dcff,#48a5f8)}
+#xoxoWhisperExplorerResults .xoxo-note-color-2{background:linear-gradient(145deg,#dba2ff,#a877f8)}
+#xoxoWhisperExplorerResults .xoxo-note-profile{margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:7px;background:transparent;border:0;color:inherit;cursor:pointer}
+#xoxoWhisperExplorerResults .xoxo-note-avatar{width:65px;height:65px;border-radius:50%;display:grid;place-items:center;overflow:hidden;border:3px solid #e789f7;background:linear-gradient(135deg,#4d207f,#16274c);color:white;font-size:28px;box-shadow:0 0 15px #b94fff77}
+#xoxoWhisperExplorerResults .xoxo-note-avatar img{width:100%;height:100%;object-fit:cover}
+#xoxoWhisperExplorerResults .xoxo-note-handle{font-size:14px;font-weight:800;overflow-wrap:anywhere}
+#xoxoWhisperExplorerResults .xoxo-note-expiry{font-size:12px;opacity:.8;margin:7px 0}
+#xoxoWhisperExplorerResults .xoxo-note-reactions{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin:5px 0 10px}
+#xoxoWhisperExplorerResults .xoxo-note-reactions span{font-size:12px;padding:4px 7px;border:1px solid #b788dd66;border-radius:99px;background:#b879e322}
+#xoxoWhisperExplorerResults .xoxo-whisper-explorer-button{font-size:12px;max-width:100%;white-space:normal}
+@media(max-width:450px){#xoxoWhisperExplorerResults{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 6px}#xoxoWhisperExplorerResults .xoxo-note-bubble{font-size:10px;min-height:54px}}
+</style>
 <script id="xoxo-whisper-explorer-script">
 (function(){
   'use strict';
@@ -21927,17 +21946,51 @@ async function xoxoAvatarClose(apply){
       const items=response.data||[];
       if(!items.length){status.textContent='No active Whispers from other accounts yet. This is expected while publishing remains admin-only.';return;}
       status.textContent=items.length+' active Whisper(s) found. Admin-only DM draft preview; nothing sends until you press Send.';
-      for(const item of items){
+      const ids=[...new Set(items.map(item=>item.user_id))];
+      const [profilesResult,reactionsResult]=await Promise.all([
+        supabaseClient.from('profiles').select('user_id,username,profile_photo').in('user_id',ids),
+        supabaseClient.from('xoxo_whisper_reactions').select('whisper_id,emoji').in('whisper_id',items.map(item=>item.id))
+      ]);
+      const profiles=new Map((profilesResult.data||[]).map(p=>[String(p.user_id),p]));
+      const totals=new Map();
+      for(const r of (reactionsResult.data||[])){
+        const key=String(r.whisper_id);
+        if(!totals.has(key))totals.set(key,new Map());
+        const count=totals.get(key);
+        count.set(r.emoji,(count.get(r.emoji)||0)+1);
+      }
+      for(const [index,item] of items.entries()){
+        const profile=profiles.get(String(item.user_id));
         const card=document.createElement('div');card.className='xoxo-whisper-explorer-result';
-        const owner=document.createElement('small');owner.textContent='Member ID: '+item.user_id;
-        const message=document.createElement('p');message.textContent=item.content||'';
-        const expiry=document.createElement('small');expiry.textContent='Expires: '+new Date(item.expires_at).toLocaleString();
-        const reply=document.createElement('button');
-        reply.type='button';
+        const bubble=document.createElement('div');
+        bubble.className='xoxo-note-bubble xoxo-note-color-'+(index%3);
+        bubble.textContent=item.content||'';
+        const profileButton=document.createElement('button');
+        profileButton.type='button';profileButton.className='xoxo-note-profile';
+        const avatar=document.createElement('span');avatar.className='xoxo-note-avatar';
+        if(profile?.profile_photo){
+          const img=document.createElement('img');img.src=profile.profile_photo;img.alt='';
+          avatar.append(img);
+        }else avatar.textContent='🫧';
+        const handle=document.createElement('span');handle.className='xoxo-note-handle';
+        const username=profile?.username||'Member';
+        handle.textContent=String(username).startsWith('@')?username:'@'+username;
+        profileButton.append(avatar,handle);
+        profileButton.addEventListener('click',()=>{
+          if(typeof openPublicProfile==='function')openPublicProfile(item.user_id);
+        });
+        const expiry=document.createElement('small');expiry.className='xoxo-note-expiry';
+        const mins=Math.max(0,Math.ceil((new Date(item.expires_at).getTime()-Date.now())/60000));
+        expiry.textContent=mins>=60?Math.ceil(mins/60)+'h remaining':mins+'m remaining';
+        const reactions=document.createElement('div');reactions.className='xoxo-note-reactions';
+        for(const [emoji,count] of (totals.get(String(item.id))||new Map())){
+          const chip=document.createElement('span');chip.textContent=emoji+' '+count;reactions.append(chip);
+        }
+        const reply=document.createElement('button');reply.type='button';
         reply.className='xoxo-whisper-explorer-button';
-        reply.textContent='💬 Reply in DM · Admin BETA';
+        reply.textContent='💬 Reply by DM';
         reply.addEventListener('click',()=>openWhisperDmDraft(item,reply));
-        card.append(owner,message,expiry,reply);results.append(card);
+        card.append(bubble,profileButton,expiry,reactions,reply);results.append(card);
       }
     }catch(e){status.textContent='Could not load other Whispers: '+(e?.message||'Unknown error');}
     finally{busy=false;button.disabled=false;}
