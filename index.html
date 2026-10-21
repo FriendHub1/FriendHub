@@ -22554,16 +22554,30 @@ async function refresh(){
    const minutes=Math.max(0,Math.ceil((new Date(w.expires_at).getTime()-Date.now())/60000));
    const timer=make('small','xoxo-dw-timer',minutes>=60?Math.ceil(minutes/60)+'h restantes':minutes+'m restantes');
    const reactions=make('div','xoxo-dw-reactions');
+   let reactionPending=false;
    async function react(emoji,b){
+      if(reactionPending)return;
+      reactionPending=true;
       if(b)b.disabled=true;
       try{
        if(!emoji||Array.from(emoji).length>16)throw Error('Selecciona un emoji válido.');
        const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
        if(live.error||!live.data)throw Error('Este Whisper ya expiró.');
-       const result=await sb.from('xoxo_whisper_reactions').insert({whisper_id:w.id,user_id:id,emoji});
+       const existing=await sb.from('xoxo_whisper_reactions').select('id,emoji')
+         .eq('whisper_id',w.id).eq('user_id',id).maybeSingle();
+       if(existing.error)throw existing.error;
+       let result;
+       if(existing.data){
+         result=existing.data.emoji===emoji
+           ?await sb.from('xoxo_whisper_reactions').delete().eq('id',existing.data.id).eq('user_id',id)
+           :await sb.from('xoxo_whisper_reactions').update({emoji}).eq('id',existing.data.id).eq('user_id',id);
+       }else{
+         result=await sb.from('xoxo_whisper_reactions').insert({whisper_id:w.id,user_id:id,emoji});
+       }
        if(result.error)throw result.error;
        await refresh();
-      }catch(e){say('Reacción: '+(e.message||'No disponible'));if(b)b.disabled=false}
+      }catch(e){say('Reacción: '+(e.message||'No disponible'));}
+      finally{reactionPending=false;if(b&&b.isConnected)b.disabled=false;}
    }
    if(!isOwn)for(const emoji of emojis){
     const count=totals.get(String(w.id))?.get(emoji)||0;
