@@ -22642,7 +22642,14 @@ async function load(){
    const people=await sb.from('profiles').select('user_id,username,profile_photo').in('user_id',allIds);
    for(const person of people.data||[])names.set(person.user_id,person);
   }
-  const labelFor=userId=>{const n=names.get(userId)?.username;return n?'@'+String(n).replace(/^@/,''):'Usuario'};
+  const labelFor=userId=>{
+   const n=names.get(userId)?.username;
+   if(n)return '@'+String(n).replace(/^@/,'');
+   // Private BETA account fallback when profile SELECT is blocked by RLS.
+   if(String(userId)==='469c2cac-c0d8-4fcd-8b63-12468bed20ee')return '@okirri';
+   if(String(userId)==='d9ea1914-fdba-465c-9700-5e640ff48763')return '@XOXOAdmin';
+   return 'Usuario';
+  };
   const timeFor=date=>date?new Date(date).toLocaleString():'';
   const stats=element('div','xmw-stats');
   const detail=element('section','xmw-details');
@@ -22781,7 +22788,15 @@ visibility();setInterval(visibility,2000);
 const ADMIN='d9ea1914-fdba-465c-9700-5e640ff48763',TESTER='469c2cac-c0d8-4fcd-8b63-12468bed20ee';
 let active=null;
 function node(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n}
-function toast(){const t=node('div','xoxo-wqr-toast','✓ ¡Tu respuesta fue enviada! 💜');t.setAttribute('role','status');document.body.append(t);setTimeout(()=>t.remove(),3000)}
+function toast(){
+ const prior=document.getElementById('xoxoWhisperReplySuccessToast');if(prior)prior.remove();
+ const t=node('div','xoxo-wqr-toast','✓ ¡Tu respuesta fue enviada! 💜');
+ t.id='xoxoWhisperReplySuccessToast';t.setAttribute('role','status');t.setAttribute('aria-live','polite');
+ // Inline priority protects the toast from global modal and site theme CSS.
+ const css={position:'fixed',top:'24px',bottom:'auto',left:'50%',transform:'translateX(-50%)',zIndex:'2147483647',display:'block',visibility:'visible',opacity:'1',pointerEvents:'none',background:'linear-gradient(110deg,#5420a5,#b42bb4)',color:'#fff',border:'2px solid #f6b5ff',padding:'16px 22px',borderRadius:'18px',boxShadow:'0 16px 55px #000a',fontSize:'15px',fontWeight:'800',textAlign:'center',width:'max-content',maxWidth:'calc(100vw - 32px)'};
+ for(const [k,v] of Object.entries(css))t.style.setProperty(k.replace(/[A-Z]/g,c=>'-'+c.toLowerCase()),v,'important');
+ document.body.appendChild(t);setTimeout(()=>t.remove(),4500);
+}
 window.xoxoOpenWhisperQuickReply=async function(whisper,username){
  const sender=typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
  if(![ADMIN,TESTER].includes(sender)||!whisper?.id||![ADMIN,TESTER].includes(String(whisper.user_id))||String(whisper.user_id)===sender)throw Error('Esta respuesta solo está disponible en BETA.');
@@ -22846,6 +22861,15 @@ button.xmw-stat:hover,button.xmw-stat:focus-visible,button.xmw-stat.xmw-selected
 .xmw-detail-message{white-space:pre-wrap;overflow-wrap:anywhere;margin:2px 0;font-size:13px}
 .xmw-detail-open{border:1px solid #ca8aff;border-radius:11px;padding:8px 11px;background:#69309e;color:white;cursor:pointer;flex-shrink:0;font-size:12px}
 @media(max-width:420px){.xmw-stats{gap:7px}.xmw-stat{min-width:0;padding:9px 7px}.xmw-stat small{font-size:10px}.xmw-stat strong{font-size:20px}}
+</style>
+
+<style id="xoxo-whisper-dm-composer-alignment-fix">
+/* Keep the editor and Send control on one compact row on desktop and mobile. */
+#messages #dmForm.dm-composer{display:flex!important;flex-wrap:nowrap!important;align-items:flex-end!important;gap:10px!important;width:100%!important;box-sizing:border-box!important}
+#messages #dmForm .dm-composer-main{flex:1 1 0%!important;width:auto!important;min-width:0!important;max-width:none!important;order:0!important}
+#messages #dmForm #dmInput{width:100%!important;min-width:0!important;box-sizing:border-box!important}
+#messages #dmForm #dmSendButton{flex:0 0 auto!important;order:1!important;margin-left:0!important;align-self:flex-end!important}
+@media(max-width:480px){#messages #dmForm.dm-composer{gap:7px!important;padding:8px!important}#messages #dmForm #dmSendButton{min-width:58px!important}}
 </style>
 </body>
                                     </html>gr
