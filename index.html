@@ -13559,13 +13559,34 @@ async function openPublicProfile(userId) {
 
                                     dmLastRenderedSignature = renderSignature;
 
-                                    const shouldStickToBottom = isFirstRender || wasNearBottom;
+                                    const pendingWhisperJump = window.__xoxoPendingWhisperDmJump;
+                                    const shouldStickToBottom = !pendingWhisperJump && (isFirstRender || wasNearBottom);
                                     requestAnimationFrame(() => {
                                     if (shouldStickToBottom) {
                                     container.scrollTop = container.scrollHeight;
                                     }
                                     });
                                     stabilizeDmMediaScroll(container, shouldStickToBottom);
+                                    if (pendingWhisperJump && String(pendingWhisperJump.userId) === String(currentDmUserId)) {
+                                      const wantedId=String(pendingWhisperJump.messageId);
+                                      const jump=()=>{
+                                        const row=Array.from(container.querySelectorAll('.dm-row[data-dm-message-id]'))
+                                          .find(el=>el.getAttribute('data-dm-message-id')===wantedId);
+                                        if (!row) return false;
+                                        row.scrollIntoView({behavior:'auto',block:'center'});
+                                        row.classList.add('dm-reply-highlight');
+                                        return true;
+                                      };
+                                      if (jump()) {
+                                        window.__xoxoPendingWhisperDmJump=null;
+                                        [180,550,1050].forEach(ms=>setTimeout(jump,ms));
+                                        setTimeout(()=>{
+                                          const row=Array.from(container.querySelectorAll('.dm-row[data-dm-message-id]'))
+                                            .find(el=>el.getAttribute('data-dm-message-id')===wantedId);
+                                          row?.classList.remove('dm-reply-highlight');
+                                        },3000);
+                                      }
+                                    }
                                     }
 
 
@@ -22717,6 +22738,7 @@ async function load(){
      open.type='button';
      open.addEventListener('click',async()=>{
       if(typeof openDirectChat==='function'){
+       window.__xoxoPendingWhisperDmJump={userId:String(userId),messageId:String(record.id||'')};
        await openDirectChat(userId,labelFor(userId),person?.profile_photo||'');
        const target=String(record.id||'');
        if(target){
