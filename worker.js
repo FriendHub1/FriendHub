@@ -2929,6 +2929,41 @@ export default {
     const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
     if (publicSeoResponse) return publicSeoResponse;
 
+    // Localized homepage social previews for WhatsApp and other link unfurlers.
+    // Preserve profile/post previews, all other routes, and the default English metadata.
+    const xoxoShareLanguage = String(url.searchParams.get("lang") || "").toLowerCase();
+    const xoxoShareDescriptions = {
+      es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
+      "pt-br": "Conheça pessoas, faça novas amizades e descubra comunidades no XOXO Avenue.",
+      fr: "Rencontrez de nouvelles personnes, faites-vous des amis et découvrez des communautés sur XOXO Avenue.",
+      pl: "Poznawaj nowych ludzi, nawiązuj przyjaźnie i odkrywaj społeczności na XOXO Avenue."
+    };
+    const xoxoShareDescription = xoxoShareDescriptions[xoxoShareLanguage];
+    if (!profileId && url.pathname === "/" && xoxoShareDescription &&
+        (request.method === "GET" || request.method === "HEAD") &&
+        !url.searchParams.has("post")) {
+      const page = await env.ASSETS.fetch(request);
+      if (page.ok && String(page.headers.get("content-type") || "").includes("text/html")) {
+        const localized = new HTMLRewriter()
+          .on('meta[property="og:description"]', {
+            element(el) { el.setAttribute("content", xoxoShareDescription); }
+          })
+          .on('meta[name="twitter:description"]', {
+            element(el) { el.setAttribute("content", xoxoShareDescription); }
+          })
+          .on('meta[name="description"]', {
+            element(el) { el.setAttribute("content", xoxoShareDescription); }
+          })
+          .transform(page);
+        const headers = new Headers(localized.headers);
+        headers.set("X-XOXO-Worker", "localized-home-share");
+        return new Response(localized.body, {
+          status: localized.status, statusText: localized.statusText, headers
+        });
+      }
+      return page;
+    }
+
     if (!profileId) {
       const response =
         await env.ASSETS.fetch(
