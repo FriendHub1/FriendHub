@@ -2538,6 +2538,26 @@ function xoxoActivityEmailCopy(type) {
   return copy[type] || null;
 }
 
+async function xoxoAuditEmailPresence(env, item, decision, reason, lastActiveAt = null) {
+  // Best effort only: audit failures must never affect email processing.
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/xoxo_email_presence_audit`, {
+      method: 'POST',
+      headers: xoxoServiceHeaders(env, {Prefer:'return=minimal'}),
+      body: JSON.stringify({
+        notification_id:item.id,
+        notification_type:item.notification_type || 'unknown',
+        last_active_at:lastActiveAt,
+        decision,
+        reason,
+      }),
+    });
+    if (!r.ok) console.error('XOXO presence audit failed',r.status);
+  } catch (err) {
+    console.error('XOXO presence audit unavailable',String(err));
+  }
+}
+
 async function handleActivityEmailQueue(env) {
   // Explicit opt-in at deployment level. No emails until heartbeat support
   // is installed on the site and this flag is enabled intentionally.
@@ -2551,6 +2571,7 @@ async function handleActivityEmailQueue(env) {
     try {
       const typeCopy = xoxoActivityEmailCopy(item.notification_type);
       if (!typeCopy || !item.recipient_id) {
+        await xoxoAuditEmailPresence(env,item,'skip','unsupported_type_or_recipient');
         await xoxoMarkActivityDone(env,item.id); skipped++; continue;
       }
       const userId = encodeURIComponent(item.recipient_id);
@@ -2560,21 +2581,25 @@ async function handleActivityEmailQueue(env) {
         xoxoRestGet(env,'xoxo_email_notification_queue',`select=id&recipient_id=eq.${userId}&sent_at=gte.${encodeURIComponent(new Date(Date.now()-XOXO_ACTIVITY_COOLDOWN_MS).toISOString())}&limit=1`),
       ]);
       if (prefs[0]?.email_enabled === false || recent.length) {
+        await xoxoAuditEmailPresence(env,item,'skip',prefs[0]?.email_enabled === false ? 'email_preference_disabled' : 'cooldown_30_minutes',presence[0]?.last_active_at || null);
         await xoxoMarkActivityDone(env,item.id); skipped++; continue;
       }
       // Fail closed when presence is missing or invalid. Never guess offline.
       const lastActive=Date.parse(presence[0]?.last_active_at || '');
       if (!Number.isFinite(lastActive)) {
         // Leave queued for later; do not send until a heartbeat exists.
+        await xoxoAuditEmailPresence(env,item,'wait','missing_or_invalid_presence');
         continue;
       }
       if (Date.now()-lastActive < XOXO_OFFLINE_AFTER_MS) {
         // Keep the notification pending while the recipient is online.
         // A later scheduled run can send it after the offline threshold.
+        await xoxoAuditEmailPresence(env,item,'wait','recipient_online',presence[0]?.last_active_at || null);
         continue;
       }
       const authUser = await getAuthUserById(item.recipient_id,env);
       if (!authUser?.email || !authUser.email_confirmed_at) {
+        await xoxoAuditEmailPresence(env,item,'skip','email_missing_or_unverified',presence[0]?.last_active_at || null);
         await xoxoMarkActivityDone(env,item.id); skipped++; continue;
       }
       const [subject,en,es]=typeCopy;
@@ -2585,9 +2610,11 @@ async function handleActivityEmailQueue(env) {
       });
       if (!result.ok) {
         console.error('XOXO activity email send failed',item.id);
+        await xoxoAuditEmailPresence(env,item,'error','email_provider_failed',presence[0]?.last_active_at || null);
         continue;
       }
       await xoxoMarkActivityDone(env,item.id,true);
+      await xoxoAuditEmailPresence(env,item,'send','email_sent_after_offline_check',presence[0]?.last_active_at || null);
       sent++;
     } catch (err) {
       console.error('XOXO activity email processing failed',item.id,String(err));
