@@ -1,6 +1,8 @@
                 <!-- XOXO Avenue v14: regular DM photo/video only; existing temporary media history preserved. -->
 <html lang="en" data-theme="night">
                                     <head>
+
+
                                     <!-- XOXO Analytics: consent-first, public-section-only measurement -->
                                     <script id="xoxo-shared-link-language-v1">
 (function () {
@@ -6091,6 +6093,37 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 #xoxoAdminWhispers .xoxo-whisper-sim-notification span{flex:1;min-width:160px;overflow-wrap:anywhere}
 #xoxoAdminWhispers .xoxo-whisper-sim-notification small{color:#d9c8ef}
 </style>
+<script id="xoxo-public-route-seo">
+(function(){
+  'use strict';
+  const routes={
+    '/': ['XOXO Avenue | Meet People and Make Friends','Meet new people, discover communities and build friendships on XOXO Avenue.'],
+    '/about': ['About XOXO Avenue | Our Community','Learn about XOXO Avenue, our community and how we help people connect.'],
+    '/discover': ['Discover | XOXO Avenue','Explore public posts and discover people and communities on XOXO Avenue.'],
+    '/privacy': ['Privacy Policy | XOXO Avenue','Read the XOXO Avenue Privacy Policy and learn how information is handled.'],
+    '/terms': ['Terms of Service | XOXO Avenue','Read the terms and conditions for using XOXO Avenue.'],
+    '/guidelines': ['Community Guidelines | XOXO Avenue','Read the community rules and safety guidelines for XOXO Avenue.']
+  };
+  function update(){
+    const path=location.pathname.replace(/\/+$/,'')||'/';
+    const item=routes[path];
+    if(!item)return;
+    document.title=item[0];
+    let description=document.querySelector('meta[name="description"]');
+    if(!description){description=document.createElement('meta');description.name='description';document.head.appendChild(description);}
+    description.content=item[1];
+    let canonical=document.querySelector('link[rel="canonical"]');
+    if(!canonical){canonical=document.createElement('link');canonical.rel='canonical';document.head.appendChild(canonical);}
+    canonical.href='https://xoxoavenue.com'+(path==='/'?'/':path);
+  }
+  update();
+  window.addEventListener('popstate',update);
+  for(const name of ['pushState','replaceState']){
+    const original=history[name];
+    history[name]=function(){const result=original.apply(this,arguments);update();return result;};
+  }
+})();
+</script>
 </head>
                                     <body>
                                     <header>
@@ -20555,13 +20588,13 @@ function renderXoxoActivity(){
 (function () {
   "use strict";
   const routeToPage = Object.freeze({
-    "/": "home", "/discover": "discover", "/profile": "profile",
+    "/": "home", "/discover": "discover", "/about": "about", "/privacy": "privacy", "/terms": "terms", "/guidelines": "guidelines", "/profile": "profile",
     "/messages": "messages", "/support": "support",
     "/secret-letters": "bottleMessages", "/notifications": "@notifications",
     "/jewels": "@jewels"
   });
   const pageToRoute = Object.freeze({
-    home: "/", discover: "/discover", profile: "/profile",
+    home: "/", discover: "/discover", about: "/about", privacy: "/privacy", terms: "/terms", guidelines: "/guidelines", profile: "/profile",
     messages: "/messages", support: "/support",
     bottleMessages: "/secret-letters"
   });
