@@ -22512,6 +22512,26 @@ async function refresh(){
    }else{
     for(const [emoji,count] of totals.get(String(w.id))||[])reactions.append(make('span','xoxo-dw-timer',emoji+' '+count));
    }
+   bubble.setAttribute('role','button');bubble.tabIndex=0;bubble.title='Abrir Whisper';
+   const openWhisper=async()=>{
+     const modal=document.createElement('div');modal.style.cssText='position:fixed;inset:0;background:#080315d9;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:20px';
+     const box=document.createElement('div');box.style.cssText='max-width:400px;width:100%;background:linear-gradient(140deg,#2b1046,#141a35);border:1px solid #d18cff;border-radius:22px;padding:25px;color:white;box-shadow:0 20px 70px #0009';
+     const close=make('button','','✕ Cerrar');close.type='button';close.style.cssText='float:right;background:#8d3cba;color:white;border:0;border-radius:12px;padding:8px;cursor:pointer';
+     close.addEventListener('click',()=>modal.remove());modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
+     box.append(close,make('h3','',profileLabel(String(w.user_id),person)),make('p','',w.content||''),make('small','','Expira: '+new Date(w.expires_at).toLocaleString()));
+     modal.append(box);document.body.append(modal);
+     if(!isOwn){
+       try{
+         const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
+         if(!live.error&&live.data){
+           const result=await sb.from('xoxo_whisper_views').insert({whisper_id:w.id,viewer_id:id});
+           if(result.error&&result.error.code!=='23505')console.warn('Whisper view not saved:',result.error.message);
+         }
+       }catch(e){console.warn('Whisper view unavailable:',e)}
+     }
+   };
+   bubble.addEventListener('click',openWhisper);
+   bubble.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openWhisper()}});
    card.append(bubble,user,timer,reactions);
    if(!isOwn){const reply=make('button','xoxo-dw-reply','💬 Responder');reply.type='button';
     reply.addEventListener('click',async()=>{reply.disabled=true;try{
@@ -22607,15 +22627,17 @@ async function load(){
   const reactions=await sb.from('xoxo_whisper_reactions').select('emoji,user_id').eq('whisper_id',w.id);
   const tally=new Map();
   for(const x of reactions.data||[])tally.set(x.emoji,(tally.get(x.emoji)||0)+1);
+  const views=await sb.from('xoxo_whisper_views').select('viewer_id').eq('whisper_id',w.id);
   const stats=element('div','xmw-stats');
   const st=element('div','xmw-stat');st.append(element('strong','',reactions.error?'—':String((reactions.data||[]).length)),element('small','','Reacciones recibidas'));stats.append(st);
-  const view=element('div','xmw-stat');view.append(element('strong','','—'),element('small','','Vistas · aún no registradas'));stats.append(view);
+  const view=element('div','xmw-stat');view.append(element('strong','',views.error?'—':String(new Set((views.data||[]).map(x=>x.viewer_id)).size)),element('small','','Vistas únicas'));stats.append(view);
   const dm=element('div','xmw-stat');dm.append(element('strong','','—'),element('small','','Respuestas por DM · aún no vinculadas'));stats.append(dm);
   area.append(stats);
   const list=element('div','xmw-reactions');
   for(const [emoji,count] of tally)list.append(element('span','',emoji+' '+count));
   if(tally.size)area.append(list);
   if(reactions.error)area.append(element('p','xmw-note-caption','No fue posible consultar las reacciones: '+reactions.error.message));
+  if(views.error)area.append(element('p','xmw-note-caption','No fue posible consultar las vistas: '+views.error.message));
   const history=rows.filter(item=>item.id!==w.id);
   if(history.length){
    area.append(element('h3','','Whispers anteriores'));
