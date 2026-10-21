@@ -14008,11 +14008,35 @@ async function openPublicProfile(userId) {
                                     }
                                     }
 
+                                    // First Whisper reply only: verify the source is still active immediately before sending.
+                                    // Ordinary follow-up DMs are unaffected after the first successful reply.
+                                    const pendingWhisper = window.xoxoWhisperDmDraftGuard;
+                                    const isWhisperReply = pendingWhisper
+                                      && String(currentDmUserId) === pendingWhisper.recipientId
+                                      && pendingWhisper.whisperId
+                                      && content.startsWith(pendingWhisper.contextOnly);
+                                    if (isWhisperReply) {
+                                      if (Date.now() >= Date.parse(pendingWhisper.expiresAt)) {
+                                        throw new Error('This Whisper has expired. Remove the quoted Whisper to send a regular DM.');
+                                      }
+                                      const { data: activeWhisper, error: whisperCheckError } = await supabaseClient
+                                        .from('xoxo_whispers').select('id')
+                                        .eq('id',pendingWhisper.whisperId)
+                                        .eq('user_id',pendingWhisper.recipientId)
+                                        .gt('expires_at',new Date().toISOString()).maybeSingle();
+                                      if (whisperCheckError) throw whisperCheckError;
+                                      if (!activeWhisper) throw new Error('This Whisper has expired. Remove the quoted Whisper to send a regular DM.');
+                                    }
+
                                     const { error } = await supabaseClient.from("direct_messages").insert(payload);
 
                                     if (error) {
                                     if (uploaded?.path) await supabaseClient.storage.from("dm-media").remove([uploaded.path]).catch(() => {});
                                     throw error;
+                                    }
+
+                                    if (isWhisperReply && window.xoxoWhisperDmDraftGuard === pendingWhisper) {
+                                      window.xoxoWhisperDmDraftGuard = null;
                                     }
 
                                     /* Play only after Supabase confirms that the DM was sent successfully. */
@@ -21698,7 +21722,7 @@ async function xoxoAvatarClose(apply){
       const quote=String(live.data.content||'').replace(/\s+/g,' ').trim().slice(0,100);
       input.value='🫧 Reply to Whisper: “'+quote+'”\n';
       // Do not allow a context-only message to be sent accidentally.
-      window.xoxoWhisperDmDraftGuard={recipientId:String(live.data.user_id),contextOnly:input.value.trim()};
+      window.xoxoWhisperDmDraftGuard={recipientId:String(live.data.user_id),whisperId:String(live.data.id),expiresAt:String(live.data.expires_at),contextOnly:input.value.trim()};
       input.dispatchEvent(new Event('input',{bubbles:true}));
       input.focus();
       input.setSelectionRange(input.value.length,input.value.length);
