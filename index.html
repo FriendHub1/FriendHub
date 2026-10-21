@@ -22979,7 +22979,14 @@ function update(){if(working)return;working=true;try{
  for(const b of document.querySelectorAll('button')){const t=b.textContent.trim();if(['💬 Responder','💬 Reply','💬 Répondre','💬 Odpowiedz','💬 Responder en DM','💬 Reply by DM','💬 Responder por DM','💬 Répondre en MP','💬 Odpowiedz w DM'].includes(t)){const translated=tr(t);if(translated!==t)b.textContent=translated}}
 }finally{working=false}}
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;update()})}
-new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,characterData:true});
+// Avoid translation feedback loops on desktop: our own text changes must not trigger another full pass.
+const whisperI18nObserver=new MutationObserver(mutations=>{
+ if(mutations.some(m=>m.type==='childList' && [...m.addedNodes].some(n=>n.nodeType===1 && (
+   n.matches?.('#myProfileWhispersPanel,#xoxoDiscoverWhispers,.xoxo-wqr-dialog,#xoxoWhisperReplySuccessToast,[data-my-profile-tab="whispers"]') ||
+   n.querySelector?.('#myProfileWhispersPanel,#xoxoDiscoverWhispers,.xoxo-wqr-dialog,#xoxoWhisperReplySuccessToast,[data-my-profile-tab="whispers"]')
+ ))))schedule();
+});
+whisperI18nObserver.observe(document.body,{subtree:true,childList:true});
 window.addEventListener('storage',schedule);document.addEventListener('change',()=>setTimeout(schedule,0),true);
 window.xoxoTranslateWhisperUI=schedule;schedule();
 })();
