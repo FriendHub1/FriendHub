@@ -14117,7 +14117,7 @@ async function openPublicProfile(userId) {
                                     const attachment = dmSelectedAttachment?.file || null;
                                     const whisperGuard = window.xoxoWhisperDmDraftGuard;
                                     if (whisperGuard && String(currentDmUserId) === whisperGuard.recipientId
-                                        && content === whisperGuard.contextOnly && !attachment) {
+                                        && !content && !attachment) {
                                       setDmStatus("Write your reply below the Whisper before sending.", true);
                                       if (input) input.focus();
                                       return;
@@ -14222,7 +14222,7 @@ async function openPublicProfile(userId) {
                                     const isWhisperReply = pendingWhisper
                                       && String(currentDmUserId) === pendingWhisper.recipientId
                                       && pendingWhisper.whisperId
-                                      && content.startsWith(pendingWhisper.contextOnly);
+                                      && !!content;
                                     if (isWhisperReply) {
                                       if (Date.now() >= Date.parse(pendingWhisper.expiresAt)) {
                                         throw new Error('This Whisper has expired. Remove the quoted Whisper to send a regular DM.');
@@ -14237,6 +14237,7 @@ async function openPublicProfile(userId) {
                                       // Server-side trigger validates this explicit Whisper reference at INSERT time.
                                       // No foreign key: the original Whisper may later be cleaned up after 24 hours.
                                       payload.whisper_id = pendingWhisper.whisperId;
+                                      payload.content = encodeDmFormattedContent('🫧 Reply to Whisper: “'+pendingWhisper.quote+'”\n'+content);
                                     }
 
                                     const { error } = await supabaseClient.from("direct_messages").insert(payload);
@@ -14248,6 +14249,7 @@ async function openPublicProfile(userId) {
 
                                     if (isWhisperReply && window.xoxoWhisperDmDraftGuard === pendingWhisper) {
                                       window.xoxoWhisperDmDraftGuard = null;
+                                      window.xoxoClearWhisperComposerPreview?.();
                                     }
 
                                     /* Play only after Supabase confirms that the DM was sent successfully. */
@@ -21950,12 +21952,7 @@ async function xoxoAvatarClose(apply){
       const input=document.getElementById('dmInput');
       if(!input)throw Error('DM composer not found.');
       const quote=String(live.data.content||'').replace(/\s+/g,' ').trim().slice(0,100);
-      input.value='🫧 Reply to Whisper: “'+quote+'”\n';
-      // Do not allow a context-only message to be sent accidentally.
-      window.xoxoWhisperDmDraftGuard={recipientId:String(live.data.user_id),whisperId:String(live.data.id),expiresAt:String(live.data.expires_at),contextOnly:input.value.trim()};
-      input.dispatchEvent(new Event('input',{bubbles:true}));
-      input.focus();
-      input.setSelectionRange(input.value.length,input.value.length);
+      window.xoxoPrepareWhisperDmReply(live.data);
       // The user must write a reply and explicitly press Send.
     }catch(error){
       status.textContent='Could not open Whisper DM draft: '+(error?.message||'Unknown error');
@@ -22348,10 +22345,7 @@ async function refresh(){
          const dm=document.getElementById('dmInput');
          if(!dm)throw Error('No se encontró el campo de mensaje.');
          const quote=String(live.data.content||'').replace(/\s+/g,' ').trim().slice(0,100);
-         dm.value='🫧 Reply to Whisper: “'+quote+'”\n';
-         window.xoxoWhisperDmDraftGuard={recipientId:String(live.data.user_id),whisperId:String(live.data.id),expiresAt:String(live.data.expires_at),contextOnly:dm.value.trim()};
-         dm.dispatchEvent(new Event('input',{bubbles:true}));dm.focus();
-         dm.setSelectionRange(dm.value.length,dm.value.length);
+         window.xoxoPrepareWhisperDmReply(live.data);
        }catch(e){panel.hidden=false;launch.setAttribute('aria-expanded','true');note('No se pudo abrir la respuesta: '+(e?.message||'Error'));}
        finally{reply.disabled=false;}
      });
@@ -22562,9 +22556,7 @@ async function refresh(){
      await openDirectChat(w.user_id,profileLabel(String(w.user_id),person),person?.profile_photo||'');
      if(String(currentDmUserId)!==String(w.user_id))throw Error('No se abrió el chat.');
      const dm=$('dmInput');if(!dm)throw Error('No se encontró el mensaje privado.');
-     dm.value='🫧 Reply to Whisper: “'+String(w.content||'').replace(/\s+/g,' ').slice(0,100)+'”\n';
-     window.xoxoWhisperDmDraftGuard={recipientId:String(w.user_id),whisperId:String(w.id),expiresAt:String(w.expires_at),contextOnly:dm.value.trim()};
-     dm.dispatchEvent(new Event('input',{bubbles:true}));dm.focus();
+     window.xoxoPrepareWhisperDmReply(w);
     }catch(e){say('Respuesta: '+(e.message||'No disponible'))}finally{reply.disabled=false}});
     card.append(reply);
    }
@@ -22681,5 +22673,46 @@ function visibility(){
 visibility();setInterval(visibility,2000);
 })();
 </script>
+
+<script id="xoxo-whisper-dm-composer-preview-script">
+(function(){
+  function escapeText(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function clearPreview(){
+    const el=document.getElementById('xoxoWhisperComposerPreview');
+    if(el)el.remove();
+  }
+  window.xoxoClearWhisperComposerPreview=clearPreview;
+  window.xoxoPrepareWhisperDmReply=function(whisper){
+    const input=document.getElementById('dmInput');
+    const form=document.getElementById('dmForm');
+    if(!input||!form||!whisper?.id)return;
+    const quote=String(whisper.content||'').replace(/\s+/g,' ').trim().slice(0,100);
+    window.xoxoWhisperDmDraftGuard={
+      recipientId:String(whisper.user_id),whisperId:String(whisper.id),
+      expiresAt:String(whisper.expires_at),quote:quote,contextOnly:''
+    };
+    input.value='';
+    clearPreview();
+    const preview=document.createElement('div');
+    preview.id='xoxoWhisperComposerPreview';
+    const colors=['#fface0,#fb65b7','#9ae9ff,#65b8ff','#c8a2ff,#8759ed','#b6ffdb,#5adcb5','#ffe9a2,#ffad64'];
+    const seed=String(whisper.id).split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+    const color=colors[seed%colors.length].split(',');
+    preview.innerHTML='<div class="xoxo-wcp-head"><span>🫧 Respondiendo a un Whisper</span><button type="button" aria-label="Cancelar respuesta a Whisper" id="xoxoWcpCancel">✕</button></div><div class="xoxo-wcp-bubble" style="background:linear-gradient(135deg,'+color[0]+','+color[1]+')">'+escapeText(quote)+'</div>';
+    form.parentNode.insertBefore(preview,form);
+    preview.querySelector('#xoxoWcpCancel').addEventListener('click',()=>{
+      window.xoxoWhisperDmDraftGuard=null;clearPreview();
+    });
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+    input.focus();
+  };
+})();
+</script>
+<style id="xoxo-whisper-dm-composer-preview-css">
+#xoxoWhisperComposerPreview{box-sizing:border-box;width:min(100%,580px);margin:10px auto 8px;padding:11px 13px;background:#1c1536;border:1px solid #ad68ec;border-radius:16px;color:#f7eaff;max-height:200px;overflow-y:auto}
+#xoxoWhisperComposerPreview .xoxo-wcp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;font-weight:700;margin-bottom:8px}
+#xoxoWhisperComposerPreview .xoxo-wcp-head button{background:#49246a;border:1px solid #8e5fb5;border-radius:9px;color:white;cursor:pointer;padding:3px 9px}
+#xoxoWhisperComposerPreview .xoxo-wcp-bubble{width:fit-content;max-width:100%;padding:10px 13px;border-radius:16px 16px 16px 5px;color:#261032;font-size:14px;font-weight:650;overflow-wrap:anywhere;white-space:pre-wrap}
+</style>
 </body>
                                     </html>gr
