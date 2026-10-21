@@ -6171,13 +6171,14 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     </div>
                                     <button class="notification-mark-read" type="button" onclick="markNotificationsAsRead(); event.stopPropagation();">Mark all read</button>
                                     </div>
-                                    <div class="notification-tabs" id="notificationTabs">
+                                    <div class="notification-tabs" id="notificationTabs" style="overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:thin;">
                                     <button class="notification-tab" type="button" data-notification-filter="like" onclick="setNotificationFilter('like', this); event.stopPropagation();">❤️ Likes</button>
                                     <button class="notification-tab" type="button" data-notification-filter="repost" onclick="setNotificationFilter('repost', this); event.stopPropagation();">🔁 Reposts</button>
                                     <button class="notification-tab" type="button" data-notification-filter="comment" onclick="setNotificationFilter('comment', this); event.stopPropagation();">💬 Comments</button>
                                     <button class="notification-tab" type="button" data-notification-filter="follow" onclick="setNotificationFilter('follow', this); event.stopPropagation();">👤 Follows</button>
                                     <button class="notification-tab" type="button" data-notification-filter="mention" onclick="setNotificationFilter('mention', this); event.stopPropagation();">@ Mentions</button>
                                     <button class="notification-tab" type="button" data-notification-filter="dm" onclick="setNotificationFilter('dm', this); event.stopPropagation();">✉️ Messages</button>
+                                    <button class="notification-tab" type="button" data-notification-filter="whispers" onclick="setNotificationFilter('whispers', this); event.stopPropagation();">🫧 My Whispers</button>
                                     </div>
                                     <div id="xoxoWhisperBellBetaNotice" hidden role="status" style="padding:8px 12px;font-size:12px;color:var(--fh-muted,#667085);"></div>
                                     <div class="notification-list" id="notificationList">
@@ -14482,6 +14483,9 @@ async function openPublicProfile(userId) {
                                       const lang=xoxoNotificationLocale();
                                       const tr={en:["See what’s happening on XOXO Avenue.","👤 Follows","@ Mentions","💬 Comments","🔁 Reposts"],es:["Mira qué sucede en XOXO Avenue.","👤 Seguidores","@ Menciones","💬 Comentarios","🔁 Reposts"],"pt-BR":["Veja o que acontece no XOXO Avenue.","👤 Seguidores","@ Menções","💬 Comentários","🔁 Reposts"],fr:["Découvrez ce qui se passe sur XOXO Avenue.","👤 Abonnements","@ Mentions","💬 Commentaires","🔁 Reposts"],pl:["Zobacz, co dzieje się na XOXO Avenue.","👤 Obserwujący","@ Wzmianki","💬 Komentarze","🔁 Reposty"]}[lang];
                                       const subtitle=document.getElementById("notificationPanelSubtitle");if(subtitle)subtitle.textContent=tr[0];
+                                      const whisperNames={en:"🫧 My Whispers",es:"🫧 Mis susurros","pt-BR":"🫧 Meus sussurros",fr:"🫧 Mes murmures",pl:"🫧 Moje szepty"};
+                                      const whisperTab=document.querySelector('.notification-tab[data-notification-filter="whispers"]');
+                                      if(whisperTab)whisperTab.textContent=whisperNames[lang];
                                       for(const [key,index] of [["follow",1],["mention",2],["comment",3],["repost",4]]){
                                         const tab=document.querySelector('.notification-tab[data-notification-filter="'+key+'"]');if(tab)tab.textContent=tr[index];
                                       }
@@ -14497,7 +14501,9 @@ async function openPublicProfile(userId) {
 
                                     const visibleNotifications = currentNotificationFilter === "all"
                                     ? notifications
-                                    : notifications.filter(item => String(item.type || "") === currentNotificationFilter);
+                                    : notifications.filter(item => currentNotificationFilter === "whispers"
+                                      ? ["whisper_reaction", "whisper_reply"].includes(String(item.type || ""))
+                                      : String(item.type || "") === currentNotificationFilter);
 
                                     if (!visibleNotifications.length) {
                                     list.innerHTML = `<div class="notification-empty">${getFriendHubLanguage() === "fr" ? (currentNotificationFilter === "all" ? "Aucune notification pour le moment." : "Aucune notification dans cette catégorie pour le moment.") : (getFriendHubLanguage() === "pl" ? (currentNotificationFilter === "all" ? "Brak powiadomień." : "Brak powiadomień w tej kategorii.") : (currentNotificationFilter === "all" ? "No notifications yet." : "No notifications in this category yet."))}</div>`;
