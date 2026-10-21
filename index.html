@@ -7576,7 +7576,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
       <div id="xoxoAdminGlobalOnline" class="xoxo-admin-global-online">💚 Loading online users...</div>
     </div>
     <div id="xoxoAdminWhispersTestDm" style="margin:12px 0 18px">
-      <button type="button" class="btn" onclick="if(currentUser && xoxoIsAdmin) openDirectChat('469c2cac-c0d8-4fcd-8b63-12468bed20ee','@Whispers BETA Tester');">
+      <button type="button" class="btn" onclick="if(currentUser && xoxoIsAdmin) openDirectChat('469c2cac-c0d8-4fcd-8b63-12468bed20ee','@okirri');">
         💬 Abrir DM de prueba · Whispers BETA
       </button>
       <small style="display:block;opacity:.75;margin-top:6px">Acceso privado temporal entre Admin y la cuenta de prueba.</small>
@@ -22247,7 +22247,7 @@ async function refresh(){
          // A valid Whisper author can have a profile hidden by RLS (notably admin).
          // Use the verified Whisper author UUID to open DM; profile data is optional.
          if(typeof openDirectChat!=='function')throw Error('El chat no está disponible.');
-         const display=String(member.data?.username||'Whispers member');
+         const display=String(member.data?.username|| (String(live.data.user_id)==='d9ea1914-fdba-465c-9700-5e640ff48763' ? '@XOXOAdmin' : 'Whispers member'));
          panel.hidden=true;launch.setAttribute('aria-expanded','false');
          await openDirectChat(live.data.user_id,display.startsWith('@')?display:'@'+display,member.data?.profile_photo||'');
          if(String(currentDmUserId)!==String(live.data.user_id))throw Error('No se abrió el chat.');
