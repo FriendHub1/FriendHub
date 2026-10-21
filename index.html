@@ -14026,6 +14026,9 @@ async function openPublicProfile(userId) {
                                         .gt('expires_at',new Date().toISOString()).maybeSingle();
                                       if (whisperCheckError) throw whisperCheckError;
                                       if (!activeWhisper) throw new Error('This Whisper has expired. Remove the quoted Whisper to send a regular DM.');
+                                      // Server-side trigger validates this explicit Whisper reference at INSERT time.
+                                      // No foreign key: the original Whisper may later be cleaned up after 24 hours.
+                                      payload.whisper_id = pendingWhisper.whisperId;
                                     }
 
                                     const { error } = await supabaseClient.from("direct_messages").insert(payload);
