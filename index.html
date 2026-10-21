@@ -22940,75 +22940,49 @@ button.xmw-stat:hover,button.xmw-stat:focus-visible,button.xmw-stat.xmw-selected
 (function(){
 'use strict';
 const codes=['en','es','pt','fr','pl'];
-const strings={"Pequeñas notas, grandes conexiones 💜": ["Little notes, big connections 💜", "Pequeñas notas, grandes conexiones 💜", "Pequenas notas, grandes conexões 💜", "Petites notes, grandes connexions 💜", "Małe notatki, wielkie znajomości 💜"], "Publicar 🫧": ["Publish 🫧", "Publicar 🫧", "Publicar 🫧", "Publier 🫧", "Opublikuj 🫧"], "Eliminar mi Whisper": ["Delete my Whisper", "Eliminar mi susurro", "Excluir meu sussurro", "Supprimer mon murmure", "Usuń mój szept"], "¿Qué estás pensando? 🫧": ["What's on your mind? 🫧", "¿Qué estás pensando? 🫧", "No que você está pensando? 🫧", "À quoi penses-tu ? 🫧", "O czym myślisz? 🫧"], "Tu Whisper activo": ["Your active Whisper", "Tu susurro activo", "Seu sussurro ativo", "Ton murmure actif", "Twój aktywny szept"], "Tu Whisper más reciente": ["Your latest Whisper", "Tu susurro más reciente", "Seu sussurro mais recente", "Ton dernier murmure", "Twój ostatni szept"], "Reacciones recibidas": ["Reactions received", "Reacciones recibidas", "Reações recebidas", "Réactions reçues", "Otrzymane reakcje"], "Vistas únicas": ["Unique views", "Vistas únicas", "Visualizações únicas", "Vues uniques", "Unikalne wyświetlenia"], "Respuestas por DM": ["DM replies", "Respuestas por DM", "Respostas por DM", "Réponses par message privé", "Odpowiedzi w DM"], "Abrir DM ↗": ["Open DM ↗", "Abrir DM ↗", "Abrir DM ↗", "Ouvrir les MP ↗", "Otwórz DM ↗"], "↻ Actualizar actividad": ["↻ Refresh activity", "↻ Actualizar actividad", "↻ Atualizar atividade", "↻ Actualiser l’activité", "↻ Odśwież aktywność"], "Whispers anteriores": ["Previous Whispers", "Susurros anteriores", "Sussurros anteriores", "Murmures précédents", "Poprzednie szepty"], "Responder": ["Reply", "Responder", "Responder", "Répondre", "Odpowiedz"], "Reaccionar": ["React", "Reaccionar", "Reagir", "Réagir", "Zareaguj"], "💌 Responder al Whisper": ["💌 Reply to Whisper", "💌 Responder al susurro", "💌 Responder ao sussurro", "💌 Répondre au murmure", "💌 Odpowiedz na szept"], "Enviar respuesta 💜": ["Send reply 💜", "Enviar respuesta 💜", "Enviar resposta 💜", "Envoyer la réponse 💜", "Wyślij odpowiedź 💜"], "Enviando…": ["Sending…", "Enviando…", "Enviando…", "Envoi…", "Wysyłanie…"], "✓ ¡Tu respuesta fue enviada! 💜": ["✓ Your reply was sent! 💜", "✓ ¡Tu respuesta fue enviada! 💜", "✓ Sua resposta foi enviada! 💜", "✓ Ta réponse a été envoyée ! 💜", "✓ Twoja odpowiedź została wysłana! 💜"], "Escribe tu respuesta... 💜": ["Write your reply... 💜", "Escribe tu respuesta... 💜", "Escreva sua resposta... 💜", "Écris ta réponse... 💜", "Napisz odpowiedź... 💜"], "Cargando tu actividad…": ["Loading your activity…", "Cargando tu actividad…", "Carregando sua atividade…", "Chargement de ton activité…", "Ładowanie aktywności…"], "Usuario": ["User", "Usuario", "Usuário", "Utilisateur", "Użytkownik"], "Activo · Expira ": ["Active · Expires ", "Activo · Expira ", "Ativo · Expira ", "Actif · Expire ", "Aktywny · Wygasa "], "Expirado · ": ["Expired · ", "Expirado · ", "Expirado · ", "Expiré · ", "Wygasł · "], "Expiró: ": ["Expired: ", "Expiró: ", "Expirou: ", "Expiré : ", "Wygasł: "], "Para ": ["To ", "Para ", "Para ", "À ", "Do "], "Mostrar u ocultar Whispers": ["Show or hide Whispers", "Mostrar u ocultar susurros", "Mostrar ou ocultar sussurros", "Afficher ou masquer les murmures", "Pokaż lub ukryj szepty"], "Todavía no hay reacciones 💜": ["No reactions yet 💜", "Todavía no hay reacciones 💜", "Ainda não há reações 💜", "Pas encore de réactions 💜", "Brak reakcji 💜"], "Todavía nadie ha abierto este Whisper 🫧": ["Nobody has viewed this Whisper yet 🫧", "Todavía nadie ha abierto este susurro 🫧", "Ninguém viu este sussurro ainda 🫧", "Personne n’a encore vu ce murmure 🫧", "Nikt jeszcze nie zobaczył tego szeptu 🫧"], "Todavía no hay respuestas a este Whisper 💌": ["No replies to this Whisper yet 💌", "Todavía no hay respuestas a este susurro 💌", "Ainda não há respostas a este sussurro 💌", "Pas encore de réponses à ce murmure 💌", "Brak odpowiedzi na ten szept 💌"], "Aún no tienes Whispers guardados. Crea uno desde Discover 🫧": ["No saved Whispers yet. Create one in Discover 🫧", "Aún no tienes susurros guardados. Crea uno en Discover 🫧", "Você ainda não tem sussurros salvos. Crie um no Discover 🫧", "Aucun murmure enregistré. Crée-en un dans Découvrir 🫧", "Nie masz jeszcze zapisanych szeptów. Utwórz jeden w Odkrywaj 🫧"], "El historial aparecerá aquí solo si los Whispers anteriores siguen almacenados. Los eliminados automáticamente no se pueden recuperar.": ["History appears here only while earlier Whispers remain stored. Automatically deleted Whispers cannot be recovered.", "El historial aparecerá aquí solo si los susurros anteriores siguen almacenados. Los eliminados automáticamente no se pueden recuperar.", "O histórico aparece aqui apenas enquanto os sussurros anteriores estiverem armazenados. Os excluídos automaticamente não podem ser recuperados.", "L’historique apparaît uniquement si les anciens murmures sont conservés. Ceux supprimés automatiquement ne peuvent pas être récupérés.", "Historia pojawia się tylko wtedy, gdy wcześniejsze szepty są nadal przechowywane. Automatycznie usuniętych nie można odzyskać."]};
-const lookup=new Map();
-for(const [key,values] of Object.entries(strings)){
- lookup.set(key,values);
- for(const v of values)lookup.set(v,values);
+const strings={"Pequeñas notas, grandes conexiones 💜": ["Little notes, big connections 💜", "Pequeñas notas, grandes conexiones 💜", "Pequenas notas, grandes conexões 💜", "Petites notes, grandes connexions 💜", "Małe notatki, wielkie znajomości 💜"], "Publicar 🫧": ["Publish 🫧", "Publicar 🫧", "Publicar 🫧", "Publier 🫧", "Opublikuj 🫧"], "Eliminar mi Whisper": ["Delete my Whisper", "Eliminar mi susurro", "Excluir meu sussurro", "Supprimer mon murmure", "Usuń mój szept"], "¿Qué estás pensando? 🫧": ["What's on your mind? 🫧", "¿Qué estás pensando? 🫧", "No que você está pensando? 🫧", "À quoi penses-tu ? 🫧", "O czym myślisz? 🫧"], "Tu Whisper activo": ["Your active Whisper", "Tu susurro activo", "Seu sussurro ativo", "Ton murmure actif", "Twój aktywny szept"], "Tu Whisper más reciente": ["Your latest Whisper", "Tu susurro más reciente", "Seu sussurro mais recente", "Ton dernier murmure", "Twój ostatni szept"], "Reacciones recibidas": ["Reactions received", "Reacciones recibidas", "Reações recebidas", "Réactions reçues", "Otrzymane reakcje"], "Vistas únicas": ["Views", "Vistas", "Visualizações", "Vues", "Wyświetlenia"], "Respuestas por DM": ["DM replies", "Respuestas por DM", "Respostas por DM", "Réponses en MP", "Odpowiedzi w DM"], "Abrir DM ↗": ["Open DM ↗", "Abrir DM ↗", "Abrir DM ↗", "Ouvrir le MP ↗", "Otwórz DM ↗"], "↻ Actualizar actividad": ["↻ Refresh activity", "↻ Actualizar actividad", "↻ Atualizar atividade", "↻ Actualiser l’activité", "↻ Odśwież aktywność"], "Whispers anteriores": ["Previous Whispers", "Susurros anteriores", "Sussurros anteriores", "Murmures précédents", "Poprzednie szepty"], "Responder": ["Reply", "Responder", "Responder", "Répondre", "Odpowiedz"], "Reaccionar": ["React", "Reaccionar", "Reagir", "Réagir", "Zareaguj"], "💌 Responder al Whisper": ["💌 Reply to Whisper", "💌 Responder al susurro", "💌 Responder ao sussurro", "💌 Répondre au murmure", "💌 Odpowiedz na szept"], "Enviar respuesta 💜": ["Send reply 💜", "Enviar respuesta 💜", "Enviar resposta 💜", "Envoyer la réponse 💜", "Wyślij odpowiedź 💜"], "Enviando…": ["Sending…", "Enviando…", "Enviando…", "Envoi…", "Wysyłanie…"], "✓ ¡Tu respuesta fue enviada! 💜": ["✓ Your reply was sent! 💜", "✓ ¡Tu respuesta fue enviada! 💜", "✓ Sua resposta foi enviada! 💜", "✓ Ta réponse a été envoyée ! 💜", "✓ Twoja odpowiedź została wysłana! 💜"], "Escribe tu respuesta... 💜": ["Write your reply... 💜", "Escribe tu respuesta... 💜", "Escreva sua resposta... 💜", "Écris ta réponse... 💜", "Napisz odpowiedź... 💜"], "Cargando tu actividad…": ["Loading your activity…", "Cargando tu actividad…", "Carregando sua atividade…", "Chargement de ton activité…", "Ładowanie aktywności…"], "Usuario": ["User", "Usuario", "Usuário", "Utilisateur", "Użytkownik"], "Activo · Expira ": ["Active · Expires ", "Activo · Expira ", "Ativo · Expira ", "Actif · Expire ", "Aktywny · Wygasa "], "Expirado · ": ["Expired · ", "Expirado · ", "Expirado · ", "Expiré · ", "Wygasł · "], "Expiró: ": ["Expired: ", "Expiró: ", "Expirou: ", "Expiré : ", "Wygasł: "], "Para ": ["To ", "Para ", "Para ", "À ", "Do "], "Mostrar u ocultar Whispers": ["Show or hide Whispers", "Mostrar u ocultar susurros", "Mostrar ou ocultar sussurros", "Afficher ou masquer les murmures", "Pokaż lub ukryj szepty"], "Todavía no hay reacciones 💜": ["No reactions yet 💜", "Todavía no hay reacciones 💜", "Ainda não há reações 💜", "Pas encore de réactions 💜", "Brak reakcji 💜"], "Todavía nadie ha abierto este Whisper 🫧": ["Nobody has viewed this Whisper yet 🫧", "Todavía nadie ha abierto este susurro 🫧", "Ninguém viu este sussurro ainda 🫧", "Personne n’a encore vu ce murmure 🫧", "Nikt jeszcze nie zobaczył tego szeptu 🫧"], "Todavía no hay respuestas a este Whisper 💌": ["No replies to this Whisper yet 💌", "Todavía no hay respuestas a este susurro 💌", "Ainda não há respostas a este sussurro 💌", "Pas encore de réponses à ce murmure 💌", "Brak odpowiedzi na ten szept 💌"], "Aún no tienes Whispers guardados. Crea uno desde Discover 🫧": ["No saved Whispers yet. Create one in Discover 🫧", "Aún no tienes susurros guardados. Crea uno en Discover 🫧", "Você ainda não tem sussurros salvos. Crie um no Discover 🫧", "Aucun murmure enregistré. Crée-en un dans Découvrir 🫧", "Nie masz jeszcze zapisanych szeptów. Utwórz jeden w Odkrywaj 🫧"], "El historial aparecerá aquí solo si los Whispers anteriores siguen almacenados. Los eliminados automáticamente no se pueden recuperar.": ["History appears here only while earlier Whispers remain stored. Automatically deleted Whispers cannot be recovered.", "El historial aparecerá aquí solo si los susurros anteriores siguen almacenados. Los eliminados automáticamente no se pueden recuperar.", "O histórico aparece aqui apenas enquanto os sussurros anteriores estiverem armazenados. Os excluídos automaticamente não podem ser recuperados.", "L’historique apparaît uniquement si les anciens murmures sont conservés. Ceux supprimés automatiquement ne peuvent pas être récupérés.", "Historia pojawia się tylko wtedy, gdy wcześniejsze szepty są nadal przechowywane. Automatycznie usuniętych nie można odzyskać."], "🫧 My Whispers": ["🫧 My Whispers", "🫧 Mis susurros", "🫧 Meus sussurros", "🫧 Mes murmures", "🫧 Moje szepty"], "Tu espacio privado para consultar tus susurros y reacciones.": ["Your private space to see your Whispers, views, reactions and replies.", "Tu espacio privado para consultar tus susurros, vistas, reacciones y respuestas.", "Seu espaço privado para ver seus sussurros, visualizações, reações e respostas.", "Ton espace privé pour consulter tes murmures, vues, réactions et réponses.", "Twoje prywatne miejsce do przeglądania szeptów, wyświetleń, reakcji i odpowiedzi."], "Abre esta pestaña para consultar tus Whispers.": ["Open this tab to see your Whispers.", "Abre esta pestaña para consultar tus susurros.", "Abra esta aba para ver seus sussurros.", "Ouvre cet onglet pour voir tes murmures.", "Otwórz tę kartę, aby zobaczyć swoje szepty."], "Unique views": ["Views", "Vistas", "Visualizações", "Vues", "Wyświetlenia"], "Visualizações únicas": ["Views", "Vistas", "Visualizações", "Vues", "Wyświetlenia"], "Vues uniques": ["Views", "Vistas", "Visualizações", "Vues", "Wyświetlenia"], "Unikalne wyświetlenia": ["Views", "Vistas", "Visualizações", "Vues", "Wyświetlenia"], "💬 Responder": ["💬 Reply", "💬 Responder", "💬 Responder", "💬 Répondre", "💬 Odpowiedz"], "💬 Responder en DM": ["💬 Reply by DM", "💬 Responder por DM", "💬 Responder por DM", "💬 Répondre en MP", "💬 Odpowiedz w DM"], "💬 Reply": ["💬 Reply", "💬 Responder", "💬 Responder", "💬 Répondre", "💬 Odpowiedz"], "💬 Reply by DM": ["💬 Reply by DM", "💬 Responder por DM", "💬 Responder por DM", "💬 Répondre en MP", "💬 Odpowiedz w DM"], "¿Qué es XOXO Whispers?": ["What is XOXO Whispers?", "¿Qué es XOXO Whispers?", "O que é XOXO Whispers?", "Qu’est-ce que XOXO Whispers ?", "Czym jest XOXO Whispers?"], "Comparte pensamientos, emociones o mensajes cortos con tu comunidad. Cada susurro dura 24 horas: otras personas pueden verlo, reaccionar o responderte por DM. Cuando desaparezca, las respuestas enviadas permanecerán en el chat.": ["Share a thought, a feeling or a short message with your community. Each Whisper lasts 24 hours: others can view it, react or reply by DM. When it disappears, DM replies remain in your chat.", "Comparte pensamientos, emociones o mensajes cortos con tu comunidad. Cada susurro dura 24 horas: otras personas pueden verlo, reaccionar o responderte por DM. Cuando desaparezca, las respuestas enviadas permanecerán en el chat.", "Compartilhe pensamentos, sentimentos ou mensagens curtas com sua comunidade. Cada sussurro dura 24 horas: outras pessoas podem visualizar, reagir ou responder por DM. Quando desaparecer, as respostas permanecerão no chat.", "Partage une pensée, une émotion ou un court message avec ta communauté. Chaque murmure dure 24 heures : les autres peuvent le voir, réagir ou répondre en MP. Quand il disparaît, les réponses restent dans la conversation.", "Podziel się myślą, uczuciem lub krótką wiadomością ze społecznością. Każdy szept trwa 24 godziny: inni mogą go zobaczyć, zareagować lub odpowiedzieć przez DM. Po jego zniknięciu odpowiedzi pozostają na czacie."]};
+const aliases=new Map();
+for(const [key,arr] of Object.entries(strings)){
+  if(!aliases.has(key))aliases.set(key,arr);
+  for(const v of arr)if(!aliases.has(v))aliases.set(v,arr);
 }
-function lang(){
- let value='en';
- try{value=localStorage.getItem('friendhub_language')||document.documentElement.lang||'en'}catch(_){}
- value=String(value).toLowerCase();
- return value.startsWith('pt')?'pt':value.startsWith('fr')?'fr':value.startsWith('pl')?'pl':value.startsWith('es')?'es':'en';
-}
-function translate(value){
- const exact=lookup.get(value);
- if(exact)return exact[codes.indexOf(lang())];
- for(const [key,values] of Object.entries(strings)){
-  if(key.endsWith(' ')&&value.startsWith(key))return values[codes.indexOf(lang())]+value.slice(key.length);
+for(const key of ['Vistas únicas','Unique views','Visualizações únicas','Vues uniques','Unikalne wyświetlenia'])aliases.set(key,strings['Vistas únicas']);
+const lang=()=>{let v='en';try{v=localStorage.getItem('friendhub_language')||document.documentElement.lang||'en'}catch(_){}v=String(v).toLowerCase();return v.startsWith('pt')?'pt':v.startsWith('fr')?'fr':v.startsWith('pl')?'pl':v.startsWith('es')?'es':'en'};
+const tr=t=>{const v=aliases.get(t);if(v)return v[codes.indexOf(lang())];for(const [k,v] of Object.entries(strings)){if(k.endsWith(' ')&&t.startsWith(k))return v[codes.indexOf(lang())]+t.slice(k.length)}return t};
+let working=false,queued=false;
+function translateElement(el){
+ if(!el)return;
+ const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);let n;
+ while((n=walker.nextNode())){
+  const parent=n.parentElement;if(!parent||parent.closest('textarea,input,.xmw-detail-message,.xoxo-wqr-quote,.xoxo-dw-bubble,.xmw-note,.dm-message-content'))continue;
+  const value=n.nodeValue,trim=value.trim();if(!trim)continue;
+  const translated=tr(trim);if(translated!==trim)n.nodeValue=value.replace(trim,translated);
  }
- return value;
+ for(const node of el.querySelectorAll('[placeholder],[title],[aria-label]'))for(const attr of ['placeholder','title','aria-label']){const v=node.getAttribute(attr);if(v){const t=tr(v);if(t!==v)node.setAttribute(attr,t)}}
 }
-const selectors=['#xoxoDiscoverWhispers','#xoxoMyWhispersContent','.xoxo-wqr-dialog','#xoxoWhisperReplySuccessToast'];
-let working=false;
-function apply(){
- if(working)return;
- working=true;
- try{
-  const tab=document.querySelector('[data-my-profile-tab="whispers"]');
-  if(tab){
-   const text=tab.textContent||'';
-   if(text.trim()==='My Whispers'||text.trim()==='Mis susurros'||text.trim()==='Meus sussurros'||text.trim()==='Mes murmures'||text.trim()==='Moje szepty'){
-    const values=['My Whispers','Mis susurros','Meus sussurros','Mes murmures','Moje szepty'];
-    tab.textContent=values[codes.indexOf(lang())];
-   }
+function update(){if(working)return;working=true;try{
+ const tab=document.querySelector('[data-my-profile-tab="whispers"]');if(tab)translateElement(tab);
+ const panel=document.querySelector('#myProfileWhispersPanel');
+ if(panel){
+  const heading=panel.querySelector('.my-profile-panel-heading');
+  if(heading && !heading.querySelector('.xoxo-whisper-explainer')){
+   const note=document.createElement('div');note.className='xoxo-whisper-explainer';
+   const title=document.createElement('strong');title.textContent='¿Qué es XOXO Whispers?';
+   const body=document.createElement('p');body.textContent='Comparte pensamientos, emociones o mensajes cortos con tu comunidad. Cada susurro dura 24 horas: otras personas pueden verlo, reaccionar o responderte por DM. Cuando desaparezca, las respuestas enviadas permanecerán en el chat.';
+   note.append(title,body);heading.append(note);
   }
-  for(const sel of selectors){
-   const root=document.querySelector(sel);if(!root)continue;
-   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-   let node;
-   while((node=walker.nextNode())){
-    const parent=node.parentElement;
-    if(!parent||parent.closest('.xmw-note,.xmw-detail-message,.xoxo-wqr-quote,.xoxo-dw-note,.xoxo-dw-bubble,textarea,input'))continue;
-    const original=node.nodeValue;
-    const trimmed=original.trim();
-    if(!trimmed)continue;
-    const next=translate(trimmed);
-    if(next!==trimmed)node.nodeValue=original.replace(trimmed,next);
-   }
-   for(const el of root.querySelectorAll('[placeholder],[title],[aria-label]')){
-    for(const attr of ['placeholder','title','aria-label']){
-     const value=el.getAttribute(attr);
-     if(value){const next=translate(value);if(next!==value)el.setAttribute(attr,next)}
-    }
-   }
-  }
- }finally{working=false}
-}
-let scheduled=false;
-function schedule(){
- if(scheduled)return;
- scheduled=true;
- requestAnimationFrame(()=>{scheduled=false;apply()});
-}
-const obs=new MutationObserver(schedule);
-obs.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:false});
-window.addEventListener('storage',schedule);
-document.addEventListener('change',e=>{if(e.target?.id==='languageSelect')setTimeout(schedule,0)},true);
-window.xoxoTranslateWhisperUI=schedule;
-schedule();
+  translateElement(heading);
+  translateElement(panel.querySelector('#xoxoMyWhispersContent'));
+ }
+ for(const root of document.querySelectorAll('#xoxoDiscoverWhispers,.xoxo-wqr-dialog,#xoxoWhisperReplySuccessToast,#xoxo-whisper-tester-panel'))translateElement(root);
+ // Profile reply buttons may live outside the Whisper panel; restrict to exact label.
+ for(const b of document.querySelectorAll('button')){const t=b.textContent.trim();if(['💬 Responder','💬 Reply','💬 Répondre','💬 Odpowiedz','💬 Responder en DM','💬 Reply by DM','💬 Responder por DM','💬 Répondre en MP','💬 Odpowiedz w DM'].includes(t)){const translated=tr(t);if(translated!==t)b.textContent=translated}}
+}finally{working=false}}
+function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;update()})}
+new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,characterData:true});
+window.addEventListener('storage',schedule);document.addEventListener('change',()=>setTimeout(schedule,0),true);
+window.xoxoTranslateWhisperUI=schedule;schedule();
 })();
 </script>
-</body>
+<style id="xoxo-whisper-explainer-css">.xoxo-whisper-explainer{margin-top:14px;padding:14px 16px;border:1px solid #b887e16b;border-radius:14px;background:#6e43a320;color:inherit}.xoxo-whisper-explainer strong{display:block;margin-bottom:7px}.xoxo-whisper-explainer p{margin:0;line-height:1.55;font-size:13px}</style></body>
                                     </html>gr
