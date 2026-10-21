@@ -13286,7 +13286,21 @@ async function openPublicProfile(userId) {
                                     }
                                     }
 
-                                    function renderXoxoWhisperDmContext(message) {
+                                    // Display Whisper context only while the referenced Whisper still exists and is active.
+                                    let xoxoDmActiveWhisperIds = new Set();
+                                    async function xoxoRefreshDmActiveWhispers(messages) {
+                                      const ids=[...new Set((messages||[]).map(m=>m.whisper_id).filter(Boolean))];
+                                      xoxoDmActiveWhisperIds=new Set();
+                                      if(!ids.length)return;
+                                      const {data,error}=await supabaseClient.from("xoxo_whispers")
+                                        .select("id").in("id",ids).gt("expires_at",new Date().toISOString());
+                                      if(error){console.warn("Whisper status unavailable; hiding context",error);return}
+                                      xoxoDmActiveWhisperIds=new Set((data||[]).map(w=>String(w.id)));
+                                    }
+                                    function xoxoWhisperReplyBody(message) {
+                                      return String(message.content||"").replace(/^🫧 Reply to Whisper: “[^”]*”\s*/, "");
+                                    }
+                                                                        function renderXoxoWhisperDmContext(message) {
                                     // Original quote is stored with the DM, so it survives Whisper expiry.
                                     const raw = String(message.content || "");
                                     const match = raw.match(/^🫧 Reply to Whisper: “([^”]*)”/);
@@ -13298,13 +13312,14 @@ async function openPublicProfile(userId) {
                                       ["#ffe9a2","#ffad64"]
                                     ];
                                     const colors = palettes[seed % palettes.length];
-                                    return `<div class="xoxo-dm-whisper-context"><div class="xoxo-dm-whisper-label">🫧 ${getFriendHubLanguage()==="es" ? "Respuesta a un Whisper" : "Whisper reply"}</div><div class="xoxo-dm-whisper-quote" style="background:linear-gradient(135deg,${colors[0]},${colors[1]})">${escapeHtml(quote)}</div></div>`;
+                                    return `<div class="xoxo-dm-whisper-context"><div class="xoxo-dm-whisper-label">🫧 ${getFriendHubLanguage()==="es" ? "Respondió a tu Whisper" : "Replied to your Whisper"}</div><div class="xoxo-dm-whisper-quote" style="background:linear-gradient(135deg,${colors[0]},${colors[1]})">${escapeHtml(quote)}</div></div>`;
                                     }
                                     async function renderDirectMessages(messages) {
                                     const container = document.getElementById("dmMessages");
                                     const buzzHistory = await loadDmBuzzHistory();
                                     if (!container) return;
                                     window.__xoxoCurrentDmMessages = messages || [];
+                                    await xoxoRefreshDmActiveWhispers(messages);
 
                                     if (!messages.length && !buzzHistory.length) {
                                     dmLastRenderedSignature = "";
@@ -13371,9 +13386,9 @@ async function openPublicProfile(userId) {
                                     ${mine ? "" : avatarHtml}
                                     <div class="dm-bubble">
                                     ${replyHtml}
-                                    ${message.whisper_id ? renderXoxoWhisperDmContext(message) : ""}
+                                    ${message.whisper_id && xoxoDmActiveWhisperIds.has(String(message.whisper_id)) ? renderXoxoWhisperDmContext(message) : ""}
                                     ${attachmentHtml}
-                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `${dmFormattedTextHtml(message.whisper_id ? String(message.content).replace(/^🫧 Reply to Whisper: “[^”]*”\s*/, "") : message.content)}${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
+                                    ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `${dmFormattedTextHtml(message.whisper_id ? xoxoWhisperReplyBody(message) : message.content)}${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
                                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
                                     <div class="dm-time">${escapeHtml(formatDmClockTime(message.created_at))}</div>
                                     ${renderDmSeenStatus(message, mine)}
@@ -22701,7 +22716,16 @@ async function load(){
      const open=element('button','xmw-detail-open','Abrir DM ↗');
      open.type='button';
      open.addEventListener('click',async()=>{
-      if(typeof openDirectChat==='function')await openDirectChat(userId,labelFor(userId),person?.profile_photo||'');
+      if(typeof openDirectChat==='function'){
+       await openDirectChat(userId,labelFor(userId),person?.profile_photo||'');
+       const target=String(record.id||'');
+       if(target){
+        const locate=()=>document.querySelector('.dm-row[data-dm-message-id="'+target+'"]');
+        let row=locate();
+        if(!row && typeof loadDirectMessages==='function'){await loadDirectMessages();row=locate()}
+        if(row && typeof scrollToDmMessage==='function')scrollToDmMessage(target);
+       }
+      }
      });
      line.append(open);
     }
