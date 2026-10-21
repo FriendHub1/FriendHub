@@ -15888,9 +15888,13 @@ function buildSharedPostUrl(postId) {
                                     try {
                                       const url = new URL(window.location.href);
                                       url.searchParams.delete("lang");
-                                      window.history.replaceState(window.history.state, "", url.toString());
-                                    } catch (error) {}
-                                    window.location.reload();
+                                      // Navigate to a fresh document rather than reloading the current desktop SPA.
+                                      url.searchParams.set("xoxo_locale_refresh", String(Date.now()));
+                                      window.location.replace(url.toString());
+                                      return;
+                                    } catch (error) {
+                                      window.location.assign(window.location.pathname + "?xoxo_locale_refresh=" + Date.now());
+                                    }
                                     };
                                     const languageSelect = document.getElementById("languageSelect");
                                     if (languageSelect) languageSelect.value = selectedLanguage;
