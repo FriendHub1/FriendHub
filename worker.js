@@ -2769,11 +2769,12 @@ export default {
     if (url.pathname === "/sitemap.xml") {
       const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://xoxoavenue.com/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
+  <url><loc>https://xoxoavenue.com/</loc></url>
+  <url><loc>https://xoxoavenue.com/about</loc></url>
+  <url><loc>https://xoxoavenue.com/discover</loc></url>
+  <url><loc>https://xoxoavenue.com/privacy</loc></url>
+  <url><loc>https://xoxoavenue.com/terms</loc></url>
+  <url><loc>https://xoxoavenue.com/guidelines</loc></url>
 </urlset>`;
 
       return new Response(sitemap, {
