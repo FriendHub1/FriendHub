@@ -6336,11 +6336,11 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     </div>
                                     <!-- XOXO Whispers BETA: Discover placement, restricted to two testers -->
 <section id="xoxoDiscoverWhispers" class="xoxo-dw" hidden aria-label="XOXO Whispers BETA">
-  <div class="xoxo-dw-heading"><div><h2>🫧 XOXO Whispers <small>BETA</small></h2><p>Pequeñas notas, grandes conexiones 💜</p></div><button type="button" id="xoxoDwRefresh">↻</button></div>
+  <div class="xoxo-dw-heading"><div><h2>🫧 XOXO Whispers <small>BETA</small></h2><p>Pequeñas notas, grandes conexiones 💜</p></div><div class="xoxo-dw-header-actions"><button type="button" id="xoxoDwRefresh" title="Actualizar">↻</button><button type="button" id="xoxoDwToggle" aria-expanded="true" aria-controls="xoxoDwBody" title="Mostrar u ocultar Whispers">⌃</button></div></div><div id="xoxoDwBody">
   <div id="xoxoDwCards" class="xoxo-dw-cards"></div>
   <div class="xoxo-dw-compose"><textarea id="xoxoDwInput" maxlength="100" rows="2" placeholder="¿Qué estás pensando? 🫧"></textarea><div class="xoxo-dw-actions"><span id="xoxoDwCount">0/100</span><button type="button" id="xoxoDwPublish">Publicar 🫧</button><button type="button" id="xoxoDwDelete" hidden>Eliminar mi Whisper</button></div></div>
   <p id="xoxoDwStatus" class="xoxo-dw-status" role="status"></p>
-</section>
+</div></section>
 <div id="friendSuggestionsSection" class="friend-suggestions-section" style="display:none;">
                                     <div class="friend-suggestions-heading">
                                     <div>
@@ -6605,6 +6605,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     <button type="button" class="my-profile-tab" data-my-profile-tab="posts" onclick="showMyProfileTab('posts', this)">📝 My Posts</button>
                                     <button type="button" class="my-profile-tab" data-my-profile-tab="following" onclick="showMyProfileTab('following', this)">💜 Following</button>
                                     <button type="button" class="my-profile-tab" data-my-profile-tab="followers" onclick="showMyProfileTab('followers', this)">👥 Followers</button>
+                                    <button type="button" class="my-profile-tab" data-my-profile-tab="whispers" onclick="showMyProfileTab('whispers', this)" hidden>🫧 My Whispers</button>
                                     </div>
 
                                     <div id="profileLoginMessage" class="content-card" style="display:none;">
@@ -6881,7 +6882,12 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     </div>
                                     </div>
 
-                                    <div id="myProfileFollowersPanel" class="my-profile-panel">
+                                    <div id="myProfileWhispersPanel" class="my-profile-panel">
+<div class="my-profile-panel-heading"><h2>🫧 My Whispers <small style="font-size:12px;color:#eab4ff">BETA</small></h2>
+<p>Tu espacio privado para consultar tus susurros y reacciones.</p></div>
+<div id="xoxoMyWhispersContent" class="xoxo-my-whispers-content" aria-live="polite"><p>Abre esta pestaña para consultar tus Whispers.</p></div>
+</div>
+<div id="myProfileFollowersPanel" class="my-profile-panel">
                                     <div class="my-profile-panel-heading">
                                     <h2>👥 Followers</h2>
                                     <p data-ptbr-follow="followers">People who follow you on XOXO Avenue.</p>
@@ -11839,7 +11845,7 @@ async function openPublicProfile(userId) {
                                     }
                                     function showMyProfileTab(tab, button) {
                                     if (!currentUser) return;
-                                    const safeTab = ["profile", "posts", "following", "followers"].includes(tab) ? tab : "profile";
+                                    const safeTab = ["profile", "posts", "following", "followers", "whispers"].includes(tab) ? tab : "profile";
                                     document.querySelectorAll(".my-profile-tab").forEach(item => item.classList.remove("active"));
                                     const activeButton = button || document.querySelector(`[data-my-profile-tab="${safeTab}"]`);
                                     if (activeButton) activeButton.classList.add("active");
@@ -11848,7 +11854,8 @@ async function openPublicProfile(userId) {
                                     profile: document.getElementById("myProfileMainPanel"),
                                     posts: document.getElementById("myProfilePostsPanel"),
                                     following: document.getElementById("myProfileFollowingPanel"),
-                                    followers: document.getElementById("myProfileFollowersPanel")
+                                    followers: document.getElementById("myProfileFollowersPanel"),
+                                    whispers: document.getElementById("myProfileWhispersPanel")
                                     };
                                     Object.entries(panels).forEach(([key, panel]) => {
                                     if (panel) panel.classList.toggle("active", key === safeTab);
@@ -11857,6 +11864,7 @@ async function openPublicProfile(userId) {
                                     if (safeTab === "posts") loadMyProfilePosts();
                                     if (safeTab === "following") loadMyProfilePeople("following");
                                     if (safeTab === "followers") loadMyProfilePeople("followers");
+                                    if (safeTab === "whispers" && typeof window.xoxoLoadMyWhispers === "function") window.xoxoLoadMyWhispers();
                                     }
 
                                     async function loadMyProfilePosts() {
@@ -22390,15 +22398,30 @@ setInterval(sync,1500);
 .xoxo-dw-actions button{border:1px solid #d59cff;background:#7939b3;color:white;border-radius:12px;padding:8px 12px;cursor:pointer;font-size:12px}
 .xoxo-dw-status{font-size:12px;color:#d8c5ef;margin:7px 0 0}
 @media(max-width:520px){#xoxoDiscoverWhispers{padding:14px 12px}.xoxo-dw-cards{gap:12px}.xoxo-dw-card{flex-basis:106px}.xoxo-dw-bubble{max-width:101px}}
+
+/* Collapsible BETA and custom reaction picker */
+#xoxoDwBody[hidden],.xoxo-dw-picker[hidden]{display:none!important}
+.xoxo-dw-header-actions{display:flex;gap:8px;align-items:center}
+#xoxoDwToggle{background:#ffffff18;border:1px solid #ffffff40;border-radius:50%;color:#fff;width:36px;height:36px;cursor:pointer;font-size:20px}
+.xoxo-dw-picker{box-sizing:border-box;width:170px;max-width:90vw;position:relative;z-index:2;border:1px solid #ae79e3;border-radius:13px;padding:8px;background:#23163b;box-shadow:0 10px 20px #0008}
+.xoxo-dw-picker-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.xoxo-dw-picker-grid button{padding:4px 1px!important;font-size:16px!important;background:transparent!important;border:0!important}
+.xoxo-dw-custom{box-sizing:border-box;width:100%;margin-top:7px;border:1px solid #b785e5;border-radius:8px;background:#100d22;color:#fff;font-size:12px;padding:6px}
+.xoxo-dw-custom-send{margin-top:5px;width:100%;font-size:12px!important}
+.xoxo-dw-plus{font-weight:800!important;font-size:15px!important}
 </style>
 <script id="xoxo-discover-whispers-beta-script">
 (function(){
 'use strict';
 const ADMIN='d9ea1914-fdba-465c-9700-5e640ff48763',TESTER='469c2cac-c0d8-4fcd-8b63-12468bed20ee';
-const allowed=new Set([ADMIN,TESTER]), emojis=['💜','❤️','😂','😍','🔥'];
+const allowed=new Set([ADMIN,TESTER]), emojis=['❤️','😍','😂','🎉','🔥'];
 const root=document.getElementById('xoxoDiscoverWhispers');
 if(!root)return;
 const $=id=>document.getElementById(id),cards=$('xoxoDwCards'),status=$('xoxoDwStatus'),input=$('xoxoDwInput');
+const body=$('xoxoDwBody'),toggle=$('xoxoDwToggle');
+function setExpanded(open){body.hidden=!open;toggle.textContent=open?'⌃':'⌄';toggle.setAttribute('aria-expanded',String(open));try{localStorage.setItem('xoxo-whispers-expanded-v1',open?'1':'0')}catch(e){}}
+let expanded=true;try{expanded=localStorage.getItem('xoxo-whispers-expanded-v1')!=='0'}catch(e){}
+setExpanded(expanded);toggle.addEventListener('click',()=>setExpanded(body.hidden));
 let owner=null,loading=false,lastUser='',lastRefresh=0;
 const uid=()=>typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
 const client=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
@@ -22427,23 +22450,45 @@ async function refresh(){
    const card=make('article','xoxo-dw-card'),bubble=make('div','xoxo-dw-bubble',w.content||'');
    const user=make('button','xoxo-dw-person'),avatar=make('span','xoxo-dw-avatar'),name=make('strong','',profileLabel(String(w.user_id),person));
    user.type='button';user.title='Ver perfil';
-   if(person?.profile_photo){const img=make('img');img.src=person.profile_photo;img.alt='';avatar.append(img)}else avatar.textContent='🫧';
+   const img=make('img');
+   const official=typeof xoxoBubbleUrl==='function'?xoxoBubbleUrl(w.user_id,person?.username):'https://www.xoxoavenue.com/01_violeta.png';
+   img.src=person?.profile_photo||official;img.alt=person?.profile_photo?'Foto de perfil':'Burbuja oficial XOXO';
+   img.onerror=()=>{if(img.src!==official){img.onerror=null;img.src=official}};
+   avatar.append(img);
    user.append(avatar,name);
    user.addEventListener('click',()=>{if(typeof openPublicProfile==='function')openPublicProfile(w.user_id)});
    const minutes=Math.max(0,Math.ceil((new Date(w.expires_at).getTime()-Date.now())/60000));
    const timer=make('small','xoxo-dw-timer',minutes>=60?Math.ceil(minutes/60)+'h restantes':minutes+'m restantes');
    const reactions=make('div','xoxo-dw-reactions');
+   async function react(emoji,b){
+      if(b)b.disabled=true;
+      try{
+       if(!emoji||Array.from(emoji).length>16)throw Error('Selecciona un emoji válido.');
+       const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
+       if(live.error||!live.data)throw Error('Este Whisper ya expiró.');
+       const result=await sb.from('xoxo_whisper_reactions').insert({whisper_id:w.id,user_id:id,emoji});
+       if(result.error)throw result.error;
+       await refresh();
+      }catch(e){say('Reacción: '+(e.message||'No disponible'));if(b)b.disabled=false}
+   }
    if(!isOwn)for(const emoji of emojis){
     const count=totals.get(String(w.id))?.get(emoji)||0;
     const b=make('button','',emoji+(count?' '+count:''));b.type='button';b.title='Reaccionar '+emoji;
-    b.addEventListener('click',async()=>{b.disabled=true;try{
-      const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
-      if(live.error||!live.data)throw Error('Este Whisper ya expiró.');
-      const result=await sb.from('xoxo_whisper_reactions').insert({whisper_id:w.id,user_id:id,emoji});
-      if(result.error)throw result.error;
-      await refresh();
-    }catch(e){say('Reacción: '+(e.message||'No disponible'));b.disabled=false}});
+    b.addEventListener('click',()=>react(emoji,b));
     reactions.append(b);
+   }
+   if(!isOwn){
+    const plus=make('button','xoxo-dw-plus','+');plus.type='button';plus.title='Elegir otro emoji';plus.setAttribute('aria-expanded','false');
+    const picker=make('div','xoxo-dw-picker');picker.hidden=true;
+    const choices=make('div','xoxo-dw-picker-grid');
+    for(const e of ['💜','👍','🥰','😘','😮','😢','👏','🙌','🥳','💯','👀','✨','💖','💋','🫶','🌹','🤩','😎','🤗','🦋','🌈','💎','🫧','🤍']){
+      const choice=make('button','',e);choice.type='button';choice.title='Reaccionar '+e;choice.addEventListener('click',()=>react(e,choice));choices.append(choice);
+    }
+    const custom=make('input','xoxo-dw-custom');custom.type='text';custom.maxLength=32;custom.placeholder='Pega otro emoji…';custom.setAttribute('aria-label','Emoji personalizado');
+    const send=make('button','xoxo-dw-custom-send','Enviar');send.type='button';send.addEventListener('click',()=>react(custom.value.trim(),send));
+    picker.append(choices,custom,send);
+    plus.addEventListener('click',()=>{picker.hidden=!picker.hidden;plus.setAttribute('aria-expanded',String(!picker.hidden))});
+    reactions.append(plus,picker);
    }else{
     for(const [emoji,count] of totals.get(String(w.id))||[])reactions.append(make('span','xoxo-dw-timer',emoji+' '+count));
    }
@@ -22499,6 +22544,71 @@ function sync(){
  else if(Date.now()-lastRefresh>60000&&document.getElementById('discover')?.classList.contains('active'))refresh();
 }
 sync();setInterval(sync,2000);
+})();
+</script>
+
+<style id="xoxo-my-whispers-beta-style">
+#myProfileTabs .my-profile-tab[hidden]{display:none!important}
+#xoxoMyWhispersContent{background:linear-gradient(140deg,#241038,#15132f);border:1px solid #c37de477;border-radius:20px;padding:20px;color:#fff}
+.xmw-note{background:linear-gradient(135deg,#ffb3e4,#fc77c4);color:#2b0d35;border-radius:16px;padding:16px;font-weight:750;overflow-wrap:anywhere;max-width:440px;margin:12px 0}
+.xmw-stats{display:flex;flex-wrap:wrap;gap:12px;margin:15px 0}.xmw-stat{background:#ffffff10;border:1px solid #b785e966;border-radius:14px;padding:12px;min-width:120px;flex:1}.xmw-stat strong{display:block;font-size:23px}.xmw-stat small{color:#dcc8ee}
+.xmw-reactions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.xmw-reactions span{border:1px solid #b887eb66;border-radius:99px;padding:7px 10px;background:#ffffff0e}
+.xmw-note-caption{color:#d9c4ed;font-size:13px}.xmw-button{background:#7e38b8;border:1px solid #d38dff;border-radius:12px;padding:10px 14px;color:white;cursor:pointer}
+</style>
+<script id="xoxo-my-whispers-beta-script">
+(function(){
+'use strict';
+const testers=new Set(['d9ea1914-fdba-465c-9700-5e640ff48763','469c2cac-c0d8-4fcd-8b63-12468bed20ee']);
+const getUser=()=>typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
+const getClient=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
+const area=document.getElementById('xoxoMyWhispersContent');
+const tab=document.querySelector('[data-my-profile-tab="whispers"]');
+if(!area||!tab)return;
+function element(tag,cls,txt){const x=document.createElement(tag);if(cls)x.className=cls;if(txt!==undefined)x.textContent=txt;return x}
+async function load(){
+ const id=getUser(),sb=getClient();if(!testers.has(id)||!sb)return;
+ area.replaceChildren(element('p','','Cargando tu actividad…'));
+ try{
+  const r=await sb.from('xoxo_whispers').select('id,content,created_at,expires_at').eq('user_id',id).order('created_at',{ascending:false}).limit(30);
+  if(r.error)throw r.error;
+  const rows=r.data||[],active=rows.find(w=>new Date(w.expires_at).getTime()>Date.now());
+  area.replaceChildren();
+  if(!rows.length){area.append(element('p','','Aún no tienes Whispers guardados. Crea uno desde Discover 🫧'));return}
+  const header=element('h3','','Tu Whisper '+(active?'activo':'más reciente'));area.append(header);
+  const w=active||rows[0];
+  area.append(element('div','xmw-note',w.content||''));
+  const expires=new Date(w.expires_at).getTime();
+  area.append(element('p','xmw-note-caption',expires>Date.now()?'Activo · Expira '+new Date(w.expires_at).toLocaleString():'Expirado · '+new Date(w.expires_at).toLocaleString()));
+  const reactions=await sb.from('xoxo_whisper_reactions').select('emoji,user_id').eq('whisper_id',w.id);
+  const tally=new Map();
+  for(const x of reactions.data||[])tally.set(x.emoji,(tally.get(x.emoji)||0)+1);
+  const stats=element('div','xmw-stats');
+  const st=element('div','xmw-stat');st.append(element('strong','',reactions.error?'—':String((reactions.data||[]).length)),element('small','','Reacciones recibidas'));stats.append(st);
+  const view=element('div','xmw-stat');view.append(element('strong','','—'),element('small','','Vistas · aún no registradas'));stats.append(view);
+  const dm=element('div','xmw-stat');dm.append(element('strong','','—'),element('small','','Respuestas por DM · aún no vinculadas'));stats.append(dm);
+  area.append(stats);
+  const list=element('div','xmw-reactions');
+  for(const [emoji,count] of tally)list.append(element('span','',emoji+' '+count));
+  if(tally.size)area.append(list);
+  if(reactions.error)area.append(element('p','xmw-note-caption','No fue posible consultar las reacciones: '+reactions.error.message));
+  const history=rows.filter(item=>item.id!==w.id);
+  if(history.length){
+   area.append(element('h3','','Whispers anteriores'));
+   for(const old of history){
+    const wrap=element('div','');wrap.style.cssText='padding:12px 0;border-top:1px solid #ffffff24';
+    wrap.append(element('p','',old.content||''),element('small','xmw-note-caption','Expiró: '+new Date(old.expires_at).toLocaleString()));area.append(wrap);
+   }
+  }else area.append(element('p','xmw-note-caption','El historial aparecerá aquí solo si los Whispers anteriores siguen almacenados. Los eliminados automáticamente no se pueden recuperar.'));
+  const reload=element('button','xmw-button','↻ Actualizar actividad');reload.type='button';reload.addEventListener('click',load);area.append(reload);
+ }catch(e){area.replaceChildren(element('p','','No se pudo cargar My Whispers: '+(e.message||'Error')))}
+}
+window.xoxoLoadMyWhispers=load;
+function visibility(){
+ const ok=testers.has(getUser());
+ tab.hidden=!ok;
+ if(!ok&&tab.classList.contains('active')&&typeof showMyProfileTab==='function')showMyProfileTab('profile');
+}
+visibility();setInterval(visibility,2000);
 })();
 </script>
 </body>
