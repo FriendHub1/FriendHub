@@ -22673,8 +22673,20 @@ async function load(){
     const person=names.get(userId);
     const line=element('div','xmw-detail-row');
     const info=element('div','xmw-detail-person');
+    const profileLink=element('a','xmw-profile-link');
+    profileLink.href='/u/'+encodeURIComponent(String(userId));
+    profileLink.setAttribute('aria-label','Ver perfil de '+labelFor(userId));
+    const avatar=element('span','xmw-detail-avatar');
+    const photo=person?.profile_photo;
+    if(photo && /^https?:\/\//i.test(String(photo))){
+     const img=element('img','');img.src=photo;img.alt='Foto de '+labelFor(userId);
+     img.loading='lazy';img.referrerPolicy='no-referrer';
+     img.onerror=()=>{img.remove();avatar.textContent='👤'};
+     avatar.append(img);
+    }else avatar.textContent='👤';
     const name=element('strong','',labelFor(userId));
-    info.append(name);
+    profileLink.append(avatar,name);
+    info.append(profileLink);
     if(type==='reactions')info.append(element('span','',record.emoji||'💜'));
     if(type==='replies'){
      const raw=String(record.content||'');
@@ -22870,6 +22882,11 @@ button.xmw-stat:hover,button.xmw-stat:focus-visible,button.xmw-stat.xmw-selected
 #messages #dmForm #dmInput{width:100%!important;min-width:0!important;box-sizing:border-box!important}
 #messages #dmForm #dmSendButton{flex:0 0 auto!important;order:1!important;margin-left:0!important;align-self:flex-end!important}
 @media(max-width:480px){#messages #dmForm.dm-composer{gap:7px!important;padding:8px!important}#messages #dmForm #dmSendButton{min-width:58px!important}}
+
+.xmw-profile-link{display:inline-flex;align-items:center;gap:11px;color:#ff91df;text-decoration:none;font-weight:750;max-width:max-content}
+.xmw-profile-link:hover,.xmw-profile-link:focus-visible{text-decoration:underline;color:#ffb9ee}
+.xmw-detail-avatar{width:42px;height:42px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;background:#633b85;border:2px solid #ce8cf6;overflow:hidden;font-size:22px}
+.xmw-detail-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 </style>
 </body>
                                     </html>gr
