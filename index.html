@@ -14451,7 +14451,43 @@ async function openPublicProfile(userId) {
                                     }
                                     renderNotifications();
                                     }
+                                    // Localize notification display only; preserve stored messages and notification actions.
+                                    function xoxoNotificationLocale() {
+                                      const v = localStorage.getItem("friendhub_language") || "en";
+                                      return ["en", "es", "pt-BR", "fr", "pl"].includes(v) ? v : "en";
+                                    }
+                                    function xoxoNotificationText(message) {
+                                      const lang=xoxoNotificationLocale(), raw=String(message || "New notification");
+                                      const labels={
+                                        "sent you a message.":{es:"te envió un mensaje.","pt-BR":"enviou uma mensagem para você.",fr:"vous a envoyé un message.",pl:"wysłał(a) Ci wiadomość."},
+                                        "New notification":{es:"Nueva notificación","pt-BR":"Nova notificação",fr:"Nouvelle notification",pl:"Nowe powiadomienie"}
+                                      };
+                                      const dm=raw.match(/^(@?[^\s]+) sent you a message\.$/);
+                                      if(dm && lang!=="en")return dm[1]+" "+labels["sent you a message."][lang];
+                                      const esDm=raw.match(/^(@?[^\s]+) te envió un mensaje\.$/);
+                                      if(esDm && lang!=="es")return lang==="en"?esDm[1]+" sent you a message.":esDm[1]+" "+labels["sent you a message."][lang];
+                                      return labels[raw]?.[lang] || raw;
+                                    }
+                                    function xoxoNotificationTime(iso) {
+                                      const lang=xoxoNotificationLocale();
+                                      if(lang==="en")return formatPostTime(iso);
+                                      const delta=Math.max(0,Math.floor((Date.now()-new Date(iso).getTime())/1000));
+                                      if(!Number.isFinite(delta))return formatPostTime(iso);
+                                      const dict={es:["Ahora mismo","hace {n} min","hace {n} h","hace {n} d"],"pt-BR":["Agora mesmo","há {n} min","há {n} h","há {n} d"],fr:["À l’instant","il y a {n} min","il y a {n} h","il y a {n} j"],pl:["Przed chwilą","{n} min temu","{n} godz. temu","{n} dni temu"]}[lang];
+                                      const idx=delta<60?0:delta<3600?1:delta<86400?2:3;
+                                      const n=idx===1?Math.floor(delta/60):idx===2?Math.floor(delta/3600):Math.floor(delta/86400);
+                                      return dict[idx].replace("{n}",String(n));
+                                    }
+                                    function xoxoNotificationPanelLocale() {
+                                      const lang=xoxoNotificationLocale();
+                                      const tr={en:["See what’s happening on XOXO Avenue.","👤 Follows","@ Mentions","💬 Comments","🔁 Reposts"],es:["Mira qué sucede en XOXO Avenue.","👤 Seguidores","@ Menciones","💬 Comentarios","🔁 Reposts"],"pt-BR":["Veja o que acontece no XOXO Avenue.","👤 Seguidores","@ Menções","💬 Comentários","🔁 Reposts"],fr:["Découvrez ce qui se passe sur XOXO Avenue.","👤 Abonnements","@ Mentions","💬 Commentaires","🔁 Reposts"],pl:["Zobacz, co dzieje się na XOXO Avenue.","👤 Obserwujący","@ Wzmianki","💬 Komentarze","🔁 Reposty"]}[lang];
+                                      const subtitle=document.getElementById("notificationPanelSubtitle");if(subtitle)subtitle.textContent=tr[0];
+                                      for(const [key,index] of [["follow",1],["mention",2],["comment",3],["repost",4]]){
+                                        const tab=document.querySelector('.notification-tab[data-notification-filter="'+key+'"]');if(tab)tab.textContent=tr[index];
+                                      }
+                                    }
                                     function renderNotifications() {
+                                    xoxoNotificationPanelLocale();
                                     const list = document.getElementById("notificationList");
                                     const badge = document.getElementById("notificationBadge");
                                     if (!list || !badge) return;
@@ -14486,8 +14522,8 @@ async function openPublicProfile(userId) {
                                     <div class="notification-item ${item.is_read ? "" : "unread"}" onclick="${clickAction}" role="button" tabindex="0">
                                     <div class="notification-avatar">${avatar}<span class="notification-type-icon">${icon}</span></div>
                                     <div class="notification-text">
-                                    <div class="notification-message">${escapeHtml(item.message || "New notification")}</div>
-                                    <div class="notification-time">${escapeHtml(formatPostTime(item.created_at))}</div>
+                                    <div class="notification-message">${escapeHtml(xoxoNotificationText(item.message))}</div>
+                                    <div class="notification-time">${escapeHtml(xoxoNotificationTime(item.created_at))}</div>
                                     </div>
                                     ${item.is_read ? "" : '<span class="notification-unread-dot" aria-label="Unread"></span>'}
                                     </div>`;
@@ -15888,13 +15924,9 @@ function buildSharedPostUrl(postId) {
                                     try {
                                       const url = new URL(window.location.href);
                                       url.searchParams.delete("lang");
-                                      // Navigate to a fresh document rather than reloading the current desktop SPA.
-                                      url.searchParams.set("xoxo_locale_refresh", String(Date.now()));
-                                      window.location.replace(url.toString());
-                                      return;
-                                    } catch (error) {
-                                      window.location.assign(window.location.pathname + "?xoxo_locale_refresh=" + Date.now());
-                                    }
+                                      window.history.replaceState(window.history.state, "", url.toString());
+                                    } catch (error) {}
+                                    window.location.reload();
                                     };
                                     const languageSelect = document.getElementById("languageSelect");
                                     if (languageSelect) languageSelect.value = selectedLanguage;
