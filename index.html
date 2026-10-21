@@ -7575,6 +7575,12 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
       <p>Private moderation dashboard for authorized administrators.</p>
       <div id="xoxoAdminGlobalOnline" class="xoxo-admin-global-online">💚 Loading online users...</div>
     </div>
+    <div id="xoxoAdminWhispersTestDm" style="margin:12px 0 18px">
+      <button type="button" class="btn" onclick="if(currentUser && xoxoIsAdmin) openDirectChat('469c2cac-c0d8-4fcd-8b63-12468bed20ee','@Whispers BETA Tester');">
+        💬 Abrir DM de prueba · Whispers BETA
+      </button>
+      <small style="display:block;opacity:.75;margin-top:6px">Acceso privado temporal entre Admin y la cuenta de prueba.</small>
+    </div>
     <div id="xoxoAdminStatus" class="xoxo-admin-status"></div>
     <div class="xoxo-admin-tabs">
       <button class="xoxo-admin-tab active" data-admin-tab="overview" onclick="switchXoxoAdminTab('overview',this)">Overview</button>
@@ -8292,7 +8298,7 @@ async function enforceXoxoSuspension() {
                                     showRequiredProfileWelcome();
                                     return;
                                     }
-                                    if (xoxoIsAdmin && ["saved", "messages"].includes(String(pageId))) {
+                                    if (xoxoIsAdmin && ["saved", "messages"].includes(String(pageId)) && !(String(pageId)==="messages" && String(currentDmUserId)==="469c2cac-c0d8-4fcd-8b63-12468bed20ee")) {
                                     pageId = "admin";
                                     }
                                     if (String(pageId) !== "profile") xoxoRestorePostComposer();
@@ -16859,7 +16865,7 @@ function applyXoxoAdminModeUI() {
     stopDmChatRefresh();
 
     const activePage = document.querySelector(".page.active");
-    if (activePage && ["saved", "messages"].includes(activePage.id)) {
+    if (activePage && ["saved", "messages"].includes(activePage.id) && !(activePage.id==="messages" && String(currentDmUserId)==="469c2cac-c0d8-4fcd-8b63-12468bed20ee")) {
       showPage("admin");
     }
   } else if (currentUser) {
