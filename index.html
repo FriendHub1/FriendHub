@@ -22403,8 +22403,8 @@ setInterval(sync,1500);
 #xoxoDwBody[hidden],.xoxo-dw-picker[hidden]{display:none!important}
 .xoxo-dw-header-actions{display:flex;gap:8px;align-items:center}
 #xoxoDwToggle{background:#ffffff18;border:1px solid #ffffff40;border-radius:50%;color:#fff;width:36px;height:36px;cursor:pointer;font-size:20px}
-.xoxo-dw-picker{box-sizing:border-box;width:170px;max-width:90vw;position:relative;z-index:2;border:1px solid #ae79e3;border-radius:13px;padding:8px;background:#23163b;box-shadow:0 10px 20px #0008}
-.xoxo-dw-picker-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.xoxo-dw-picker{box-sizing:border-box;width:260px;max-width:calc(100vw - 24px);position:fixed;z-index:2147483000;max-height:min(360px,calc(100dvh - 24px));overflow-y:auto;overscroll-behavior:contain;border:1px solid #ae79e3;border-radius:13px;padding:8px;background:#23163b;box-shadow:0 10px 20px #0008}
+.xoxo-dw-picker-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px}
 .xoxo-dw-picker-grid button{padding:4px 1px!important;font-size:16px!important;background:transparent!important;border:0!important}
 .xoxo-dw-custom{box-sizing:border-box;width:100%;margin-top:7px;border:1px solid #b785e5;border-radius:8px;background:#100d22;color:#fff;font-size:12px;padding:6px}
 .xoxo-dw-custom-send{margin-top:5px;width:100%;font-size:12px!important}
@@ -22443,6 +22443,7 @@ async function refresh(){
   const profiles=new Map((pr.data||[]).map(p=>[String(p.user_id),p]));
   const totals=new Map();
   for(const x of rr.data||[]){const k=String(x.whisper_id);if(!totals.has(k))totals.set(k,new Map());const m=totals.get(k);m.set(x.emoji,(m.get(x.emoji)||0)+1)}
+  document.querySelectorAll('.xoxo-dw-floating-picker').forEach(el=>el.remove());
   cards.replaceChildren();
   if(!rows.length)cards.append(make('p','xoxo-dw-status','Todavía no hay Whispers activos. ¡Publica el primero! 🫧'));
   for(const w of rows){
@@ -22487,8 +22488,27 @@ async function refresh(){
     const custom=make('input','xoxo-dw-custom');custom.type='text';custom.maxLength=32;custom.placeholder='Pega otro emoji…';custom.setAttribute('aria-label','Emoji personalizado');
     const send=make('button','xoxo-dw-custom-send','Enviar');send.type='button';send.addEventListener('click',()=>react(custom.value.trim(),send));
     picker.append(choices,custom,send);
-    plus.addEventListener('click',()=>{picker.hidden=!picker.hidden;plus.setAttribute('aria-expanded',String(!picker.hidden))});
-    reactions.append(plus,picker);
+    picker.classList.add('xoxo-dw-floating-picker');
+    document.body.append(picker);
+    function placePicker(){
+      if(picker.hidden)return;
+      const r=plus.getBoundingClientRect(),vw=document.documentElement.clientWidth,vh=window.innerHeight;
+      const w=picker.offsetWidth||260,h=picker.offsetHeight||300;
+      const left=Math.max(12,Math.min(r.left,vw-w-12));
+      const below=r.bottom+8,above=r.top-h-8;
+      const top=(below+h<=vh-12||above<12)?Math.max(12,Math.min(below,vh-h-12)):Math.max(12,above);
+      picker.style.left=left+'px';picker.style.top=top+'px';
+    }
+    function closePicker(){picker.hidden=true;plus.setAttribute('aria-expanded','false')}
+    plus.addEventListener('click',(ev)=>{
+      ev.stopPropagation();
+      document.querySelectorAll('.xoxo-dw-floating-picker').forEach(other=>{if(other!==picker)other.hidden=true});
+      picker.hidden=!picker.hidden;
+      plus.setAttribute('aria-expanded',String(!picker.hidden));
+      if(!picker.hidden)placePicker();
+    });
+    picker.addEventListener('click',ev=>ev.stopPropagation());
+    reactions.append(plus);
    }else{
     for(const [emoji,count] of totals.get(String(w.id))||[])reactions.append(make('span','xoxo-dw-timer',emoji+' '+count));
    }
@@ -22532,6 +22552,11 @@ async function act(kind){
   await refresh();
  }catch(e){say('No se pudo guardar: '+(e.message||'Error'))}finally{button.disabled=false}
 }
+document.addEventListener('click',ev=>{
+  document.querySelectorAll('.xoxo-dw-floating-picker').forEach(p=>{if(!p.hidden){p.hidden=true;document.querySelectorAll('.xoxo-dw-plus').forEach(b=>b.setAttribute('aria-expanded','false'))}});
+});
+window.addEventListener('resize',()=>document.querySelectorAll('.xoxo-dw-floating-picker').forEach(p=>p.hidden=true));
+window.addEventListener('scroll',()=>document.querySelectorAll('.xoxo-dw-floating-picker').forEach(p=>p.hidden=true),true);
 $('xoxoDwRefresh').addEventListener('click',refresh);
 $('xoxoDwPublish').addEventListener('click',()=>act('publish'));
 $('xoxoDwDelete').addEventListener('click',()=>act('delete'));
