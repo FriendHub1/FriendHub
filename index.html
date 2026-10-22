@@ -6130,6 +6130,11 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 .xoxo-dm-whisper-quote{border-radius:16px 16px 16px 5px;padding:12px 13px;color:#261032;font-size:13px;line-height:1.4;font-weight:650;overflow-wrap:anywhere;box-shadow:0 4px 16px #0003;border:1px solid #ffffff70}
 @media(max-width:480px){.xoxo-dm-whisper-context{max-width:min(230px,70vw)}}
 </style>
+<style id="xoxo-jewels-paused-style">
+/* XOXO Avenue: Jewel Collection temporarily hidden; data preserved. */
+#xjOwnShowcase, #xjPublicShowcase, #xjPreviewOverlay,
+.xj-showcase, .xj-overlay { display:none !important; }
+</style>
 </head>
                                     <body>
                                     <header>
@@ -19870,7 +19875,7 @@ window.xoxoChatStudioApply = function () {
   .xj-mini:hover,.xj-tile:hover { transform:none !important; }
 }
 </style>
-<script id="xoxo-jewel-preview-script">
+<script id="xoxo-jewel-preview-script" type="text/plain" data-xoxo-feature="jewels-paused">
 /* XOXO Jewel Box: Supabase-backed achievements and Founder’s Diamond. */
 (()=>{
  const gems=[
@@ -20003,7 +20008,7 @@ window.xoxoChatStudioApply = function () {
 })();
 </script>
 
-<script id="xoxo-jewel-email-deeplink">
+<script id="xoxo-jewel-email-deeplink" type="text/plain" data-xoxo-feature="jewels-paused">
 /* XOXO Avenue: open Jewel Box from a congratulation email, including after sign-in. */
 (function () {
   const destination = '#jewel-collection';
