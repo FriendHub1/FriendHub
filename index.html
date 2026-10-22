@@ -6141,6 +6141,16 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 <style id="xoxo-whispers-activity-monitor-css">
 .xwam-root{background:linear-gradient(145deg,#211234,#371849)!important;color:#f7eefe!important;border:1px solid #8054a8!important;border-radius:22px!important}.xwam-root h2{color:#fff!important}.xwam-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap}.xwam-heading p{color:#d8c8e5}.xwam-eyebrow{font-size:11px;letter-spacing:.12em;color:#e8b9ff}.xwam-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}.xwam-card{border:1px solid #72508b;background:#29183d;color:white;border-radius:17px;text-align:left;padding:17px;cursor:pointer;min-height:112px;display:flex;flex-direction:column;gap:7px}.xwam-card:hover,.xwam-card:focus-visible,.xwam-card[aria-pressed=true]{border-color:#f1a9ff;background:#45205f;outline-offset:3px}.xwam-card .xwam-num{font-size:29px;font-weight:800}.xwam-card .xwam-label{font-size:13px;color:#f0d7fa}.xwam-detail{border:1px solid #6e4c88;background:#1a102b;border-radius:18px;padding:16px;min-height:90px}.xwam-detail h3{color:#fff;margin:0 0 12px}.xwam-item{padding:13px;border:1px solid #604577;border-radius:12px;margin:9px 0;background:#291a3b}.xwam-item p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}.xwam-item small{color:#d6bfe8}.xwam-user{color:#f4bbff;font-weight:700}.xwam-expand{border:1px solid #b783d5;background:#3a2052;color:white;border-radius:9px;padding:7px 11px;cursor:pointer;margin-top:7px}.xwam-detail button:focus-visible{outline:2px solid #fff}.xwam-detail .xwam-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#e6d2f5}#xwamStatus{font-size:12px;color:#e5c2f4}@media(min-width:900px){.xwam-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}@media(max-width:480px){.xwam-card{padding:12px;min-height:105px}.xwam-card .xwam-num{font-size:24px}}
 </style>
+<style id="xoxo-notification-category-unread-badges">
+#notificationTabs .notification-tab { display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+#notificationTabs .xoxo-category-unread-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:18px; height:18px; padding:0 5px; box-sizing:border-box;
+  border-radius:999px; background:#e52948; color:#fff;
+  font-size:10px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums;
+  flex-shrink:0;
+}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -14426,8 +14436,34 @@ async function openPublicProfile(userId) {
                                         const tab=document.querySelector('.notification-tab[data-notification-filter="'+key+'"]');if(tab)tab.textContent=tr[index];
                                       }
                                     }
+                                    function xoxoUpdateNotificationTabBadges() {
+                                      const counts = Object.create(null);
+                                      for (const item of notifications) {
+                                        if (item.is_read) continue;
+                                        const type = String(item.type || "");
+                                        const category = (type === "whisper_reaction" || type === "whisper_reply") ? "whispers" : type;
+                                        counts[category] = (counts[category] || 0) + 1;
+                                      }
+                                      document.querySelectorAll('#notificationTabs .notification-tab[data-notification-filter]').forEach(tab => {
+                                        const category = tab.getAttribute("data-notification-filter");
+                                        const existing = tab.querySelector(".xoxo-category-unread-badge");
+                                        if (existing) existing.remove();
+                                        const count = counts[category] || 0;
+                                        if (!count) {
+                                          tab.removeAttribute("data-unread-count");
+                                          return;
+                                        }
+                                        const badge = document.createElement("span");
+                                        badge.className = "xoxo-category-unread-badge";
+                                        badge.textContent = count > 99 ? "99+" : String(count);
+                                        badge.setAttribute("aria-label", count + " unread");
+                                        tab.appendChild(badge);
+                                        tab.setAttribute("data-unread-count", String(count));
+                                      });
+                                    }
                                     function renderNotifications() {
                                     xoxoNotificationPanelLocale();
+                                    xoxoUpdateNotificationTabBadges();
                                     const list = document.getElementById("notificationList");
                                     const badge = document.getElementById("notificationBadge");
                                     if (!list || !badge) return;
