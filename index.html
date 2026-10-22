@@ -14236,7 +14236,8 @@ async function openPublicProfile(userId) {
                                     ? `${actorUsername} te envió un mensaje.`
                                     : `${actorUsername} sent you a message.`;
 
-                                    const { error: dmNotificationError } = await supabaseClient
+                                    // Whisper replies are notified by the database trigger, avoiding duplicate bells.
+                                    const { error: dmNotificationError } = isWhisperReply ? { error: null } : await supabaseClient
                                     .from("notifications")
                                     .insert({
                                     user_id: currentDmUserId,
@@ -14494,15 +14495,26 @@ async function openPublicProfile(userId) {
                                     renderNotifications();
                                     }
 
-                                    // BETA: safe fallback until verified Whisper deep links are implemented.
-                                    // Never interpret a Whisper notification as a post notification.
+                                    // Official Whispers: reaction opens the author's active Whisper; reply opens the DM.
                                     async function openWhisperNotificationBeta(notificationId) {
+                                    const item = notifications.find(n => String(n.id) === String(notificationId));
+                                    if (!item) return;
                                     await markNotificationAsRead(notificationId);
-                                    const notice = document.getElementById("xoxoWhisperBellBetaNotice");
-                                    if (notice) {
-                                      notice.textContent = "🫧 Whisper notification marked as read. Opening a Whisper from the bell is not enabled in private BETA yet.";
-                                      notice.hidden = false;
+                                    const panel = document.getElementById("notificationPanel");
+                                    if (panel) panel.classList.remove("open");
+                                    if (item.type === "whisper_reply") {
+                                      await openDmNotification(String(item.actor_id || ""), notificationId);
+                                      return;
                                     }
+                                    showPage("discover");
+                                    const section = document.getElementById("xoxoDiscoverWhispers");
+                                    if (section) {
+                                      const body = document.getElementById("xoxoDwBody");
+                                      const toggle = document.getElementById("xoxoDwToggle");
+                                      if (body && body.hidden && toggle) toggle.click();
+                                      section.scrollIntoView({behavior:"smooth",block:"center"});
+                                    }
+                                    if (typeof window.xoxoWhisperPreviewRefresh === "function") window.xoxoWhisperPreviewRefresh();
                                     }
 
                                     async function openDmNotification(actorId, notificationId) {
