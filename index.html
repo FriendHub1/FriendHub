@@ -6138,6 +6138,9 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 .xoxo-dm-whisper-quote{border-radius:16px 16px 16px 5px;padding:12px 13px;color:#261032;font-size:13px;line-height:1.4;font-weight:650;overflow-wrap:anywhere;box-shadow:0 4px 16px #0003;border:1px solid #ffffff70}
 @media(max-width:480px){.xoxo-dm-whisper-context{max-width:min(230px,70vw)}}
 </style>
+<style id="xoxo-whispers-activity-monitor-css">
+.xwam-root{background:linear-gradient(145deg,#211234,#371849)!important;color:#f7eefe!important;border:1px solid #8054a8!important;border-radius:22px!important}.xwam-root h2{color:#fff!important}.xwam-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:15px;flex-wrap:wrap}.xwam-heading p{color:#d8c8e5}.xwam-eyebrow{font-size:11px;letter-spacing:.12em;color:#e8b9ff}.xwam-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}.xwam-card{border:1px solid #72508b;background:#29183d;color:white;border-radius:17px;text-align:left;padding:17px;cursor:pointer;min-height:112px;display:flex;flex-direction:column;gap:7px}.xwam-card:hover,.xwam-card:focus-visible,.xwam-card[aria-pressed=true]{border-color:#f1a9ff;background:#45205f;outline-offset:3px}.xwam-card .xwam-num{font-size:29px;font-weight:800}.xwam-card .xwam-label{font-size:13px;color:#f0d7fa}.xwam-detail{border:1px solid #6e4c88;background:#1a102b;border-radius:18px;padding:16px;min-height:90px}.xwam-detail h3{color:#fff;margin:0 0 12px}.xwam-item{padding:13px;border:1px solid #604577;border-radius:12px;margin:9px 0;background:#291a3b}.xwam-item p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}.xwam-item small{color:#d6bfe8}.xwam-user{color:#f4bbff;font-weight:700}.xwam-expand{border:1px solid #b783d5;background:#3a2052;color:white;border-radius:9px;padding:7px 11px;cursor:pointer;margin-top:7px}.xwam-detail button:focus-visible{outline:2px solid #fff}.xwam-detail .xwam-meta{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#e6d2f5}#xwamStatus{font-size:12px;color:#e5c2f4}@media(min-width:900px){.xwam-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}@media(max-width:480px){.xwam-card{padding:12px;min-height:105px}.xwam-card .xwam-num{font-size:24px}}
+</style>
 </head>
                                     <body>
                                     <header>
@@ -7621,94 +7624,11 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 
     </div>
     <div id="xoxoAdminWhispers" class="xoxo-admin-panel">
-      <div class="xoxo-admin-card xoxo-whispers-beta">
-        <div class="xoxo-whispers-beta-label">👑 ADMIN ONLY · PRIVATE BETA</div>
-        <h2>🫧 XOXO Whispers</h2>
-        <p>Little thoughts, big feelings. Create one whisper at a time. It expires after 24 hours.</p>
-        <label for="xoxoAdminWhisperInput">Your whisper</label>
-        <textarea id="xoxoAdminWhisperInput" maxlength="100" rows="3" placeholder="What's on your mind? 🫧" oninput="xoxoAdminWhisperCount()"></textarea>
-        <div class="xoxo-whispers-beta-meta"><span id="xoxoAdminWhisperCount">0 / 100</span><span id="xoxoAdminWhisperExpires"></span></div>
-        <div class="xoxo-whispers-beta-actions">
-          <button type="button" class="btn btn-primary" id="xoxoAdminWhisperSave" onclick="xoxoAdminWhisperSave()">🫧 Publish Whisper</button>
-          <button type="button" class="btn btn-secondary" id="xoxoAdminWhisperDelete" onclick="xoxoAdminWhisperDelete()" hidden>Delete whisper</button>
-        </div>
-        <p id="xoxoAdminWhisperStatus" role="status" aria-live="polite"></p>
-        <section class="xoxo-whisper-preview" aria-label="Private Whisper preview">
-          <div class="xoxo-whisper-preview-head"><strong>🫧 Whisper Preview</strong><span>👑 ADMIN ONLY</span></div>
-          <p class="xoxo-whisper-preview-note">This is how your whisper could appear to other members after launch. Private preview only.</p>
-          <div class="xoxo-whisper-preview-bubble">
-            <span class="xoxo-whisper-preview-mark">🫧</span>
-            <p id="xoxoWhisperPreviewText">Publish a whisper to preview it here.</p>
-            <span id="xoxoWhisperPreviewTimer" class="xoxo-whisper-preview-timer">Not published</span>
-          </div>
-          <div class="xoxo-whisper-preview-reactions" aria-label="Private BETA reactions">
-            <button type="button" data-xoxo-whisper-emoji="💜" aria-pressed="false" disabled>💜</button>
-            <button type="button" data-xoxo-whisper-emoji="❤️" aria-pressed="false" disabled>❤️</button>
-            <button type="button" data-xoxo-whisper-emoji="😂" aria-pressed="false" disabled>😂</button>
-            <button type="button" data-xoxo-whisper-emoji="😍" aria-pressed="false" disabled>😍</button>
-            <button type="button" data-xoxo-whisper-emoji="🔥" aria-pressed="false" disabled>🔥</button>
-            <small id="xoxoWhisperReactionStatus" role="status" aria-live="polite">Publish a whisper to test reactions privately.</small>
-          </div>
-        </section>
-        <section class="xoxo-whisper-visitor-demo" aria-label="Visitor profile whisper preview">
-          <div class="xoxo-whisper-visitor-demo-heading"><strong>🫧 Visitor Profile Preview</strong><span>👑 ADMIN ONLY · SIMULATION</span></div>
-          <p class="xoxo-whisper-visitor-demo-info">Preview how your own Whisper would look to another member after launch. This does not open profiles, query other users, or save visitor reactions.</p>
-          <div class="xoxo-whisper-visitor-demo-card">
-            <div class="xoxo-whisper-visitor-demo-top"><span>🫧 Whisper on profile</span><span id="xoxoVisitorWhisperRemaining">Not published</span></div>
-            <p id="xoxoVisitorWhisperText">Publish a Whisper to see its visitor preview.</p>
-            <div class="xoxo-whisper-visitor-demo-emojis" aria-label="Visual-only visitor reaction examples">
-              <span>💜</span><span>❤️</span><span>😂</span><span>😍</span><span>🔥</span>
-            </div>
-            <small>Preview only · These icons cannot send reactions.</small>
-          </div>
-        </section>
-        <section class="xoxo-whisper-explorer" aria-label="Other members Whispers admin beta">
-          <div class="xoxo-whisper-explorer-head"><strong>🫧 Other Members' Whispers</strong><span>👑 PRIVATE ADMIN BETA</span></div>
-          <p>Read-only explorer for active Whispers belonging to other accounts. This is not visible to members or Discover. Only admins can use it.</p>
-          <button type="button" id="xoxoWhisperExplorerRefresh" class="xoxo-whisper-explorer-button">↻ Load other Whispers</button>
-          <p id="xoxoWhisperExplorerStatus" role="status" aria-live="polite">Not loaded yet.</p>
-          <div id="xoxoWhisperExplorerResults"></div>
-        </section>
-        <section class="xoxo-whisper-two-person-simulator" aria-label="Two-person Whisper simulator">
-          <div class="xoxo-whisper-sim-heading"><strong>🫧 Two-Person Whisper Simulator</strong><span>👑 ADMIN ONLY · FICTIONAL DATA</span></div>
-          <p class="xoxo-whisper-sim-note">Test two fictional members without creating accounts. Nothing here is sent to Supabase, DMs, notifications, or real users. Simulation resets on page reload.</p>
-          <div class="xoxo-whisper-sim-roles" role="group" aria-label="Choose fictional member">
-            <button type="button" data-xws-role="luna" aria-pressed="true">🌙 Luna (demo)</button>
-            <button type="button" data-xws-role="sol" aria-pressed="false">☀️ Sol (demo)</button>
-          </div>
-          <p id="xwsRoleStatus" class="xoxo-whisper-sim-status" aria-live="polite"></p>
-          <label for="xwsMessage">Your simulated Whisper (max 100 characters)</label>
-          <textarea id="xwsMessage" maxlength="100" rows="2" placeholder="Write a demo Whisper..."></textarea>
-          <div class="xoxo-whisper-sim-actions">
-            <button type="button" id="xwsPublish">🫧 Publish in simulator</button>
-            <button type="button" id="xwsDelete">Delete simulated Whisper</button>
-            <button type="button" id="xwsReset">↺ Reset demo</button>
-          </div>
-          <div class="xoxo-whisper-sim-notification-box">
-            <div class="xoxo-whisper-sim-notification-heading">
-              <strong>🔔 Demo Notifications <span id="xwsUnreadCount" aria-live="polite">0 unread</span></strong>
-              <button type="button" id="xwsMarkRead">✓ Mark all as read</button>
-            </div>
-            <p class="xoxo-whisper-sim-note">Only notifications for the currently selected fictional member appear here. They stay inside this browser tab.</p>
-            <div id="xwsNotifications" aria-live="polite"></div>
-          </div>
-          <div class="xoxo-whisper-sim-routing" style="padding:14px;margin:12px 0;border:1px solid #a785dc;border-radius:14px;background:rgba(132,77,193,.12)">
-            <strong>💬 Stage 15 · DM handoff preview (fictional only)</strong>
-            <p class="xoxo-whisper-sim-note">Reply previews the Whisper context and the intended DM handoff. This is an isolated simulation: it does not open a real conversation, change DM permissions, or send real messages.</p>
-            <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="xwsBlocked"> Simulate blocked users (prevent reply)</label>
-          </div>
-          <div id="xwsFeed" class="xoxo-whisper-sim-feed" aria-live="polite"></div>
-          <p id="xwsFeedback" class="xoxo-whisper-sim-status" role="status"></p>
-        </section>
-        <section class="xoxo-whisper-activity" aria-label="My Whisper Activity">
-          <div class="xoxo-whisper-activity-header"><strong>💜 My Whisper Activity</strong><span>👑 PRIVATE BETA</span></div>
-          <p class="xoxo-whisper-activity-note">Real reactions on your current whisper. Only authorized admin accounts can access this BETA.</p>
-          <div id="xoxoWhisperActivityCounts" class="xoxo-whisper-activity-counts" aria-label="Reaction totals"></div>
-          <p id="xoxoWhisperActivityStatus" role="status" aria-live="polite">Loading activity...</p>
-          <div id="xoxoWhisperActivityList" class="xoxo-whisper-activity-list"></div>
-          <button type="button" id="xoxoWhisperActivityRefresh" class="xoxo-whisper-activity-refresh">↻ Refresh activity</button>
-        </section>
-
+      <div class="xoxo-admin-card xwam-root">
+        <div class="xwam-heading"><div><span class="xwam-eyebrow">👑 ADMIN · OFFICIAL</span><h2>🫧 XOXO Whispers Activity</h2><p>Actividad de susurros en tiempo real. Sin acceso al contenido de mensajes privados.</p></div><button type="button" class="btn btn-secondary" onclick="xwamLoad()">↻ Actualizar</button></div>
+        <div class="xwam-grid" id="xwamCards"></div>
+        <div class="xwam-detail" id="xwamDetail" aria-live="polite"><p>Selecciona una ficha para ver los detalles.</p></div>
+        <p id="xwamStatus" role="status" aria-live="polite"></p>
       </div>
     </div>
     <div id="xoxoAdminMagicBox" class="xoxo-admin-panel">
@@ -17167,7 +17087,7 @@ function switchXoxoAdminTab(tab, button) {
   if(button) button.classList.add("active");
   if(tab === "magicbox") { xoxoMagicBoxStudioOpen(); }
   else { xoxoMagicBoxStudioClose(); }
-  if(tab === "whispers") { xoxoAdminWhisperLoad().then(xoxoWhisperPreviewRefresh); }
+  if(tab === "whispers") { xwamLoad(); }
   if(tab === "support") loadXoxoAdminSupportCases();
   if(tab === "activity") loadXoxoActivity();
   if(tab === "moderation") { loadXoxoAdminMessageStats(); loadXoxoDmReports(); loadXoxoDmConversations(); }
@@ -22943,5 +22863,22 @@ window.addEventListener('storage',schedule);document.addEventListener('change',(
 window.xoxoTranslateWhisperUI=schedule;schedule();
 })();
 </script>
-<style id="xoxo-whisper-explainer-css">.xoxo-whisper-explainer{margin-top:14px;padding:14px 16px;border:1px solid #b887e16b;border-radius:14px;background:#6e43a320;color:inherit}.xoxo-whisper-explainer strong{display:block;margin-bottom:7px}.xoxo-whisper-explainer p{margin:0;line-height:1.55;font-size:13px}</style></body>
+<style id="xoxo-whisper-explainer-css">.xoxo-whisper-explainer{margin-top:14px;padding:14px 16px;border:1px solid #b887e16b;border-radius:14px;background:#6e43a320;color:inherit}.xoxo-whisper-explainer strong{display:block;margin-bottom:7px}.xoxo-whisper-explainer p{margin:0;line-height:1.55;font-size:13px}</style><script id="xoxo-whispers-activity-monitor-v1">
+(function(){
+'use strict';
+const types=[['active','🫧','Active Whispers'],['views','👁️','Unique Views'],['reactions','💜','Reactions'],['replies','💬','DM Replies'],['expired','⌛','Expired Whispers']];
+let data=null,section='active',expanded=null,busy=false;
+const $=id=>document.getElementById(id);
+const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const date=x=>x?new Date(x).toLocaleString():'—';
+const name=id=>(data?.users||{})[id]||('@'+String(id||'unknown').slice(0,8));
+function count(t){let w=data?.whispers||[];if(t==='active')return w.filter(x=>!x.expired).length;if(t==='expired')return w.filter(x=>x.expired).length;if(t==='views')return (data?.views||[]).length;if(t==='reactions')return (data?.reactions||[]).length;return (data?.replies||[]).length;}
+function cards(){const el=$('xwamCards');if(!el)return;el.innerHTML=types.map(([key,icon,label])=>`<button type="button" class="xwam-card" data-xwam="${key}" aria-pressed="${key===section}"><span>${icon} ↗</span><span class="xwam-num">${count(key)}</span><span class="xwam-label">${label}</span></button>`).join('');el.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{section=b.dataset.xwam;expanded=null;cards();render();}));}
+function whisperCard(w){const v=(data.views||[]).filter(x=>x.whisper_id===w.id),r=(data.reactions||[]).filter(x=>x.whisper_id===w.id),m=(data.replies||[]).filter(x=>x.whisper_id===w.id);return `<article class="xwam-item"><div class="xwam-user">${esc(name(w.user_id))}</div><p>${esc(w.content||'')}</p><small>${w.expired?'Expirado':'Activo'} · ${date(w.created_at)} · Expira: ${date(w.expires_at)}</small><div class="xwam-meta"><span>👁️ ${v.length}</span><span>💜 ${r.length}</span><span>💬 ${m.length}</span></div><button class="xwam-expand" data-detail="${esc(w.id)}">${expanded===w.id?'Ocultar detalles':'Ver actividad ↗'}</button>${expanded===w.id?`<div class="xwam-item"><b>Vistas</b><p>${v.map(x=>esc(name(x.viewer_id))+' · '+date(x.viewed_at)).join('<br>')||'Sin vistas'}</p><b>Reacciones</b><p>${r.map(x=>esc(x.emoji)+' '+esc(name(x.user_id))+' · '+date(x.created_at)).join('<br>')||'Sin reacciones'}</p><b>Respondieron por DM</b><p>${m.map(x=>esc(name(x.sender_id))+' · '+date(x.created_at)).join('<br>')||'Sin respuestas'}</p></div>`:''}</article>`;}
+function render(){const el=$('xwamDetail');if(!el||!data)return;let w=data.whispers||[],v=data.views||[],r=data.reactions||[],m=data.replies||[];let body='';if(section==='active'||section==='expired'){let list=w.filter(x=>x.expired===(section==='expired'));body=list.map(whisperCard).join('')||'<p>No hay registros disponibles.</p>';}else{let rows=section==='views'?v:section==='reactions'?r:m;body=rows.map(x=>{let a=w.find(z=>z.id===x.whisper_id);return `<div class="xwam-item"><span class="xwam-user">${esc(name(x.viewer_id||x.user_id||x.sender_id))}</span> ${section==='reactions'?esc(x.emoji):''}<br><small>${date(x.viewed_at||x.created_at)} · Whisper: ${esc(name(a?.user_id))}</small><p>${esc(a?.content||'Susurro eliminado o expirado')}</p></div>`;}).join('')||'<p>No hay registros disponibles.</p>';}
+el.innerHTML='<h3>'+esc(types.find(x=>x[0]===section)?.[2])+'</h3>'+body;el.querySelectorAll('[data-detail]').forEach(b=>b.addEventListener('click',()=>{expanded=expanded===b.dataset.detail?null:b.dataset.detail;render();}));}
+window.xwamLoad=async function(){if(busy)return;busy=true;const status=$('xwamStatus');if(status)status.textContent='Cargando actividad…';try{if(!window.currentUser&&!currentUser)throw Error('Inicia sesión como administrador.');const {data:result,error}=await supabaseClient.rpc('xoxo_admin_whisper_activity');if(error)throw error;data=result;cards();render();if(status)status.textContent='Actualizado: '+new Date().toLocaleTimeString()+' · El historial expirado depende de los registros conservados.';}catch(e){if(status)status.textContent='No se pudo cargar la actividad: '+e.message;}finally{busy=false;}};
+})();
+</script>
+</body>
                                     </html>gr
