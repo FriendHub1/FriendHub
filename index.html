@@ -6349,9 +6349,9 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     <h1>Discover</h1>
                                     <p>Find people and communities that match what you're looking for.</p>
                                     </div>
-                                    <!-- XOXO Whispers BETA: Discover placement, restricted to two testers -->
-<section id="xoxoDiscoverWhispers" class="xoxo-dw" hidden aria-label="XOXO Whispers BETA">
-  <div class="xoxo-dw-heading"><div><h2>🫧 XOXO Whispers <small>BETA</small></h2><p>Pequeñas notas, grandes conexiones 💜</p></div><div class="xoxo-dw-header-actions"><button type="button" id="xoxoDwRefresh" title="Actualizar">↻</button><button type="button" id="xoxoDwToggle" aria-expanded="true" aria-controls="xoxoDwBody" title="Mostrar u ocultar Whispers">⌃</button></div></div><div id="xoxoDwBody">
+                                    <!-- XOXO Whispers: official release -->
+<section id="xoxoDiscoverWhispers" class="xoxo-dw" hidden aria-label="XOXO Whispers">
+  <div class="xoxo-dw-heading"><div><h2>🫧 XOXO Whispers</h2><p>Pequeñas notas, grandes conexiones 💜</p></div><div class="xoxo-dw-header-actions"><button type="button" id="xoxoDwRefresh" title="Actualizar">↻</button><button type="button" id="xoxoDwToggle" aria-expanded="true" aria-controls="xoxoDwBody" title="Mostrar u ocultar Whispers">⌃</button></div></div><div id="xoxoDwBody">
   <div id="xoxoDwCards" class="xoxo-dw-cards"></div>
   <div class="xoxo-dw-compose"><textarea id="xoxoDwInput" maxlength="100" rows="2" placeholder="¿Qué estás pensando? 🫧"></textarea><div class="xoxo-dw-actions"><span id="xoxoDwCount">0/100</span><button type="button" id="xoxoDwPublish">Publicar 🫧</button><button type="button" id="xoxoDwDelete" hidden>Eliminar mi Whisper</button></div></div>
   <p id="xoxoDwStatus" class="xoxo-dw-status" role="status"></p>
@@ -6898,7 +6898,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     </div>
 
                                     <div id="myProfileWhispersPanel" class="my-profile-panel">
-<div class="my-profile-panel-heading"><h2>🫧 My Whispers <small style="font-size:12px;color:#eab4ff">BETA</small></h2>
+<div class="my-profile-panel-heading"><h2>🫧 My Whispers</h2>
 <p>Tu espacio privado para consultar tus susurros y reacciones.</p></div>
 <div id="xoxoMyWhispersContent" class="xoxo-my-whispers-content" aria-live="polite"><p>Abre esta pestaña para consultar tus Whispers.</p></div>
 </div>
@@ -7617,7 +7617,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
       <button class="xoxo-admin-tab" data-admin-tab="posts" onclick="switchXoxoAdminTab('posts',this)">Posts</button>
       <button class="xoxo-admin-tab" data-admin-tab="activity" onclick="switchXoxoAdminTab('activity',this)">💜 Activity Monitor</button>      <button class="xoxo-admin-tab" data-admin-tab="support" onclick="switchXoxoAdminTab('support',this)">💬 Support Cases</button>
       <button class="xoxo-admin-tab" data-admin-tab="moderation" onclick="switchXoxoAdminTab('moderation',this)">🛡️ Message Moderation</button>
-      <button class="xoxo-admin-tab" data-admin-tab="whispers" onclick="switchXoxoAdminTab('whispers',this)">🫧 Whispers BETA</button>
+      <button class="xoxo-admin-tab" data-admin-tab="whispers" onclick="switchXoxoAdminTab('whispers',this)">🫧 Whispers</button>
 
     </div>
     <div id="xoxoAdminWhispers" class="xoxo-admin-panel">
@@ -22070,8 +22070,8 @@ async function xoxoAvatarClose(apply){
         .order('created_at',{ascending:false}).limit(25);
       if(response.error)throw response.error;
       const items=response.data||[];
-      if(!items.length){status.textContent='No active Whispers from other accounts yet. This is expected while publishing remains admin-only.';return;}
-      status.textContent=items.length+' active Whisper(s) found. Admin-only DM draft preview; nothing sends until you press Send.';
+      if(!items.length){status.textContent='No hay Whispers activos de otros usuarios.';return;}
+      status.textContent=items.length+' active Whisper(s) found. Vista previa de respuesta; nada se envía hasta pulsar Enviar.';
       const ids=[...new Set(items.map(item=>item.user_id))];
       const [profilesResult,reactionsResult]=await Promise.all([
         supabaseClient.from('profiles').select('user_id,username,profile_photo').in('user_id',ids),
@@ -22357,126 +22357,6 @@ function init(){syncLegalLanguage();document.addEventListener('click',function()
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
-<!-- XOXO Whispers: temporary isolated second-account BETA access. Remove this entire block after testing. -->
-<style id="xoxo-whisper-tester-style">
-#xoxo-whisper-tester-launch[hidden],#xoxo-whisper-tester-panel[hidden]{display:none!important}
-#xoxo-whisper-tester-launch{position:fixed;bottom:20px;right:18px;z-index:1800;background:#733cc1;color:#fff;border:1px solid #c49cff;border-radius:30px;padding:13px 18px;box-shadow:0 10px 30px #0007;font-weight:800}
-#xoxo-whisper-tester-panel{position:fixed;right:12px;bottom:80px;z-index:1801;width:min(430px,calc(100vw - 24px));max-height:calc(100dvh - 105px);overflow:auto;border:1px solid #ad7bed;border-radius:22px;padding:20px;background:linear-gradient(145deg,#281647,#151b35);color:#fff;box-shadow:0 18px 60px #0009}
-#xoxo-whisper-tester-panel button{background:#7540b4;color:#fff;border:1px solid #c39bfa;border-radius:11px;padding:9px 12px;cursor:pointer}
-#xoxo-whisper-tester-panel button:disabled{opacity:.5}
-#xoxo-whisper-tester-panel textarea{width:100%;box-sizing:border-box;border-radius:12px;padding:12px;background:#140e29;color:white;border:1px solid #9368c9;resize:vertical}
-#xoxo-whisper-tester-panel .xwt-item{padding:13px;border:1px solid #875bb7;border-radius:13px;margin:10px 0;background:#ffffff0a}
-#xoxo-whisper-tester-panel .xwt-item p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}
-#xoxo-whisper-tester-panel .xwt-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
-#xoxo-whisper-tester-panel small{color:#d5c1f0}
-</style>
-<button type="button" id="xoxo-whisper-tester-launch" hidden aria-controls="xoxo-whisper-tester-panel" aria-expanded="false">🫧 Whispers BETA</button>
-<section id="xoxo-whisper-tester-panel" hidden aria-label="Whispers temporary tester">
- <div class="xwt-row" style="justify-content:space-between"><strong>🫧 Whispers · BETA privada</strong><button type="button" id="xwt-close" aria-label="Close">✕</button></div>
- <small>Solo esta cuenta de prueba y la cuenta administradora. Los susurros vencen en 24 horas.</small>
- <p style="margin:12px 0 6px">Tu susurro (máximo 100 caracteres)</p>
- <textarea id="xwt-input" maxlength="100" rows="3" placeholder="Escribe tu susurro..."></textarea>
- <div class="xwt-row"><button type="button" id="xwt-publish">🫧 Publicar</button><button type="button" id="xwt-delete" hidden>Eliminar el mío</button><button type="button" id="xwt-refresh">↻ Actualizar</button></div>
- <p id="xwt-status" role="status" aria-live="polite"></p>
- <div id="xwt-items"></div>
-</section>
-<script id="xoxo-whisper-tester-script">
-(function(){
-'use strict';
-const TESTER='469c2cac-c0d8-4fcd-8b63-12468bed20ee';
-const launch=document.getElementById('xoxo-whisper-tester-launch');
-const panel=document.getElementById('xoxo-whisper-tester-panel');
-const status=document.getElementById('xwt-status');
-const input=document.getElementById('xwt-input');
-const publish=document.getElementById('xwt-publish');
-const del=document.getElementById('xwt-delete');
-const items=document.getElementById('xwt-items');
-let own=null,busy=false;
-function authorized(){return typeof currentUser!=='undefined'&&String(currentUser?.id||'')===TESTER;}
-function note(value){status.textContent=value;}
-function sync(){
- const allowed=authorized();
- launch.hidden=!allowed;
- if(!allowed){panel.hidden=true;own=null;items.replaceChildren();}
-}
-async function refresh(){
- if(!authorized()||typeof supabaseClient==='undefined')return;
- note('Cargando susurros...');
- const result=await supabaseClient.from('xoxo_whispers').select('id,user_id,content,expires_at,created_at').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(30);
- if(result.error){note('No se pudieron cargar: '+result.error.message);return;}
- const rows=result.data||[];
- own=rows.find(w=>String(w.user_id)===TESTER)||null;
- input.value=own?.content||'';input.readOnly=!!own;
- publish.hidden=!!own;del.hidden=!own;
- items.replaceChildren();
- note(rows.length+' susurro(s) activo(s).');
- for(const w of rows){
-   const card=document.createElement('article');card.className='xwt-item';
-   const title=document.createElement('small');title.textContent=String(w.user_id)===TESTER?'Tu susurro':'Susurro de otro participante';
-   const content=document.createElement('p');content.textContent=w.content||'';
-   const exp=document.createElement('small');exp.textContent='Vence: '+new Date(w.expires_at).toLocaleString();
-   card.append(title,content,exp);
-   if(String(w.user_id)!==TESTER){
-     const actions=document.createElement('div');actions.className='xwt-row';
-     const reply=document.createElement('button');reply.type='button';reply.textContent='💬 Responder en DM';
-     reply.addEventListener('click',async()=>{
-       if(!authorized())return;
-       reply.disabled=true;
-       try{
-         const live=await supabaseClient.from('xoxo_whispers').select('id,user_id,content,expires_at').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
-         if(live.error)throw live.error;
-         if(!live.data||String(live.data.user_id)===TESTER)throw Error('El susurro ya no está disponible.');
-         const member=await supabaseClient.from('profiles').select('username,profile_photo').eq('user_id',live.data.user_id).maybeSingle();
-         if(member.error)throw member.error;
-         // A valid Whisper author can have a profile hidden by RLS (notably admin).
-         // Use the verified Whisper author UUID to open DM; profile data is optional.
-         if(typeof openDirectChat!=='function')throw Error('El chat no está disponible.');
-         const display=String(member.data?.username|| (String(live.data.user_id)==='d9ea1914-fdba-465c-9700-5e640ff48763' ? '@XOXOAdmin' : 'Whispers member'));
-         panel.hidden=true;launch.setAttribute('aria-expanded','false');
-         await openDirectChat(live.data.user_id,display.startsWith('@')?display:'@'+display,member.data?.profile_photo||'');
-         if(String(currentDmUserId)!==String(live.data.user_id))throw Error('No se abrió el chat.');
-         const dm=document.getElementById('dmInput');
-         if(!dm)throw Error('No se encontró el campo de mensaje.');
-         const quote=String(live.data.content||'').replace(/\s+/g,' ').trim().slice(0,100);
-         window.xoxoPrepareWhisperDmReply(live.data);
-       }catch(e){panel.hidden=false;launch.setAttribute('aria-expanded','true');note('No se pudo abrir la respuesta: '+(e?.message||'Error'));}
-       finally{reply.disabled=false;}
-     });
-     actions.append(reply);card.append(actions);
-   }
-   items.append(card);
- }
-}
-async function act(type){
- if(!authorized()||busy)return;
- busy=true;publish.disabled=true;del.disabled=true;
- try{
-   if(type==='publish'){
-     const value=input.value.trim();
-     if(!value||Array.from(value).length>100)throw Error('Escribe entre 1 y 100 caracteres.');
-     if(own)throw Error('Ya tienes un susurro activo.');
-     const old=await supabaseClient.from('xoxo_whispers').delete().eq('user_id',TESTER).lte('expires_at',new Date().toISOString());
-     if(old.error)throw old.error;
-     const r=await supabaseClient.from('xoxo_whispers').insert({user_id:TESTER,content:value});
-     if(r.error)throw r.error;
-   }else{
-     if(!own||!confirm('¿Eliminar tu susurro de prueba?'))return;
-     const r=await supabaseClient.from('xoxo_whispers').delete().eq('id',own.id).eq('user_id',TESTER);
-     if(r.error)throw r.error;
-   }
-   await refresh();
- }catch(e){note('Error: '+(e?.message||'Error desconocido'));}
- finally{busy=false;publish.disabled=false;del.disabled=false;}
-}
-launch.addEventListener('click',()=>{if(!authorized())return;panel.hidden=!panel.hidden;launch.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)refresh();});
-document.getElementById('xwt-close').addEventListener('click',()=>{panel.hidden=true;launch.setAttribute('aria-expanded','false');});
-document.getElementById('xwt-refresh').addEventListener('click',refresh);
-publish.addEventListener('click',()=>act('publish'));
-del.addEventListener('click',()=>act('delete'));
-sync();
-setInterval(sync,1500);
-})();
-</script>
 <style id="xoxo-discover-whispers-beta-css">
 #xoxoDiscoverWhispers[hidden]{display:none!important}
 #xoxoDiscoverWhispers{margin:0 0 24px;padding:19px 18px 14px;border:1px solid #b565e67d;border-radius:22px;background:linear-gradient(120deg,#28113d,#151b36 65%,#23143b);color:#fff;box-shadow:0 12px 36px #110a2440}
@@ -22522,7 +22402,7 @@ setInterval(sync,1500);
 (function(){
 'use strict';
 const ADMIN='d9ea1914-fdba-465c-9700-5e640ff48763',TESTER='469c2cac-c0d8-4fcd-8b63-12468bed20ee';
-const allowed=new Set([ADMIN,TESTER]), emojis=['❤️','😍','😂','🎉','🔥'];
+const emojis=['❤️','😍','😂','🎉','🔥'];
 const root=document.getElementById('xoxoDiscoverWhispers');
 if(!root)return;
 const $=id=>document.getElementById(id),cards=$('xoxoDwCards'),status=$('xoxoDwStatus'),input=$('xoxoDwInput');
@@ -22534,18 +22414,18 @@ let owner=null,loading=false,lastUser='',lastRefresh=0;
 const uid=()=>typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
 const client=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
 const say=s=>{status.textContent=s};
-function profileLabel(id,profile){return id===ADMIN?'@XOXOAdmin':profile?.username?('@'+String(profile.username).replace(/^@/,'')):'@okirri'}
+function profileLabel(id,profile){return profile?.username?('@'+String(profile.username).replace(/^@/,'')):(id===ADMIN?'@XOXOAdmin':'@Miembro XOXO')}
 function make(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
 async function refresh(){
- const id=uid(),sb=client();if(!allowed.has(id)||!sb||loading)return;
+ const id=uid(),sb=client();if(!id||!sb||loading)return;
  loading=true;lastRefresh=Date.now();say('Cargando Whispers…');
  try{
   const r=await sb.from('xoxo_whispers').select('id,user_id,content,expires_at,created_at').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(30);
   if(r.error)throw r.error;
-  const rows=(r.data||[]).filter(w=>allowed.has(String(w.user_id)));
+  const rows=r.data||[];
   owner=rows.find(w=>String(w.user_id)===id)||null;
   const [pr,rr]=await Promise.all([
-   sb.from('profiles').select('user_id,username,profile_photo').in('user_id',[ADMIN,TESTER]),
+   rows.length?sb.from('profiles').select('user_id,username,profile_photo').in('user_id',[...new Set(rows.map(w=>w.user_id))]):Promise.resolve({data:[]}),
    rows.length?sb.from('xoxo_whisper_reactions').select('whisper_id,emoji').in('whisper_id',rows.map(w=>w.id)):Promise.resolve({data:[]})
   ]);
   const profiles=new Map((pr.data||[]).map(p=>[String(p.user_id),p]));
@@ -22667,12 +22547,12 @@ async function refresh(){
   }
   input.readOnly=!!owner;input.value=owner?.content||'';$('xoxoDwPublish').hidden=!!owner;$('xoxoDwDelete').hidden=!owner;
   $('xoxoDwCount').textContent=Array.from(input.value).length+'/100';
-  say(rows.length+' Whisper(s) activo(s) · Solo dos cuentas BETA');
+  say(rows.length+' Whisper(s) activo(s) · Expiran después de 24 horas 🫧');
  }catch(e){say('No se pudieron cargar Whispers: '+(e.message||'Error'))}
  finally{loading=false}
 }
 async function act(kind){
- const id=uid(),sb=client();if(!allowed.has(id)||!sb)return;
+ const id=uid(),sb=client();if(!id||!sb)return;
  const button=$(kind==='publish'?'xoxoDwPublish':'xoxoDwDelete');button.disabled=true;
  try{
   if(kind==='publish'){
@@ -22698,7 +22578,7 @@ $('xoxoDwPublish').addEventListener('click',()=>act('publish'));
 $('xoxoDwDelete').addEventListener('click',()=>act('delete'));
 input.addEventListener('input',()=>{$('xoxoDwCount').textContent=Array.from(input.value).length+'/100'});
 function sync(){
- const id=uid(),yes=allowed.has(id);
+ const id=uid(),yes=!!id;
  root.hidden=!yes;
  if(!yes){lastUser='';return}
  if(id!==lastUser){lastUser=id;refresh()}
@@ -22719,7 +22599,7 @@ sync();setInterval(sync,2000);
 <script id="xoxo-my-whispers-beta-script">
 (function(){
 'use strict';
-const testers=new Set(['d9ea1914-fdba-465c-9700-5e640ff48763','469c2cac-c0d8-4fcd-8b63-12468bed20ee']);
+
 const getUser=()=>typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
 const getClient=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
 const area=document.getElementById('xoxoMyWhispersContent');
@@ -22727,7 +22607,7 @@ const tab=document.querySelector('[data-my-profile-tab="whispers"]');
 if(!area||!tab)return;
 function element(tag,cls,txt){const x=document.createElement(tag);if(cls)x.className=cls;if(txt!==undefined)x.textContent=txt;return x}
 async function load(){
- const id=getUser(),sb=getClient();if(!testers.has(id)||!sb)return;
+ const id=getUser(),sb=getClient();if(!id||!sb)return;
  area.replaceChildren(element('p','','Cargando tu actividad…'));
  try{
   const r=await sb.from('xoxo_whispers').select('id,content,created_at,expires_at').eq('user_id',id).order('created_at',{ascending:false}).limit(30);
@@ -22847,7 +22727,7 @@ async function load(){
 }
 window.xoxoLoadMyWhispers=load;
 function visibility(){
- const ok=testers.has(getUser());
+ const ok=!!getUser();
  tab.hidden=!ok;
  if(!ok&&tab.classList.contains('active')&&typeof showMyProfileTab==='function')showMyProfileTab('profile');
 }
@@ -22929,7 +22809,7 @@ function toast(){
 }
 window.xoxoOpenWhisperQuickReply=async function(whisper,username){
  const sender=typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
- if(![ADMIN,TESTER].includes(sender)||!whisper?.id||![ADMIN,TESTER].includes(String(whisper.user_id))||String(whisper.user_id)===sender)throw Error('Esta respuesta solo está disponible en BETA.');
+ if(!sender||!whisper?.id||!whisper.user_id||String(whisper.user_id)===sender)throw Error('No puedes responder a tu propio Whisper.');
  if(active)active.remove();
  const shade=node('div','xoxo-wqr-backdrop'),dialog=node('section','xoxo-wqr-dialog');
  shade.setAttribute('role','presentation');dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.setAttribute('aria-label','Responder a un Whisper');
