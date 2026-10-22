@@ -13402,7 +13402,7 @@ async function openPublicProfile(userId) {
                                     ${mine ? "" : avatarHtml}
                                     <div class="dm-bubble">
                                     ${replyHtml}
-                                    ${message.whisper_id && xoxoDmActiveWhisperIds.has(String(message.whisper_id)) ? renderXoxoWhisperDmContext(message) : ""}
+                                    ${message.whisper_id ? renderXoxoWhisperDmContext(message) : ""}
                                     ${attachmentHtml}
                                     ${message.content ? (parseDmGifContent(message.content) ? renderDmGifMessage(message.content) : `${dmFormattedTextHtml(message.whisper_id ? xoxoWhisperReplyBody(message) : message.content)}${!mine ? `<div class="dm-translate-wrap"><button type="button" class="dm-translate-button" onclick="toggleDmTranslationPreview('${escapeHtmlAttribute(String(message.id))}', this)">🌐 ${getFriendHubLanguage() === "es" ? "Traducir" : "Translate"}</button><div class="dm-translation-preview" id="dmTranslation-${escapeHtmlAttribute(String(message.id))}">${getFriendHubLanguage() === "es" ? "La traducción aparecerá aquí cuando conectemos el traductor." : "The translation will appear here when the translator is connected."}</div></div>` : ""}`) : ""}
                                     ${message.edited_at ? `<div class="dm-edited-label">${getFriendHubLanguage() === "es" ? "Editado" : "Edited"}</div>` : ""}
