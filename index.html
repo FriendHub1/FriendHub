@@ -23173,6 +23173,19 @@ Object.assign(words,{"XOXO Profile Studio":"XOXO Profil-Studio","Make your profi
 Object.assign(words,{"Likes":"Gefällt mir","Like":"Gefällt mir","Likes ❤️":"Gefällt mir ❤️","❤️ Likes":"❤️ Gefällt mir","LIKES":"GEFÄLLT MIR","Liked":"Gefällt mir","Unlike":"Gefällt mir entfernen"});
 Object.assign(words,{"active Whisper(s) · Expire after 24 hours 🫧":"aktive Whispers · Verfallen nach 24 Stunden 🫧","Whisper(s) activo(s) · Expiran después de 24 horas 🫧":"aktive Whispers · Verfallen nach 24 Stunden 🫧"});
 Object.assign(words,{"Follower":"Follower","Followers":"Follower","Report user":"Nutzer melden","Report User":"Nutzer melden","Share profile":"Profil teilen","Share Profile":"Profil teilen","Following":"Folge ich","Follow":"Folgen","Unfollow":"Nicht mehr folgen","Report this user":"Diesen Nutzer melden"});
+
+Object.assign(words,{
+  "Tu Whisper activo":"Dein aktiver Whisper",
+  "Reacciones recibidas":"Erhaltene Reaktionen",
+  "Vistas únicas":"Eindeutige Aufrufe",
+  "Respuestas por DM":"Antworten per DM",
+  "Actualizar actividad":"Aktivität aktualisieren",
+  "↻ Actualizar actividad":"↻ Aktivität aktualisieren",
+  "Activo":"Aktiv",
+  "Expira":"Läuft ab",
+  "restantes":"verbleibend",
+  "El historial aparecerá aquí solo si los Whispers anteriores siguen almacenados. Los eliminados automáticamente no se pueden recuperar.":"Der Verlauf wird hier nur angezeigt, wenn frühere Whispers noch gespeichert sind. Automatisch gelöschte Whispers können nicht wiederhergestellt werden."
+});
 const excluded='script,style,code,pre,textarea,[contenteditable],.post-content,.comment-content,.dm-message-content,.dm-message-text,.xmw-detail-message,.xoxo-wqr-quote,.xoxo-dw-bubble,.xmw-note';
 const active=()=>{try{return (localStorage.getItem('friendhub_language')||'en').toLowerCase()==='de'}catch(e){return false}};
 const isExcluded=el=>!el||el.closest(excluded);
@@ -23196,7 +23209,25 @@ function translate(root){if(!active()||!root)return;
    if(m)replacement=m[1]+'Gib zur Bestätigung unten DELETE ein.'+m[3];
  }
 if(!replacement){const w=normalized.match(/^(\d+)\s+(?:active Whisper\(s\) · Expire after 24 hours 🫧|Whisper\(s\) activo\(s\) · Expiran después de 24 horas 🫧)$/);if(w)replacement=w[1]+" aktive Whispers · Verfallen nach 24 Stunden 🫧";}
- if(!replacement){const h=normalized.match(/^(\d+)h remaining$/i);if(h)replacement=h[1]+" Std. verbleibend";const days=normalized.match(/^You can change your username again in (\d+) days\.$/);if(days)replacement="Du kannst deinen Benutzernamen in "+days[1]+" Tagen erneut ändern.";}if(replacement)root.nodeValue=root.nodeValue.replace(t,replacement);return;}
+
+if(!replacement){
+  const status=normalized.match(/^Activo\s*·\s*Expira\s+(.+)$/i);
+  const expired=normalized.match(/^Expirado\s*·\s*(.+)$/i);
+  const expiry=normalized.match(/^Expira:\s*(.+)$/i);
+  const past=normalized.match(/^Expiró:\s*(.+)$/i);
+
+  if(status)replacement="Aktiv · Läuft ab: "+status[1];
+  else if(expired)replacement="Abgelaufen · "+expired[1];
+  else if(expiry)replacement="Läuft ab: "+expiry[1];
+  else if(past)replacement="Abgelaufen am: "+past[1];
+}
+if(!replacement){const h=normalized.match(/^(\d+)h remaining$/i);if(h)replacement=h[1]+" Std. verbleibend";
+  if(!replacement){
+    const wh=normalized.match(/^(\d+)h\s+restantes$/i);
+    const wm=normalized.match(/^(\d+)m\s+restantes$/i);
+    if(wh)replacement=wh[1]+" Std. verbleibend";
+    else if(wm)replacement=wm[1]+" Min. verbleibend";
+  }const days=normalized.match(/^You can change your username again in (\d+) days\.$/);if(days)replacement="Du kannst deinen Benutzernamen in "+days[1]+" Tagen erneut ändern.";}if(replacement)root.nodeValue=root.nodeValue.replace(t,replacement);return;}
  if(root.nodeType!==1||isExcluded(root))return;
  for(const a of ['placeholder','title','aria-label','alt']){const v=root.getAttribute(a);if(v&&words[v])root.setAttribute(a,words[v]);}
  for(const n of root.childNodes){if(n.nodeType===3)translate(n);else if(n.nodeType===1)translate(n)}
