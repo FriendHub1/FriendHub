@@ -15648,7 +15648,11 @@ async function sharePublicProfile(userId, username = "@User") {
                                     ========================================================= */
                                     async function shareFriendHub() {
                                       const language = getFriendHubLanguage();
-                                      const url = xoxoLocalizedShareUrl("https://xoxoavenue.com/", language);
+                                      // In R37 BETA, keep Norwegian invitation links on the BETA host for testing.
+                                      // Production links remain canonical outside the preview.
+                                      const betaNorwegian = language === "nb" && /\\.workers\\.dev$/i.test(window.location.hostname);
+                                      const shareBase = betaNorwegian ? window.location.origin + "/" : "https://xoxoavenue.com/";
+                                      const url = xoxoLocalizedShareUrl(shareBase, language);
                                       const title = "XOXO Avenue";
                                       const messages = {
                                         "es": "¡Únete a XOXO Avenue! Conoce gente, descubre comunidades y haz nuevos amigos.",
