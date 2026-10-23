@@ -2936,7 +2936,8 @@ export default {
       es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
       "pt-br": "Conheça pessoas, faça novas amizades e descubra comunidades no XOXO Avenue.",
       fr: "Rencontrez de nouvelles personnes, faites-vous des amis et découvrez des communautés sur XOXO Avenue.",
-      pl: "Poznawaj nowych ludzi, nawiązuj przyjaźnie i odkrywaj społeczności na XOXO Avenue."
+      pl: "Poznawaj nowych ludzi, nawiązuj przyjaźnie i odkrywaj społeczności na XOXO Avenue.",
+      de: "Lerne neue Leute kennen, finde Freunde und entdecke Communities auf XOXO Avenue. 💜"
     };
     const xoxoShareDescription = xoxoShareDescriptions[xoxoShareLanguage];
     if (!profileId && url.pathname === "/" && xoxoShareDescription &&
@@ -2944,7 +2945,10 @@ export default {
         !url.searchParams.has("post")) {
       const page = await env.ASSETS.fetch(request);
       if (page.ok && String(page.headers.get("content-type") || "").includes("text/html")) {
+        const xoxoGermanTitle = xoxoShareLanguage === "de" ? "XOXO Avenue – Neue Freunde finden 💜" : null;
         const localized = new HTMLRewriter()
+          .on('meta[property="og:title"]', { element(el) { if (xoxoGermanTitle) el.setAttribute("content", xoxoGermanTitle); } })
+          .on('meta[name="twitter:title"]', { element(el) { if (xoxoGermanTitle) el.setAttribute("content", xoxoGermanTitle); } })
           .on('meta[property="og:description"]', {
             element(el) { el.setAttribute("content", xoxoShareDescription); }
           })
