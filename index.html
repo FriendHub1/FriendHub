@@ -16085,7 +16085,7 @@ function buildSharedPostUrl(postId) {
                                     const FRIENDHUB_LANGUAGE_KEY = "friendhub_language";
                                     const selectedLanguage = localStorage.getItem(FRIENDHUB_LANGUAGE_KEY) || "en";
                                     window.changeFriendHubLanguage = function (language) {
-                                    const safeLanguage = ["en", "es", "pt-BR", "pl", "fr", "de", "nb"].includes(language) ? language : "en";
+                                    const safeLanguage = ["en", "es", "pt-BR", "pl", "fr", "de", "nb", "cs"].includes(language) ? language : "en";
                                     localStorage.setItem(FRIENDHUB_LANGUAGE_KEY, safeLanguage);
                                     try {
                                       const url = new URL(window.location.href);
