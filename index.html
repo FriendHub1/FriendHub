@@ -7,7 +7,7 @@
                                     <script id="xoxo-shared-link-language-v1">
 (function () {
   'use strict';
-  var allowed = ['en', 'es', 'pt-BR', 'fr', 'pl', 'de'];
+  var allowed = ['en', 'es', 'pt-BR', 'fr', 'pl', 'de', 'nb'];
   try {
     var params = new URLSearchParams(window.location.search);
     var incoming = params.get('lang');
@@ -15655,7 +15655,8 @@ async function sharePublicProfile(userId, username = "@User") {
                                         "en": "Join me on XOXO Avenue — meet people, discover communities and make new friends!",
                                         "pt-BR": "Junte-se a mim no XOXO Avenue! Conheça novas pessoas, descubra comunidades e faça novas amizades! 💜",
                                         "fr": "Rejoins-moi sur XOXO Avenue ! Rencontre de nouvelles personnes, découvre des communautés et fais-toi de nouveaux amis ! 💜",
-                                        "pl": "Dołącz do mnie na XOXO Avenue! Poznawaj nowych ludzi, odkrywaj społeczności i zawieraj nowe przyjaźnie! 💜"
+                                        "pl": "Dołącz do mnie na XOXO Avenue! Poznawaj nowych ludzi, odkrywaj społeczności i zawieraj nowe przyjaźnie! 💜",
+                                        "nb": "💜 Bli med på XOXO Avenue! Møt nye mennesker, få nye venner og oppdag fellesskap fra hele verden. ✨"
                                       };
                                       const text = messages[language] || messages.en;
                                       const fullMessage = `${text}\n${url}`;
@@ -15675,6 +15676,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                               language === "pt-BR" ? "Convite do XOXO Avenue copiado." :
                                               language === "fr" ? "Invitation XOXO Avenue copiée." :
                                               language === "pl" ? "Zaproszenie XOXO Avenue skopiowane." :
+                                              language === "nb" ? "XOXO Avenue-invitasjonen er kopiert." :
                                               "XOXO Avenue invitation copied.");
                                       } catch (error) {
                                         console.error("XOXO Avenue share copy error:", error);
@@ -15695,7 +15697,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     }
 
                                     function xoxoLocalizedShareUrl(value, language) {
-  const supported = ["en", "es", "pt-BR", "fr", "pl"];
+  const supported = ["en", "es", "pt-BR", "fr", "pl", "de", "nb"];
   const selected = supported.includes(language) ? language : getFriendHubLanguage();
   const url = new URL(value, window.location.origin);
   url.searchParams.set("lang", selected);
@@ -15713,6 +15715,8 @@ function buildSharedPostUrl(postId) {
                                       const title = "XOXO Avenue";
                                       const text = language === "es"
                                         ? `Mira esta publicación de ${post?.username || "XOXO Avenue"} en XOXO Avenue.`
+                                        : language === "nb"
+                                        ? `Se dette innlegget fra ${post?.username || "XOXO Avenue"} på XOXO Avenue. 💜`
                                         : `Check out this post from ${post?.username || "XOXO Avenue"} on XOXO Avenue.`;
 
                                       try {
@@ -15729,12 +15733,14 @@ function buildSharedPostUrl(postId) {
                                         await navigator.clipboard.writeText(url);
                                         alert(language === "es"
                                           ? "Enlace de la publicación copiado."
+                                          : language === "nb" ? "Lenken til innlegget er kopiert."
                                           : "Post link copied.");
                                       } catch (error) {
                                         console.error("Share copy error:", error);
                                         window.prompt(
                                           language === "es"
                                             ? "Copia este enlace para compartir la publicación:"
+                                            : language === "nb" ? "Kopier denne lenken for å dele innlegget:"
                                             : "Copy this link to share the post:",
                                           url
                                         );
