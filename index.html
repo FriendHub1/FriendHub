@@ -23499,12 +23499,11 @@ if(raw.length<900){
 }
 if(out!==raw)n.nodeValue=out;
 }
-// Translate the dynamically rendered public-home description without changing posts or user content.
-const homeDescriptionEnglish='Discover people, friendships and communities based on your interests and the platforms you use.';
-const homeDescriptionCzech='Objevujte lidi, přátelství a komunity podle svých zájmů a platforem, které používáte.';
-for(const el of document.querySelectorAll('main p, main div, section p, header p, .hero p, [data-i18n]')){
-  if(el.closest(excluded)||el.children.length>0)continue;
-  if(el.textContent.trim()===homeDescriptionEnglish)el.textContent=homeDescriptionCzech;
+// Home hero text has line breaks in its HTML, so exact-string matching fails.
+// Target the original paragraph only, preserving its element and other languages.
+const heroParagraph=document.querySelector('#home .hero-content > p');
+if(heroParagraph && /Discover\s+people,\s+friendships\s+and\s+communities\s+based\s+on\s+your\s+interests\s+and\s+the\s+platforms\s+you\s+use\./i.test(heroParagraph.textContent)){
+  heroParagraph.textContent='Objevujte lidi, přátelství a komunity podle svých zájmů a platforem, které používáte.';
 }
 // Support text may contain line breaks, and its online status is updated asynchronously.
 const support=document.querySelector('.support-contact-card');
