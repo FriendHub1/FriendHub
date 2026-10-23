@@ -83,9 +83,12 @@
       window.XOXOGirl.unlock?.();
       window.XOXOGirl.preview('dm',language());
     });
-    sample.disabled = !checkbox.checked;\n    checkbox.addEventListener('change', () => { sample.disabled = !checkbox.checked; });\n    row.append(label,sample);
+    sample.disabled = !checkbox.checked;
+    checkbox.addEventListener('change', () => { sample.disabled = !checkbox.checked; });
+    row.append(label,sample);
     host.after(row); translate();
-    document.addEventListener('change', translate);\n    document.addEventListener('xoxo-language-changed', translate);
+    document.addEventListener('change', translate);
+    document.addEventListener('xoxo-language-changed', translate);
   }
   window.XOXOGirlIntegration = Object.freeze({ receive, setUser, renderToggle });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',renderToggle,{once:true});
