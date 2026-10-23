@@ -11747,9 +11747,9 @@ async function xoxoOpenPublicProfileCore(userId) {
                                     </div>
                                     ${isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary public-profile-follow${isFollowing ? " following" : ""}" onclick="toggleFollow('${escapeHtmlAttribute(String(userId))}')">${isFollowing ? (getFriendHubLanguage() === "pl" ? "Obserwowani" : "Following") : (getFriendHubLanguage() === "pl" ? "Obserwuj" : "Follow")}</button>`}
                                     ${isOwnProfile ? "" : `<button id="publicBlockButton" class="btn public-profile-block${isBlocked ? " blocked" : ""}" onclick="toggleBlockUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">${isBlocked ? "Unblock" : "Block"}</button>`}
-                                    ${isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${getFriendHubLanguage() === "fr" ? "Signaler l’utilisateur" : (getFriendHubLanguage() === "pl" ? "Zgłoś użytkownika" : window.xoxoPtLabel("Report user","Reportar usuario","Denunciar usuário"))}</button>`}
-                                    ${isOwnProfile ? "" : `<button id="publicShareButton" class="btn btn-secondary" onclick="sharePublicProfile('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#128279; ${getFriendHubLanguage() === "pl" ? "Udostępnij profil" : window.xoxoPtLabel("Share profile","Compartir perfil","Compartilhar perfil")}</button>`}
-                                    ${isOwnProfile || isBlocked ? "" : `<button id="publicMessageButton" class="btn public-profile-message" onclick="openDirectChat('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(profile.profile_photo || "")}')">&#128172; ${getFriendHubLanguage() === "pl" ? "Wiadomość" : (getFriendHubLanguage() === "es" ? "Mensaje" : "Message")}</button>`}
+                                    ${isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${getFriendHubLanguage() === "cs" ? "Nahlásit uživatele" : getFriendHubLanguage() === "fr" ? "Signaler l’utilisateur" : (getFriendHubLanguage() === "pl" ? "Zgłoś użytkownika" : window.xoxoPtLabel("Report user","Reportar usuario","Denunciar usuário"))}</button>`}
+                                    ${isOwnProfile ? "" : `<button id="publicShareButton" class="btn btn-secondary" onclick="sharePublicProfile('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#128279; ${getFriendHubLanguage() === "cs" ? "Sdílet profil" : getFriendHubLanguage() === "pl" ? "Udostępnij profil" : window.xoxoPtLabel("Share profile","Compartir perfil","Compartilhar perfil")}</button>`}
+                                    ${isOwnProfile || isBlocked ? "" : `<button id="publicMessageButton" class="btn public-profile-message" onclick="openDirectChat('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(profile.profile_photo || "")}')">&#128172; ${getFriendHubLanguage() === "cs" ? "Zpráva" : getFriendHubLanguage() === "pl" ? "Wiadomość" : (getFriendHubLanguage() === "es" ? "Mensaje" : "Message")}</button>`}
                                     <div class="public-profile-details">
                                     ${profile.gender_identity && profile.gender_identity !== "Prefer not to say" ? `<div class="public-profile-detail"><strong>Gender</strong><span>${escapeHtml(profile.gender_identity)}</span></div>` : ""}
                                     ${profile.sexual_orientation && profile.sexual_orientation !== "Prefer not to say" ? `<div class="public-profile-detail"><strong>Sexual orientation</strong><span>${escapeHtml(profile.sexual_orientation)}</span></div>` : ""}
@@ -11831,7 +11831,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     title: `${cleanUsername} · XOXO Avenue`,
                                     text: language === "es"
                                     ? `Mira el perfil de ${cleanUsername} en XOXO Avenue.`
-                                    : language === "de" ? `Sieh dir das Profil von ${cleanUsername} auf XOXO Avenue an.` : `Check out ${cleanUsername}'s profile on XOXO Avenue.`,
+                                    : language === "cs" ? `Podívejte se na profil ${cleanUsername} na XOXO Avenue.` : language === "de" ? `Sieh dir das Profil von ${cleanUsername} auf XOXO Avenue an.` : `Check out ${cleanUsername}'s profile on XOXO Avenue.`,
                                     url
                                     };
 
@@ -11849,13 +11849,13 @@ async function sharePublicProfile(userId, username = "@User") {
                                     await navigator.clipboard.writeText(url);
                                     alert(language === "es"
                                     ? "Enlace del perfil copiado."
-                                    : "Profile link copied.");
+                                    : language === "cs" ? "Odkaz na profil byl zkopírován." : "Profile link copied.");
                                     } catch (error) {
                                     console.error("Profile share copy error:", error);
                                     window.prompt(
                                     language === "es"
                                     ? "Copia este enlace para compartir el perfil:"
-                                    : "Copy this link to share the profile:",
+                                    : language === "cs" ? "Zkopírujte tento odkaz pro sdílení profilu:" : "Copy this link to share the profile:",
                                     url
                                     );
                                     }
@@ -15829,7 +15829,8 @@ async function sharePublicProfile(userId, username = "@User") {
                                         "pt-BR": "Junte-se a mim no XOXO Avenue! Conheça novas pessoas, descubra comunidades e faça novas amizades! 💜",
                                         "fr": "Rejoins-moi sur XOXO Avenue ! Rencontre de nouvelles personnes, découvre des communautés et fais-toi de nouveaux amis ! 💜",
                                         "pl": "Dołącz do mnie na XOXO Avenue! Poznawaj nowych ludzi, odkrywaj społeczności i zawieraj nowe przyjaźnie! 💜",
-                                        "nb": "💜 Bli med på XOXO Avenue! Møt nye mennesker, få nye venner og oppdag fellesskap fra hele verden. ✨"
+                                        "nb": "💜 Bli med på XOXO Avenue! Møt nye mennesker, få nye venner og oppdag fellesskap fra hele verden. ✨",
+                                        "cs": "💜 Objevte XOXO Avenue! Poznávejte nové lidi z celého světa, navazujte přátelství a objevujte komunity podle svých zájmů. Připojte se zdarma! ✨"
                                       };
                                       const text = messages[language] || messages.en;
                                       const fullMessage = `${text}\n${url}`;
@@ -15850,6 +15851,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                               language === "fr" ? "Invitation XOXO Avenue copiée." :
                                               language === "pl" ? "Zaproszenie XOXO Avenue skopiowane." :
                                               language === "nb" ? "XOXO Avenue-invitasjonen er kopiert." :
+                                              language === "cs" ? "Pozvánka na XOXO Avenue byla zkopírována." :
                                               "XOXO Avenue invitation copied.");
                                       } catch (error) {
                                         console.error("XOXO Avenue share copy error:", error);
@@ -15888,6 +15890,7 @@ function buildSharedPostUrl(postId) {
                                       const title = "XOXO Avenue";
                                       const text = language === "es"
                                         ? `Mira esta publicación de ${post?.username || "XOXO Avenue"} en XOXO Avenue.`
+                                        : language === "cs" ? `Podívejte se na příspěvek od ${post?.username || "XOXO Avenue"} na XOXO Avenue.`
                                         : language === "nb"
                                         ? `Se dette innlegget fra ${post?.username || "XOXO Avenue"} på XOXO Avenue. 💜`
                                         : `Check out this post from ${post?.username || "XOXO Avenue"} on XOXO Avenue.`;
@@ -15906,14 +15909,14 @@ function buildSharedPostUrl(postId) {
                                         await navigator.clipboard.writeText(url);
                                         alert(language === "es"
                                           ? "Enlace de la publicación copiado."
-                                          : language === "nb" ? "Lenken til innlegget er kopiert."
+                                          : language === "cs" ? "Odkaz na příspěvek byl zkopírován." : language === "nb" ? "Lenken til innlegget er kopiert."
                                           : "Post link copied.");
                                       } catch (error) {
                                         console.error("Share copy error:", error);
                                         window.prompt(
                                           language === "es"
                                             ? "Copia este enlace para compartir la publicación:"
-                                            : language === "nb" ? "Kopier denne lenken for å dele innlegget:"
+                                            : language === "cs" ? "Zkopírujte tento odkaz pro sdílení příspěvku:" : language === "nb" ? "Kopier denne lenken for å dele innlegget:"
                                             : "Copy this link to share the post:",
                                           url
                                         );
@@ -23514,6 +23517,37 @@ if(root.querySelectorAll){for(const el of root.querySelectorAll('[placeholder],[
 }
 let queued=false;function schedule(){if(queued||!active())return;queued=true;requestAnimationFrame(()=>{queued=false;apply(document.body)})}
 function init(){if(!document.body)return;apply(document.body);new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,characterData:true});document.getElementById('languageSelect')?.addEventListener('change',schedule)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+
+<style id="xoxo-back-to-top-r50">
+#xoxoBackToTopR50{position:fixed;right:max(18px,env(safe-area-inset-right));bottom:calc(22px + env(safe-area-inset-bottom));width:46px;height:46px;border-radius:50%;border:1px solid rgba(222,166,255,.8);background:linear-gradient(145deg,#8e38cf,#542180);box-shadow:0 4px 20px rgba(157,55,240,.45);color:#fff;font-size:25px;line-height:1;z-index:800;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .2s,transform .2s,visibility .2s;pointer-events:none}
+#xoxoBackToTopR50.xoxo-visible{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}
+#xoxoBackToTopR50:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){#xoxoBackToTopR50{transition:none}}
+</style>
+<script id="xoxo-back-to-top-r50">
+(function(){
+'use strict';
+function init(){
+if(document.getElementById('xoxoBackToTopR50'))return;
+const btn=document.createElement('button');
+btn.id='xoxoBackToTopR50';btn.type='button';btn.textContent='↑';
+btn.setAttribute('aria-label','Volver arriba / Back to top');
+btn.title='Volver arriba / Back to top';
+document.body.appendChild(btn);
+let scheduled=false;
+function refresh(){
+scheduled=false;
+const scrolling=document.scrollingElement||document.documentElement;
+const down=Math.max(window.scrollY||0,scrolling.scrollTop||0);
+btn.classList.toggle('xoxo-visible',down>450);
+}
+window.addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(refresh)}},{passive:true});
+btn.addEventListener('click',()=>window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
+refresh();
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
