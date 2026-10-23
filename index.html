@@ -8971,6 +8971,19 @@ async function enforceXoxoSuspension() {
                                     }
 
                                     async function logout() {
+                                    // R40: Confirm user-initiated logout in seven languages.
+                                    const logoutMessages = {
+                                      en: 'Are you sure you want to log out?',
+                                      es: '¿Seguro que quieres cerrar sesión?',
+                                      'pt-BR': 'Tem certeza de que deseja sair?',
+                                      fr: 'Voulez-vous vraiment vous déconnecter ?',
+                                      pl: 'Czy na pewno chcesz się wylogować?',
+                                      de: 'Möchtest du dich wirklich abmelden?',
+                                      nb: 'Er du sikker på at du vil logge ut?'
+                                    };
+                                    let logoutLanguage = 'en';
+                                    try { logoutLanguage = localStorage.getItem('friendhub_language') || document.documentElement.lang || 'en'; } catch (error) {}
+                                    if (!window.confirm(logoutMessages[logoutLanguage] || logoutMessages.en)) return;
                                     await supabaseClient.auth.signOut();
                                     currentUser = null;
                                     currentProfile = null;
