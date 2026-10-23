@@ -23499,6 +23499,13 @@ if(raw.length<900){
 }
 if(out!==raw)n.nodeValue=out;
 }
+// Translate the dynamically rendered public-home description without changing posts or user content.
+const homeDescriptionEnglish='Discover people, friendships and communities based on your interests and the platforms you use.';
+const homeDescriptionCzech='Objevujte lidi, přátelství a komunity podle svých zájmů a platforem, které používáte.';
+for(const el of document.querySelectorAll('main p, main div, section p, header p, .hero p, [data-i18n]')){
+  if(el.closest(excluded)||el.children.length>0)continue;
+  if(el.textContent.trim()===homeDescriptionEnglish)el.textContent=homeDescriptionCzech;
+}
 // Support text may contain line breaks, and its online status is updated asynchronously.
 const support=document.querySelector('.support-contact-card');
 if(support){const p=support.querySelector('p');if(p){const current=p.textContent.replace(/\s+/g,' ').trim();if(current==='If you have a question, experience a problem or need assistance with your account, contact us by email.')p.textContent='Máte dotaz, problém nebo potřebujete pomoc se svým účtem? Kontaktujte nás e-mailem.';}}
