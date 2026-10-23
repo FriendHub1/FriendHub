@@ -23344,6 +23344,11 @@ if(raw.length<900){
 }
 if(out!==raw)n.nodeValue=out;
 }
+// Support text may contain line breaks, and its online status is updated asynchronously.
+const support=document.querySelector('.support-contact-card');
+if(support){const p=support.querySelector('p');if(p){const current=p.textContent.replace(/\s+/g,' ').trim();if(current==='If you have a question, experience a problem or need assistance with your account, contact us by email.')p.textContent='Máte dotaz, problém nebo potřebujete pomoc se svým účtem? Kontaktujte nás e-mailem.';}}
+const status=document.getElementById('supportLiveStatusText');
+if(status && /^online$/i.test(status.textContent.trim()))status.textContent='Právě online';
 if(root.querySelectorAll){for(const el of root.querySelectorAll('[placeholder],[title],[aria-label]')){if(el.closest(excluded))continue;for(const a of ['placeholder','title','aria-label']){const v=el.getAttribute(a);if(v&&words[v])el.setAttribute(a,words[v]);}}}
 }
 let queued=false;function schedule(){if(queued||!active())return;queued=true;requestAnimationFrame(()=>{queued=false;apply(document.body)})}
