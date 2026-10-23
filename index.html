@@ -11379,9 +11379,11 @@ function xoxoBubbleImg(userId, username) {
                                     /* =========================================================
                                     PUBLIC PROFILES
                                     ========================================================= */
+                                    let xoxoUsernameLookupSequence = 0;
                                     async function openPublicProfileByUsername(username) {
                                     if (!currentUser || !username) { if (!currentUser) openAuth("login"); return; }
                                     const normalizedUsername = String(username).trim();
+                                    const lookupSequence = ++xoxoUsernameLookupSequence;
                                     window.xoxoProfileDiag?.mark('username lookup started');
                                     // Show the target immediately; username resolution can take 1-2s.
                                     showPageWithoutReload("publicProfile");
@@ -11395,6 +11397,7 @@ function xoxoBubbleImg(userId, username) {
                                     .eq("username", normalizedUsername)
                                     .maybeSingle();
                                     window.xoxoProfileDiag?.mark('username lookup finished');
+                                    if (lookupSequence !== xoxoUsernameLookupSequence) return;
                                     if (error || !profile?.user_id) {
                                     console.error("Public profile username lookup error:", error);
                                     alert("This profile could not be loaded.");
@@ -11480,7 +11483,7 @@ async function xoxoOpenPublicProfileCore(userId) {
                                       ));
                                     } catch (profileLoadError) {
                                       console.error("Public profile request failed:", profileLoadError);
-                                      if (content) content.innerHTML = '<div class="empty-state">This profile could not be loaded. Please try again.</div>';
+                                      if (String(currentPublicProfileUserId) === String(userId) && content) content.innerHTML = '<div class="empty-state">This profile could not be loaded. Please try again.</div>';
                                       return;
                                     }
 
@@ -11638,7 +11641,7 @@ async function xoxoOpenPublicProfileCore(userId) {
   let timeout;
   try {
     timeout = setTimeout(() => {
-      if (content && /Loading profile\.\.\.|Profil wird geladen|Cargando perfil/i.test(content.textContent || '')) {
+      if (String(currentPublicProfileUserId) === String(userId) && content && /Loading profile\.\.\.|Profil wird geladen|Cargando perfil/i.test(content.textContent || '')) {
         console.error('[XOXO profile] Still loading after 20 seconds', { userId });
         content.textContent = getFriendHubLanguage() === 'de'
           ? 'Das Profil konnte nicht geladen werden. Bitte versuche es erneut.'
@@ -11648,7 +11651,7 @@ async function xoxoOpenPublicProfileCore(userId) {
     await xoxoOpenPublicProfileCore(userId);
   } catch (error) {
     console.error('[XOXO profile] Unexpected error:', error);
-    if (content && /Loading profile\.\.\.|Profil wird geladen|Cargando perfil/i.test(content.textContent || '')) {
+    if (String(currentPublicProfileUserId) === String(userId) && content && /Loading profile\.\.\.|Profil wird geladen|Cargando perfil/i.test(content.textContent || '')) {
       content.textContent = getFriendHubLanguage() === 'de'
         ? 'Das Profil konnte nicht geladen werden. Bitte versuche es erneut.'
         : 'This profile could not be loaded. Please try again.';
@@ -14483,6 +14486,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     }
 
                                     function renderPublicProfilePosts(userId, profilePhoto) {
+                                    if (String(currentPublicProfileUserId) !== String(userId)) return;
                                     const container = document.getElementById("publicProfilePosts");
                                     if (!container) return;
                                     const userPosts = posts.filter(post => String(post.userId || "") === String(userId));
