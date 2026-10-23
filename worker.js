@@ -2936,7 +2936,8 @@ export default {
       es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
       "pt-br": "Conheça pessoas, faça novas amizades e descubra comunidades no XOXO Avenue.",
       fr: "Rencontrez de nouvelles personnes, faites-vous des amis et découvrez des communautés sur XOXO Avenue.",
-      pl: "Poznawaj nowych ludzi, nawiązuj przyjaźnie i odkrywaj społeczności na XOXO Avenue."
+      pl: "Poznawaj nowych ludzi, nawiązuj przyjaźnie i odkrywaj społeczności na XOXO Avenue.",
+      nb: "Møt nye mennesker, få nye venner og oppdag fellesskap på XOXO Avenue. 🌍✨"
     };
     const xoxoShareDescription = xoxoShareDescriptions[xoxoShareLanguage];
     if (!profileId && url.pathname === "/" && xoxoShareDescription &&
