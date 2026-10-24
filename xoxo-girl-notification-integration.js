@@ -9,7 +9,9 @@
     pl:['Powiadomienia głosowe XOXO Girl','Odtwórz próbkę'],
     de:['XOXO Girl Sprachmeldungen','Beispiel anhören'],
     nb:['XOXO Girl talevarsler','Spill av prøve'],
-    cs:['Hlasová upozornění XOXO Girl','Přehrát ukázku']
+    cs:['Hlasová upozornění XOXO Girl','Přehrát ukázku'],
+    sv:['XOXO Girl röstaviseringar','Spela upp exempel'],
+    it:['Avvisi vocali XOXO Girl','Ascolta un esempio']
   };
   const key = 'xoxo_girl_seen_notification_ids_v1';
   let userId = null, primed = false, seen = new Set(), lastCheck = 0;
@@ -85,7 +87,21 @@
     });
     sample.disabled = !checkbox.checked;
     checkbox.addEventListener('change', () => { sample.disabled = !checkbox.checked; });
-    row.append(label,sample);
+    const voiceSelect = document.createElement('select');
+    voiceSelect.setAttribute('aria-label','XOXO Girl voice');
+    voiceSelect.style.cssText = 'max-width:100%;border:1px solid #e3b8ff;border-radius:9px;background:#341b5c;color:white;padding:6px;';
+    function refreshVoices() {
+      const current = window.XOXOGirl.getPreferredVoice?.() || '';
+      const available = window.XOXOGirl.availableVoices?.(language()) || [];
+      voiceSelect.replaceChildren();
+      const auto = new Option('🎙️ Auto voice',''); voiceSelect.add(auto);
+      available.forEach(v => voiceSelect.add(new Option(v.name + ' (' + v.lang + ')',v.name)));
+      voiceSelect.value = available.some(v => v.name === current) ? current : '';
+    }
+    voiceSelect.addEventListener('change', () => window.XOXOGirl.setPreferredVoice?.(voiceSelect.value));
+    row.append(label,voiceSelect,sample);
+    refreshVoices();
+    window.speechSynthesis?.addEventListener?.('voiceschanged',refreshVoices);
     if (host === document.body) {
       row.style.position = 'fixed'; row.style.right = '12px'; row.style.bottom = '12px'; row.style.zIndex = '2147483000'; row.style.maxWidth = '360px';
       host.append(row);
@@ -96,7 +112,7 @@
     }
     translate();
     document.addEventListener('change', translate);
-    document.addEventListener('xoxo-language-changed', translate);
+    document.addEventListener('xoxo-language-changed', () => { translate(); refreshVoices(); });
   }
   window.XOXOGirlIntegration = Object.freeze({ receive, setUser, renderToggle });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',renderToggle,{once:true});
