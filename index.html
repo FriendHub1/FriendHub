@@ -23766,5 +23766,64 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+<script id="xoxo-swedish-messenger-interface-v6">
+(function(){
+  'use strict';
+  const dict={"Discover people, friendships and communities based on your interests and the platforms you use.":"Upptäck människor, vänskaper och gemenskaper utifrån dina intressen och de plattformar du använder.","Report user":"Anmäl användare","Share profile":"Dela profil","Message":"Meddelande","Last seen":"Senast aktiv","If you have a question, experience a problem or need assistance with your account, contact us by email.":"Om du har en fråga, stöter på ett problem eller behöver hjälp med ditt konto, kontakta oss via e-post.","Photos & Videos":"Foton och videor","Photos & videos":"Foton och videor","Voice":"Röstmeddelande","GIF":"GIF","Buzz":"Puff","No messages yet. Say hello 👋":"Inga meddelanden ännu. Säg hej 👋","Delete conversation?":"Radera konversationen?","Choose how you want to delete your conversation with":"Välj hur du vill radera din konversation med","Delete for me":"Radera bara för mig","The other person keeps the history. If they message you again, the chat returns from the new message.":"Den andra personen behåller historiken. Om personen skriver till dig igen visas chatten från det nya meddelandet.","Delete for both":"Radera för båda","Permanently deletes the conversation for both people.":"Raderar konversationen permanent för båda personerna.","Cancel":"Avbryt","Send":"Skicka","Type a message":"Skriv ett meddelande","Type a message...":"Skriv ett meddelande...","Online":"Online","Offline":"Offline","Typing...":"Skriver...","Send photo":"Skicka foto","Send video":"Skicka video","Record voice message":"Spela in röstmeddelande","Voice message":"Röstmeddelande","Search messages":"Sök bland meddelanden","Search conversation":"Sök i konversationen","Delete message":"Radera meddelande","Delete conversation":"Radera konversation","Edit message":"Redigera meddelande","Reply":"Svara","Forward":"Vidarebefordra","Copy":"Kopiera","Block user":"Blockera användare","Unblock user":"Avblockera användare","Report message":"Anmäl meddelande","Conversation":"Konversation","Conversations":"Konversationer","Messages":"Meddelanden","New message":"Nytt meddelande","Start a conversation":"Starta en konversation","No conversations yet":"Inga konversationer ännu","Photo":"Foto","Video":"Video","Attach":"Bifoga","Attachment":"Bilaga","Stop recording":"Stoppa inspelning","Start recording":"Starta inspelning","Play":"Spela upp","Pause":"Pausa","Delete for everyone":"Radera för alla","Delete for you":"Radera för dig","Are you sure?":"Är du säker?","Confirm":"Bekräfta"};
+  const keys=Object.keys(dict).sort((a,b)=>b.length-a.length);
+  const skip='script,style,noscript,textarea,pre,code,[contenteditable="true"],[translate="no"],.notranslate';
+  const uiSelector='button,label,option,h1,h2,h3,h4,summary,[role="button"],[role="dialog"],nav,header,footer,.modal,.dialog,.settings,.toolbar';
+  function active(){try{return localStorage.getItem('friendhub_language')==='sv';}catch(e){return document.documentElement.lang==='sv';}}
+  function convert(value){
+    const trimmed=value.trim();
+    if(Object.prototype.hasOwnProperty.call(dict,trimmed)) return value.replace(trimmed,dict[trimmed]);
+    // Handle emoji-prefixed UI labels and changing values such as @username in dialog copy.
+    let result=value;
+    for(const k of keys){
+      if(k==='Message'||k==='Voice'||k==='GIF'||k==='Send'||k==='Reply'||k==='Online'||k==='Photo'||k==='Video'||k==='Cancel')continue;
+      if(result.includes(k))result=result.split(k).join(dict[k]);
+    }
+    return result;
+  }
+  function eligible(node){
+    const el=node.parentElement;
+    if(!el||el.closest(skip))return false;
+    // Avoid translating user-generated content in posts and message bubbles.
+    if(el.closest('[data-message-id],.message-bubble,.dm-message,.chat-message,.post-content,[data-post-id]'))return false;
+    return Boolean(el.closest(uiSelector)) || /^(Discover people, friendships|If you have a question|No messages yet|Choose how you want to delete)/.test(node.nodeValue.trim());
+  }
+  function text(node){if(node.nodeType!==3||!eligible(node))return;const v=convert(node.nodeValue);if(v!==node.nodeValue)node.nodeValue=v;}
+  function scan(root){
+    if(!active()||!root)return;
+    if(root.nodeType===3){text(root);return;}
+    if(root.nodeType!==1||root.closest(skip))return;
+    const elements=[root,...root.querySelectorAll('button,input,textarea,select,option,[title],[aria-label],[placeholder]')];
+    for(const el of elements){
+      if(el.closest(skip))continue;
+      for(const attr of ['title','aria-label','placeholder']){
+        const old=el.getAttribute(attr);if(old){const next=convert(old);if(next!==old)el.setAttribute(attr,next);}
+      }
+    }
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    while(walker.nextNode())text(walker.currentNode);
+  }
+  function init(){
+    if(!active()||!document.body)return;
+    scan(document.body);
+    const pending=new Set();let scheduled=false;
+    function flush(){scheduled=false;const nodes=[...pending];pending.clear();for(const n of nodes)if(n.isConnected)scan(n);}
+    const observer=new MutationObserver(records=>{
+      for(const r of records){
+        if(r.type==='characterData')pending.add(r.target);
+        else if(r.type==='childList')for(const n of r.addedNodes)pending.add(n);
+        else if(r.type==='attributes')pending.add(r.target);
+      }
+      if(pending.size&&!scheduled){scheduled=true;requestAnimationFrame(flush);}
+    });
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['title','aria-label','placeholder']});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
 </body>
                                     </html>
