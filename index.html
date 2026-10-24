@@ -24193,5 +24193,67 @@ function start(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+<script id="xoxo-norwegian-interests-v1">
+(function(){
+'use strict';
+const words={"Gaming":"Spill","Music":"Musikk","Movies & TV":"Film og TV","Books":"Bøker","Sports":"Sport","Technology":"Teknologi","Art":"Kunst","Travel":"Reise","Food":"Mat","Photography":"Fotografi","Psychology":"Psykologi","Fitness":"Trening","Nature":"Natur","Entertainment":"Underholdning","Languages":"Språk","Culture":"Kultur","Other":"Annet"};
+const keys=Object.keys(words).sort((a,b)=>b.length-a.length);
+const blocked='script,style,noscript,textarea,code,pre,[contenteditable],.post-content,.comment-content,.dm-message-content,.dm-message-text,[data-no-translate],[translate="no"],.xoxo-legal-locale';
+const active=()=>{try{return ['nb','no','nb-NO'].includes(localStorage.getItem('friendhub_language'))}catch(_){return false}};
+function translate(text){
+ const trimmed=text.trim();
+ for(const key of keys){
+  const i=trimmed.indexOf(key);
+  if(i<0)continue;
+  const prefix=trimmed.slice(0,i), suffix=trimmed.slice(i+key.length);
+  if(/[\p{L}\p{N}]/u.test(prefix))continue;
+  if(!/^(?:\s*\(\d+\))?\s*[⌃⌄▾▴▼▲✨💜]*\s*$/u.test(suffix))continue;
+  return text.replace(key,words[key]);
+ }
+ return text;
+}
+function apply(root){
+ if(!active()||!root)return;
+ const nodes=[];
+ if(root.nodeType===3)nodes.push(root);
+ else if(root.nodeType===1){
+  if(root.closest(blocked))return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  while(walker.nextNode())nodes.push(walker.currentNode);
+ }
+ for(const node of nodes){
+  if(!node.parentElement||node.parentElement.closest(blocked))continue;
+  const before=node.nodeValue;
+  const after=translate(before);
+  if(before!==after)node.nodeValue=after;
+ }
+}
+function start(){
+ if(!document.body)return;
+ apply(document.body);
+ let scheduled=false;
+ const queue=new Set();
+ const observer=new MutationObserver(records=>{
+  if(!active())return;
+  for(const r of records){
+   if(r.type==='characterData')queue.add(r.target);
+   else for(const n of r.addedNodes)queue.add(n);
+  }
+  if(scheduled)return;
+  scheduled=true;
+  requestAnimationFrame(()=>{
+   scheduled=false;
+   for(const n of queue)if(n.isConnected)apply(n);
+   queue.clear();
+  });
+ });
+ observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+ window.addEventListener('storage',e=>{if(e.key==='friendhub_language')apply(document.body)});
+ const select=document.getElementById('languageSelect');
+ if(select)select.addEventListener('change',()=>setTimeout(()=>apply(document.body),30));
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
 </body>
                                     </html>
