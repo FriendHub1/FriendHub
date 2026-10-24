@@ -24255,5 +24255,67 @@ function start(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+<script id="xoxo-french-profile-options-v1">
+(function(){
+'use strict';
+const words={"Gaming":"Jeux vidéo","Music":"Musique","Movies & TV":"Films et séries","Books":"Livres","Sports":"Sports","Technology":"Technologie","Art":"Art","Travel":"Voyages","Food":"Cuisine","Photography":"Photographie","Psychology":"Psychologie","Fitness":"Fitness","Nature":"Nature","Entertainment":"Divertissement","Languages":"Langues","Culture":"Culture","Other":"Autre","No languages selected yet":"Aucune langue sélectionnée pour le moment","Select what you are looking for":"Sélectionnez ce que vous recherchez","New friends":"De nouveaux amis","Someone to talk to":"Quelqu’un avec qui discuter","Gaming partners":"Partenaires de jeu","People with similar music taste":"Personnes partageant mes goûts musicaux","Movie & TV friends":"Amis passionnés de films et séries","Study partners":"Partenaires d’étude","Language exchange":"Échange linguistique","Friends from other countries":"Amis d’autres pays","Communities & groups":"Communautés et groupes","WhatsApp groups":"Groupes WhatsApp","Telegram groups":"Groupes Telegram","Snapchat friends":"Amis sur Snapchat","People with similar interests":"Personnes partageant mes centres d’intérêt","Sports partners":"Partenaires de sport","Travel friends":"Compagnons de voyage","Networking":"Réseautage","Meet new people":"Faire de nouvelles rencontres"};
+const keys=Object.keys(words).sort((a,b)=>b.length-a.length);
+const blocked='script,style,noscript,textarea,code,pre,[contenteditable],.post-content,.comment-content,.dm-message-content,.dm-message-text,[data-no-translate],[translate="no"],.xoxo-legal-locale';
+const active=()=>{try{return ['fr','fr-FR'].includes(localStorage.getItem('friendhub_language'))}catch(_){return false}};
+function translate(text){
+ const trimmed=text.trim();
+ for(const key of keys){
+  const i=trimmed.indexOf(key);
+  if(i<0)continue;
+  const prefix=trimmed.slice(0,i), suffix=trimmed.slice(i+key.length);
+  if(/[\p{L}\p{N}]/u.test(prefix))continue;
+  if(!/^(?:\s*\(\d+\))?\s*[⌃⌄▾▴▼▲✨💜]*\s*$/u.test(suffix))continue;
+  return text.replace(key,words[key]);
+ }
+ return text;
+}
+function apply(root){
+ if(!active()||!root)return;
+ const nodes=[];
+ if(root.nodeType===3)nodes.push(root);
+ else if(root.nodeType===1){
+  if(root.closest(blocked))return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  while(walker.nextNode())nodes.push(walker.currentNode);
+ }
+ for(const node of nodes){
+  if(!node.parentElement||node.parentElement.closest(blocked))continue;
+  const before=node.nodeValue;
+  const after=translate(before);
+  if(before!==after)node.nodeValue=after;
+ }
+}
+function start(){
+ if(!document.body)return;
+ apply(document.body);
+ let scheduled=false;
+ const queue=new Set();
+ const observer=new MutationObserver(records=>{
+  if(!active())return;
+  for(const r of records){
+   if(r.type==='characterData')queue.add(r.target);
+   else for(const n of r.addedNodes)queue.add(n);
+  }
+  if(scheduled)return;
+  scheduled=true;
+  requestAnimationFrame(()=>{
+   scheduled=false;
+   for(const n of queue)if(n.isConnected)apply(n);
+   queue.clear();
+  });
+ });
+ observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+ window.addEventListener('storage',e=>{if(e.key==='friendhub_language')apply(document.body)});
+ const select=document.getElementById('languageSelect');
+ if(select)select.addEventListener('change',()=>setTimeout(()=>apply(document.body),30));
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
 </body>
                                     </html>
