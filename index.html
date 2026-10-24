@@ -7,7 +7,7 @@
                                     <script id="xoxo-shared-link-language-v1">
 (function () {
   'use strict';
-  var allowed = ['en', 'es', 'pt-BR', 'fr', 'pl', 'de', 'nb', 'cs', 'sv'];
+  var allowed = ['en', 'es', 'pt-BR', 'fr', 'pl', 'de', 'nb', 'cs', 'sv', 'it'];
   try {
     var params = new URLSearchParams(window.location.search);
     var incoming = params.get('lang');
@@ -6197,6 +6197,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 <option value="fr">🇫🇷 Français</option>
 <option value="cs">🇨🇿 Čeština</option>
 <option value="sv">🇸🇪 Svenska</option>
+<option value="it">🇮🇹 Italiano</option>
                                     </select>
                                     
                                     <div class="notification-wrap" id="notificationWrap">
@@ -16376,7 +16377,7 @@ function buildSharedPostUrl(postId) {
                                     const FRIENDHUB_LANGUAGE_KEY = "friendhub_language";
                                     const selectedLanguage = localStorage.getItem(FRIENDHUB_LANGUAGE_KEY) || "en";
                                     window.changeFriendHubLanguage = function (language) {
-                                    const safeLanguage = ["en", "es", "pt-BR", "pl", "fr", "de", "nb", "cs", "sv"].includes(language) ? language : "en";
+                                    const safeLanguage = ["en", "es", "pt-BR", "pl", "fr", "de", "nb", "cs", "sv", "it"].includes(language) ? language : "en";
                                     localStorage.setItem(FRIENDHUB_LANGUAGE_KEY, safeLanguage);
                                     // Navigate to a clean document for every language, preserving
                                     // the current route and any unrelated URL parameters.
@@ -22806,7 +22807,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 function syncLegalLanguage(){
 var lang='en';
 try{lang=localStorage.getItem('friendhub_language')||'en'}catch(e){}
-if(['en','es','pt-BR','fr','pl','nb','cs','sv'].indexOf(lang)<0)lang='en';
+if(['en','es','pt-BR','fr','pl','nb','cs','sv','it'].indexOf(lang)<0)lang='en';
 document.querySelectorAll('#privacy [data-xoxo-legal-lang],#terms [data-xoxo-legal-lang],#guidelines [data-xoxo-legal-lang]').forEach(function(el){el.hidden=el.getAttribute('data-xoxo-legal-lang')!==lang});
 }
 function init(){syncLegalLanguage();document.addEventListener('click',function(){setTimeout(syncLegalLanguage,0)},true);document.addEventListener('change',function(){setTimeout(syncLegalLanguage,0)},true);window.addEventListener('focus',syncLegalLanguage);window.addEventListener('storage',syncLegalLanguage);document.addEventListener('visibilitychange',syncLegalLanguage);setInterval(syncLegalLanguage,1500);}
@@ -23990,6 +23991,29 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   window.addEventListener('storage', function(event) {
     if (event.key === 'friendhub_language') apply();
   });
+})();
+</script>
+<script id="xoxo-italian-interface-v1">
+(function(){'use strict';
+const words={"Home":"Home","Discover":"Scopri","Profile":"Profilo","Saved":"Salvati","About":"Informazioni","Support":"Assistenza","Notifications":"Notifiche","Messages":"Messaggi","Log In":"Accedi","Create Account":"Crea un account","Log Out":"Esci","Cancel":"Annulla","OK":"OK","Online":"Online","Offline":"Offline","No notifications yet.":"Nessuna notifica per ora.","A place to meet people":"Un luogo per conoscere persone","Meet People.":"Conosci persone.","Make Friends.":"Fai nuove amicizie.","Discover People":"Scopri persone","Share XOXO Avenue":"Condividi XOXO Avenue","Learn More":"Scopri di più","Find Your Community":"Trova la tua comunità","Meet People":"Conosci persone","Find Communities":"Trova comunità","Make Connections":"Crea legami","All":"Tutti","People":"Persone","Create a post":"Crea un post","Post":"Pubblica","Posts":"Post","Add media":"Aggiungi contenuti multimediali","Your Profile":"Il tuo profilo","Username":"Nome utente","Age":"Età","Country":"Paese","Bio":"Biografia","Languages":"Lingue","Interests":"Interessi","What are you looking for?":"Che cosa cerchi?","Save Profile":"Salva il profilo","Reset":"Reimposta","Loading profile...":"Caricamento del profilo...","Saved Posts":"Post salvati","About XOXO Avenue":"Informazioni su XOXO Avenue","What is XOXO Avenue?":"Che cos'è XOXO Avenue?","Important":"Importante","Need help with XOXO Avenue?":"Hai bisogno di aiuto con XOXO Avenue?","Contact XOXO Avenue Support":"Contatta l'assistenza di XOXO Avenue","Email XOXO Avenue Support":"Scrivi all'assistenza di XOXO Avenue","Live Chat":"Chat dal vivo","Start Live Chat":"Avvia chat dal vivo","XOXO Avenue Support is online right now.":"L'assistenza di XOXO Avenue è online in questo momento.","Are you sure you want to log out?":"Sei sicuro di voler uscire?","Privacy Policy":"Informativa sulla privacy","Terms of Service":"Termini di servizio","Community Guidelines":"Linee guida della comunità","Last updated: October 21, 2026":"Ultimo aggiornamento: 21 ottobre 2026","Contact":"Contatti","Search":"Cerca","Search people":"Cerca persone","Send":"Invia","Reply":"Rispondi","Delete":"Elimina","Edit":"Modifica","Save":"Salva","Close":"Chiudi","Back":"Indietro","Next":"Avanti","Loading...":"Caricamento...","No messages yet.":"Nessun messaggio per ora.","New message":"Nuovo messaggio","Type a message...":"Scrivi un messaggio...","Photos & Videos":"Foto e video","Voice":"Voce","GIF":"GIF","Buzz":"Buzz","Delete conversation":"Elimina conversazione","Report user":"Segnala utente","Share profile":"Condividi profilo","Followers":"Follower","Following":"Seguiti","Follow":"Segui","Unfollow":"Non seguire più","Like":"Mi piace","Comment":"Commenta","Comments":"Commenti","Repost":"Ripubblica","Share":"Condividi","Report":"Segnala","Block":"Blocca","Unblock":"Sblocca","Settings":"Impostazioni","Delete Account":"Elimina account","Danger Zone":"Zona pericolosa","Change profile photo":"Cambia foto del profilo","Create a personal profile.":"Crea un profilo personale.","Discover people with similar interests.":"Scopri persone con interessi simili.","Discover people, friendships and communities based on your interests and the platforms you use.":"Scopri persone, amicizie e comunità in base ai tuoi interessi e alle piattaforme che utilizzi.","If you have a question, experience a problem or need assistance with your account, contact us by email.":"Se hai una domanda, riscontri un problema o hai bisogno di aiuto con il tuo account, contattaci via e-mail.","Privacy":"Privacy","My Posts":"I miei post","My Whispers":"I miei Whispers","No profile visitors yet. 👀":"Nessuna visita al profilo per ora. 👀","Email Notifications":"Notifiche e-mail","Support is online":"L'assistenza è online","Support is offline":"L'assistenza è offline","Logga in":"Accedi"};
+const active=()=>{try{return localStorage.getItem('friendhub_language')==='it'}catch(e){return false}};
+const excluded='script,style,noscript,textarea,code,pre,[contenteditable],.post-content,.comment-content,.dm-message-content,.dm-message-text,[data-no-translate],[translate="no"],.xoxo-legal-locale';
+function apply(root){
+ if(!active()||!root)return;
+ const nodes=[];
+ if(root.nodeType===3)nodes.push(root);
+ else if(root.nodeType===1){if(root.closest(excluded))return;const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);while(walker.nextNode())nodes.push(walker.currentNode)}
+ for(const n of nodes){const parent=n.parentElement;if(!parent||parent.closest(excluded))continue;const raw=n.nodeValue;const t=raw.trim();if(Object.prototype.hasOwnProperty.call(words,t))n.nodeValue=raw.replace(t,words[t]);}
+ if(root.nodeType===1){const els=[root,...root.querySelectorAll('[placeholder],[title],[aria-label]')];for(const el of els){if(el.closest(excluded))continue;for(const attr of ['placeholder','title','aria-label']){const v=el.getAttribute(attr);if(v&&Object.prototype.hasOwnProperty.call(words,v))el.setAttribute(attr,words[v]);}}}
+}
+function init(){if(!active()||!document.body)return;document.documentElement.lang='it';apply(document.body);
+ const hero=document.querySelector('[data-xoxo-sv-static="hero"]');if(hero)hero.textContent=words['Discover people, friendships and communities based on your interests and the platforms you use.'];
+ const support=document.querySelector('[data-xoxo-sv-static="support"]');if(support)support.textContent=words['If you have a question, experience a problem or need assistance with your account, contact us by email.'];
+ let pending=false;const queue=new Set();
+ const flush=()=>{pending=false;for(const n of queue){if(n.isConnected)apply(n)}queue.clear()};
+ new MutationObserver(records=>{for(const r of records){if(r.type==='characterData')queue.add(r.target);else for(const n of r.addedNodes)queue.add(n)}if(!pending){pending=true;requestAnimationFrame(flush)}}).observe(document.body,{childList:true,characterData:true,subtree:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
 </body>
