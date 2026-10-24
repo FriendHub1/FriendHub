@@ -2991,7 +2991,7 @@ export default {
         const bridge = "window.XOXOGirlIntegration?.receive(notifications, currentUser.id);";
         if (originalHtml.includes(notificationAnchor) && originalHtml.includes("</body>")) {
           const patchedHtml = originalHtml.replace(notificationAnchor,
-            notificationAnchor + "\\n                                    " + bridge)
+            notificationAnchor + "\n                                    " + bridge)
             .replace("</body>",
               '<script defer src="/xoxo-girl-voice-alerts.js"></script>' +
               '<script defer src="/xoxo-girl-notification-integration.js"></script></body>');
