@@ -23673,5 +23673,47 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   else init();
 })();
 </script>
+<script id="xoxo-swedish-interface-v4">
+(function(){
+'use strict';
+if((localStorage.getItem('friendhub_language')||'en')!=='sv')return;
+const exact={"Discover people, friendships and communities based on your interests and the platforms you use.":"Upptäck människor, vänskaper och gemenskaper utifrån dina intressen och de plattformar du använder.","🚀 Share XOXO Avenue":"🚀 Dela XOXO Avenue","Discover More Friends":"Upptäck fler vänner","Your Official XOXO Bubble!":"Din officiella XOXO Bubble!","Likes":"Gilla-markeringar","Create Post":"Skapa inlägg","Customize Profile":"Anpassa profil","Change username":"Ändra användarnamn","Optional for existing members":"Valfritt för befintliga medlemmar","Preferred translation language":"Önskat översättningsspråk","Select what you are looking for":"Välj vad du söker","New friends":"Nya vänner","Someone to talk to":"Någon att prata med","Gaming partners":"Spelkompisar","People with similar music taste":"Personer med liknande musiksmak","Movie & TV friends":"Film- och tv-vänner","Study partners":"Studiekompisar","Language exchange":"Språkutbyte","Friends from other countries":"Vänner från andra länder","Communities & groups":"Gemenskaper och grupper","WhatsApp groups":"WhatsApp-grupper","Telegram groups":"Telegram-grupper","Snapchat friends":"Snapchat-vänner","People with similar interests":"Personer med liknande intressen","Sports partners":"Träningskompisar","Travel friends":"Resevänner","Networking":"Nätverkande","Meet new people":"Träffa nya människor","Other":"Annat","Gaming":"Spel","Music":"Musik","Movies & TV":"Film och tv","Books":"Böcker","Sports":"Sport","Technology":"Teknik","Art":"Konst","Travel":"Resor","Food":"Mat","Photography":"Fotografi","Psychology":"Psykologi","Fitness":"Träning","Nature":"Natur","Entertainment":"Underhållning","Languages":"Språk","Culture":"Kultur","This permanently deletes your XOXO Avenue account and account data. This action cannot be undone.":"Detta raderar ditt XOXO Avenue-konto och dina kontouppgifter permanent. Åtgärden kan inte ångras.","Are you absolutely sure?":"Är du helt säker?","Type":"Skriv","below to confirm.":"nedan för att bekräfta.","Confirmation":"Bekräftelse","Email verification code / Código de verificación":"Verifieringskod via e-post","Send verification code":"Skicka verifieringskod","Verify code":"Verifiera kod","Permanently Delete Account":"Radera kontot permanent","If you have a question, experience a problem or need assistance with your account, contact us by email.":"Har du en fråga, ett problem eller behöver hjälp med ditt konto? Kontakta oss via e-post.","Email XOXO Avenue Support":"Mejla XOXO Avenues support","online":"online"};
+const skip='script,style,noscript,textarea,code,pre,[contenteditable="true"],[translate="no"],.notranslate';
+const attrs=['placeholder','title','aria-label','alt'];
+const patterns=[
+ [/\b(\d+) active Whisper\(s\) · Expire after 24 hours\b/g,(_,n)=>n+' aktiva Whispers · Försvinner efter 24 timmar'],
+ [/\bChange username \((\d+)d\)/g,(_,n)=>'Ändra användarnamn ('+n+' d)'],
+ [/\bYou can change your username again in (\d+) days?\./g,(_,n)=>'Du kan ändra ditt användarnamn igen om '+n+' dagar.'],
+ [/\bSelect what you are looking for \((\d+)\)/g,(_,n)=>'Välj vad du söker ('+n+')'],
+ [/\bType DELETE below to confirm\./g,'Skriv DELETE nedan för att bekräfta.']
+];
+const tokens=Object.keys(exact).sort((a,b)=>b.length-a.length);
+function convert(v){if(!v||!v.trim())return v;
+ let out=v;
+ for(const [rx,repl] of patterns)out=out.replace(rx,repl);
+ const trimmed=out.trim();
+ if(Object.prototype.hasOwnProperty.call(exact,trimmed))return out.replace(trimmed,exact[trimmed]);
+ // Keep emoji, counters and small UI decorations while translating labels.
+ for(const token of tokens){
+   if(token.length<4)continue;
+   const esc=token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+   const rx=new RegExp('(^|[\\s✨🎨✍️🔒🌐👋💬🎮🎵🎬📚🗣️🌎👥💚✈️👻⚽🧳🤝🌟🔎🚀🫧💜❤️]+)('+esc+')(?=$|[\\s✨🎨✍️🔒🌐👋💬🎮🎵🎬📚🗣️🌎👥💚✈️👻⚽🧳🤝🌟🔎🚀🫧💜❤️(\\d])','g');
+   out=out.replace(rx,(_,prefix)=>prefix+exact[token]);
+ }
+ return out;
+}
+function node(n){if(n.nodeType===3){if(!n.parentElement||n.parentElement.closest(skip))return;const next=convert(n.nodeValue);if(next!==n.nodeValue)n.nodeValue=next;return;}
+ if(n.nodeType!==1||n.closest(skip))return;
+ const visit=e=>{for(const a of attrs){const v=e.getAttribute(a);if(v){const next=convert(v);if(next!==v)e.setAttribute(a,next);}}};
+ visit(n);
+ const walker=document.createTreeWalker(n,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT);
+ while(walker.nextNode()){const e=walker.currentNode;if(e.nodeType===3){if(e.parentElement&&!e.parentElement.closest(skip)){const v=convert(e.nodeValue);if(v!==e.nodeValue)e.nodeValue=v;}}else if(!e.closest(skip))visit(e);}
+}
+function init(){node(document.body);let pending=false;const q=new Set();
+ const obs=new MutationObserver(records=>{for(const r of records){if(r.type==='childList')r.addedNodes.forEach(n=>q.add(n));else if(r.type==='characterData')q.add(r.target);else if(r.type==='attributes')q.add(r.target);}if(!pending&&q.size){pending=true;requestAnimationFrame(()=>{pending=false;const items=[...q];q.clear();items.forEach(n=>{if(n.isConnected)node(n);});});}});
+ obs.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:attrs});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
 </body>
                                     </html>
