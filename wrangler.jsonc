@@ -15,7 +15,8 @@
   },
   "previews": {
     "vars": {
-      "XOXO_ACTIVITY_EMAILS_ENABLED": "false"
+      "XOXO_ACTIVITY_EMAILS_ENABLED": "false",
+      "XOXO_GIRL_BETA_ENABLED": "true"
     }
   }
 }
