@@ -2984,7 +2984,9 @@ export default {
 
       // BETA-only: inject voice scripts and notification bridge at response time.
       // Keep the large index.html asset untouched and production unchanged.
-      if (env.XOXO_GIRL_BETA_ENABLED === "true" &&
+      if ((env.XOXO_GIRL_BETA_ENABLED === "true" ||
+           url.hostname === "feature-xoxo-girl-voice-alerts-beta-friendhub.paredesarixon.workers.dev") &&
+          url.hostname.endsWith(".workers.dev") &&
           String(response.headers.get("content-type") || "").includes("text/html")) {
         const originalHtml = await response.text();
         const notificationAnchor = "notifications = data || [];";
