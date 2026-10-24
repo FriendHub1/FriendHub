@@ -2966,6 +2966,25 @@ export default {
       return page;
     }
 
+    // Preview homepage requests may exit via the localized sharing branch above.
+    // Inject XOXO Girl at the earliest normal-page entry, BETA hostname only.
+    if (!profileId && url.hostname.endsWith(".workers.dev") &&
+        (env.XOXO_GIRL_BETA_ENABLED === "true" ||
+         url.hostname === "feature-xoxo-girl-voice-alerts-beta-friendhub.paredesarixon.workers.dev")) {
+      const betaAsset = await env.ASSETS.fetch(request);
+      if (String(betaAsset.headers.get("content-type") || "").includes("text/html")) {
+        const html = await betaAsset.text();
+        const marker = "notifications = data || [];";
+        if (html.includes(marker) && html.includes("</body>")) {
+          const patched = html.replace(marker, marker + "\n                                    window.XOXOGirlIntegration?.receive(notifications, currentUser.id);")
+            .replace("</body>", '<script defer src="/xoxo-girl-voice-alerts.js"></script><script defer src="/xoxo-girl-notification-integration.js"></script></body>');
+          const h = new Headers(betaAsset.headers);
+          h.delete("content-length"); h.set("Cache-Control", "no-store"); h.set("X-XOXO-Girl", "beta-injected-early");
+          return new Response(patched, {status:betaAsset.status, statusText:betaAsset.statusText, headers:h});
+        }
+      }
+    }
+
     if (!profileId) {
       const response =
         await env.ASSETS.fetch(
