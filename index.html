@@ -14,6 +14,11 @@
     if (incoming && allowed.indexOf(incoming) !== -1) {
       localStorage.setItem('friendhub_language', incoming);
       document.documentElement.lang = incoming;
+      if (params.has('xoxo_language_refresh')) {
+        params.delete('lang');
+        params.delete('xoxo_language_refresh');
+        window.history.replaceState(window.history.state, '', window.location.pathname + (params.toString() ? '?' + params.toString() : '') + window.location.hash);
+      }
     }
   } catch (error) {
     console.warn('XOXO shared language could not be applied.', error);
@@ -16253,12 +16258,12 @@ function buildSharedPostUrl(postId) {
                                     window.changeFriendHubLanguage = function (language) {
                                     const safeLanguage = ["en", "es", "pt-BR", "pl", "fr", "de", "nb", "cs"].includes(language) ? language : "en";
                                     localStorage.setItem(FRIENDHUB_LANGUAGE_KEY, safeLanguage);
-                                    try {
-                                      const url = new URL(window.location.href);
-                                      url.searchParams.delete("lang");
-                                      window.history.replaceState(window.history.state, "", url.toString());
-                                    } catch (error) {}
-                                    window.location.reload();
+                                    // Navigate to a clean document for every language, preserving
+                                    // the current route and any unrelated URL parameters.
+                                    const destination = new URL(window.location.href);
+                                    destination.searchParams.set("lang", safeLanguage);
+                                    destination.searchParams.set("xoxo_language_refresh", String(Date.now()));
+                                    window.location.assign(destination.toString());
                                     };
                                     const languageSelect = document.getElementById("languageSelect");
                                     if (languageSelect) languageSelect.value = selectedLanguage;
@@ -23580,4 +23585,4 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 </body>
-                                    </html>gr
+                                    </html>
