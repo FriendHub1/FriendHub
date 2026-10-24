@@ -7,7 +7,7 @@
                                     <script id="xoxo-shared-link-language-v1">
 (function () {
   'use strict';
-  var allowed = ['en', 'es', 'pt-BR', 'fr', 'pl', 'de', 'nb', 'cs'];
+  var allowed = ['en', 'es', 'pt-BR', 'fr', 'pl', 'de', 'nb', 'cs', 'sv'];
   try {
     var params = new URLSearchParams(window.location.search);
     var incoming = params.get('lang');
@@ -6196,6 +6196,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
 <option value="pl">🇵🇱 Polski</option>
 <option value="fr">🇫🇷 Français</option>
 <option value="cs">🇨🇿 Čeština</option>
+<option value="sv">🇸🇪 Svenska</option>
                                     </select>
                                     
                                     <div class="notification-wrap" id="notificationWrap">
@@ -16256,7 +16257,7 @@ function buildSharedPostUrl(postId) {
                                     const FRIENDHUB_LANGUAGE_KEY = "friendhub_language";
                                     const selectedLanguage = localStorage.getItem(FRIENDHUB_LANGUAGE_KEY) || "en";
                                     window.changeFriendHubLanguage = function (language) {
-                                    const safeLanguage = ["en", "es", "pt-BR", "pl", "fr", "de", "nb", "cs"].includes(language) ? language : "en";
+                                    const safeLanguage = ["en", "es", "pt-BR", "pl", "fr", "de", "nb", "cs", "sv"].includes(language) ? language : "en";
                                     localStorage.setItem(FRIENDHUB_LANGUAGE_KEY, safeLanguage);
                                     // Navigate to a clean document for every language, preserving
                                     // the current route and any unrelated URL parameters.
@@ -23584,5 +23585,49 @@ refresh();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+<script id="xoxo-swedish-interface-v1">
+(function () {
+  'use strict';
+  const words = {"Home":"Hem","Discover":"Upptäck","Profile":"Profil","Saved":"Sparat","About":"Om oss","Support":"Support","Notifications":"Aviseringar","Messages":"Meddelanden","Log In":"Logga in","Create Account":"Skapa konto","Log Out":"Logga ut","Meet People":"Träffa människor","Make Friends":"Få nya vänner","Discover People":"Upptäck människor","Share XOXO Avenue":"Dela XOXO Avenue","Learn More":"Läs mer","Find Your Community":"Hitta din gemenskap","All":"Alla","People":"Personer","Create a post":"Skapa ett inlägg","Post":"Publicera","Posts":"Inlägg","Friends":"Vänner","Followers":"Följare","Following":"Följer","Add media":"Lägg till media","Your Profile":"Din profil","Username":"Användarnamn","Age":"Ålder","Country":"Land","Bio":"Presentation","Languages":"Språk","Interests":"Intressen","Save Profile":"Spara profil","Reset":"Återställ","Search":"Sök","Search people":"Sök personer","Send":"Skicka","Cancel":"Avbryt","Close":"Stäng","Settings":"Inställningar","Edit Profile":"Redigera profil","Save":"Spara","Delete":"Ta bort","Edit":"Redigera","Comment":"Kommentera","Comments":"Kommentarer","Like":"Gilla","Likes":"Gilla-markeringar","Repost":"Dela vidare","Reply":"Svara","Replies":"Svar","Share":"Dela","Follow":"Följ","Unfollow":"Sluta följa","Loading...":"Laddar...","No notifications yet":"Inga aviseringar ännu","Online":"Online","Offline":"Offline","View Profile":"Visa profil","View profile":"Visa profil","Discover more friends":"Upptäck fler vänner","Load more":"Visa fler","Show more":"Visa mer","Welcome":"Välkommen","Welcome back":"Välkommen tillbaka","Email":"E-post","Password":"Lösenord","Confirm Password":"Bekräfta lösenord","Forgot password?":"Glömt lösenordet?","Sign Up":"Registrera dig","Sign In":"Logga in","Create your account":"Skapa ditt konto","Terms of Service":"Användarvillkor","Privacy Policy":"Integritetspolicy","Community Guidelines":"Gemenskapsregler","Report":"Anmäl","Block":"Blockera","Unblock":"Avblockera","Mute":"Tysta","Unmute":"Slå på ljud","Photo":"Foto","Photos":"Foton","Video":"Video","Videos":"Videor","Public":"Offentlig","Private":"Privat","Today":"Idag","Yesterday":"Igår","New message":"Nytt meddelande","New messages":"Nya meddelanden","Type a message...":"Skriv ett meddelande...","Send message":"Skicka meddelande","Start a conversation":"Starta en konversation","Find friends":"Hitta vänner","Friend suggestions":"Vänförslag","Suggested friends":"Föreslagna vänner","Remove photo":"Ta bort foto","Change photo":"Byt foto","Save changes":"Spara ändringar","Account":"Konto","Help":"Hjälp","Contact us":"Kontakta oss","Back":"Tillbaka","Next":"Nästa","Continue":"Fortsätt","Done":"Klart","Yes":"Ja","No":"Nej","Allow analytics":"Tillåt analys","Decline":"Avböj","Privacy settings":"Integritetsinställningar","Meet People.":"Träffa människor.","Make Friends.":"Få nya vänner.","A place to meet people":"En plats där du kan träffa människor","Find Communities":"Hitta gemenskaper","Make Connections":"Skapa kontakter","Search people, interests, groups...":"Sök personer, intressen, grupper...","What's on your mind?":"Vad tänker du på?","What's on your mind...":"Vad tänker du på...","View all":"Visa alla","More":"Mer","New":"Ny","Select":"Välj","Language":"Språk"};
+  const active = () => { try { return localStorage.getItem('friendhub_language') === 'sv'; } catch(e) { return false; } };
+  const excluded = 'script,style,noscript,textarea,code,pre,[contenteditable="true"]';
+  function translate(root) {
+    if (!active() || !root) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      const parent = node.parentElement;
+      if (!parent || parent.closest(excluded)) continue;
+      const original = node.nodeValue;
+      const trimmed = original.trim();
+      if (words[trimmed]) node.nodeValue = original.replace(trimmed, words[trimmed]);
+    }
+    const elements = [root, ...root.querySelectorAll('[placeholder],[title],[aria-label],[alt]')];
+    for (const el of elements) {
+      if (!el.getAttribute || el.closest(excluded)) continue;
+      for (const attr of ['placeholder','title','aria-label','alt']) {
+        const value = el.getAttribute(attr);
+        if (value && words[value]) el.setAttribute(attr, words[value]);
+      }
+    }
+  }
+  function start() {
+    if (!active() || !document.body) return;
+    translate(document.body);
+    let pending = false;
+    const observer = new MutationObserver(() => {
+      if (pending || !active()) return;
+      pending = true;
+      requestAnimationFrame(() => { pending = false; translate(document.body); });
+    });
+    observer.observe(document.body, {childList:true,subtree:true,characterData:true});
+    window.xoxoSwedishTranslationCount = Object.keys(words).length;
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>
+
 </body>
                                     </html>
