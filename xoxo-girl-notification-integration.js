@@ -52,7 +52,7 @@
   }
   function renderToggle() {
     if (document.getElementById('xoxo-girl-toggle')) return;
-    const host = document.querySelector('#notificationPanel .notification-panel-header');
+    const host = document.querySelector('#notificationPanel .notification-panel-header') || document.querySelector('#notificationPanel') || document.querySelector('[id*=notificationPanel]') || document.body;
     if (!host || !window.XOXOGirl) return;
     const row = document.createElement('div');
     row.id = 'xoxo-girl-toggle';
@@ -86,7 +86,15 @@
     sample.disabled = !checkbox.checked;
     checkbox.addEventListener('change', () => { sample.disabled = !checkbox.checked; });
     row.append(label,sample);
-    host.after(row); translate();
+    if (host === document.body) {
+      row.style.position = 'fixed'; row.style.right = '12px'; row.style.bottom = '12px'; row.style.zIndex = '2147483000'; row.style.maxWidth = '360px';
+      host.append(row);
+    } else if (host.id === 'notificationPanel') {
+      host.prepend(row);
+    } else {
+      host.after(row);
+    }
+    translate();
     document.addEventListener('change', translate);
     document.addEventListener('xoxo-language-changed', translate);
   }
