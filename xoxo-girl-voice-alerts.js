@@ -31,7 +31,7 @@
     const matching = voices.filter(v => v.lang?.toLowerCase().startsWith(lang.toLowerCase().split('-')[0]));
     return matching.find(v => /samantha|victoria|karen|moira|amelie|anna|paulina|luciana|female|femina|maria|sofia|zuzana/i.test(v.name)) || matching[0] || null;
   }
-  function unlock() {\n    const AC = root.AudioContext || root.webkitAudioContext;\n    try { if (AC) { audioContext ||= new AC(); if (audioContext.state === 'suspended') audioContext.resume().catch(() => {}); } } catch (_) {}\n    try { root.speechSynthesis?.getVoices?.(); } catch (_) {}\n  }\n  function chime() {
+  function chime() {
     const AC = root.AudioContext || root.webkitAudioContext;
     if (!AC) return;
     try {
