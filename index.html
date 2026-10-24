@@ -8575,7 +8575,15 @@ async function enforceXoxoSuspension() {
                                     options: {
                                     emailRedirectTo:
                                     "https://xoxoavenue.com",
-                                    data: { xoxo_welcome_eligible_v1: true }
+                                    data: {
+                                    xoxo_welcome_eligible_v1: true,
+                                    language: (function () {
+                                      var selected = 'en';
+                                      try { selected = localStorage.getItem('friendhub_language') || document.getElementById('languageSelect')?.value || 'en'; } catch (error) {}
+                                      if (selected === 'nb') selected = 'no';
+                                      return ['en', 'es', 'pt-BR', 'fr', 'pl', 'de', 'no', 'cs'].includes(selected) ? selected : 'en';
+                                    })()
+                                    }
                                     }
                                     });
                                     if (error) {
