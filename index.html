@@ -6258,7 +6258,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     Meet People.<br>
                                     <span>Make Friends.</span>
                                     </h1>
-                                    <p>
+                                    <p data-xoxo-sv-static="hero">
                                     Discover people, friendships and communities based on
                                     your interests and the platforms you use.
                                     </p>
@@ -7197,7 +7197,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     <div class="content-card support-contact-card">
                                     <div class="support-contact-icon">✉️</div>
                                     <h2>Contact XOXO Avenue Support</h2>
-                                    <p>
+                                    <p data-xoxo-sv-static="support">
                                     If you have a question, experience a problem or need
                                     assistance with your account, contact us by email.
                                     </p>
@@ -23823,6 +23823,35 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
     observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['title','aria-label','placeholder']});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
+<script id="xoxo-swedish-static-content-v7">
+(function () {
+  'use strict';
+  const translations = {
+    hero: 'Upptäck människor, vänskaper och gemenskaper utifrån dina intressen och de plattformar du använder.',
+    support: 'Om du har en fråga, stöter på ett problem eller behöver hjälp med ditt konto, kontakta oss via e-post.'
+  };
+  const original = {
+    hero: 'Discover people, friendships and communities based on your interests and the platforms you use.',
+    support: 'If you have a question, experience a problem or need assistance with your account, contact us by email.'
+  };
+  function apply() {
+    let language = document.documentElement.lang;
+    try { language = localStorage.getItem('friendhub_language') || language; } catch (_) {}
+    document.querySelectorAll('[data-xoxo-sv-static]').forEach(function (element) {
+      const key = element.getAttribute('data-xoxo-sv-static');
+      const wanted = language === 'sv' ? translations[key] : original[key];
+      if (wanted && element.textContent.trim() !== wanted) element.textContent = wanted;
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', apply, {once:true});
+  } else apply();
+  window.addEventListener('pageshow', apply);
+  window.addEventListener('storage', function(event) {
+    if (event.key === 'friendhub_language') apply();
+  });
 })();
 </script>
 </body>
