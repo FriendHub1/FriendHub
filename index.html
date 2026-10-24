@@ -23715,5 +23715,56 @@ function init(){node(document.body);let pending=false;const q=new Set();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
 </script>
+
+<script id="xoxo-swedish-source-text-fixes-v5">
+(function () {
+  'use strict';
+  const translations = {"Discover people, friendships and communities based on your interests and the platforms you use.": "Upptäck människor, vänskaper och gemenskaper utifrån dina intressen och de plattformar du använder.", "👤 Profile": "👤 Profil", "📝 My Posts": "📝 Mina inlägg", "💜 Following": "💜 Följer", "👥 Followers": "👥 Följare", "🫧 My Whispers": "🫧 Mina Whispers", "👀 Who visited my profile": "👀 Vem har besökt min profil?", "Who visited my profile": "Vem har besökt min profil?", "If you have a question, experience a problem or need assistance with your account, contact us by email.": "Om du har en fråga, stöter på ett problem eller behöver hjälp med ditt konto, kontakta oss via e-post."};
+  const keys = Object.keys(translations).sort((a,b)=>b.length-a.length);
+  const ignore = 'script,style,noscript,textarea,pre,code,[contenteditable="true"],[translate="no"],.notranslate';
+  function isSwedish() {
+    try { return (localStorage.getItem('friendhub_language') || '') === 'sv'; }
+    catch (_) { return document.documentElement.lang === 'sv'; }
+  }
+  function translateNode(node) {
+    if (node.nodeType !== Node.TEXT_NODE || !node.parentElement || node.parentElement.closest(ignore)) return;
+    let next = node.nodeValue;
+    for (const key of keys) if (next.includes(key)) next = next.split(key).join(translations[key]);
+    if (next !== node.nodeValue) node.nodeValue = next;
+  }
+  function translateBranch(root) {
+    if (!isSwedish() || !root) return;
+    if (root.nodeType === Node.TEXT_NODE) { translateNode(root); return; }
+    if (root.nodeType !== Node.ELEMENT_NODE || root.closest(ignore)) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) translateNode(walker.currentNode);
+  }
+  function init() {
+    if (!isSwedish()) return;
+    translateBranch(document.body);
+    const queued = new Set();
+    let scheduled = false;
+    const flush = () => {
+      scheduled = false;
+      for (const node of queued) if (node.isConnected) translateBranch(node);
+      queued.clear();
+    };
+    const observer = new MutationObserver(records => {
+      for (const r of records) {
+        if (r.type === 'characterData') queued.add(r.target);
+        else for (const node of r.addedNodes) queued.add(node);
+      }
+      if (queued.size && !scheduled) {
+        scheduled = true;
+        requestAnimationFrame(flush);
+      }
+    });
+    observer.observe(document.body, {subtree:true,childList:true,characterData:true});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',init,{once:true});
+  else init();
+})();
+</script>
+
 </body>
                                     </html>
