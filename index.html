@@ -9267,7 +9267,8 @@ async function enforceXoxoSuspension() {
                                       pl: 'Czy na pewno chcesz się wylogować?',
                                       de: 'Möchtest du dich wirklich abmelden?',
                                       nb: 'Er du sikker på at du vil logge ut?',
-                                      cs: 'Opravdu se chcete odhlásit?'
+                                      cs: 'Opravdu se chcete odhlásit?',
+                                      sv: 'Är du säker på att du vill logga ut?'
                                     };
                                     let logoutLanguage = 'en';
                                     try { logoutLanguage = localStorage.getItem('friendhub_language') || document.documentElement.lang || 'en'; } catch (error) {}
@@ -19168,6 +19169,12 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
   window.renderXoxoSupportButton = function() {
     const startBtn = document.getElementById("supportChatStartBtn");
     if (!startBtn) return;
+    if (localStorage.getItem('friendhub_language') === 'sv') {
+      startBtn.textContent = window.xoxoSupportActiveCase?.id
+        ? (window.xoxoSupportIsOnline ? 'Återgå till livechatten' : 'Återgå till konversationen')
+        : (window.xoxoSupportIsOnline ? 'Starta livechatt' : 'Lämna ett meddelande');
+      return;
+    }
     if (window.xoxoSupportActiveCase?.id) {
       startBtn.textContent = localStorage.getItem('friendhub_language') === 'pl'
         ? (window.xoxoSupportIsOnline ? "Wróć do czatu na żywo" : "Wróć do rozmowy")
@@ -19186,11 +19193,16 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
     if (!box || !label || !message) return;
 
     box.classList.remove("online", "offline");
+    const isSwedishSupport = localStorage.getItem('friendhub_language') === 'sv';
 
     if (hasError) {
       box.classList.add("offline");
       label.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Status niedostępny" : "Status unavailable";
       message.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Nie udało się sprawdzić statusu czatu na żywo. Nadal możesz skontaktować się z pomocą XOXO Avenue przez e-mail." : "Live Chat status could not be checked right now. You can still contact XOXO Avenue Support by email.";
+      if (isSwedishSupport) {
+        label.textContent = 'Status ej tillgänglig';
+        message.textContent = 'Det gick inte att kontrollera livechattens status just nu. Du kan fortfarande kontakta XOXO Avenues support via e-post.';
+      }
       window.xoxoSupportIsOnline = false;
       window.renderXoxoSupportButton();
       return;
@@ -19200,12 +19212,20 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
       box.classList.add("online");
       label.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Dostępny" : window.xoxoPtLabel("Online","En línea","Online");
       message.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Pomoc XOXO Avenue jest teraz dostępna online." : window.xoxoPtLabel("XOXO Avenue Support is online right now.","El soporte de XOXO Avenue está en línea ahora.","O suporte da XOXO Avenue está online agora.");
+      if (isSwedishSupport) {
+        label.textContent = 'Online';
+        message.textContent = 'XOXO Avenues support är online just nu.';
+      }
       window.xoxoSupportIsOnline = true;
       window.renderXoxoSupportButton();
     } else {
       box.classList.add("offline");
       label.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Niedostępny" : "Offline";
       message.textContent = localStorage.getItem('friendhub_language') === 'pl' ? "Pomoc XOXO Avenue jest obecnie niedostępna. Możesz zostawić wiadomość tutaj lub skontaktować się z nami przez e-mail." : "XOXO Avenue Support is currently offline. You can leave a message here or contact us by email.";
+      if (isSwedishSupport) {
+        label.textContent = 'Offline';
+        message.textContent = 'XOXO Avenues support är offline just nu. Du kan lämna ett meddelande här eller kontakta oss via e-post.';
+      }
       window.xoxoSupportIsOnline = false;
       window.renderXoxoSupportButton();
     }
