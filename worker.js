@@ -2982,6 +2982,30 @@ export default {
         "normal-page"
       );
 
+      // BETA-only: inject voice scripts and notification bridge at response time.
+      // Keep the large index.html asset untouched and production unchanged.
+      if (env.XOXO_GIRL_BETA_ENABLED === "true" &&
+          String(response.headers.get("content-type") || "").includes("text/html")) {
+        const originalHtml = await response.text();
+        const notificationAnchor = "notifications = data || [];";
+        const bridge = "window.XOXOGirlIntegration?.receive(notifications, currentUser.id);";
+        if (originalHtml.includes(notificationAnchor) && originalHtml.includes("</body>")) {
+          const patchedHtml = originalHtml.replace(notificationAnchor,
+            notificationAnchor + "\\n                                    " + bridge)
+            .replace("</body>",
+              '<script defer src="/xoxo-girl-voice-alerts.js"></script>' +
+              '<script defer src="/xoxo-girl-notification-integration.js"></script></body>');
+          headers.delete("content-length");
+          headers.set("Cache-Control", "no-store");
+          headers.set("X-XOXO-Girl", "beta-injected");
+          return new Response(patchedHtml, {status:response.status,
+            statusText:response.statusText, headers});
+        }
+        console.warn("XOXO Girl BETA injection anchor missing");
+        return new Response(originalHtml, {status:response.status,
+          statusText:response.statusText, headers});
+      }
+
       return new Response(
         response.body,
         {
