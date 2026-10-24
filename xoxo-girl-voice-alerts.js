@@ -16,8 +16,17 @@
     pl: {dm:'Psst… ktoś chce wywołać twój uśmiech.',like:'Mmm… komuś spodobał się twój post.',comment:'Hej, piękna osobo… masz nowy komentarz.',follow:'Oho… ktoś chce cię lepiej poznać.',repost:'Ktoś udostępnił twój post!',whisper:'Ciii… czeka na ciebie nowy szept.',other:'Psst… masz nowe powiadomienie w XOXO Avenue.'},
     de: {dm:'Psst… jemand möchte dich zum Lächeln bringen.',like:'Mmm… jemandem gefällt dein Beitrag.',comment:'Hey, du Schöne… du hast einen neuen Kommentar.',follow:'Oh… jemand möchte dich kennenlernen.',repost:'Jemand hat deinen Beitrag geteilt!',whisper:'Psst… ein neues Flüstern wartet auf dich.',other:'Psst… du hast eine neue Benachrichtigung bei XOXO Avenue.'},
     nb: {dm:'Psst… noen vil få deg til å smile.',like:'Mmm… noen likte innlegget ditt.',comment:'Hei, vakre deg… du har fått en kommentar.',follow:'Oi… noen vil bli bedre kjent med deg.',repost:'Noen delte innlegget ditt!',whisper:'Hysj… en ny hvisking venter på deg.',other:'Psst… du har et nytt varsel på XOXO Avenue.'},
-    cs: {dm:'Psst… někdo ti chce vykouzlit úsměv.',like:'Hmm… někomu se líbí tvůj příspěvek.',comment:'Ahoj, krásko… máš nový komentář.',follow:'Jé… někdo tě chce poznat.',repost:'Někdo sdílel tvůj příspěvek!',whisper:'Pššt… čeká na tebe nový šepot.',other:'Psst… máš nové oznámení na XOXO Avenue.'}
+    cs: {dm:'Psst… někdo ti chce vykouzlit úsměv.',like:'Hmm… někomu se líbí tvůj příspěvek.',comment:'Ahoj, krásko… máš nový komentář.',follow:'Jé… někdo tě chce poznat.',repost:'Někdo sdílel tvůj příspěvek!',whisper:'Pššt… čeká na tebe nový šepot.',other:'Psst… máš nové oznámení na XOXO Avenue.'},
+    sv: {dm:'Psst… någon vill få dig att le.',like:'Mmm… någon gillade ditt inlägg.',comment:'Hej, fina du… någon har kommenterat ditt inlägg.',follow:'Oj… någon vill lära känna dig.',repost:'Någon delade ditt inlägg!',whisper:'Schh… du har fått en ny viskning.',other:'Psst… du har en ny avisering på XOXO Avenue.'},
+    it: {dm:'Psst… qualcuno vuole farti sorridere.',like:'Mmm… a qualcuno piace il tuo post.',comment:'Ehi, splendore… qualcuno ha commentato il tuo post.',follow:'Oh… qualcuno vuole conoscerti.',repost:'Qualcuno ha condiviso il tuo post!',whisper:'Shhh… hai un nuovo sussurro.',other:'Psst… hai una nuova notifica su XOXO Avenue.'}
   };
+  const VOICE_KEY = 'xoxo_girl_preferred_voice_v1';
+  function availableVoices(lang) {
+    const prefix = normalizeLang(lang).split('-')[0].toLowerCase();
+    return (root.speechSynthesis?.getVoices?.() || []).filter(v => v.lang?.toLowerCase().startsWith(prefix));
+  }
+  function setPreferredVoice(name) { try { root.localStorage.setItem(VOICE_KEY, String(name || '')); } catch (_) {} }
+  function getPreferredVoice() { try { return root.localStorage.getItem(VOICE_KEY) || ''; } catch (_) { return ''; } }
   const EXCLUDED = new Set(['jewel','jewels','secret_letter','secret_letters','letter','letters']);
   const ALIASES = {message:'dm',direct_message:'dm',dm:'dm',likes:'like',liked:'like',comments:'comment',reply:'comment',follower:'follow',new_follower:'follow',reposts:'repost',whispers:'whisper'};
   const queue = [];
@@ -27,8 +36,10 @@
   function setEnabled(value) { try { root.localStorage.setItem(KEY, String(Boolean(value))); } catch (_) {} if (value) unlock(); else { queue.length = 0; root.speechSynthesis?.cancel(); speaking = false; } return enabled(); }
   function normalizeLang(lang) { const l = String(lang || root.document?.documentElement?.lang || 'en').toLowerCase(); if (l.startsWith('pt')) return 'pt-BR'; if (l.startsWith('no') || l.startsWith('nb')) return 'nb'; return Object.keys(PHRASES).find(k => k.toLowerCase() === l) || l.split('-')[0] in PHRASES && l.split('-')[0] || 'en'; }
   function pickVoice(lang) {
-    const voices = root.speechSynthesis?.getVoices?.() || [];
-    const matching = voices.filter(v => v.lang?.toLowerCase().startsWith(lang.toLowerCase().split('-')[0]));
+    const matching = availableVoices(lang);
+    const preferred = getPreferredVoice();
+    const selected = matching.find(v => v.name === preferred);
+    if (selected) return selected;
     return matching.find(v => /samantha|victoria|karen|moira|amelie|anna|paulina|luciana|female|femina|maria|sofia|zuzana/i.test(v.name)) || matching[0] || null;
   }
   function chime() {
@@ -38,15 +49,15 @@
       audioContext ||= new AC();
       if (audioContext.state !== 'running') return;
       const t = audioContext.currentTime;
-      [659.25, 783.99, 987.77].forEach((freq, i) => {
+      [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25].forEach((freq, i) => {
         const osc = audioContext.createOscillator(), gain = audioContext.createGain();
         osc.type = 'sine'; osc.frequency.value = freq;
-        const start = t + i * 0.11;
+        const start = t + i * 0.25;
         gain.gain.setValueAtTime(0.0001, start);
-        gain.gain.exponentialRampToValueAtTime(0.055, start + 0.025);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.45);
+        gain.gain.exponentialRampToValueAtTime(0.035, start + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.68);
         osc.connect(gain).connect(audioContext.destination);
-        osc.start(start); osc.stop(start + 0.47);
+        osc.start(start); osc.stop(start + 0.7);
       });
     } catch (_) { /* Audio unavailable: speech can still work. */ }
   }
@@ -61,7 +72,7 @@
     const done = () => { speaking = false; drain(); };
     utterance.onend = done; utterance.onerror = done;
     chime();
-    try { root.setTimeout(() => { if (!enabled() || !unlocked || root.document?.hidden) { done(); return; } root.speechSynthesis.speak(utterance); }, 550); } catch (_) { done(); }
+    try { root.setTimeout(() => { if (!enabled() || !unlocked || root.document?.hidden) { done(); return; } root.speechSynthesis.speak(utterance); }, 1950); } catch (_) { done(); }
   }
   function announce(type, opts = {}) {
     if (!enabled() || !unlocked || !root.speechSynthesis || root.document?.hidden) return false;
@@ -81,5 +92,5 @@
   }
   function preview(type = 'dm', lang) { return announce(type, {lang}); }
   root.document?.addEventListener('visibilitychange', () => { if (root.document.hidden) { queue.length = 0; root.speechSynthesis?.cancel(); speaking = false; } else drain(); });
-  root.XOXOGirl = Object.freeze({announce,preview,enabled,setEnabled,unlock,phrases:PHRASES});
+  root.XOXOGirl = Object.freeze({announce,preview,enabled,setEnabled,unlock,availableVoices,setPreferredVoice,getPreferredVoice,phrases:PHRASES});
 })(window);
