@@ -14,23 +14,19 @@ function section(before,after){
   assert.ok(i>=0 && j>i,"Worker BETA section not found: "+before);
   return worker.slice(i,j);
 }
-const chat=section('// Stay Safe, Sweetheart! — opt-in preview on workers.dev only.',
-  '// Opt-in, branch-only preview of conversation reports');
-const admin=section('// Opt-in, branch-only preview of conversation reports',
+const route=section('// Stay Safe, Sweetheart! — opt-in BETA only on workers.dev.',
   'const xoxoShareLanguage =');
-for(const [name,s,flag] of [
-  ["chat",chat,"xoxo_safety_chat_beta"],
-  ["admin",admin,"xoxo_safety_admin_beta"]
-]){
-  assert.match(s,/url\.hostname\.endsWith\("\.workers\.dev"\)/,
-    name+" must not inject scripts on the public production domain");
-  assert.match(s,/request\.method === "GET"/,
-    name+" should not intercept POST or API traffic");
-  assert.ok(s.includes('url.searchParams.get("'+flag+'") === "1"'),
-    name+" must remain an explicit opt-in");
-  assert.match(s,/headers\.set\("Cache-Control",\s*"no-store"\)/,
-    name+" must not cache private pages");
+assert.match(route,/url\.hostname\.endsWith\("\.workers\.dev"\)/,
+  "the combined route must not inject scripts on the public production domain");
+assert.match(route,/request\.method === "GET"/,
+  "the route must not intercept POST or API traffic");
+for(const flag of ["xoxo_safety_chat_beta","xoxo_safety_admin_beta"]){
+  assert.ok(route.includes('url.searchParams.get("'+flag+'") === "1"'),
+    flag+" must remain an explicit opt-in");
 }
+assert.match(route,/xoxoSafetyChatBeta \|\| xoxoSafetyAdminBeta/);
+assert.match(route,/headers\.set\("Cache-Control",\s*"no-store"\)/,
+  "private preview pages must never be cached");
 const scripts=[
   "/beta/stay-safe-sweetheart.js",
   "/beta/stay-safe-report-form.js",
@@ -41,13 +37,15 @@ const scripts=[
 ];
 let offset=-1;
 for(const filename of scripts){
-  const at=chat.indexOf(filename);
+  const at=route.indexOf(filename);
   assert.ok(at>offset,"missing or out-of-order chat dependency: "+filename);
   offset=at;
 }
-assert.match(admin,/\/beta\/admin-report-queue\.js/);
-assert.match(admin,/\/beta\/admin-report-panel-bridge\.js/);
-assert.doesNotMatch(admin,/stay-safe-admin-reports-bridge\.js/,
+assert.match(route,/\/beta\/admin-report-queue\.js/);
+assert.match(route,/\/beta\/admin-report-panel-bridge\.js/);
+assert.ok(route.indexOf("/beta/stay-safe-chat-preview-bridge.js")<
+  route.indexOf("/beta/admin-report-queue.js"),"chat dependencies must precede admin dependencies");
+assert.doesNotMatch(route,/stay-safe-admin-reports-bridge\.js/,
   "do not inject the retired/draft alternative admin report adapter");
 assert.match(preview,/const REPORT_RPC_WRITES_ENABLED=false;/,
   "preview must never send live database writes");
