@@ -47,7 +47,11 @@ const required = [
   ["authenticated RPC grant", /to authenticated;/i],
   ["admin reason is a required RPC parameter", /xoxo_admin_list_conversation_reports_beta\(\s*p_reason text\s*\)/i],
   ["status reason is a required RPC parameter", /xoxo_admin_update_conversation_report_beta\(\s*p_report_id uuid,\s*p_status text,\s*p_reason text\s*\)/i],
-  ["moderation audit includes reason", /'conversation_report_status:'\s*\|\|\s*p_status\s*\|\|\s*': '\s*\|\|\s*v_reason/i],
+  ["moderation audit includes specific report id", /'conversation_report_status:'\s*\|\|\s*p_status\s*\|\|\s*': report='\s*\|\|\s*p_report_id::text/i],
+  ["moderation audit records previous status", /' previous='\s*\|\|\s*v_previous_status/i],
+  ["status transition serialized by row lock", /from xoxo_safety_private\.conversation_reports r\s*where r\.id = p_report_id\s*for update/i],
+  ["moderation audit includes reason", /' reason='\s*\|\|\s*v_reason/i],
+  ["audit log reason forbids control characters", /v_reason\s*~\s*'\[\[:cntrl:\]\]'/i],
   ["fixed search path", /set search_path = ''/i]
 ];
 for (const [name, pattern] of required) {
@@ -63,6 +67,8 @@ assert.equal((source.match(/conversation_report_queue:view count=/g)||[]).length
   "Every successful admin queue read must be audited exactly once");
 assert.equal((source.match(/pg_catalog\.length\(v_reason\) not between 10 and 300/g)||[]).length,3,
   "All three admin RPCs must reject missing, short or oversized moderation reasons");
+assert.equal((source.match(/v_reason\s*~\s*'\[\[:cntrl:\]\]'/g)||[]).length,3,
+  "All three admin RPCs must reject multiline/control-character audit log injection");
 assert.match(source,/revoke all on function public\.xoxo_admin_list_conversation_reports_beta\(text\)/i);
 assert.match(source,/revoke all on function public\.xoxo_admin_update_conversation_report_beta\(uuid, text, text\)/i);
 assert.match(source,/revoke all on function\s+public\.xoxo_admin_page_conversation_reports_beta\(\s*text,boolean,timestamptz,uuid,integer\)/i);
