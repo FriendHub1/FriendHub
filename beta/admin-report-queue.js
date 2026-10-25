@@ -14,6 +14,8 @@
   const reasons=["Scam or money requests","Threats or blackmail","Harassment or unwanted messages","Fake profile or identity","Intimate photo threats","Other"];
   const rpcBySource=Object.freeze({message:"update_xoxo_dm_report_status",conversation_beta:"xoxo_admin_update_conversation_report_beta"});
   const uuid=value=>typeof value==="string" && UUID.test(value);
+  const validReason=value=>typeof value==="string" &&
+    value.trim().length>=10 && value.trim().length<=300;
   function normalizeLegacy(report){
     if(!report || !uuid(report.id))return null;
     return {...report,source:"message"};
@@ -46,9 +48,13 @@
       created_at:report.created_at,status:report.status,
       evidence_count:count,source:"conversation_beta"};
   }
-  async function loadReportQueue(client,{includeLegacy=true}={}){
+  async function loadReportQueue(client,{includeLegacy=true,moderationReason}={}){
     if(typeof client?.rpc!=="function" || typeof includeLegacy!=="boolean")
       return {ok:false,reason:"invalid_client"};
+    // Reuse the same 10–300 character reason entered in the site's EXISTING
+    // PIN + moderation reason dialog; never silently query without a reason.
+    if(!validReason(moderationReason))
+      return {ok:false,reason:"moderation_reason_required"};
     let reports=[];
     if(includeLegacy){
       let original;
@@ -60,7 +66,9 @@
     }
     let warning=null;
     try{
-      const extra=await client.rpc("xoxo_admin_list_conversation_reports_beta");
+      const extra=await client.rpc("xoxo_admin_list_conversation_reports_beta",{
+        p_reason:moderationReason.trim()
+      });
       if(extra?.error){
         warning=["PGRST202","42883"].includes(String(extra.error.code)) 
           ? "conversation_reports_not_deployed" : "conversation_reports_unavailable";
@@ -82,11 +90,15 @@
     });
     return {ok:true,reports,warning};
   }
-  async function updateReportStatus(client,report,status){
+  async function updateReportStatus(client,report,status,moderationReason){
     if(typeof client?.rpc!=="function" || !report || !uuid(report.id) ||
-       !statuses.has(status) || !Object.hasOwn(rpcBySource,report.source))return {ok:false,reason:"invalid_request"};
+       !statuses.has(status) || !Object.hasOwn(rpcBySource,report.source) ||
+       (report.source==="conversation_beta" && !validReason(moderationReason)))
+      return {ok:false,reason:"invalid_request"};
     try{
-      const result=await client.rpc(rpcBySource[report.source],{p_report_id:report.id,p_status:status});
+      const args={p_report_id:report.id,p_status:status};
+      if(report.source==="conversation_beta")args.p_reason=moderationReason.trim();
+      const result=await client.rpc(rpcBySource[report.source],args);
       return result?.error || result?.data!==true ? {ok:false,reason:"status_update_failed"}:{ok:true};
     }catch{return {ok:false,reason:"status_update_failed"};}
   }
