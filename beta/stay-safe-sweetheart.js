@@ -32,14 +32,14 @@
     it:{"tips":"Altri consigli di sicurezza","report":"Segnala conversazione 🚩","meet":"Se incontri qualcuno di persona, scegli un luogo pubblico, avvisa una persona fidata e organizza il tuo trasporto.","threat":"Se qualcuno ti minaccia o ricatta, conserva le prove, interrompi i contatti e non pagare."}
   };
   const css = `
-.xoxo-safe-backdrop{position:fixed;inset:0;z-index:2147483000;background:#000a;display:grid;place-items:center;padding:16px}
-.xoxo-safe-dialog{box-sizing:border-box;max-width:430px;width:100%;max-height:90vh;overflow:auto;background:#160e29;color:#f5ebff;border:1px solid #69478a;border-radius:22px;padding:22px;box-shadow:0 20px 65px #0009;font:inherit}
+.xoxo-safe-backdrop{position:fixed;inset:0;z-index:2147483000;box-sizing:border-box;background:#000a;display:grid;place-items:center;padding:12px;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom))}
+.xoxo-safe-dialog{box-sizing:border-box;max-width:430px;width:100%;max-height:90vh;max-height:90dvh;overflow:auto;overscroll-behavior:contain;background:#160e29;color:#f5ebff;border:1px solid #69478a;border-radius:22px;padding:clamp(14px,4vw,22px);box-shadow:0 20px 65px #0009;font:16px system-ui}
 .xoxo-safe-dialog h2{margin:0 0 8px;color:#ffdc64;font-size:23px}
 .xoxo-safe-dialog p{line-height:1.5}
 .xoxo-safe-dialog li{margin:10px 0;line-height:1.4}
 .xoxo-safe-dialog button.xoxo-safe-secondary{background:#39254e;color:#ffe49a;border:1px solid #84659a;margin-top:9px}
 .xoxo-safe-dialog [hidden]{display:none!important}
-.xoxo-safe-dialog button{background:#ffda60;color:#24132f;border:0;border-radius:11px;padding:12px 16px;width:100%;font-weight:700;cursor:pointer}
+.xoxo-safe-dialog button{box-sizing:border-box;background:#ffda60;color:#24132f;border:0;border-radius:11px;padding:12px 16px;min-height:44px;width:100%;font-weight:700;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
 `;
   function show({conversationId, locale="en", accountId, onReport}={}) {
     if (!conversationId || !accountId) return false;
