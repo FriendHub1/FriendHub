@@ -45,11 +45,12 @@ jobs:
 
   deploy-safety-beta:
     needs: verify-beta-package
-    if: ${{ github.ref == 'refs/heads/feature/xoxo-safety-reminder-beta' && vars.XOXO_SAFETY_BETA_DEPLOY_ENABLED == 'true' }}
+    if: ${{ github.ref == 'refs/heads/feature/xoxo-safety-reminder-beta' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: xoxo-safety-beta
     env:
+      XOXO_SAFETY_BETA_DEPLOY_ENABLED: ${{ vars.XOXO_SAFETY_BETA_DEPLOY_ENABLED }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.XOXO_SAFETY_BETA_CF_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.XOXO_SAFETY_BETA_CF_ACCOUNT_ID }}
     steps:
@@ -60,6 +61,7 @@ jobs:
       - name: Require isolated Cloudflare credentials
         run: |
           set -euo pipefail
+          test "$XOXO_SAFETY_BETA_DEPLOY_ENABLED" = 'true' || { echo 'BETA deployment flag must be true'; exit 1; }
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing XOXO_SAFETY_BETA_CF_API_TOKEN'; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing XOXO_SAFETY_BETA_CF_ACCOUNT_ID'; exit 1; }
           node beta/test-safety-beta-deploy-contract.cjs
