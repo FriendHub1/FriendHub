@@ -55,8 +55,11 @@ revoke all on function public.is_xoxo_admin() from public, anon, authenticated;
 grant execute on function public.is_xoxo_admin() to authenticated;
 
 alter table public.direct_messages enable row level security;
+alter table public.dm_conversation_clears enable row level security;
 grant select on public.direct_messages to authenticated;
 grant select on public.dm_conversation_clears to authenticated;
+create policy cleared_state_is_private on public.dm_conversation_clears
+  for select to authenticated using (user_id = auth.uid());
 create policy dm_visible_for_user on public.direct_messages
   for select to authenticated using (
     (auth.uid() = sender_id or auth.uid() = recipient_id)
