@@ -136,7 +136,7 @@ function install(){
    // Closing a chat often changes display/style without mutating messages.
    if(chat)observer.observe(chat,{attributes:true,attributeFilter:["style","class"]});
    // Switching peers typically updates the header, not just the messages.
-   if(header)observer.observe(header,{childList:true,subtree:false});
+   if(header)observer.observe(header,{childList:true,subtree:true});
  }
  if(typeof window.addEventListener==="function")
    window.addEventListener("pagehide",disposeFlow);
