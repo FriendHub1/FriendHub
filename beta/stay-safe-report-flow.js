@@ -9,6 +9,8 @@ function start({conversationId,otherUserId,locale="es",messages=[],onPrepared}={
  const form=window.XOXOReportFormBeta;
  const evidence=window.XOXOEvidencePickerBeta;
  const validator=window.XOXOReportValidationBeta;
+ const peer=otherUserId.toLowerCase();
+ const available=new Set(messages.filter(m=>m&&typeof m.id==="string"&&typeof m.senderId==="string"&&typeof m.recipientId==="string"&&((m.senderId.toLowerCase()===peer)||(m.recipientId.toLowerCase()===peer))).map(m=>m.id));
  if(!form?.open||!evidence?.open||!validator?.validate)return false;
  return form.open({
   conversationId,locale,
@@ -25,7 +27,7 @@ function start({conversationId,otherUserId,locale="es",messages=[],onPrepared}={
       messageIds:Object.freeze([...selection.messageIds])
      });
      const check=validator.validate(prepared);
-     if(!check.ok){console.warn("XOXO BETA report validation failed",check.errors);return;}
+     if(!check.ok||selection.messageIds.some(id=>!available.has(id))){console.warn("XOXO BETA report validation failed");return;}
      onPrepared(prepared);
     }
    });
