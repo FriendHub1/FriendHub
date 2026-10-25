@@ -9,7 +9,7 @@ const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
  */
 function createReportRpcWriter(client) {
   return async function writeReport(report) {
-    if(typeof client?.rpc!=="function" || !report || typeof report!=="object")
+    if(typeof client?.rpc!=="function" || !report || typeof report!=="object" || Array.isArray(report))
       return {ok:false};
     const {otherUserId,reasonCode,details,messageIds,idempotencyKey}=report;
     if(typeof otherUserId!=="string" || !UUID.test(otherUserId) ||
