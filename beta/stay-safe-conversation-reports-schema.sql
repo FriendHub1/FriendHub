@@ -266,6 +266,18 @@ begin
       order by r.created_at desc
       limit 100
   ) x;
+
+  -- The queue exposes sensitive report metadata. The EXISTING admin access
+  -- audit must also record this READ, not only a status update or DM viewer.
+  -- An admin/admin pair denotes a QUEUE event, not a viewed DM conversation;
+  -- actual DM conversation reads continue to log their real participant IDs.
+  insert into public.xoxo_message_access_log
+    (admin_id, conversation_user_1, conversation_user_2, action)
+  values (
+    auth.uid(), auth.uid(), auth.uid(),
+    'conversation_report_queue:view count=' ||
+       pg_catalog.jsonb_array_length(v_rows)::text || ': ' || v_reason
+  );
   return v_rows;
 end
 $xoxo_admin_list$;
