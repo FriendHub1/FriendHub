@@ -147,12 +147,19 @@ async function testAdapter() {
 
 function browserHarness({ enabled = true, rows, submit, getMessages: overrideMessages, isContextActive } = {}) {
   const status = [];
-  const ui = { form: null, picker: null, reminder: null, calls: 0 };
+  const ui = { form: null, picker: null, reminder: null, calls: 0,
+    formDismissed:false, pickerDismissed:false };
   const root = {
     crypto: { randomUUID: () => key },
     XOXOReportSubmitBrowserBeta: { submit: submit || adapter.submit },
-    XOXOReportFormBeta: { open: args => { ui.form = args; return true; } },
-    XOXOEvidencePickerBeta: { open: args => { ui.picker = args; return true; } },
+    XOXOReportFormBeta: {
+      open: args => { ui.form = args; ui.formDismissed=false; return true; },
+      dismiss: owner => {if(ui.form?.owner!==owner)return false;ui.formDismissed=true;return true;}
+    },
+    XOXOEvidencePickerBeta: {
+      open: args => { ui.picker = args; ui.pickerDismissed=false;return true; },
+      dismiss: owner => {if(ui.picker?.owner!==owner)return false;ui.pickerDismissed=true;return true;}
+    },
     XOXOSafetyReminderBeta: { show: args => { ui.reminder = args; return true; } }
   };
   const source = fs.readFileSync(path.join(__dirname, "stay-safe-browser-flow.js"), "utf8");
@@ -334,6 +341,48 @@ async function testFlow() {
   assert.equal(attemptSubmissions,1,
     "Only the latest form and picker may submit the current report");
   assert.equal(superseded.status.length,1);
+
+  // Closing a DM during asynchronous evidence loading dismisses its
+  // owned dialog and prevents the late promise from opening stale evidence.
+  let releaseOldChatMessages;
+  const interrupted=browserHarness({
+    getMessages:()=>new Promise(resolve=>{releaseOldChatMessages=resolve})
+  });
+  interrupted.flow.openReport();
+  interrupted.ui.form.onContinue(submitData);
+  await flush();
+  assert.equal(interrupted.flow.dispose(),true);
+  assert.equal(interrupted.ui.formDismissed,true,
+    "Disposing a chat must close its private report form");
+  assert.equal(interrupted.flow.dispose(),false,"Disposal must be idempotent");
+  releaseOldChatMessages([{id:id1,sender_id:peer,recipient_id:user,
+    text:"Previously visible private evidence"}]);
+  await flush();
+  assert.equal(interrupted.ui.picker,null,
+    "An old asynchronous DM read must not show private evidence after chat closes");
+  assert.equal(interrupted.flow.openReport(),false);
+  assert.equal(interrupted.flow.showReminder(),false);
+
+  // An evidence picker already displayed must close on chat change; its
+  // retained callback cannot submit after the moderator switches conversations.
+  let invalidatedSubmissions=0;
+  const closedChat=browserHarness({
+    submit:async()=>{invalidatedSubmissions++;return {ok:true,reportId}}
+  });
+  closedChat.flow.openReport();
+  closedChat.ui.form.onContinue(submitData);
+  await flush();
+  const detachedPicker=closedChat.ui.picker;
+  assert.ok(detachedPicker);
+  assert.equal(closedChat.flow.dispose(),true);
+  assert.equal(closedChat.ui.pickerDismissed,true,
+    "Dispose must dismiss an open evidence picker with private DM content");
+  detachedPicker.onContinue(selectionData);
+  await flush();
+  assert.equal(invalidatedSubmissions,0,
+    "Private evidence cannot be submitted after its chat flow is disposed");
+  assert.equal(closedChat.status.length,0,
+    "Old chat flow cannot alert newly opened conversation");
 
   // A form callback can fire twice while getMessages() is pending.
   // Only ONE evidence picker may open, with no obsolete form replacing it.
