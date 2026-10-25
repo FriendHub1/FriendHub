@@ -162,7 +162,7 @@ begin
   -- direct_messages SELECT policy explicitly, including per-user clears.
   -- FOR SHARE blocks deletes AND concurrent non-key UPDATEs to validated
   -- rows (sender/recipient/created_at/content) until the evidence snapshot
-  -- has been persisted atomically. FOR KEY SHARE is not sufficient here:
+  -- has been persisted atomically. KEY SHARE locking is insufficient here:
   -- a concurrent content/timestamp UPDATE could otherwise slip through.
   for v_message in
     select dm.id, dm.sender_id, dm.recipient_id, dm.created_at
