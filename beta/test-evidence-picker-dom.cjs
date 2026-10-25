@@ -68,4 +68,39 @@ picks=h.find(h.document.body,n=>n.tagName==="INPUT"&&n.type==="checkbox");
 assert.equal(picks.length,2,"case-variant UUID duplicates must not create extra choices");
 assert.ok(h.find(h.document.body,n=>n.tagName==="BUTTON").some(n=>n.textContent==="Invia segnalazione"));
 
-console.log("PASS: latest 100 evidence messages, max 20 selected, unique IDs, Swedish/Italian text");
+// Host messages may be sorted newest FIRST. With valid created_at dates,
+// always offer the true 100 most recent messages, not the oldest 100.
+const stamped=messages.map((m,i)=>({...m,created_at:
+  new Date(Date.UTC(2026,9,1,0,i,0)).toISOString()}));
+h=createDOM();
+assert.equal(h.api.open({conversationId:"reverse-timeline",
+  messages:stamped.slice().reverse(),locale:"es",onContinue:()=>{}}),true);
+picks=h.find(h.document.body,n=>n.tagName==="INPUT"&&n.type==="checkbox");
+assert.equal(picks.length,100);
+assert.equal(picks[0].value,uuid(21),
+  "newest-first host ordering must still show newest 100 in chronological order");
+assert.equal(picks.at(-1).value,uuid(120),
+  "latest actual message should remain available even with reversed inputs");
+
+// Unsorted but individually dated arrays must also select newest 100.
+h=createDOM();
+const shuffled=stamped.filter((_,i)=>i%2===0).reverse()
+  .concat(stamped.filter((_,i)=>i%2===1));
+assert.equal(h.api.open({conversationId:"mixed-timeline",
+  messages:shuffled,locale:"en",onContinue:()=>{}}),true);
+picks=h.find(h.document.body,n=>n.tagName==="INPUT"&&n.type==="checkbox");
+assert.deepEqual(picks.map(p=>p.value),stamped.slice(20).map(m=>m.id),
+  "dated messages should use chronological order even when loaded unsorted");
+
+// If any timestamp is missing/invalid, do not silently infer chronology.
+// Preserve existing host ordering for backwards compatibility.
+h=createDOM();
+const mixed=stamped.slice().reverse();
+mixed[0]={...mixed[0],created_at:"invalid"};
+assert.equal(h.api.open({conversationId:"missing-date",
+  messages:mixed,locale:"en",onContinue:()=>{}}),true);
+picks=h.find(h.document.body,n=>n.tagName==="INPUT"&&n.type==="checkbox");
+assert.equal(picks[0].value,uuid(100));
+assert.equal(picks.at(-1).value,uuid(1));
+
+console.log("PASS: latest 100 dated DMs in forward/reverse/shuffled order, no-date fallback, max 20 selected, unique IDs, ten-language picker");
