@@ -24,7 +24,7 @@ for(const bad of [
  {...base,details:"x".repeat(2001)},
  {...base,messageIds:[]},
  {...base,messageIds:[id1,id1]},
- {...base,messageIds:[outsider]},
+ {...base,messageIds:["not-a-uuid"]},
  {...base,messageIds:Array(21).fill(id1)}
 ])assert.equal(validate(bad).ok,false);
 let prepared=null;
