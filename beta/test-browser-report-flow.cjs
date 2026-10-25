@@ -161,6 +161,22 @@ async function testFlow() {
   h.ui.form.onContinue({ conversationId: "conversation-1", reasonCode: 1, details: "Threats" });
   await flush();
   assert.equal(h.ui.picker.messages.length, 2, "must exclude messages from other chats");
+
+  // Authenticated chat normalization must carry date metadata into the UI.
+  // The picker relies on these dates when the host returns newest-first rows.
+  const dated=browserHarness({getMessages:()=>[
+    {id:id2,sender_id:user,recipient_id:peer,content:"newer",
+      created_at:"2026-10-25T13:00:00Z"},
+    {id:id1,sender_id:peer,recipient_id:user,content:"older",
+      created_at:"2026-10-24T13:00:00Z"}
+  ]});
+  dated.flow.openReport();
+  dated.ui.form.onContinue({conversationId:"conversation-1",reasonCode:1,details:"Threats"});
+  await flush();
+  assert.equal(dated.ui.picker.messages[0].created_at,"2026-10-25T13:00:00Z");
+  assert.equal(dated.ui.picker.messages[1].created_at,"2026-10-24T13:00:00Z");
+  assert.equal(dated.calls.length,0,
+    "Showing dated evidence choices must not send a report");
   h.ui.picker.onContinue({ conversationId: "conversation-1", messageIds: [id1] });
   await flush();
   assert.equal(h.status.length, 1);
