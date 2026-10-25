@@ -1,10 +1,11 @@
 -- XOXO Avenue / Stay Safe, Sweetheart! — BETA ONLY
--- REVIEW-ONLY SQL. DO NOT APPLY TO THE LIVE DATABASE WITHOUT OWNER APPROVAL.
--- Designed against project cxosofpxfmjkrhfabrqc (schema inspected 2026-10-25).
+-- Owner-approved installation on cxosofpxfmjkrhfabrqc: 2026-10-25.
+-- Do not install elsewhere or broaden tester access without owner approval.
 -- Purpose: atomic conversation reports with 1–20 explicitly selected DM IDs.
 -- Existing public.direct_message_reports and PIN-protected DM viewer are untouched.
 -- Retention: store IDs + minimal metadata, NOT copies of DM content/attachments.
--- Applying requires a separate privacy/retention review and real-account tests.
+-- Before enabling the frontend, complete privacy/retention review and
+-- real-account tests, using a separately owner-approved expiring test account.
 
 begin;
 
@@ -535,6 +536,6 @@ to authenticated;
 
 commit;
 
--- NOT INCLUDED: frontend admin UI wiring or real-environment integration tests.
--- The draft admin RPCs return metadata only and preserve the PIN-gated viewer.
--- This file is NOT part of a deployed migration or production workflow.
+-- Frontend remains disabled in production; installation alone does not enable
+-- submissions. Admin RPCs return metadata only and preserve the PIN-gated
+-- viewer. This file is the reviewed source for the 2026-10-25 BETA install.

@@ -73,6 +73,13 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-fixtures.sql
       - name: Create safety BETA SQL within ephemeral PostgreSQL 17
         run: psql -X -v ON_ERROR_STOP=1 -f beta/stay-safe-conversation-reports-schema.sql
+      - name: Require private roles, empty tester list and locked definer RPCs
+        run: |
+          result="$(psql -XAtq -v ON_ERROR_STOP=1 -f beta/sql-postinstall-safety-gate-readonly.sql)"
+          if [ "$result" != "t" ]; then
+            echo 'Restricted BETA post-install safety gate FAILED' >&2
+            exit 1
+          fi
       - name: Execute authenticated report and moderation security tests
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-report-pipeline.sql
       - name: Reject disappearing and once-view evidence in isolated Postgres
