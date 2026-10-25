@@ -66,7 +66,7 @@
       if(typeof xoxoIsAdmin==="undefined"||!xoxoIsAdmin||!document.getElementById("xoxoAdminModeration")?.classList.contains("active"))return;
       const list=document.getElementById("xmmReportsList");
       if(!list)return;
-      const queue=await adapter.loadReportQueue(supabaseClient);
+      const queue=await adapter.loadReportQueue(supabaseClient,{includeLegacy:false});
       if(version!==generation||!queue?.ok||typeof xoxoIsAdmin==="undefined"||!xoxoIsAdmin)return;
       const conversationReports=queue.reports.filter(x=>x.source==="conversation_beta");
       if(!conversationReports.length)return;
