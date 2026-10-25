@@ -37,6 +37,10 @@ const required = [
   ["PIN lockout enforced", /ps\.locked_until is null or ps\.locked_until <= now\(\)/i],
   ["existing moderation audit", /insert into public\.xoxo_message_access_log/i],
   ["report queue read audited", /conversation_report_queue:view count=/i],
+  ["paginated queue RPC", /create or replace function public\.xoxo_admin_page_conversation_reports_beta\(/i],
+  ["keyset comparison", /\(\(r\.status = 'pending'\), r\.created_at, r\.id\)\s*<\s*\(p_after_pending, p_after_created_at, p_after_id\)/i],
+  ["page size capped", /p_limit not between 1 and 50/i],
+  ["page audit", /conversation_report_page:view count=/i],
   ["no partial evidence commit", /Evidence could not be saved atomically/i],
   ["explicit anon revocation", /from public, anon, authenticated/i],
   ["authenticated RPC grant", /to authenticated;/i],
@@ -48,18 +52,19 @@ const required = [
 for (const [name, pattern] of required) {
   assert.match(source, pattern, `Required safety contract missing: ${name}`);
 }
-assert.equal((source.match(/xoxo_safety_private\.active_session_for\((?:v_reporter|auth\.uid\(\))\)/g)||[]).length,3,
-  "Submission, report queue, and status changes must all reject revoked sessions");
+assert.equal((source.match(/xoxo_safety_private\.active_session_for\((?:v_reporter|auth\.uid\(\))\)/g)||[]).length,4,
+  "Submission, initial queue, paginated queue, and status updates must all reject revoked sessions");
 assert.match(source,/revoke all on function xoxo_safety_private\.active_session_for\(uuid\)/i,
   "Private session guard must not be executable by public roles");
-assert.equal((source.match(/security definer/g)||[]).length,3,
-  "Only the three reviewed public BETA RPCs may use SECURITY DEFINER");
+assert.equal((source.match(/security definer/g)||[]).length,4,
+  "Only four reviewed public BETA RPCs may use SECURITY DEFINER");
 assert.equal((source.match(/conversation_report_queue:view count=/g)||[]).length,1,
   "Every successful admin queue read must be audited exactly once");
-assert.equal((source.match(/pg_catalog\.length\(v_reason\) not between 10 and 300/g)||[]).length,2,
-  "Both admin RPCs must reject missing, short or oversized moderation reasons");
+assert.equal((source.match(/pg_catalog\.length\(v_reason\) not between 10 and 300/g)||[]).length,3,
+  "All three admin RPCs must reject missing, short or oversized moderation reasons");
 assert.match(source,/revoke all on function public\.xoxo_admin_list_conversation_reports_beta\(text\)/i);
 assert.match(source,/revoke all on function public\.xoxo_admin_update_conversation_report_beta\(uuid, text, text\)/i);
+assert.match(source,/revoke all on function\s+public\.xoxo_admin_page_conversation_reports_beta\(\s*text,boolean,timestamptz,uuid,integer\)/i);
 // Regression guards for real PostgreSQL errors found by the BETA PR checks.
 assert.doesNotMatch(source, /pg_catalog\.coalesce\s*\(/i,
   "COALESCE is a SQL expression, not a schema-qualified function");
