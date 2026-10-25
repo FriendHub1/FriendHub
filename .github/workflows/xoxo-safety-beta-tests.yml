@@ -1,0 +1,34 @@
+name: XOXO Safety BETA Tests
+
+on:
+  push:
+    branches:
+      - feature/xoxo-safety-reminder-beta
+  pull_request:
+    paths:
+      - "beta/**"
+      - ".github/workflows/xoxo-safety-beta-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safety-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check JavaScript syntax
+        run: |
+          for f in beta/*.cjs; do node --check "$f"; done
+      - name: Run report evidence regression suites
+        run: |
+          node beta/test-report-server-authorization.cjs
+          node beta/test-report-rls-check.cjs
+          node beta/test-report-authenticated-preflight.cjs
+          node beta/test-report-preflight-auth-failures.cjs
+          node beta/test-report-query-exception.cjs
