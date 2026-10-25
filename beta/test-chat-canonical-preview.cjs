@@ -13,8 +13,14 @@ const outsider = "55555555-5555-4555-8555-555555555555";
 const msg = "22222222-2222-4222-8222-222222222221";
 const otherMsg = "22222222-2222-4222-8222-222222222222";
 const called = { auth: 0, reads: 0, rpc: 0, alerts: [] };
+let authChange=null;
 const client = {
-  auth: { getUser: async () => { called.auth++; throw new Error("Auth must not run in preview"); } },
+  auth: {
+    getUser: async () => { called.auth++; throw new Error("Auth must not run in preview"); },
+    onAuthStateChange: cb => {
+      authChange=cb;return {data:{subscription:{unsubscribe(){}}}};
+    }
+  },
   from: () => { called.reads++; throw new Error("Never query live messages in preview"); },
   rpc: async () => { called.rpc++; throw new Error("Never write live reports in preview"); }
 };
@@ -26,7 +32,8 @@ const window = {
     { id: otherMsg, sender_id: outsider, recipient_id: peer, content: "unrelated" }
   ]
 };
-const chat = { style: { display: "block" }, isConnected: true };
+const chat = { style: { display: "block" }, isConnected: true,
+   querySelector:()=>null };
 const events = [];
 const document = {
   readyState: "loading",
@@ -54,6 +61,15 @@ for (const name of [
   assert.deepEqual(Object.keys(api.translations).sort(), [
     "en", "es", "pt-BR", "fr", "pl", "de", "cs", "no", "sv", "it"
   ].sort());
+  // Even a populated SPA currentUser and DM cache cannot authorize the
+  // preview before the real client announces INITIAL_SESSION.
+  assert.equal(api.visibleContext(),null);
+  assert.equal(api.openReport(),false);
+  events[0][1](); // Simulate DOMContentLoaded and Auth listener installation.
+  assert.equal(typeof authChange,"function");
+  authChange("INITIAL_SESSION",null);
+  assert.equal(api.openReport(),false);
+  authChange("INITIAL_SESSION",{user:{id:user,is_anonymous:false}});
   const conversation = api.visibleContext();
   assert.equal(conversation.messages.length, 1, "must exclude unrelated chat messages");
   assert.equal(api.openReport(), true, "preview should demonstrate report UI");
