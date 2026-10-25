@@ -12,7 +12,17 @@ function valid(id){return typeof id==="string" && UUID.test(id);}
 function locale(){
  return typeof getFriendHubLanguage==="function"?getFriendHubLanguage():"en";
 }
-function words(es,en){return locale()==="es"?es:en;}
+const UI={
+ en:{button:"Report conversation",success:"🚩 Report submitted. Thank you for keeping XOXO Avenue safe. 💜",failure:"No report was sent. The BETA server may not be enabled or the evidence is no longer available."},
+ es:{button:"Denunciar conversación",success:"🚩 Denuncia enviada correctamente. Gracias por cuidarnos. 💜",failure:"No se envió ninguna denuncia. El sistema BETA aún no está listo o las pruebas ya no están disponibles."},
+ "pt-BR":{button:"Denunciar conversa",success:"🚩 Denúncia enviada. Obrigado por ajudar a manter o XOXO Avenue seguro. 💜",failure:"Nenhuma denúncia foi enviada. O sistema BETA pode estar indisponível ou as provas não estão mais acessíveis."},
+ fr:{button:"Signaler la conversation",success:"🚩 Signalement envoyé. Merci de contribuer à la sécurité de XOXO Avenue. 💜",failure:"Aucun signalement n'a été envoyé. Le serveur BETA peut être indisponible ou les preuves ne sont plus accessibles."},
+ pl:{button:"Zgłoś rozmowę",success:"🚩 Zgłoszenie wysłane. Dziękujemy za dbanie o bezpieczeństwo XOXO Avenue. 💜",failure:"Zgłoszenie nie zostało wysłane. Serwer BETA może być niedostępny lub dowody są już niedostępne."},
+ de:{button:"Unterhaltung melden",success:"🚩 Meldung gesendet. Danke, dass du XOXO Avenue sicherer machst. 💜",failure:"Es wurde keine Meldung gesendet. Der BETA-Server ist möglicherweise nicht verfügbar oder die Beweise sind nicht mehr zugänglich."},
+ cs:{button:"Nahlásit konverzaci",success:"🚩 Nahlášení bylo odesláno. Děkujeme, že pomáháš chránit XOXO Avenue. 💜",failure:"Nahlášení nebylo odesláno. Server BETA může být nedostupný nebo důkazy již nejsou přístupné."},
+ no:{button:"Rapporter samtalen",success:"🚩 Rapport sendt. Takk for at du bidrar til et tryggere XOXO Avenue. 💜",failure:"Ingen rapport ble sendt. BETA-serveren kan være utilgjengelig, eller bevisene er ikke lenger tilgjengelige."}
+};
+function ui(){const code=locale();return UI[code==="nb"||code==="nb-NO"?"no":code]||UI.en;}
 function visibleContext(){
  const chat=document.getElementById("dmChat");
  if(!chat || chat.style.display==="none" || !chat.isConnected)return null;
@@ -55,7 +65,7 @@ function ensureButton(){
  }
  const active=!!visibleContext();
  btn.hidden=!active;
- btn.title=words("Denunciar conversación","Report conversation");
+ btn.title=ui().button;
  btn.setAttribute("aria-label",btn.title);
 }
 function refresh(){
@@ -132,11 +142,7 @@ function openReport(){
        messages:ctx.messages.slice(-100),
        onContinue:async evidence=>{
          const result=await submit(ctx,draft,evidence.messageIds);
-         window.alert(result.ok
-           ? words("🚩 Denuncia enviada correctamente. Gracias por cuidarnos. 💜",
-                   "🚩 Report submitted. Thank you for keeping XOXO Avenue safe. 💜")
-           : words("No se envió ninguna denuncia. El sistema BETA aún no está listo o las pruebas ya no están disponibles.",
-                   "No report was sent. The BETA server may not be enabled or the evidence is no longer available."));
+         window.alert(result.ok?ui().success:ui().failure);
        }
      });
    }
