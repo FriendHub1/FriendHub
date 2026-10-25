@@ -206,7 +206,7 @@ set search_path = ''
 as $xoxo_admin_list$
 declare
   v_rows jsonb;
-  v_reason text := pg_catalog.btrim(pg_catalog.coalesce(p_reason,''));
+  v_reason text := pg_catalog.btrim(coalesce(p_reason,''));
 begin
   if auth.uid() is null or not public.is_xoxo_admin() then
     raise exception 'Administrator access required' using errcode = '42501';
@@ -259,7 +259,7 @@ as $xoxo_admin_status$
 declare
   v_reporter uuid;
   v_other_user uuid;
-  v_reason text := pg_catalog.btrim(pg_catalog.coalesce(p_reason,''));
+  v_reason text := pg_catalog.btrim(coalesce(p_reason,''));
 begin
   if auth.uid() is null or not public.is_xoxo_admin() then
     raise exception 'Administrator access required' using errcode = '42501';
