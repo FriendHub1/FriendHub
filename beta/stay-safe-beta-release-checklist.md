@@ -102,3 +102,14 @@ Tests include:
 - [Green GitHub Actions run 40172896880](https://github.com/FriendHub1/FriendHub/actions/runs/40172896880): all 3 jobs passed, including WebKit (two phone-sized layouts), desktop Chromium, Node tests, and PostgreSQL/PostgREST HTTP security and concurrency tests.
 - Nine synthetic screenshots are available for 7 days via [GitHub artifact](https://github.com/FriendHub1/FriendHub/actions/runs/40172896880/artifacts/12590304440); they include no real private messages or real users.
 - **Still open:** test real iPhone Safari hardware with the integrated live-auth BETA chat, real Supabase Auth sessions in a separate environment, and owner approval for evidence retention and the proposed report rate-limit. The PR remains a draft and no production database schema/Worker has been modified.
+
+### Pending-report queue starvation protection (2026-10-25)
+
+- Previous draft admin RPC returned the 100 **most recently created** cases; after a large influx of closed reports, an older `pending` safety report could disappear from the first 100 visible cards. This had an impact on actual moderation triage, even though the database still retained the report.
+- `xoxo_admin_list_conversation_reports_beta` now orders **pending reports first**, newest within each status tier, **before** applying the 100-card limit. The JSON array preserves that same ordering. `beta/admin-report-queue.js` now also sorts its normalized cards pending-first instead of undoing the server priority.
+- `beta/sql-test-admin-queue-priority.sql` inserts 120 newer synthetic resolved cases and three **95-day-old pending cases**. It verifies that all three pending cases remain visible in a 100-card result, all pending precede closed reports, response metadata omits message bodies, and the existing audit log records one 100-result queue read.
+- `beta/test-safety-postgrest-queue-priority.py` repeats these assertions using the **real loopback PostgREST HTTP API and a signed synthetic admin JWT**, and verifies one additional read-audit event.
+- The Node report queue regression exercises an older pending case versus newer reviewed and resolved cards. SQL source-contract checks prevent accidental removal of pending-first priority before the limit.
+- [GitHub Actions run 40201828217](https://github.com/FriendHub1/FriendHub/actions/runs/40201828217) passed all three jobs: Node.js 22, PostgreSQL 17 with signed PostgREST HTTP, and WebKit/Chromium browser tests. No live data was accessed or changed.
+- **Limit remains:** if there are MORE than 100 pending reports simultaneously, the first 100 (newest pending) will appear. Full pending-history pagination and explicit retention/erasure policy are not yet implemented or approved. Do not describe this as a complete admin-history solution.
+- The source remains on the unmerged safety BETA branch and PR #12. No production SQL installation, Worker deployment or real Supabase Auth testing was performed.
