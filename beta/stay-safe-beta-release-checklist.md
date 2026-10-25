@@ -47,7 +47,8 @@ Tests include:
 - [ ] Approve or modify the proposed rate limit of 10 reports per user per 24 hours.
 - [ ] Deploy and audit the three RPC functions after explicit approval. Verify no broader table grants or admin access.
 - [ ] Test signed-in reporter, unrelated account, malformed evidence, repeated idempotency key, and rate limit in real Supabase.
-- [ ] Test BETA preview UX on desktop/iPhone and ensure each chat displays the warning once per account.
+- [x] Browser smoke-test the standalone warning → report form → evidence picker using WebKit at 320×568 and 390×844 mobile viewports and Chromium at 1280×800; verify 20-message cap, modal geometry, keyboard focus, translations and one-time warning. Green in GitHub Actions 40172387185.
+- [ ] Complete device testing on a physical iPhone/Safari and the integrated authenticated XOXO Avenue BETA chat; standalone WebKit emulation does not replace this.
 - [x] Confirm all 10 site languages, including Bokmål `nb` -> `no` mapping, and validate user-facing safety copy in CI.
 - [ ] Verify moderation PIN expiry, unauthorized admin access, status changes and audit records end-to-end.
 - [ ] Verify no regressions to legacy single-message reports or admin DM viewer.
@@ -82,3 +83,12 @@ Tests include:
 - The JWT signing key and database credentials are **fictional values hardcoded solely for temporary CI**. No project API key, service-role key, real email, user record or production message was accessed. Neither the production Workers service nor Supabase schema was modified.
 
 **Critical scope:** PostgREST HTTP and PostgreSQL RPC interoperability are now demonstrated using *locally signed synthetic JWTs and stubbed Auth tables*, **not actual Supabase Auth-issued logins**. A separate real Supabase Auth/PostgREST environment, owner-approved retention/deletion policy, final rate-limit decision and device visual checks remain required before enabling or deploying this feature. PR #12 remains in DRAFT state with no merge.
+
+### Moderation read audit and responsive UI smoke results (2026-10-25)
+
+- The draft PIN-gated `xoxo_admin_list_conversation_reports_beta` function now writes a **single queue-view audit event** to the EXISTING `public.xoxo_message_access_log` on each successful list read, including the mandatory 10–300-character reason and number of reports returned. It uses an admin/admin UUID pair with an explicit queue-event action (NOT a fabricated DM access), while individual DM reads still log their actual participant pairs.
+- The existing report-status update audit remains unchanged. Rejected queue reads and status changes must not create successful access events. SQL and real signed HTTP/PostgREST tests verify these invariants without granting ordinary users access to the sensitive audit table.
+- Fixed the narrow-screen `box-sizing`, maximum viewport height and safe-area padding on `stay-safe-sweetheart.js`, `stay-safe-report-form.js` and `stay-safe-evidence-picker.js`. Report and evidence buttons use touch-friendly minimum heights and adapt to long translations. The evidence picker now traps Tab/Shift+Tab inside its modal. Duplicate Swedish and Italian strings were removed from the report form.
+- **Real visual browser engines**: [GitHub Actions 40172387185](https://github.com/FriendHub1/FriendHub/actions/runs/40172387185) passed **all three jobs** (Node 22, PostgreSQL 17/PostgREST and the new browser job). Browser job launched **WebKit** in 320×568 Spanish and 390×844 Italian mobile emulations and **Chromium** in 1280×800 desktop English. It exercised one-time reminder, form, six report reasons, 20 selected evidence cap, keyboard focus trapping and modal overflow.
+- It uploaded **synthetic screenshot artifacts** with seven-day expiration: [review UI captures](https://github.com/FriendHub1/FriendHub/actions/runs/40172387185/artifacts/12590911282). These screenshots are generated from artificial messages only and do not depict real users or content.
+- **Not yet tested:** physical iPhone Safari, production app integration with live Supabase Auth, or privacy/retention decisions. Draft PR #12 remains unmerged. The browser preview cannot submit live reports and the production site has not been changed.
