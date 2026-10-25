@@ -36,8 +36,9 @@ function tick(){return new Promise(done=>setImmediate(done))}
  const list=element("div");
  let active=true,admin=true;
  const moderation={classList:{contains:token=>token==="active"&&active}};
- const counts={pin:0,queue:0,legacy:0};
+ const counts={pin:0,queue:0,legacy:0,viewer:0,statusUpdates:0};
  let authChange,observer,fetchDeferred=false,resolveFetch,visibilityHandler;
+ let statusDeferred=false,resolveStatus;
  const auth={onAuthStateChange:fn=>{authChange=fn;return {
    data:{subscription:{unsubscribe(){}}}
  }}};
@@ -51,6 +52,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
  }
  const context={
    window:{
+    confirm:()=>true,
     addEventListener:(event,fn)=>{if(event==="pagehide")visibilityHandler=fn},
     loadXoxoDmReports:async()=>{
       counts.legacy++;list.children=[element("legacy-report")];list.children[0].parent=list;
@@ -64,7 +66,11 @@ function tick(){return new Promise(done=>setImmediate(done))}
         if(fetchDeferred)return new Promise(resolve=>{resolveFetch=resolve});
         return {ok:true,reports:[report]};
       },
-      updateReportStatus:async()=>({ok:true}),
+      updateReportStatus:async()=>{
+        counts.statusUpdates++;
+        if(statusDeferred)return new Promise(resolve=>{resolveStatus=resolve});
+        return {ok:true};
+      },
       cursorAfter:()=>null
     }
    },
@@ -77,7 +83,8 @@ function tick(){return new Promise(done=>setImmediate(done))}
    supabaseClient:{auth},
    get xoxoIsAdmin(){return admin;},
    getFriendHubLanguage:()=>"es",
-   xoxoModerationPinAuthorize:async()=>{counts.pin++;return {reason}}
+   xoxoModerationPinAuthorize:async()=>{counts.pin++;return {reason}},
+   openXoxoDmConversation:()=>{counts.viewer++}
  };
  vm.runInNewContext(src,context);
  assert.equal(typeof authChange,"function","install must listen to Supabase Auth");
@@ -147,6 +154,32 @@ function tick(){return new Promise(done=>setImmediate(done))}
  login(adminA);
  assert.equal(cards(),0,"same-user new login should invalidate old PIN grants");
  assert.ok(unlock());
+
+ // An in-flight STATUS WRITE may succeed on the server before logout, but
+ // its old UI callback must NOT reopen the legacy admin queue afterwards.
+ await authorize();
+ const card=sel("[data-xoxo-conversation-beta-report]")[0];
+ const actions=card.children.find(node=>node.className==="xmm-report-actions");
+ const beforeStatusReload=counts.legacy;
+ statusDeferred=true;
+ const inFlight=actions.children[1].listeners.click();
+ await tick();
+ assert.equal(counts.statusUpdates,1);
+ assert.equal(typeof resolveStatus,"function");
+ authChange("SIGNED_OUT",null);
+ assert.equal(cards(),0);
+ const finishStatus=resolveStatus;
+ resolveStatus=null;
+ finishStatus({ok:true});
+ await inFlight;
+ await tick();
+ assert.equal(counts.legacy,beforeStatusReload,
+   "Late status-write success from old login must not reload admin reports");
+ assert.equal(cards(),0);
+ assert.ok(unlock());
+ actions.children[0].listeners.click();
+ assert.equal(counts.viewer,0,
+   "Detached conversation button from previous PIN session must be inert");
  assert.equal(counts.queue>=4,true);
- console.log("PASS: auth switch, logout mid-flight, inactive tab, pagehide and same-user re-login invalidate PIN-authorized safety cards");
+ console.log("PASS: account switching, logout during report/page/status RPCs, tab exit and navigation purge private metadata");
 })().catch(error=>{console.error(error);process.exitCode=1});
