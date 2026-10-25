@@ -39,7 +39,7 @@
   function adminName(id){
     return typeof xoxoDmAdminName==="function"?xoxoDmAdminName(id):String(id||"Unknown");
   }
-  function addReportCard(report,list,adapter,moderationReason,onAuthorizationLost){
+  function addReportCard(report,list,adapter,moderationReason,onAuthorizationLost,isStillAuthorized){
     const t=localized();
     const card=node("article","","xmm-report-card");
     card.setAttribute("data-xoxo-conversation-beta-report",report.id);
@@ -60,6 +60,7 @@
     const view=node("button",t.view);
     view.type="button";
     view.addEventListener("click",()=>{
+      if(typeof isStillAuthorized==="function"&&!isStillAuthorized())return;
       if(typeof xoxoIsAdmin==="undefined"||!xoxoIsAdmin||
          typeof openXoxoDmConversation!=="function")return;
       // Only reuses the PIN-gated, reason-audited existing viewer.
@@ -71,11 +72,15 @@
       const button=node("button",t.actions[status]);
       button.type="button";
       button.addEventListener("click",async()=>{
-        if(typeof xoxoIsAdmin==="undefined"||!xoxoIsAdmin||
+        if((typeof isStillAuthorized==="function"&&!isStillAuthorized())||
+           typeof xoxoIsAdmin==="undefined"||!xoxoIsAdmin||
            !window.confirm(t.confirm+t.statuses[status]+"?"))return;
         for(const item of actions.querySelectorAll("button"))item.disabled=true;
         feedback.textContent=t.saving;
         const result=await adapter.updateReportStatus(supabaseClient,report,status,moderationReason);
+        // A late write response from a previous login/PIN session must never
+        // trigger the legacy moderation loader in the NEW session.
+        if(typeof isStillAuthorized==="function"&&!isStillAuthorized())return;
         if(result?.ok){await window.loadXoxoDmReports();return;}
         // A PIN may expire while the status request is in flight.
         // Remove private metadata immediately rather than leaving stale rows.
@@ -197,10 +202,11 @@
       const empty=Array.from(list.querySelectorAll(".xmm-report-feedback"))
         .find(x=>x.textContent.includes("No private-message reports yet"));
       if(empty)empty.remove();
+      const cardGeneration=generation;
       for(const report of cached)addReportCard(report,list,adapter,moderationReason,()=>{
         invalidate();
         if(isActiveAdmin()){paintUnlockControl();showWarning("reauthorize");}
-      });
+      },()=>unlocked && isActiveAdmin() && cardGeneration===generation);
       if(canLoadMore && pageCursor){
         const button=node("button",localized().more,"xmm-reload");
         button.type="button";
