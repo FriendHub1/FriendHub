@@ -96,6 +96,22 @@ async function exercise(browser,engine){
   await page.locator("[data-xoxo-conversation-beta-report]").waitFor();
   assert.equal(await page.locator("#preserved-legacy-moderation").count(),1);
 
+  // In both native browser engines, a throttled background timer must not
+  // leave report metadata readable when the tab regains focus after expiry.
+  await page.evaluate(()=>{
+    const realNow=Date.now;
+    try{
+      Date.now=()=>realNow()+14*60*1000+1;
+      window.dispatchEvent(new Event("focus"));
+    }finally{Date.now=realNow}
+  });
+  assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0,
+    engine+" kept reports visible after PIN expiry on focus");
+  assert.equal(await page.locator("#preserved-legacy-moderation").count(),1,
+    engine+" removed the existing moderation viewer on PIN expiry");
+  await page.locator("[data-xoxo-safety-report-unlock]").click();
+  await page.locator("[data-xoxo-conversation-beta-report]").waitFor();
+
   // Native MutationObserver must remove private data when leaving Moderation.
   await page.evaluate(()=>document.getElementById("xoxoAdminModeration").classList.remove("active"));
   await page.waitForFunction(()=>!document.querySelector("[data-xoxo-conversation-beta-report]"));

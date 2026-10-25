@@ -109,6 +109,11 @@
     let pageCursor=null;
     let canLoadMore=false;
     let loadingMore=false;
+    // The existing server PIN verification lasts 15 minutes. Hide BETA-only
+    // report metadata earlier, without changing the legacy PIN/viewer flow.
+    const PIN_DISPLAY_WINDOW_MS=14*60*1000;
+    let pinExpiresAt=0;
+    let pinExpiryTimer=null;
 
     function isActiveAdmin(){
       return typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
@@ -125,6 +130,10 @@
       for(const item of list.querySelectorAll("[data-xoxo-safety-load-more]"))item.remove();
     }
     function invalidate(){
+      if(pinExpiryTimer!==null && typeof window.clearTimeout==="function")
+        window.clearTimeout(pinExpiryTimer);
+      pinExpiryTimer=null;
+      pinExpiresAt=0;
       ++generation;
       cached=[];
       unlocked=false;
@@ -134,6 +143,25 @@
       loadingMore=false;
       clearBetaUI();
       // Never touch cards owned by the existing DM report renderer.
+    }
+    function isPinWindowActive(){
+      if(!unlocked)return false;
+      if(!pinExpiresAt || Date.now()>=pinExpiresAt){
+        invalidate();
+        if(isActiveAdmin())paintUnlockControl();
+        return false;
+      }
+      return true;
+    }
+    function armPinExpiry(){
+      pinExpiresAt=Date.now()+PIN_DISPLAY_WINDOW_MS;
+      if(typeof window.setTimeout!=="function")return;
+      const deadline=pinExpiresAt;
+      pinExpiryTimer=window.setTimeout(()=>{
+        if(unlocked && pinExpiresAt===deadline && Date.now()>=deadline)
+          isPinWindowActive();
+      },PIN_DISPLAY_WINDOW_MS);
+      pinExpiryTimer?.unref?.();
     }
     // Supabase Auth events are synchronous notifications. Drop sensitive BETA
     // cards immediately when a session is signed out/switched; incrementing
@@ -162,8 +190,15 @@
       });
       guard.observe(moderationArea,{attributes:true,attributeFilter:["class"]});
     }
-    if(typeof window.addEventListener==="function")
+    if(typeof window.addEventListener==="function"){
       window.addEventListener("pagehide",invalidate);
+      // Background browsers can throttle timers; re-check when focused.
+      window.addEventListener("focus",()=>{if(unlocked)isPinWindowActive();});
+    }
+    if(typeof document.addEventListener==="function")
+      document.addEventListener("visibilitychange",()=>{
+        if(document.visibilityState==="visible" && unlocked)isPinWindowActive();
+      });
 
     function paintUnlockControl(){
       if(!isActiveAdmin())return;
@@ -193,6 +228,7 @@
           if(reason.length<10 || reason.length>300)return;
           moderationReason=reason;
           unlocked=true;
+          armPinExpiry();
           await window.loadXoxoDmReports();
         }catch{
           // An obsolete dialog must NEVER invalidate a newer account's PIN
@@ -207,6 +243,7 @@
     function paintCachedReports(){
       const list=reportList();
       if(!list||!isActiveAdmin())return;
+      if(!isPinWindowActive())return;
       clearBetaUI();
       if(!cached.length)return;
       const empty=Array.from(list.querySelectorAll(".xmm-report-feedback"))
@@ -216,7 +253,7 @@
       for(const report of cached)addReportCard(report,list,adapter,moderationReason,()=>{
         invalidate();
         if(isActiveAdmin()){paintUnlockControl();showWarning("reauthorize");}
-      },()=>unlocked && isActiveAdmin() && cardGeneration===generation);
+      },()=>isPinWindowActive() && isActiveAdmin() && cardGeneration===generation);
       if(canLoadMore && pageCursor){
         const button=node("button",localized().more,"xmm-reload");
         button.type="button";
@@ -226,7 +263,7 @@
       }
     }
     async function loadMoreReportPage(){
-      if(loadingMore || !unlocked || !canLoadMore || !pageCursor ||
+      if(loadingMore || !isPinWindowActive() || !canLoadMore || !pageCursor ||
          !isActiveAdmin())return;
       const version=++generation;
       const previous=cached.slice();
@@ -244,7 +281,7 @@
       }catch{page={ok:false};}
       // A stale response must not clear the loading lock belonging to a new
       // authenticated admin session.
-      if(version!==generation || !isActiveAdmin())return;
+      if(version!==generation || !isActiveAdmin() || !isPinWindowActive())return;
       loadingMore=false;
       if(!page?.ok || !Array.isArray(page.reports)){
         invalidate();paintUnlockControl();showWarning("reauthorize");
@@ -280,7 +317,7 @@
       canLoadMore=false;
       clearBetaUI();
       if(!isActiveAdmin()){invalidate();return;}
-      if(!unlocked || moderationReason.length<10 || moderationReason.length>300){
+      if(!isPinWindowActive() || moderationReason.length<10 || moderationReason.length>300){
         invalidate();paintUnlockControl();return;
       }
       let queue;
@@ -291,7 +328,7 @@
       }catch{
         queue={ok:false,reason:"conversation_reports_unavailable"};
       }
-      if(version!==generation||!isActiveAdmin())return;
+      if(version!==generation||!isActiveAdmin()||!isPinWindowActive())return;
 
       const error=queue?.warning;
       const denied=!queue?.ok || !Array.isArray(queue.reports) ||
@@ -299,11 +336,7 @@
       if(denied){
         // PIN may have expired. Fail closed, purge metadata and allow a new
         // verification; do not present an authorization failure as "empty".
-        unlocked=false;
-        moderationReason="";
-        cached=[];
-        pageCursor=null;
-        canLoadMore=false;
+        invalidate();
         paintUnlockControl();
         showWarning("reauthorize");
         return;
@@ -328,7 +361,7 @@
         clearBetaUI();
         if(!isActiveAdmin()){invalidate();return result;}
         paintUnlockControl();
-        if(!insideLegacyLoad && unlocked)void refreshBetaQueue();
+        if(!insideLegacyLoad && isPinWindowActive())void refreshBetaQueue();
         return result;
       };
     }
@@ -349,7 +382,7 @@
       }
       if(version!==generation)return;
       if(!isActiveAdmin()){invalidate();return;}
-      if(!unlocked){
+      if(!isPinWindowActive()){
         cached=[];
         clearBetaUI();
         paintUnlockControl();

@@ -35,9 +35,14 @@ function tick(){return new Promise(done=>setImmediate(done))}
 (async()=>{
  const list=element("div");
  let active=true,admin=true;
+ let now=Date.now();
+ class TestDate extends Date{static now(){return now}}
  const moderation={classList:{contains:token=>token==="active"&&active}};
  const counts={pin:0,queue:0,legacy:0,viewer:0,statusUpdates:0};
  let authChange,observer,fetchDeferred=false,resolveFetch,visibilityHandler;
+ const browserEvents={};
+ const timers=new Map();
+ let nextTimer=0;
  let statusDeferred=false,resolveStatus;
  let pinDeferred=false,resolvePin,rejectPin;
  const auth={onAuthStateChange:fn=>{authChange=fn;return {
@@ -54,7 +59,12 @@ function tick(){return new Promise(done=>setImmediate(done))}
  const context={
    window:{
     confirm:()=>true,
-    addEventListener:(event,fn)=>{if(event==="pagehide")visibilityHandler=fn},
+    addEventListener:(event,fn)=>{
+      browserEvents[event]=fn;
+      if(event==="pagehide")visibilityHandler=fn;
+    },
+    setTimeout:(fn,delay)=>{assert.equal(delay,14*60*1000);const id=++nextTimer;timers.set(id,fn);return id},
+    clearTimeout:id=>timers.delete(id),
     loadXoxoDmReports:async()=>{
       counts.legacy++;list.children=[element("legacy-report")];list.children[0].parent=list;
     },
@@ -81,6 +91,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
        id==="xmmReportsList"?list:null
    },
    MutationObserver:Observer,
+   Date:TestDate,
    supabaseClient:{auth},
    get xoxoIsAdmin(){return admin;},
    getFriendHubLanguage:()=>"es",
@@ -96,6 +107,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
  vm.runInNewContext(src,context);
  assert.equal(typeof authChange,"function","install must listen to Supabase Auth");
  assert.equal(typeof visibilityHandler,"function","navigation must purge metadata");
+ assert.equal(typeof browserEvents.focus,"function","focus must recheck PIN expiry");
  assert.ok(observer,"moderator panel class changes must be monitored");
 
  const sel=key=>list.querySelectorAll(key);
@@ -223,5 +235,27 @@ function tick(){return new Promise(done=>setImmediate(done))}
  assert.equal(cards(),1,"Old PIN error cleared newer account's authorized reports");
  assert.equal(counts.queue,beforeRejectedPin,
    "Old PIN error must not trigger new account report queries");
- console.log("PASS: account switching, delayed PIN success/failure, logout during report/page/status RPCs, tab exit and navigation purge private metadata");
+
+ // The backend PIN grant lasts 15 minutes. The BETA-only report cards must
+ // disappear after 14 minutes, even if the admin never changes tabs.
+ assert.equal(timers.size,1,"PIN verification must arm a single expiry timer");
+ const expiry=Array.from(timers.values())[0];
+ const beforeExpiry=counts.queue;
+ now+=14*60*1000;
+ expiry();
+ assert.equal(cards(),0,"expired PIN timer left BETA report cards visible");
+ assert.ok(unlock(),"expired PIN must offer reauthorization");
+ assert.equal(list.children[0].tag,"legacy-report",
+   "PIN expiry must not remove the existing moderation report renderer");
+ assert.equal(counts.queue,beforeExpiry,"PIN expiry must not start another RPC");
+ assert.equal(timers.size,0,"PIN expiry must clear the pending timer");
+ await authorize();
+ now+=13*60*1000;
+ browserEvents.focus();
+ assert.equal(cards(),1,"a valid PIN should remain active before expiry");
+ now+=60*1000;
+ browserEvents.focus();
+ assert.equal(cards(),0,"refocusing after expiry must hide private reports");
+ assert.ok(unlock(),"refocusing after expiry must require PIN again");
+ console.log("PASS: auth/PIN lifecycle, delayed events, 14-minute PIN card expiry (timer + focus), and legacy viewer preservation");
 })().catch(error=>{console.error(error);process.exitCode=1});
