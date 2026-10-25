@@ -352,8 +352,9 @@ begin
     raise exception 'BUG: forbidden role/PIN status update modified report';
   end if;
   if exists(select 1 from public.xoxo_message_access_log
-            where action like 'conversation_report_status:%') then
-    raise exception 'BUG: denied status update produced an audit side effect';
+            where action like 'conversation_report_status:%'
+               or action like 'conversation_report_queue:%') then
+    raise exception 'BUG: unauthorized PIN/role read or update produced an audit side effect';
   end if;
 end $$;
 
@@ -394,6 +395,13 @@ begin
     raise exception 'BUG: expected 10 saved, PIN-authorized reports, got %',v_queue;
   end if;
   v_report := (v_queue->0->>'id')::uuid;
+  if (select count(*) from public.xoxo_message_access_log log
+      where log.admin_id = auth.uid()
+        and log.conversation_user_1 = auth.uid()
+        and log.conversation_user_2 = auth.uid()
+        and log.action like 'conversation_report_queue:view count=10:%') <> 1 then
+    raise exception 'BUG: PIN-authorized report queue read was not audited exactly once';
+  end if;
   -- A valid PIN does not eliminate the existing mandatory moderation reason.
   begin
     perform public.xoxo_admin_list_conversation_reports_beta('short');
