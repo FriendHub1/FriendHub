@@ -103,3 +103,32 @@ jobs:
       - name: Clean up disposable PostgREST container
         if: always()
         run: docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
+
+  safety-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install exact browser-test version and supported engines
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/xoxo-safety-playwright"
+          npm --prefix "$RUNNER_TEMP/xoxo-safety-playwright" install \
+            --no-save --no-package-lock --ignore-scripts playwright@1.64.1
+          "$RUNNER_TEMP/xoxo-safety-playwright/node_modules/.bin/playwright" \
+            install --with-deps chromium webkit
+      - name: Check 320px and 390px WebKit mobile plus Chromium desktop
+        run: |
+          NODE_PATH="$RUNNER_TEMP/xoxo-safety-playwright/node_modules" \
+            node beta/test-safety-browser-visual.cjs
+      - name: Upload synthetic BETA screenshots for visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xoxo-safety-mobile-desktop-screenshots
+          path: beta/screenshots/*.png
+          if-no-files-found: ignore
+          retention-days: 7
