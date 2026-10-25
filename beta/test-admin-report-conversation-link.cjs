@@ -1,0 +1,16 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {findReportedConversation}=require("./admin-report-conversation-link.cjs");
+const a="11111111-1111-4111-8111-111111111111";
+const b="22222222-2222-4222-8222-222222222222";
+const c="33333333-3333-4333-8333-333333333333";
+const conversation={user_1:b,user_2:a,message_count:3};
+assert.equal(findReportedConversation({reporter_id:a,other_user_id:b},[conversation]),conversation);
+assert.equal(findReportedConversation({reporter_id:b,other_user_id:a},[conversation]),conversation);
+assert.equal(findReportedConversation({reporter_id:a.toUpperCase(),other_user_id:b},[conversation]),conversation);
+assert.equal(findReportedConversation({reporter_id:a,other_user_id:c},[conversation]),null);
+assert.equal(findReportedConversation({reporter_id:a,other_user_id:a},[conversation]),null);
+assert.equal(findReportedConversation({reporter_id:"invalid",other_user_id:b},[conversation]),null);
+assert.equal(findReportedConversation({reporter_id:a,other_user_id:b},null),null);
+assert.equal(findReportedConversation(null,[conversation]),null);
+console.log("PASS: 8 existing admin conversation linking cases");

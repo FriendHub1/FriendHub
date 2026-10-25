@@ -1,0 +1,33 @@
+-- XOXO Avenue BETA review-only RPC sketch. NOT DEPLOYED.
+-- This is intentionally a design specification, not an executable privileged function.
+-- Important: existing direct_messages uses sender_id/recipient_id; there is no
+-- standalone DM conversation row. Never trust a client-supplied reporter_id.
+--
+-- Input: other_user_id UUID, reason_code SMALLINT, details TEXT,
+--        selected_message_ids UUID[] (1..20), idempotency_key UUID.
+-- Output: report_id UUID only after committed transaction.
+--
+-- Required server-side algorithm:
+-- 1. Identify reporter from auth.uid(); reject NULL, self-report, invalid reason,
+--    oversized details, invalid/duplicate message IDs, and excessive submissions.
+-- 2. Lock/validate idempotency key scoped to reporter; repeat requests must
+--    return the same result, not create duplicate reports.
+-- 3. SELECT matching messages where:
+--      (sender_id = reporter AND recipient_id = other_user)
+--      OR (sender_id = other_user AND recipient_id = reporter)
+--    AND the reporter is allowed to see them under existing RLS and clears.
+--    Require count = array_length(selected_message_ids, 1).
+-- 4. Explicitly address ephemeral/once-view media, whisper expiry, deleted
+--    messages, and attachment evidence. Do not silently expose hidden media.
+-- 5. Atomically insert report and selected evidence; consider encrypted
+--    evidence snapshots if retention after message deletion is required.
+-- 6. Expose only a narrowly scoped authenticated endpoint; do not grant
+--    direct INSERT/SELECT on report/evidence tables to ordinary users.
+-- 7. Moderation reads require server-verified admin status and active PIN
+--    verification; log every evidence access and enforce retention.
+-- 8. Return a success response only after commit. Test unauthorized IDs,
+--    cross-conversation IDs, cleared chats, repeat submissions and concurrency.
+--
+-- Implementation must be reviewed against live schema and existing admin
+-- functions before any SQL is executed. Do not use SECURITY DEFINER to
+-- bypass RLS without explicit authorization review.

@@ -1,0 +1,335 @@
+"use strict";
+/* BETA-only moderator-session lifecycle security regression, no network. */
+const assert=require("node:assert/strict");
+const fs=require("node:fs");
+const vm=require("node:vm");
+const path=require("node:path");
+const src=fs.readFileSync(path.join(__dirname,"admin-report-panel-bridge.js"),"utf8");
+const adminA="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const adminB="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const reason="Investigating safety reports with audited moderator access";
+const uuid=n=>"dddddddd-dddd-4ddd-8ddd-"+n.toString(16).padStart(12,"0");
+const report={id:uuid(1),reporter_id:uuid(2),reported_user_id:uuid(3),
+ reason_code:1,details:"Fictional safety report",evidence_count:2,
+ evidence_message_ids:[uuid(4),uuid(5)],
+ source:"conversation_beta",created_at:"2026-10-25T14:00:00Z",status:"pending"};
+
+function element(tag){
+ return {
+  tag,children:[],textContent:"",attributes:{},listeners:{},className:"",
+  disabled:false,parent:null,
+  append(...items){for(const item of items){item.parent=this;this.children.push(item)}},
+  setAttribute(key,value){this.attributes[key]=value},
+  addEventListener(key,fn){this.listeners[key]=fn},
+  querySelectorAll(selector){
+   return this.children.filter(el=>selector==="button"?el.tag==="button":
+    selector==="[data-xoxo-conversation-beta-report]"?el.attributes["data-xoxo-conversation-beta-report"]:
+    selector==="[data-xoxo-safety-report-unlock]"?el.attributes["data-xoxo-safety-report-unlock"]:
+    selector==="[data-xoxo-safety-report-notice]"?el.attributes["data-xoxo-safety-report-notice"]:
+    selector==="[data-xoxo-safety-load-more]"?el.attributes["data-xoxo-safety-load-more"]:
+    selector===".xmm-report-feedback"?el.className==="xmm-report-feedback":false);
+  },
+  remove(){if(this.parent)this.parent.children=this.parent.children.filter(x=>x!==this)}
+ };
+}
+function tick(){return new Promise(done=>setImmediate(done))}
+(async()=>{
+ const list=element("div");
+ let active=true,admin=true;
+ let now=Date.now();
+ class TestDate extends Date{static now(){return now}}
+ const moderation={classList:{contains:token=>token==="active"&&active}};
+ const counts={pin:0,queue:0,legacy:0,viewer:0,statusUpdates:0};
+ let authChange,observer,fetchDeferred=false,resolveFetch,visibilityHandler;
+ const browserEvents={};
+ const timers=new Map();
+ let nextTimer=0;
+ let statusDeferred=false,resolveStatus;
+ let pinDeferred=false,resolvePin,rejectPin;
+ const auth={onAuthStateChange:fn=>{authChange=fn;return {
+   data:{subscription:{unsubscribe(){}}}
+ }}};
+ class Observer{
+  constructor(callback){this.callback=callback;observer=this}
+  observe(target,opts){
+   assert.equal(target,moderation);
+   assert.equal(opts.attributeFilter[0],"class");
+  }
+  trigger(){this.callback([{type:"attributes",attributeName:"class"}])}
+ }
+ const context={
+   window:{
+    confirm:()=>true,
+    addEventListener:(event,fn)=>{
+      browserEvents[event]=fn;
+      if(event==="pagehide")visibilityHandler=fn;
+    },
+    setTimeout:(fn,delay)=>{assert.equal(delay,14*60*1000);const id=++nextTimer;timers.set(id,fn);return id},
+    clearTimeout:id=>timers.delete(id),
+    loadXoxoDmReports:async()=>{
+      counts.legacy++;list.children=[element("legacy-report")];list.children[0].parent=list;
+    },
+    renderXoxoDmReports:()=>{
+      list.children=[element("legacy-report")];list.children[0].parent=list;
+    },
+    xoxoDmMakeMessage:()=>element("article"),
+    XOXOAdminReportQueueBeta:{
+      loadReportQueue:async()=>{
+        counts.queue++;
+        if(fetchDeferred)return new Promise(resolve=>{resolveFetch=resolve});
+        return {ok:true,reports:[report]};
+      },
+      updateReportStatus:async()=>{
+        counts.statusUpdates++;
+        if(statusDeferred)return new Promise(resolve=>{resolveStatus=resolve});
+        return {ok:true};
+      },
+      cursorAfter:()=>null
+    }
+   },
+   document:{
+     readyState:"complete",createElement:element,
+     getElementById:id=>id==="xoxoAdminModeration"?moderation:
+       id==="xmmReportsList"?list:null
+   },
+   MutationObserver:Observer,
+   Date:TestDate,
+   supabaseClient:{auth},
+   currentUser:null,
+   get xoxoIsAdmin(){return admin;},
+   getFriendHubLanguage:()=>"es",
+   xoxoModerationPinAuthorize:async()=>{
+     counts.pin++;
+     if(pinDeferred)return new Promise((resolve,reject)=>{
+       resolvePin=resolve;rejectPin=reject;
+     });
+     return {reason};
+   },
+   openXoxoDmConversation:()=>{counts.viewer++}
+ };
+ vm.runInNewContext(src,context);
+ assert.equal(typeof authChange,"function","install must listen to Supabase Auth");
+ assert.equal(typeof visibilityHandler,"function","navigation must purge metadata");
+ assert.equal(typeof browserEvents.focus,"function","focus must recheck PIN expiry");
+ assert.ok(observer,"moderator panel class changes must be monitored");
+
+ const sel=key=>list.querySelectorAll(key);
+ const cards=()=>sel("[data-xoxo-conversation-beta-report]").length;
+ const unlock=()=>sel("[data-xoxo-safety-report-unlock]")[0];
+ const authorize=async()=>{await unlock().listeners.click();assert.equal(cards(),1)};
+ const authEvent=(event,session)=>{
+   // The original SPA listens first and updates currentUser synchronously.
+   context.currentUser=session?.user||null;
+   authChange(event,session);
+ };
+ const login=user=>authEvent("SIGNED_IN",{user:{id:user}});
+ await context.window.loadXoxoDmReports();
+ assert.equal(unlock(),undefined,"before Supabase INITIAL_SESSION, no BETA PIN action");
+ authEvent("INITIAL_SESSION",null);
+ assert.equal(unlock(),undefined,"missing Auth session must not unlock moderation reports");
+ authEvent("INITIAL_SESSION",{user:{id:adminA,is_anonymous:true}});
+ assert.equal(unlock(),undefined,"anonymous Auth session must not unlock admin reports");
+ context.currentUser={id:adminA};
+ authChange("INITIAL_SESSION",{user:{id:adminB,is_anonymous:false}});
+ assert.equal(unlock(),undefined,"session ID must match currently displayed admin account");
+ authEvent("INITIAL_SESSION",{user:{id:adminA}});
+ await context.window.loadXoxoDmReports();
+ assert.equal(cards(),0);
+ await authorize();
+ assert.equal(counts.pin,1);
+ assert.equal(list.children[0].tag,"legacy-report");
+
+ // Changing to a different account must erase cards immediately.
+ login(adminB);
+ assert.equal(cards(),0,"account switch leaked previous admin's safety queue");
+ assert.ok(unlock(),"new account requires a fresh PIN authorization");
+ assert.equal(list.children[0].tag,"legacy-report","legacy cards remain untouched");
+ await authorize();
+ assert.equal(counts.pin,2);
+
+ // Hide moderator section: private snapshots must not linger in the DOM.
+ active=false;
+ observer.trigger();
+ assert.equal(cards(),0,"leaving moderation must remove BETA cards");
+ active=true;
+ await context.window.loadXoxoDmReports();
+ assert.equal(cards(),0,"returning to moderation cannot replay BETA metadata");
+ await authorize();
+
+ // Re-fetch and capture a pending server response, then sign out before it
+ // completes. Late data MUST NOT be repainted or leave an unlocked session.
+ fetchDeferred=true;
+ context.window.renderXoxoDmReports();
+ await tick();
+ assert.equal(cards(),0);
+ assert.equal(typeof resolveFetch,"function");
+ authEvent("SIGNED_OUT",null);
+ assert.equal(cards(),0,"logout while request pending leaked report cards");
+ fetchDeferred=false;
+ const delayed=resolveFetch;
+ resolveFetch=null;
+ delayed({ok:true,reports:[report]});
+ await tick();await tick();
+ assert.equal(cards(),0,"stale post-logout HTTP response repainted private cards");
+ assert.equal(unlock(),undefined,"signed-out user must not receive a BETA PIN prompt");
+
+ // The OS/browser page-hide event also removes previously authorized rows.
+ login(adminA);
+ await authorize();
+ assert.equal(cards(),1);
+ visibilityHandler();
+ assert.equal(cards(),0,"navigation must erase private report metadata");
+ // The OS pagehide event erases sensitive data, but the unlock control can
+ // be rebuilt by a fresh moderation load if the browser restores the page.
+ await context.window.loadXoxoDmReports();
+ assert.ok(unlock(),"restored moderation view requires a fresh PIN");
+
+ // SIGNED_IN for the SAME account is also a session boundary: do not keep
+ // a previously verified PIN across a new login.
+ await authorize();
+ login(adminA);
+ assert.equal(cards(),0,"same-user new login should invalidate old PIN grants");
+ assert.ok(unlock());
+
+ // An in-flight STATUS WRITE may succeed on the server before logout, but
+ // its old UI callback must NOT reopen the legacy admin queue afterwards.
+ await authorize();
+ const card=sel("[data-xoxo-conversation-beta-report]")[0];
+ const actions=card.children.find(node=>node.className==="xmm-report-actions");
+ const beforeStatusReload=counts.legacy;
+ statusDeferred=true;
+ const inFlight=actions.children[1].listeners.click();
+ await tick();
+ assert.equal(counts.statusUpdates,1);
+ assert.equal(typeof resolveStatus,"function");
+ authEvent("SIGNED_OUT",null);
+ assert.equal(cards(),0);
+ const finishStatus=resolveStatus;
+ resolveStatus=null;
+ finishStatus({ok:true});
+ await inFlight;
+ await tick();
+ assert.equal(counts.legacy,beforeStatusReload,
+   "Late status-write success from old login must not reload admin reports");
+ assert.equal(cards(),0);
+ assert.equal(unlock(),undefined,"signed-out user must not retain the BETA unlock control");
+ actions.children[0].listeners.click();
+ assert.equal(counts.viewer,0,
+   "Detached conversation button from previous PIN session must be inert");
+ assert.equal(counts.queue>=4,true);
+
+ // An old PIN dialog may resolve after account switching. Its successful
+ // result belongs to the former user and MUST NOT unlock the new account.
+ login(adminA);
+ pinDeferred=true;
+ const firstPin=unlock().listeners.click();
+ await tick();
+ assert.equal(typeof resolvePin,"function");
+ const beforeObsoletePin=counts.queue;
+ login(adminB);
+ resolvePin({reason});
+ await firstPin;await tick();
+ assert.equal(cards(),0,"PIN success from previous account exposed report cards");
+ assert.equal(counts.queue,beforeObsoletePin,
+   "Obsolete PIN success must not start a report RPC for the new account");
+ assert.ok(unlock(),"New account should have its own PIN prompt");
+
+ // Even an obsolete PIN rejection must not invalidate a NEW authorized
+ // session or remove that person's currently visible report cards.
+ pinDeferred=true;
+ login(adminA);
+ const oldPin=unlock().listeners.click();
+ await tick();
+ const rejectOutdated=rejectPin;
+ assert.equal(typeof rejectOutdated,"function");
+ login(adminB);
+ pinDeferred=false;
+ await authorize();
+ assert.equal(cards(),1);
+ const beforeRejectedPin=counts.queue;
+ rejectOutdated(new Error("Previous account PIN rejected"));
+ await oldPin;await tick();
+ assert.equal(cards(),1,"Old PIN error cleared newer account's authorized reports");
+ assert.equal(counts.queue,beforeRejectedPin,
+   "Old PIN error must not trigger new account report queries");
+
+ // Selecting a report highlights only its saved evidence in the existing
+ // message renderer; losing PIN authorization must remove that link too.
+ const evidenceCard=sel("[data-xoxo-conversation-beta-report]")[0];
+ evidenceCard.children.find(x=>x.className==="xmm-report-actions")
+   .children[0].listeners.click();
+ const evidencePair={user_1:report.reporter_id,user_2:report.reported_user_id};
+ assert.equal(context.window.xoxoDmMakeMessage({id:uuid(4)},evidencePair)
+   .attributes["data-xoxo-safety-report-evidence"],"1");
+
+ // The backend PIN grant lasts 15 minutes. The BETA-only report cards must
+ // disappear after 14 minutes, even if the admin never changes tabs.
+ assert.equal(timers.size,1,"PIN verification must arm a single expiry timer");
+ const expiry=Array.from(timers.values())[0];
+ const beforeExpiry=counts.queue;
+ now+=14*60*1000;
+ expiry();
+ assert.equal(cards(),0,"expired PIN timer left BETA report cards visible");
+ assert.equal(context.window.xoxoDmMakeMessage({id:uuid(4)},evidencePair)
+   .attributes["data-xoxo-safety-report-evidence"],undefined,
+   "expired PIN left the selected-evidence marker active");
+ assert.ok(unlock(),"expired PIN must offer reauthorization");
+ assert.equal(list.children[0].tag,"legacy-report",
+   "PIN expiry must not remove the existing moderation report renderer");
+ assert.equal(counts.queue,beforeExpiry,"PIN expiry must not start another RPC");
+ assert.equal(timers.size,0,"PIN expiry must clear the pending timer");
+ await authorize();
+ now+=13*60*1000;
+ browserEvents.focus();
+ assert.equal(cards(),1,"a valid PIN should remain active before expiry");
+ now+=60*1000;
+ browserEvents.focus();
+ assert.equal(cards(),0,"refocusing after expiry must hide private reports");
+ assert.ok(unlock(),"refocusing after expiry must require PIN again");
+
+ // The server can complete a previously started queue read after the PIN
+ // deadline. That response belongs to the expired authorization epoch.
+ await authorize();
+ fetchDeferred=true;
+ context.window.renderXoxoDmReports();
+ await tick();
+ const lateQueue=resolveFetch;
+ assert.equal(typeof lateQueue,"function");
+ const queueCallsAtExpiry=counts.queue;
+ now+=14*60*1000;
+ browserEvents.focus();
+ fetchDeferred=false;
+ lateQueue({ok:true,reports:[report]});
+ await tick();await tick();
+ assert.equal(cards(),0,"late queue response repainted reports after PIN expiry");
+ assert.equal(counts.queue,queueCallsAtExpiry,"expired queue started an unexpected read");
+ assert.ok(unlock(),"late queue must not silently renew the moderator PIN");
+
+ // Likewise, a status-write response must not reopen the admin queue after
+ // its PIN expires; the already issued server request remains server-gated.
+ await authorize();
+ const expiringCard=sel("[data-xoxo-conversation-beta-report]")[0];
+ const expiringActions=expiringCard.children.find(x=>x.className==="xmm-report-actions");
+ statusDeferred=true;
+ const legacyBeforeExpiry=counts.legacy;
+ const statusAfterExpiry=expiringActions.children[1].listeners.click();
+ await tick();
+ const lateStatus=resolveStatus;
+ assert.equal(typeof lateStatus,"function");
+ now+=14*60*1000;
+ const expiryWithoutClockSkew=Array.from(timers.values())[0];
+ // A backwards wall-clock jump cannot extend the existing PIN grant:
+ // the elapsed-time browser timer itself must clear BETA metadata.
+ now-=20*60*1000;
+ expiryWithoutClockSkew();
+ assert.equal(cards(),0,"backwards clock change bypassed elapsed PIN timer");
+ assert.equal(timers.size,0);
+ statusDeferred=false;
+ lateStatus({ok:true});
+ await statusAfterExpiry;await tick();
+ assert.equal(counts.legacy,legacyBeforeExpiry,
+   "late status result reopened the legacy moderator queue after PIN expiry");
+ assert.equal(cards(),0,"late status result exposed report metadata");
+ assert.ok(unlock(),"PIN expiry during a write must require reauthorization");
+ console.log("PASS: auth/PIN lifecycle, 14-minute PIN expiry, wall-clock skew, late queue/status responses, and legacy viewer preservation");
+})().catch(error=>{console.error(error);process.exitCode=1});

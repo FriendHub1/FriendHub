@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XOXO Avenue | Stay Safe BETA Lab</title>
+<style>
+:root{color-scheme:dark}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 0,#39215c,#100a1e 70%);font:16px system-ui,sans-serif;color:#f8eeff;display:grid;place-items:center}
+main{max-width:500px;margin:18px;padding:28px;background:#241536;border:1px solid #76529a;border-radius:22px;box-shadow:0 20px 60px #0007}
+h1{color:#ffdc64;font-size:25px}label{display:block;margin:18px 0 8px}select,button{font:inherit;border-radius:12px;padding:12px;background:#3c2954;color:white;border:1px solid #9073a8}button{cursor:pointer;margin:8px 6px 0 0}button.primary{background:#ffda60;color:#281638;font-weight:700}small{color:#d5c0e5}#status{margin-top:20px;line-height:1.5}
+</style>
+</head>
+<body><main>
+<h1>Stay Safe, Sweetheart! 💛</h1>
+<p>Laboratorio aislado para probar la ventana. No abre conversaciones reales ni envía denuncias.</p>
+<label for="locale">Idioma de la prueba</label>
+<select id="locale"><option value="es">Español</option><option value="en">English</option><option value="pt-BR">Português (Brasil)</option><option value="fr">Français</option><option value="pl">Polski</option><option value="de">Deutsch</option><option value="cs">Čeština</option><option value="no">Norsk</option></select>
+<p><button class="primary" id="first">Simular conversación A</button><button id="second">Simular conversación B</button></p>
+<p><button id="reset">Reiniciar pruebas en este navegador</button></p>
+<div id="status" role="status"></div>
+<small>El botón «Entendido» guarda la aceptación solo en este navegador. Ningún mensaje privado se consulta.</small>
+</main>
+<script src="./stay-safe-sweetheart.js"></script>
+<script>
+const accountId="demo-account-only";
+const status=document.getElementById("status");
+function openDemo(id){
+ const shown=window.XOXOSafetyReminderBeta?.show({conversationId:id,accountId,locale:document.getElementById("locale").value});
+ status.textContent=shown?"Se abrió el aviso de seguridad.":"El aviso ya fue reconocido en esta conversación (o hay otra ventana abierta).";
+}
+document.getElementById("first").onclick=()=>openDemo("demo-a");
+document.getElementById("second").onclick=()=>openDemo("demo-b");
+document.getElementById("reset").onclick=()=>{
+ for(const id of ["demo-a","demo-b"])localStorage.removeItem("xoxo:safety:v1:"+encodeURIComponent(accountId)+":"+encodeURIComponent(id));
+ status.textContent="Pruebas reiniciadas. Abre una conversación simulada.";
+};
+</script></body></html>

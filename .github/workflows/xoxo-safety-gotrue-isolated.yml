@@ -1,0 +1,189 @@
+name: XOXO Safety - Isolated Real Auth Issuer BETA
+
+# Experimental security integration, independent from the required green suite.
+# ONLY disposable GitHub-hosted PostgreSQL and loopback Docker containers.
+# Never use Supabase project keys, real accounts, Cloudflare, or production URLs.
+on:
+  push:
+    branches:
+      - feature/xoxo-safety-reminder-beta
+    paths:
+      - ".github/workflows/xoxo-safety-gotrue-isolated.yml"
+      - "beta/stay-safe-conversation-reports-schema.sql"
+      - "beta/sql-test-fixtures.sql"
+      - "beta/sql-test-postgrest-fixtures.sql"
+      - "beta/sql-test-report-pipeline.sql"
+      - "beta/test-safety-gotrue-auth-http.py"
+      - "beta/test-safety-gotrue-native-session.py"
+      - "beta/test-safety-native-js-client.cjs"
+      - "beta/test-safety-native-browser-e2e.cjs"
+      - "beta/sql-test-gotrue-native-session-fixture.sql"
+      - "beta/test-safety-gotrue-ci-isolation.cjs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-auth-issuer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: xoxo_safety_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d xoxo_safety_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: xoxo_safety_test
+      XOXO_HTTP_JWT_KEY: xoxo-local-ci-jwt-secret-not-for-production-1234567890
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Reject non-isolated targets before starting containers
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = 127.0.0.1
+          test "$PGDATABASE" = xoxo_safety_test
+          test "$PGUSER" = postgres
+          node beta/test-safety-gotrue-ci-isolation.cjs
+          psql -XAtqc "select current_database()" | grep -Fx xoxo_safety_test
+      - name: Create report schema and real PostgREST fixture in disposable database
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-fixtures.sql
+          psql -X -v ON_ERROR_STOP=1 -f beta/stay-safe-conversation-reports-schema.sql
+          psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-postgrest-fixtures.sql
+      - name: Start loopback PostgREST with only fictional signing key
+        run: |
+          set -euo pipefail
+          docker run -d --name xoxo-safety-ci-postgrest --network host \
+            -e PGRST_DB_URI="postgres://xoxo_ci_authenticator:local-ci-only-password@127.0.0.1:5432/xoxo_safety_test" \
+            -e PGRST_DB_SCHEMAS=public \
+            -e PGRST_DB_ANON_ROLE=anon \
+            -e PGRST_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
+            -e PGRST_SERVER_HOST=127.0.0.1 \
+            -e PGRST_SERVER_PORT=3001 \
+            postgrest/postgrest:v12.2.12
+          ready=0
+          for i in $(seq 1 35); do
+            code="$(curl --max-time 2 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/ || true)"
+            if [ "$code" = 200 ]; then ready=1;break;fi
+            sleep 1
+          done
+          test "$ready" = 1
+      - name: Bootstrap separate official GoTrue schema with consistent search path
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -c "create database xoxo_gotrue_ci"
+          psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -c "create schema auth"
+          # IMPORTANT: set search_path BEFORE the one-time official migrations.
+          # The previous experiment changed it AFTER migration, so API startup
+          # looked for schema_migrations in a different schema and reran DDL.
+          psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -c \
+            "alter role postgres in database xoxo_gotrue_ci set search_path = auth, public"
+          docker run --rm --network host \
+            -e API_EXTERNAL_URL=http://127.0.0.1:9999 \
+            -e GOTRUE_SITE_URL=http://127.0.0.1:9999 \
+            -e GOTRUE_DB_DRIVER=postgres \
+            -e GOTRUE_DB_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5432/xoxo_gotrue_ci?sslmode=disable" \
+            -e GOTRUE_DB_DB_NAMESPACE=auth \
+            -e GOTRUE_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
+            -e GOTRUE_JWT_AUD=authenticated \
+            -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
+            supabase/gotrue:v2.197.0 auth migrate
+          psql -XAtq -d xoxo_gotrue_ci -c \
+            "select to_regclass('auth.schema_migrations') is not null and to_regclass('auth.identities') is not null and to_regclass('auth.users') is not null" | grep -Fx t
+      - name: Run self-hosted Supabase Auth issuer on loopback only
+        run: |
+          set -euo pipefail
+          docker run -d --name xoxo-safety-ci-gotrue --network host \
+            -e GOTRUE_API_HOST=127.0.0.1 \
+            -e GOTRUE_API_PORT=9999 \
+            -e API_EXTERNAL_URL=http://127.0.0.1:9999 \
+            -e GOTRUE_SITE_URL=http://127.0.0.1:9999 \
+            -e GOTRUE_DB_DRIVER=postgres \
+            -e GOTRUE_DB_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5432/xoxo_gotrue_ci?sslmode=disable" \
+            -e GOTRUE_DB_DB_NAMESPACE=auth \
+            -e GOTRUE_DISABLE_SIGNUP=false \
+            -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true \
+            -e GOTRUE_MAILER_AUTOCONFIRM=true \
+            -e GOTRUE_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
+            -e GOTRUE_JWT_AUD=authenticated \
+            -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
+            -e GOTRUE_JWT_EXP=3600 \
+            -e GOTRUE_LOG_LEVEL=warn \
+            supabase/gotrue:v2.197.0
+          ready=0
+          for i in $(seq 1 40); do
+            if curl --max-time 2 -fsS http://127.0.0.1:9999/health >/dev/null 2>&1; then
+              ready=1;break
+            fi
+            if [ "$(docker inspect -f '{{.State.Running}}' xoxo-safety-ci-gotrue)" != true ]; then
+              docker logs --tail 35 xoxo-safety-ci-gotrue
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = 1
+      - name: Test real GoTrue-issued JWT, RLS, immutable receipt and revoked session
+        run: python3 beta/test-safety-gotrue-auth-http.py
+      - name: Install BETA report schema alongside GoTrue native session tables in second disposable database
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -f beta/sql-test-gotrue-native-session-fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -f beta/stay-safe-conversation-reports-schema.sql
+      - name: Start second loopback PostgREST for native Auth session integration
+        run: |
+          set -euo pipefail
+          docker run -d --name xoxo-safety-native-postgrest --network host \
+            -e PGRST_DB_URI="postgres://xoxo_ci_authenticator:local-ci-only-password@127.0.0.1:5432/xoxo_gotrue_ci" \
+            -e PGRST_DB_SCHEMAS=public \
+            -e PGRST_DB_ANON_ROLE=anon \
+            -e PGRST_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
+            -e PGRST_SERVER_HOST=127.0.0.1 \
+            -e PGRST_SERVER_PORT=3002 \
+            postgrest/postgrest:v12.2.12
+          ready=0
+          for i in $(seq 1 35); do
+            code="$(curl --max-time 2 -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3002/ || true)"
+            if [ "$code" = 200 ]; then ready=1;break;fi
+            sleep 1
+          done
+          test "$ready" = 1
+      - name: Verify native GoTrue, moderator role, PIN and audited RPCs without browser downloads
+        env:
+          XOXO_SAFETY_NATIVE_QUICK_ADMIN: "1"
+        run: python3 beta/test-safety-gotrue-native-session.py
+      - name: Install pinned WebKit and Chromium for isolated real-browser reports
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/xoxo-safety-playwright"
+          npm --prefix "$RUNNER_TEMP/xoxo-safety-playwright" install \
+            --no-save --no-package-lock --ignore-scripts playwright@1.64.1
+          "$RUNNER_TEMP/xoxo-safety-playwright/node_modules/.bin/playwright" \
+            install --with-deps chromium webkit
+      - name: Verify native GoTrue session and actual JavaScript submission pipeline in same disposable database
+        env:
+          NODE_PATH: ${{ runner.temp }}/xoxo-safety-playwright/node_modules
+        run: python3 beta/test-safety-gotrue-native-session.py
+      - name: Clean up disposable services even after failure
+        if: always()
+        run: |
+          docker rm -f xoxo-safety-ci-gotrue 2>/dev/null || true
+          docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
+          docker rm -f xoxo-safety-native-postgrest 2>/dev/null || true

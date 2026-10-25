@@ -1,0 +1,24 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {loadCombinedDmReports}=require("./admin-report-list-adapter.cjs");
+(async()=>{
+ let calls=[];
+ const client={rpc:async name=>{calls.push(name);return name==="get_xoxo_dm_reports"?{data:[{id:"old",status:"pending"}],error:null}:{data:[{id:"new",status:"pending"}],error:null};}};
+ assert.deepEqual(await loadCombinedDmReports(client),{ok:false,reason:"not_authorized",reports:[]});
+ assert.equal(calls.length,0,"never query reports before authorization");
+ const good=await loadCombinedDmReports(client,{moderationAuthorized:true});
+ assert.equal(good.ok,true);
+ assert.equal(good.reports.length,2);
+ assert.deepEqual(good.reports.map(r=>r.reportKind),["message","conversation"]);
+ assert.deepEqual(calls,["get_xoxo_dm_reports","get_xoxo_conversation_reports_beta"]);
+ const legacyOnly=await loadCombinedDmReports({rpc:async name=>name==="get_xoxo_dm_reports"?{data:[{id:"old"}],error:null}:{data:null,error:{code:"42883"}}},{moderationAuthorized:true});
+ assert.equal(legacyOnly.ok,true);
+ assert.equal(legacyOnly.newReportsAvailable,false);
+ assert.equal(legacyOnly.reports.length,1);
+ const blocked=await loadCombinedDmReports({rpc:async()=>({data:null,error:{message:"denied"}})},{moderationAuthorized:true});
+ assert.equal(blocked.ok,false);
+ assert.deepEqual(blocked.reports,[]);
+ const throwing=await loadCombinedDmReports({rpc:async()=>{throw Error("offline");}},{moderationAuthorized:true});
+ assert.equal(throwing.ok,false);
+ console.log("PASS: 5 BETA admin report-list scenarios");
+})().catch(e=>{console.error(e);process.exitCode=1;});

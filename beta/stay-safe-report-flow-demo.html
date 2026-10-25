@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XOXO Avenue — Report Flow BETA</title>
+<style>body{margin:0;min-height:100vh;background:#140c23;color:#f6edff;font:16px system-ui;display:grid;place-items:center}main{width:min(550px,90vw);padding:24px;background:#261639;border-radius:22px}button{padding:12px 18px;border:0;border-radius:10px;background:#ffda60;color:#24122c;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#120a1e;padding:14px;border-radius:10px}small{color:#ddcdea}</style></head>
+<body><main><h1>Denunciar conversación 🚩</h1>
+<p>Prueba local del flujo de denuncia: motivo → explicación → selección de mensajes.</p>
+<button id="start">Probar denuncia</button>
+<p id="status" role="status">No se ha preparado ninguna denuncia.</p>
+<pre id="output"></pre>
+<small>Solo demostración. No se envía información, no hay conexión con Supabase ni se crea una denuncia real.</small>
+</main>
+<script src="./stay-safe-report-form.js"></script>
+<script src="./stay-safe-evidence-picker.js"></script>
+<script src="./stay-safe-report-validation.js"></script>
+<script src="./stay-safe-report-flow.js"></script>
+<script>
+document.getElementById("start").addEventListener("click",()=>{
+ const ok=window.XOXOReportFlowBeta.start({
+  conversationId:"11111111-1111-4111-8111-111111111111",
+  currentUserId:"44444444-4444-4444-8444-444444444444",
+  otherUserId:"33333333-3333-4333-8333-333333333333",
+  locale:"es",
+  messages:[
+   {id:"22222222-2222-4222-8222-222222222221",senderId:"33333333-3333-4333-8333-333333333333",recipientId:"44444444-4444-4444-8444-444444444444",text:"Hola, ¿cómo estás?"},
+   {id:"22222222-2222-4222-8222-222222222222",senderId:"33333333-3333-4333-8333-333333333333",recipientId:"44444444-4444-4444-8444-444444444444",text:"Envíame dinero para poder visitarte."},
+   {id:"22222222-2222-4222-8222-222222222223",senderId:"33333333-3333-4333-8333-333333333333",recipientId:"44444444-4444-4444-8444-444444444444",text:"No compartas esto con nadie."}
+  ],
+  onPrepared:payload=>{
+   document.getElementById("status").textContent="Denuncia preparada para revisión de integración (NO enviada).";
+   document.getElementById("output").textContent=JSON.stringify(payload,null,2);
+  }
+ });
+ if(!ok)document.getElementById("status").textContent="No se pudo abrir la demostración.";
+});
+</script></body></html>

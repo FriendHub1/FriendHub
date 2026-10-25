@@ -1,0 +1,18 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {normalizeConversationReportForAdmin}=require("./admin-report-compatibility.cjs");
+const row={id:"11111111-1111-4111-8111-111111111111",reporter_id:"22222222-2222-4222-8222-222222222222",other_user_id:"33333333-3333-4333-8333-333333333333",reason_code:1,details:"Suspicious request",status:"pending",created_at:"2026-10-25T00:00:00Z",evidence_count:2};
+const mapped=normalizeConversationReportForAdmin(row);
+assert.equal(mapped.reported_user_id,row.other_user_id);
+assert.equal(mapped.report_kind,"conversation");
+assert.equal(mapped.reason,"spam");
+assert.equal(mapped.evidence_count,2);
+assert.equal(mapped.status,"pending");
+assert.equal(normalizeConversationReportForAdmin({...row,reason_code:99}),null);
+assert.equal(normalizeConversationReportForAdmin({...row,id:"not-a-uuid"}),null);
+assert.equal(normalizeConversationReportForAdmin({...row,reporter_id:"bad"}),null);
+assert.equal(normalizeConversationReportForAdmin({...row,other_user_id:"bad"}),null);
+assert.equal(normalizeConversationReportForAdmin(null),null);
+assert.equal(normalizeConversationReportForAdmin({...row,status:"unauthorized"}).status,"pending");
+assert.equal(normalizeConversationReportForAdmin({...row,evidence_count:21}).evidence_count,null);
+console.log("PASS: 12 BETA admin report compatibility assertions");

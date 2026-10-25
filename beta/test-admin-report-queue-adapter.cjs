@@ -1,0 +1,25 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {loadCombinedDmReportQueue}=require("./admin-report-queue-adapter.cjs");
+(async()=>{
+ const calls=[];
+ const existing={id:"old",reporter_id:"u1",reported_user_id:"u2",reason:"spam"};
+ const beta={id:"new",reporter_id:"u3",other_user_id:"u4",reason_code:2,evidence_count:3};
+ const client={rpc:async name=>{calls.push(name);return name==="get_xoxo_dm_reports"?{data:[existing],error:null}:{data:[beta],error:null};}};
+ const normal=await loadCombinedDmReportQueue(client);
+ assert.equal(normal.ok,true);assert.equal(normal.reports.length,1);
+ assert.equal(normal.reports[0].report_source,"existing");
+ assert.deepEqual(calls,["get_xoxo_dm_reports"]);
+ const combined=await loadCombinedDmReportQueue(client,{includeBeta:true});
+ assert.equal(combined.reports.length,2);
+ assert.equal(combined.reports[1].reported_user_id,"u4");
+ assert.equal(combined.reports[1].evidence_count,3);
+ assert.equal(combined.reports[1].report_source,"conversation_beta");
+ const missing=await loadCombinedDmReportQueue({rpc:async name=>name==="get_xoxo_dm_reports"?{data:[existing]}:{error:{code:"42883"}}},{includeBeta:true});
+ assert.equal(missing.ok,true);assert.equal(missing.betaAvailable,false);assert.equal(missing.reports.length,1);
+ const broken=await loadCombinedDmReportQueue({rpc:async()=>({error:{message:"denied"}})});
+ assert.deepEqual(broken,{ok:false,reason:"existing_reports_unavailable"});
+ const invalid=await loadCombinedDmReportQueue(null);
+ assert.deepEqual(invalid,{ok:false,reason:"invalid_client"});
+ console.log("PASS: 5 admin report queue compatibility cases");
+})().catch(e=>{console.error(e);process.exitCode=1;});
