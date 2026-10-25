@@ -39,6 +39,8 @@ async function exercise(browser,engine){
    window.__holdStatus=false;
    window.__queueResolve=null;
    window.__statusResolve=null;
+   window.__holdPin=false;
+   window.__pinResolve=null;
    window.__loadCount=0;
    window.__statusCount=0;
    window.__viewerCount=0;
@@ -48,7 +50,11 @@ async function exercise(browser,engine){
       return {data:{subscription:{unsubscribe(){}}}};
     }}
    };
-   window.xoxoModerationPinAuthorize=async()=>({reason});
+   window.xoxoModerationPinAuthorize=async()=>{
+     if(window.__holdPin)
+       return new Promise(resolve=>{window.__pinResolve=resolve});
+     return {reason};
+   };
    window.openXoxoDmConversation=()=>{window.__viewerCount++};
    window.xoxoDmAdminName=(id)=>id.slice(0,8);
    window.XOXOAdminReportQueueBeta={
@@ -147,8 +153,28 @@ async function exercise(browser,engine){
   await page.evaluate(()=>window.dispatchEvent(new Event("pagehide")));
   assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0,
     engine+" kept sensitive report metadata after pagehide");
+
+  // A PIN authorization popup can remain open during a logout. Completing
+  // that popup later must NOT unlock the new account or call the RPC.
+  await page.evaluate(async()=>{
+    await window.loadXoxoDmReports();
+    window.__holdPin=true;
+  });
+  const beforePendingPin=await page.evaluate(()=>window.__loadCount);
+  await page.locator("[data-xoxo-safety-report-unlock]").click();
+  await page.waitForFunction(()=>typeof window.__pinResolve==="function");
+  await page.evaluate(({reason})=>{
+    window.__authEvents("SIGNED_OUT",null);
+    window.__pinResolve({reason});
+    window.__holdPin=false;
+  },{reason});
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0,
+    engine+" stale PIN completion exposed report metadata after logout");
+  assert.equal(await page.evaluate(()=>window.__loadCount),beforePendingPin,
+    engine+" stale PIN completion triggered a server reload after logout");
   assert.deepEqual(errors,[],engine+" uncaught UI errors");
-  console.log("PASS: "+engine+" native auth events, tab exits, in-flight queue/status callbacks and pagehide purge sensitive admin rows");
+  console.log("PASS: "+engine+" native auth events, stale PIN popup, tab exits, delayed queue/status callbacks and pagehide purge private rows");
  }finally{await context.close()}
 }
 (async()=>{
