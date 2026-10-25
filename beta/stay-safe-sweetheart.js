@@ -27,7 +27,7 @@
     const key = "xoxo:safety:v1:"+encodeURIComponent(accountId)+":"+encodeURIComponent(conversationId);
     try { if (localStorage.getItem(key)==="seen") return false; } catch {}
     if (document.querySelector(".xoxo-safe-backdrop")) return false;
-    const aliases={"pt":"pt-BR","pt-br":"pt-BR","nb":"no","nb-NO":"no","nn":"no","cz":"cs"};
+    const aliases={"pt":"pt-BR","pt-br":"pt-BR","nb":"no","nb-no":"no","nn":"no","cz":"cs"};
     const normalized=String(locale).trim();
     const language=aliases[normalized]||aliases[normalized.toLowerCase()]||normalized;
     const t=COPY[language]||COPY[language.split("-")[0]]||COPY.en;
@@ -39,7 +39,7 @@
     const list=document.createElement("ul");
     [t.money,t.privacy,t.images,t.links].forEach(s=>{const li=document.createElement("li");li.textContent=s;list.append(li)});
     dialog.append(list);
-    const support=document.createElement("p");support.textContent=t.support;support.setAttribute("aria-live","polite");dialog.append(support);
+    const support=document.createElement("p");support.textContent=t.support;dialog.append(support);
     const close=document.createElement("button");close.type="button";close.textContent=t.ack;
     const previousFocus=document.activeElement;
     function onKeyDown(event){
