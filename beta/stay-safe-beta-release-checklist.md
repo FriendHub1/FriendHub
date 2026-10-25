@@ -34,11 +34,13 @@ Tests include:
 - `test-safety-rpc-compatibility.cjs`: consistent server RPC names, metadata fields, preview wiring.
 - `test-conversation-report-sql-contract.cjs`: 28 static SQL safety rules plus regressions for invalid PostgreSQL expressions and DO block quoting.
 
-**Verified green run:** [GitHub Actions 40169087913](https://github.com/FriendHub1/FriendHub/actions/runs/40169087913) — Node.js 22 job and isolated PostgreSQL 17 job both succeeded. The PostgreSQL job executed 17 named groups of integration/security assertions on temporary fixtures: report inserts, evidence bounds, access controls, cleared messages, duplicate/rate-limit handling, PIN, audit and status. The SQL was compiled and executed on PostgreSQL **but has NOT been deployed to real Supabase or exercised with live authentication/session tokens**. The website and production Cloudflare deployment remain untouched.
+**Verified green run:** [GitHub Actions 40169745436](https://github.com/FriendHub1/FriendHub/actions/runs/40169745436) — Node.js 22 job and isolated PostgreSQL 17 job both succeeded, including concurrency and unauthorized-admin status-change checks. The PostgreSQL job executed 17 named groups of integration/security assertions on temporary fixtures: report inserts, evidence bounds, access controls, cleared messages, duplicate/rate-limit handling, PIN, audit and status. The SQL was compiled and executed on PostgreSQL **but has NOT been deployed to real Supabase or exercised with live authentication/session tokens**. The website and production Cloudflare deployment remain untouched.
 
 ## Release blockers
 
-- [x] Execute SQL and RLS report/admin integration tests against isolated PostgreSQL 17 with GitHub Actions; run 40169087913 passed. This is NOT a live Supabase E2E test.
+- [x] Execute SQL and RLS report/admin integration tests against isolated PostgreSQL 17 with GitHub Actions; run 40169745436 passed. This is NOT a live Supabase E2E test.
+- [x] Verify 12 concurrent submissions respect 10-per-day limit, 8 identical retries create a single report, and retry after quota returns the original report ID.
+- [x] Verify unauthorized users, expired PINs and locked PINs cannot change report status or create an administrative status audit entry.
 - [ ] Audit SQL function privileges, behavior and RLS in an isolated non-production Supabase environment.
 - [ ] Approve evidence retention (the draft stores selected IDs + participant/timestamps, not copies of message text/media); confirm treatment of physical deletion.
 - [ ] Approve or modify the proposed rate limit of 10 reports per user per 24 hours.
@@ -51,3 +53,10 @@ Tests include:
 - [ ] Request owner approval before any production rollout.
 
 **Never report an untested server submission as a successful deployment.**
+
+### Confirmed BETA security checkpoints
+
+- The active SQL remains review-only and was never applied to the connected Supabase production project. The latest CI jobs use ephemeral PostgreSQL 17, not production tokens or messages.
+- Concurrent report submission and idempotency were exercised with real parallel database connections using `beta/test-safety-postgres-concurrency.py` (passed in run 40169561842 and 40169745436).
+- Unauthorized users, expired PINs and locked PINs were checked against a persisted report ID in real PostgreSQL; forbidden status changes left status and audit unchanged. The valid PIN + moderation reason path still completes successfully.
+- Draft PR #12 remains unmerged; release still depends on non-production Supabase Auth/PostgREST integration, privacy/retention approval, the final 10/day limit decision and browser/iPhone UX checks.
