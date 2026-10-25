@@ -12,17 +12,33 @@
   const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const statuses=new Set(["pending","reviewed","resolved","dismissed"]);
   const reasons=["Scam or money requests","Threats or blackmail","Harassment or unwanted messages","Fake profile or identity","Intimate photo threats","Other"];
-  const rpcBySource=Object.freeze({message:"update_xoxo_dm_report_status",conversation_beta:"xoxo_admin_update_conversation_report_status_beta"});
+  const rpcBySource=Object.freeze({message:"update_xoxo_dm_report_status",conversation_beta:"xoxo_admin_update_conversation_report_beta"});
   const uuid=value=>typeof value==="string" && UUID.test(value);
   function normalizeLegacy(report){
     if(!report || !uuid(report.id))return null;
     return {...report,source:"message"};
   }
   function normalizeConversation(report){
-    if(!report || !uuid(report.id) || !uuid(report.reporter_id) || !uuid(report.other_user_id) ||
-       !Number.isInteger(report.reason_code) || report.reason_code<0 || report.reason_code>5)return null;
-    const count=Number.isInteger(report.evidence_count)&&report.evidence_count>=1&&report.evidence_count<=20?report.evidence_count:null;
-    return {id:report.id,reporter_id:report.reporter_id,reported_user_id:report.other_user_id,
+    const reportedId=report?.reported_user_id || report?.other_user_id;
+    if(!report || !uuid(report.id) || !uuid(report.reporter_id) || !uuid(reportedId) ||
+       report.reporter_id.toLowerCase()===reportedId.toLowerCase() ||
+       !Number.isInteger(report.reason_code) || report.reason_code<0 || report.reason_code>5)
+      return null;
+    // The new private-schema RPC returns the selected message IDs, whereas
+    // earlier mock adapters returned only evidence_count.
+    let count=null;
+    if(Array.isArray(report.message_ids)){
+      if(report.message_ids.length<1 || report.message_ids.length>20 ||
+         report.message_ids.some(id=>!uuid(id)) ||
+         new Set(report.message_ids.map(id=>id.toLowerCase())).size!==report.message_ids.length)
+        return null;
+      count=report.message_ids.length;
+    }else if(Number.isInteger(report.evidence_count) &&
+             report.evidence_count>=1 && report.evidence_count<=20){
+      count=report.evidence_count;
+    }
+    if(count===null)return null;
+    return {id:report.id,reporter_id:report.reporter_id,reported_user_id:reportedId,
       reason:reasons[report.reason_code],details:typeof report.details==="string"?report.details:"",
       created_at:report.created_at,status:statuses.has(report.status)?report.status:"pending",
       evidence_count:count,source:"conversation_beta"};
