@@ -251,6 +251,34 @@ def check():
     assert f"reason={REASON}" in audit_action, (
         "Audited moderation status change omitted mandatory PIN-review reason")
 
+    # The access log is shared with ordinary moderation. A malicious audit
+    # reason cannot include line breaks or terminal-control bytes to forge
+    # the appearance of another administrative action.
+    injected_reason = "Reviewing reports" + chr(10) + "FORGED AUDIT ENTRY"
+    for rpc_name, args in [
+        ("xoxo_admin_list_conversation_reports_beta", {
+            "p_reason": injected_reason
+        }),
+        ("xoxo_admin_page_conversation_reports_beta", {
+            "p_reason": injected_reason, "p_after_pending": None,
+            "p_after_created_at": None, "p_after_id": None, "p_limit": 10
+        }),
+        ("xoxo_admin_update_conversation_report_beta", {
+            "p_report_id": report, "p_status": "dismissed",
+            "p_reason": injected_reason
+        })
+    ]:
+        status, _ = request("POST", "/rpc/" + rpc_name, administrator, args)
+        blocked(status, "multiline moderation reason in " + rpc_name)
+    assert db(
+        "select status from xoxo_safety_private.conversation_reports "
+        f"where id='{report}'::uuid"
+    ) == "reviewed", "Log-injection attempt changed report status"
+    assert db(
+        "select count(*) from public.xoxo_message_access_log "
+        "where action like '%' || chr(10) || '%'"
+    ) == "0", "Multiline moderation audit entry was persisted"
+
     # A user's own chat-clear state must hide evidence from that user while
     # preserving its existing moderation record for the administrator.
     db("insert into public.dm_conversation_clears "
