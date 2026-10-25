@@ -21,6 +21,9 @@ async function verifyVisibleMessages(client, userId, peerId, messageIds) {
   if (error || !Array.isArray(data) || data.length !== messageIds.length) {
     return { ok: false, reason: "not_visible" };
   }
+  if (data.some(m => !m || !UUID.test(m.id || "") || !UUID.test(m.sender_id || "") || !UUID.test(m.recipient_id || ""))) {
+    return { ok: false, reason: "invalid_result" };
+  }
   const ids = new Set(messageIds.map(id => id.toLowerCase()));
   const returnedIds = new Set(data.map(m => String(m.id).toLowerCase()));
   if (returnedIds.size !== messageIds.length) return { ok: false, reason: "duplicate_result" };
