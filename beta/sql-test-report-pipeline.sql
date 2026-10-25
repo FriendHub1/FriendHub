@@ -196,6 +196,14 @@ begin
   exception when sqlstate '28000' then null; end;
 end $$;
 
+-- Capture a *real* report ID as the local CI superuser. Neither ordinary
+-- members nor admins without a valid PIN may change this persisted row.
+reset role;
+select set_config('xoxo.safety_ci_report_id',
+  (select id::text from xoxo_safety_private.conversation_reports
+   order by created_at limit 1),false);
+set role authenticated;
+
 -- Admin report queue MUST block a normal user.
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
 do $$
@@ -204,7 +212,13 @@ begin
     perform public.xoxo_admin_list_conversation_reports_beta('Reviewing safety report evidence');
     raise exception 'BUG: non-admin obtained private report queue';
   exception when sqlstate '42501' then null; end;
-end $$;
+  begin
+    perform public.xoxo_admin_update_conversation_report_beta(
+      current_setting('xoxo.safety_ci_report_id')::uuid,
+      'dismissed','Unrelated user may not update a report');
+    raise exception 'BUG: unrelated user updated another member report';
+  exception when sqlstate '42501' then null; end;
+end $;
 
 -- Even admin accounts without a valid PIN MUST be denied.
 select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
@@ -214,11 +228,53 @@ begin
     perform public.xoxo_admin_list_conversation_reports_beta('Reviewing safety report evidence');
     raise exception 'BUG: expired PIN allowed report queue';
   exception when sqlstate '42501' then null; end;
-end $$;
+  begin
+    perform public.xoxo_admin_update_conversation_report_beta(
+      current_setting('xoxo.safety_ci_report_id')::uuid,
+      'dismissed','Reviewing report with an expired PIN');
+    raise exception 'BUG: expired PIN changed report status';
+  exception when sqlstate '42501' then null; end;
+end $;
+
+-- A time-valid but LOCKED PIN must prevent both list and status update.
+reset role;
+update public.xoxo_moderation_pin_security
+   set verified_until=now()+interval '5 minutes',
+       locked_until=now()+interval '5 minutes'
+ where admin_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+set role authenticated;
+do $
+begin
+  begin
+    perform public.xoxo_admin_list_conversation_reports_beta('Checking a PIN locked report');
+    raise exception 'BUG: locked PIN exposed the report queue';
+  exception when sqlstate '42501' then null; end;
+  begin
+    perform public.xoxo_admin_update_conversation_report_beta(
+      current_setting('xoxo.safety_ci_report_id')::uuid,
+      'dismissed','Checking a PIN locked status action');
+    raise exception 'BUG: locked PIN changed a report status';
+  exception when sqlstate '42501' then null; end;
+end $;
+
+-- Neither a normal user, expired PIN nor locked PIN may leave a changed row
+-- or moderation status audit event in the disposable database.
+reset role;
+do $
+begin
+  if (select status from xoxo_safety_private.conversation_reports
+      where id=current_setting('xoxo.safety_ci_report_id')::uuid) <> 'pending' then
+    raise exception 'BUG: forbidden role/PIN status update modified report';
+  end if;
+  if exists(select 1 from public.xoxo_message_access_log
+            where action like 'conversation_report_status:%') then
+    raise exception 'BUG: denied status update produced an audit side effect';
+  end if;
+end $;
 
 -- Set up a verified admin PIN only in the temporary test database.
 reset role;
-update public.xoxo_moderation_pin_security set verified_until=now()+interval '5 minutes'
+update public.xoxo_moderation_pin_security set verified_until=now()+interval '5 minutes', locked_until=null
  where admin_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 set role authenticated;
 select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
