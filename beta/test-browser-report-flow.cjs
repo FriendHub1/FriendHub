@@ -49,7 +49,7 @@ function clientWith({ rows = [{ id: id1, sender_id: peer, recipient_id: user }],
 async function testAdapter() {
   let test = clientWith();
   assert.deepEqual(await adapter.submit(test.client, input), { ok: true, reportId });
-  assert.deepEqual(test.calls, ["auth", "evidence", "rpc"]);
+  assert.deepEqual(test.calls, ["auth", "evidence", "auth", "rpc", "auth"]);
 
   test = clientWith({ authId: null });
   assert.equal((await adapter.submit(test.client, input)).reason, "authentication_failed");
@@ -69,7 +69,7 @@ async function testAdapter() {
 
   test = clientWith({ rpcError: { message: "not deployed" }, rpcData: null });
   assert.equal((await adapter.submit(test.client, input)).reason, "submission_failed");
-  assert.deepEqual(test.calls, ["auth", "evidence", "rpc"]);
+  assert.deepEqual(test.calls, ["auth", "evidence", "auth", "rpc"]);
 
   test = clientWith();
   assert.equal((await adapter.submit(test.client, { ...input, messageIds: [id1, id1] })).reason, "invalid_input");
@@ -78,6 +78,51 @@ async function testAdapter() {
   test = clientWith();
   assert.equal((await adapter.submit(test.client, { ...input, reasonCode: 7 })).reason, "invalid_input");
   assert.deepEqual(test.calls, []);
+
+  // An anonymous Supabase Auth member is also technically authenticated,
+  // but must not reach our report RPC.
+  let rpcCount = 0;
+  let changingUser = user;
+  let releaseEvidence;
+  const changingClient = {
+    auth: { getUser: async () => ({
+      data: { user: { id: changingUser } }, error: null
+    }) },
+    from: () => ({ select: () => ({ in: () => new Promise(resolve => {
+      releaseEvidence = resolve;
+    }) }) }),
+    rpc: async () => { rpcCount++; return { data: reportId }; }
+  };
+  const pendingEvidence = adapter.submit(changingClient, input);
+  for (let i = 0; i < 8 && !releaseEvidence; i++) await new Promise(r => setImmediate(r));
+  assert.equal(typeof releaseEvidence, "function");
+  changingUser = outsider; // auth swapped while evidence query was pending
+  releaseEvidence({data:[{id:id1,sender_id:peer,recipient_id:user}],error:null});
+  assert.equal((await pendingEvidence).reason,"wrong_account");
+  assert.equal(rpcCount,0,"Old evidence query must never submit from new account");
+
+  // If an RPC was already sent, a later logout must not show an old user's
+  // successful report ID inside the newly authenticated account's UI.
+  changingUser = user;
+  let releaseRpc;
+  changingClient.from=()=>({select:()=>({in:async()=>({
+    data:[{id:id1,sender_id:peer,recipient_id:user}],error:null
+  })})});
+  changingClient.rpc=()=>new Promise(resolve => { releaseRpc=resolve; });
+  const pendingReceipt=adapter.submit(changingClient,input);
+  for(let i=0;i<8 && !releaseRpc;i++)await new Promise(r=>setImmediate(r));
+  assert.equal(typeof releaseRpc,"function");
+  changingUser=outsider;
+  releaseRpc({data:reportId,error:null});
+  assert.equal((await pendingReceipt).reason,"wrong_account",
+    "Successful old-account report receipt must not appear after account swap");
+
+  const anonymousClient=clientWith().client;
+  anonymousClient.auth.getUser=async()=>({
+    data:{user:{id:user,is_anonymous:true}},error:null
+  });
+  assert.equal((await adapter.submit(anonymousClient,input)).reason,
+    "authentication_failed","Anonymous Auth sessions cannot submit reports");
 }
 
 function browserHarness({ enabled = true, rows, submit, getMessages: overrideMessages, isContextActive } = {}) {
