@@ -41,8 +41,8 @@ def submit(reporter, peer, key, details):
     query = (
         "SET ROLE authenticated;"
         f"SELECT set_config('request.jwt.claim.sub','{reporter}',false);"
-        "SELECT public.xoxo_submit_conversation_report_beta("
         f"SELECT set_config('request.jwt.claim.session_id','{SESSIONS[reporter]}',false);"
+        "SELECT public.xoxo_submit_conversation_report_beta("
         f"'{peer}'::uuid,0,'{details}',"
         f"ARRAY['{MESSAGE}'::uuid],'{key}'::uuid);"
     )
