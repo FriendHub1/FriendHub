@@ -2943,6 +2943,8 @@ export default {
               '<script src="/beta/stay-safe-sweetheart.js" defer></script>' +
               '<script src="/beta/stay-safe-report-form.js" defer></script>' +
               '<script src="/beta/stay-safe-evidence-picker.js" defer></script>' +
+              '<script src="/beta/stay-safe-browser-report-adapter.js" defer></script>' +
+              '<script src="/beta/stay-safe-browser-flow.js" defer></script>' +
               '<script src="/beta/stay-safe-chat-preview-bridge.js" defer></script>',
               {html:true});
           }
