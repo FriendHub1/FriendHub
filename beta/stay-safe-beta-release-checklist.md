@@ -256,3 +256,12 @@ Tests include:
 - Verified the production audit column type is unrestricted PostgreSQL `text` through **read-only schema inspection**; no schema or data mutation was made.
 - [GitHub Actions run 40215821395](https://github.com/FriendHub1/FriendHub/actions/runs/40215821395) passed all three jobs: Node.js, disposable PostgreSQL 17/signed PostgREST and WebKit/Chromium.
 - This change does not resolve the separately required owner approval of evidence-retention and disclosure, real isolated Supabase Auth session tests, or physical iPhone acceptance. The PR stays draft; production was not changed.
+
+### Exact-case audit and log-integrity protection (2026-10-25)
+
+- The existing moderation access log previously recorded `conversation_report_status:reviewed: <reason>` with participant UUIDs, **but no report UUID**. When two complaints concerned the same pair, it was impossible to know which exact report changed, or its prior status.
+- The draft `xoxo_admin_update_conversation_report_beta` now locks the specific report row `FOR UPDATE`, reads the **previous status**, changes its status and atomically writes a log entry containing **new status, report UUID, previous status and moderator reason**. Existing PIN/session/admin authorization and the legacy moderation log remain mandatory. No new table or data grants.
+- All **three** admin RPCs (initial queue, continuation page, status change) now reject moderation reasons containing control characters, preventing newline/CRLF injection into the shared audit action field. They still require the 10–300-character reason and valid PIN.
+- `beta/sql-test-report-pipeline.sql` validates one exact UUID/status/reason event and confirms failed multiline calls create no extra records or status changes. Signed **real local PostgREST HTTP** tests separately attempt multiline reasons against all 3 RPCs and confirm denial.
+- **[GitHub Actions run 40215903952](https://github.com/FriendHub1/FriendHub/actions/runs/40215903952) passed all 3 jobs**: Node.js 22, disposable PostgreSQL 17 with signed local HTTP and WebKit/Chromium browsers.
+- BETA-only: no live Supabase SQL, Worker deployment, report-write activation or PR merge. Real non-production Supabase Auth testing, privacy/retention approval, draft reporting limit and physical iPhone acceptance remain pending.
