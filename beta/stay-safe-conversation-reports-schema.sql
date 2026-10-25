@@ -258,8 +258,9 @@ begin
   end if;
   -- Same mandatory 10–300 character moderation reason as the existing
   -- PIN-gated full conversation viewer.
-  if pg_catalog.length(v_reason) not between 10 and 300 then
-    raise exception 'A moderation reason of 10 to 300 characters is required'
+  if pg_catalog.length(v_reason) not between 10 and 300
+     or v_reason ~ '[[:cntrl:]]' then
+    raise exception 'Moderation reason must be 10 to 300 characters without control characters'
       using errcode = '22023';
   end if;
 
@@ -313,6 +314,7 @@ as $xoxo_admin_status$
 declare
   v_reporter uuid;
   v_other_user uuid;
+  v_previous_status text;
   v_reason text := pg_catalog.btrim(coalesce(p_reason,''));
 begin
   if auth.uid() is null or not public.is_xoxo_admin()
@@ -327,8 +329,9 @@ begin
   ) then
     raise exception 'Moderation PIN verification required' using errcode = '42501';
   end if;
-  if pg_catalog.length(v_reason) not between 10 and 300 then
-    raise exception 'A moderation reason of 10 to 300 characters is required'
+  if pg_catalog.length(v_reason) not between 10 and 300
+     or v_reason ~ '[[:cntrl:]]' then
+    raise exception 'Moderation reason must be 10 to 300 characters without control characters'
       using errcode = '22023';
   end if;
   if p_report_id is null or p_status is null
@@ -336,21 +339,30 @@ begin
     raise exception 'Invalid report status' using errcode = '22023';
   end if;
 
-  update xoxo_safety_private.conversation_reports r
-     set status = p_status
+  -- Serialize status changes for THIS report. Without the old status and
+  -- report UUID, multiple cases between the same pair are indistinguishable
+  -- in the existing admin audit trail.
+  select r.reporter_id, r.other_user_id, r.status
+    into v_reporter, v_other_user, v_previous_status
+    from xoxo_safety_private.conversation_reports r
    where r.id = p_report_id
-   returning r.reporter_id, r.other_user_id
-     into v_reporter, v_other_user;
+     for update;
   if not found then
     return false;
   end if;
+
+  update xoxo_safety_private.conversation_reports r
+     set status = p_status
+   where r.id = p_report_id;
 
   insert into public.xoxo_message_access_log
     (admin_id, conversation_user_1, conversation_user_2, action)
   values
     (auth.uid(), least(v_reporter, v_other_user),
      greatest(v_reporter, v_other_user),
-     'conversation_report_status:' || p_status || ': ' || v_reason);
+     'conversation_report_status:' || p_status ||
+     ': report=' || p_report_id::text ||
+     ' previous=' || v_previous_status || ' reason=' || v_reason);
   return true;
 end
 $xoxo_admin_status$;
@@ -401,8 +413,9 @@ begin
   ) then
     raise exception 'Moderation PIN verification required' using errcode = '42501';
   end if;
-  if pg_catalog.length(v_reason) not between 10 and 300 then
-    raise exception 'A moderation reason of 10 to 300 characters is required'
+  if pg_catalog.length(v_reason) not between 10 and 300
+     or v_reason ~ '[[:cntrl:]]' then
+    raise exception 'Moderation reason must be 10 to 300 characters without control characters'
       using errcode = '22023';
   end if;
   if p_limit is null or p_limit not between 1 and 50 then
