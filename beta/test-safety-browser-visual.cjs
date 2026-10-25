@@ -53,7 +53,7 @@ async function runScenario(browser,engine,viewport,language,url){
     await page.goto(url);
     for(const filename of [
       "stay-safe-sweetheart.js","stay-safe-report-form.js",
-      "stay-safe-evidence-picker.js"
+      "stay-safe-evidence-picker.js","stay-safe-browser-flow.js"
     ])await page.addScriptTag({path:path.join(root,filename)});
     const opened=await page.evaluate(({user,language})=>{
       const conversationId="responsive-"+language;
@@ -220,8 +220,64 @@ async function runScenario(browser,engine,viewport,language,url){
       formAfterCancel:0,formRepeated:1,
       pickerAfterCancel:0,pickerRepeated:1,activeOverlays:0
     },label+" stale/cancelled modal callbacks must never submit twice");
+    // Real DOM regression: navigation disposes ONLY dialogs belonging to
+    // the old chat; a stale handler must not leak a previous private message.
+    const navLifecycle=await page.evaluate(async ({user,language})=>{
+      const counts={oldClosed:0,newPreserved:0,oldPickerClosed:0,
+        staleReportSubmissions:0,overlaysAtEnd:0};
+      const peer="22222222-2222-4222-8222-222222222222";
+      const fakeMessages=[{
+        id:"dddddddd-dddd-4ddd-8ddd-000000000001",
+        sender_id:peer,recipient_id:user,text:"Synthetic private message",
+        created_at:"2026-10-25T12:00:00Z"
+      }];
+      const createFlow=conversationId=>
+        window.XOXOSafetyFlowBeta.create({
+          client:{},accountId:user,otherUserId:peer,conversationId,
+          locale:language,enabled:false,previewOnly:true,
+          getMessages:()=>fakeMessages
+        });
+      const oldFlow=createFlow("chat-original");
+      oldFlow.openReport();
+      const oldForm=document.querySelector("[data-xoxo-report-beta] form");
+      // The previous form is closed by its owner/user, without disposing
+      // the flow; an old flow cannot later dismiss the new chat's modal.
+      oldForm.querySelector('button[type="button"]').click();
+      const nextFlow=createFlow("chat-new");
+      nextFlow.openReport();
+      oldFlow.dispose();
+      counts.newPreserved=Number(!!document.querySelector(
+        "[data-xoxo-report-beta]"));
+      // Simulate a new form followed by a report with authorized evidence.
+      const nextForm=document.querySelector("[data-xoxo-report-beta] form");
+      nextForm.onsubmit({preventDefault(){}});
+      await Promise.resolve();await Promise.resolve();
+      const picker=document.querySelector("[data-xoxo-evidence-beta]");
+      if(!picker)throw Error("New chat picker did not open");
+      const staleClick=picker.querySelector("button").onclick;
+      picker.querySelector('input[type="checkbox"]').checked=true;
+      nextFlow.dispose();
+      counts.oldPickerClosed=Number(!document.querySelector(
+        "[data-xoxo-evidence-beta]"));
+      staleClick();
+      counts.staleReportSubmissions=Number(!!document.querySelector(
+        "[data-xoxo-evidence-beta]"));
+      counts.oldClosed=Number(!document.querySelector(
+        "[data-xoxo-report-beta]"));
+      const newestFlow=createFlow("chat-third");
+      if(!newestFlow.openReport())throw Error("Third chat could not open");
+      newestFlow.dispose();
+      counts.overlaysAtEnd=document.querySelectorAll(
+        "[data-xoxo-report-beta],[data-xoxo-evidence-beta]").length;
+      return counts;
+    },{user,language});
+    assert.deepEqual(navLifecycle,{
+      oldClosed:1,newPreserved:1,oldPickerClosed:1,
+      staleReportSubmissions:0,overlaysAtEnd:0
+    },label+" disposed chat must close its owned dialog but not new chat");
     assert.deepEqual(errors,[],"browser page errors");
-    console.log("PASS: "+label+" responsive safety, evidence, and one-shot modal callbacks");
+    console.log("PASS: "+label+
+      " responsive safety, one-shot callbacks, chat-change private modal disposal");
   }finally{await context.close();}
 }
 
