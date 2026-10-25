@@ -9,17 +9,18 @@ const report={id:"22222222-2222-4222-8222-222222222222",reporter_id:reporter,rep
  created_at:"2026-10-24T12:00:00Z",source:"conversation_beta"};
 function element(tag){
   return {tag,children:[],textContent:"",listeners:{},attributes:{},className:"",disabled:false,
-   append(...items){this.children.push(...items)},
+   append(...items){for(const item of items){item.parent=this;this.children.push(item)}},
    setAttribute(name,value){this.attributes[name]=value},
    addEventListener(name,fn){this.listeners[name]=fn},
-   querySelectorAll(){return this.children.filter(x=>x.tag==="button")},
-   remove(){this.removed=true}};
+   querySelectorAll(selector){return this.children.filter(x=>selector==="button"?x.tag==="button":selector==="[data-xoxo-conversation-beta-report]"?!!x.attributes["data-xoxo-conversation-beta-report"]:selector===".xmm-report-feedback"?x.className==="xmm-report-feedback":false)},
+   remove(){this.removed=true;if(this.parent)this.parent.children=this.parent.children.filter(x=>x!==this)}};
 }
 (async()=>{
  const list=element("section");const moderation={classList:{contains:()=>true}};
  const calls={legacy:0,queue:0,pin:0,updates:0};
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;list.children=[element("legacy-card")];},
+   renderXoxoDmReports:()=>{list.children=[element("legacy-card")];},
    XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");return {ok:true,reports:[report]};},
     updateReportStatus:async()=>{calls.updates++;return {ok:true};}}},
   document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xoxoAdminModeration"?moderation:null},
@@ -31,6 +32,10 @@ function element(tag){
  await context.window.loadXoxoDmReports();
  assert.equal(calls.legacy,1);assert.equal(calls.queue,1);
  assert.equal(list.children.length,2,"existing legacy card must remain alongside BETA report");
+ context.window.renderXoxoDmReports();
+ assert.equal(list.children.length,2,"dashboard re-render must preserve BETA card");
+ context.window.renderXoxoDmReports();
+ assert.equal(list.children.length,2,"repeated renders must never duplicate BETA reports");
  const card=list.children[1];assert.equal(card.attributes["data-xoxo-conversation-beta-report"],report.id);
  const actions=card.children.find(x=>x.className==="xmm-report-actions");
  const view=actions.children[0];view.listeners.click();assert.equal(calls.pin,1,"existing PIN-gated viewer must be reused");
@@ -39,5 +44,5 @@ function element(tag){
  context.xoxoIsAdmin=false;
  await context.window.loadXoxoDmReports();
  assert.equal(calls.queue,2,"non-admin reload must not request BETA report metadata");
- console.log("PASS: admin bridge preserves existing reports, reuses viewer, updates status and blocks non-admin queue reads");
+ console.log("PASS: admin bridge preserves existing reports, survives dashboard rerenders, reuses viewer, updates status and blocks non-admin queue reads");
 })().catch(e=>{console.error(e);process.exitCode=1;});
