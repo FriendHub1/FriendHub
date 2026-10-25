@@ -183,7 +183,7 @@ select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111'
 do $$
 begin
   begin
-    perform public.xoxo_admin_list_conversation_reports_beta();
+    perform public.xoxo_admin_list_conversation_reports_beta('Reviewing safety report evidence');
     raise exception 'BUG: non-admin obtained private report queue';
   exception when sqlstate '42501' then null; end;
 end $$;
@@ -193,7 +193,7 @@ select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 do $$
 begin
   begin
-    perform public.xoxo_admin_list_conversation_reports_beta();
+    perform public.xoxo_admin_list_conversation_reports_beta('Reviewing safety report evidence');
     raise exception 'BUG: expired PIN allowed report queue';
   exception when sqlstate '42501' then null; end;
 end $$;
@@ -209,16 +209,25 @@ declare
   v_queue jsonb;
   v_report uuid;
 begin
-  v_queue := public.xoxo_admin_list_conversation_reports_beta();
+  v_queue := public.xoxo_admin_list_conversation_reports_beta('Reviewing safety report evidence');
   if jsonb_typeof(v_queue) <> 'array' or jsonb_array_length(v_queue) <> 10 then
     raise exception 'BUG: expected 10 saved, PIN-authorized reports, got %',v_queue;
   end if;
   v_report := (v_queue->0->>'id')::uuid;
-  if not public.xoxo_admin_update_conversation_report_beta(v_report,'reviewed') then
+  -- A valid PIN does not eliminate the existing mandatory moderation reason.
+  begin
+    perform public.xoxo_admin_list_conversation_reports_beta('short');
+    raise exception 'BUG: report queue accepted a missing/short reason';
+  exception when sqlstate '22023' then null; end;
+  begin
+    perform public.xoxo_admin_update_conversation_report_beta(v_report,'reviewed','short');
+    raise exception 'BUG: status change accepted a missing/short reason';
+  exception when sqlstate '22023' then null; end;
+  if not public.xoxo_admin_update_conversation_report_beta(v_report,'reviewed','Reviewed evidence from reported conversation') then
     raise exception 'BUG: admin status change not saved';
   end if;
   begin
-    perform public.xoxo_admin_update_conversation_report_beta(v_report,'unknown');
+    perform public.xoxo_admin_update_conversation_report_beta(v_report,'unknown','Reviewed evidence from reported conversation');
     raise exception 'BUG: invalid status accepted';
   exception when sqlstate '22023' then null; end;
 end $$;
@@ -233,7 +242,7 @@ begin
     raise exception 'BUG: evidence rows not persisted atomically';
   end if;
   if (select count(*) from public.xoxo_message_access_log
-      where action='conversation_report_status:reviewed') <> 1 then
+      where action like 'conversation_report_status:reviewed:%') <> 1 then
     raise exception 'BUG: status update has no moderation audit record';
   end if;
   if exists (
