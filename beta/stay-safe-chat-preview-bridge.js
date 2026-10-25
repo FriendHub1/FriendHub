@@ -10,7 +10,9 @@ if(typeof window==="undefined")return;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REPORT_RPC_WRITES_ENABLED=false;
 let flow=null,flowKey="",flowClient=null;
-let authSignedOut=false,authenticatedUserId=null;
+// Fail closed until Supabase publishes the initial stored session. A stale
+// SPA currentUser is NOT proof of a current signed-in Auth user.
+let authSignedOut=true,authenticatedUserId=null;
 function disposeFlow(){
  if(typeof flow?.dispose==="function")flow.dispose();
  flow=null;flowKey="";flowClient=null;
@@ -154,10 +156,20 @@ function install(){
        authSignedOut=true;
        authenticatedUserId=null;
        disposeFlow();
-     }else if(event==="SIGNED_IN"){
-       authSignedOut=!valid(session?.user?.id);
-       authenticatedUserId=authSignedOut?null:session.user.id.toLowerCase();
-       disposeFlow();
+       refresh();
+     }else if(["INITIAL_SESSION","SIGNED_IN","TOKEN_REFRESHED",
+               "USER_UPDATED","PASSWORD_RECOVERY"].includes(event)){
+       // Supabase's INITIAL_SESSION may be null when there is no stored
+       // login. TOKEN_REFRESHED can also invalidate/change the user.
+       // Ignore stale global currentUser until the Auth event agrees.
+       const next=valid(session?.user?.id) &&
+         session.user.is_anonymous!==true ?
+         session.user.id.toLowerCase():null;
+       if(next!==authenticatedUserId || authSignedOut!==!next)
+         disposeFlow();
+       authenticatedUserId=next;
+       authSignedOut=!next;
+       refresh();
      }
    });
  refresh();
