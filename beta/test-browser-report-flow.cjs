@@ -263,6 +263,51 @@ async function testFlow() {
   assert.equal(delayedReceipt.status.length,0,
     "Old successful receipt must not be displayed after account switch");
 
+  // A form callback can fire twice while getMessages() is pending.
+  // Only ONE evidence picker may open, with no obsolete form replacing it.
+  let pickerReads=0,finishPickerLoad;
+  const duplicatePicker=browserHarness({
+    getMessages:()=>{pickerReads++;
+      return new Promise(resolve=>{finishPickerLoad=resolve});
+    }
+  });
+  const originalForm=duplicatePicker.flow.openReport();
+  assert.equal(originalForm,true);
+  const formValues={conversationId:"conversation-1",reasonCode:1,details:"Threats"};
+  duplicatePicker.ui.form.onContinue(formValues);
+  duplicatePicker.ui.form.onContinue(formValues);
+  assert.equal(duplicatePicker.flow.openReport(),false,
+    "Cannot start a new report form while evidence loads");
+  assert.equal(pickerReads,1,
+    "Double form submission must not fetch evidence twice");
+  finishPickerLoad([{id:id1,sender_id:peer,recipient_id:user,
+    text:"A message selected as evidence"}]);
+  await flush();
+  assert.equal(duplicatePicker.ui.picker?.messages?.length,1);
+  assert.equal(duplicatePicker.status.length,0,
+    "Duplicate form callbacks must not emit an error alert");
+  assert.deepEqual(duplicatePicker.calls,[],
+    "Loading the evidence picker must not call authenticated report RPC");
+
+  // A rejected evidence-load should release the lock so another form can
+  // open and retry without needing to sign out or reload the whole page.
+  let pickerAttempts=0;
+  const pickerRecovery=browserHarness({getMessages:()=>{
+    pickerAttempts++;
+    return pickerAttempts===1 ? Promise.reject(new Error("temporary failure"))
+      : [{id:id1,sender_id:peer,recipient_id:user,text:"Retry evidence"}];
+  }});
+  pickerRecovery.flow.openReport();
+  pickerRecovery.ui.form.onContinue(formValues);
+  await flush();
+  assert.equal(pickerRecovery.status.at(-1)?.reason,"no_messages");
+  assert.equal(pickerRecovery.flow.openReport(),true,
+    "Failed picker initialization must not leave a permanent loading lock");
+  pickerRecovery.ui.form.onContinue(formValues);
+  await flush();
+  assert.equal(pickerRecovery.ui.picker?.messages?.length,1);
+  assert.equal(pickerAttempts,2);
+
   // Two rapid taps can happen while the asynchronous evidence re-read is
   // pending. Exactly ONE adapter RPC and ONE status notification may happen.
   const visible=[{id:id1,sender_id:peer,recipient_id:user,content:"Synthetic evidence"}];
