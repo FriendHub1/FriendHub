@@ -23,6 +23,14 @@ for (const [name, match] of [
 assert.match(http, /HOST = "http:\/\/127\.0\.0\.1:3001"/);
 assert.match(http, /assert os\.environ\.get\("PGDATABASE"\) == "xoxo_safety_test"/);
 assert.match(seed, /current_database\(\) <> 'xoxo_safety_test'/);
+assert.match(ci, /^  safety-browser:/m,
+  "WebKit and Chromium visual test job must remain enabled");
+assert.match(ci, /playwright@1\.64\.1/,
+  "Pin browser test version to avoid unreviewed upgrades");
+assert.match(ci, /node beta\/test-safety-browser-visual\.cjs/,
+  "Run actual responsive browser tests, not only Node DOM mocks");
+assert.match(ci, /retention-days: 7/,
+  "Expire synthetic visual captures rather than storing them indefinitely");
 for (const [name, contents] of [["workflow", ci], ["HTTP test", http]]) {
   assert.doesNotMatch(contents, /SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SECRET_KEY|SUPABASE_DB_PASSWORD/,
     name + " must never depend on live Supabase secrets");
