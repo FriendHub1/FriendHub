@@ -38,5 +38,8 @@ function client({user=self,authError=null,rows=[{id:msg,sender_id:peer,recipient
   assert.equal(result.ok,expected,name);
  }
  assert.equal((await authenticatedReportPreflight(null,payload)).ok,false);
- console.log("PASS: 9 authenticated preflight mock scenarios");
+ for(const invalid of [{auth:{getUser:true},from:()=>{}},{auth:{getUser:async()=>({data:{user:{id:self}}})},from:true}]){
+  assert.deepEqual(await authenticatedReportPreflight(invalid,payload),{ok:false,reason:"invalid_client"});
+ }
+ console.log("PASS: 11 authenticated preflight mock scenarios");
 })().catch(e=>{console.error(e);process.exitCode=1;});
