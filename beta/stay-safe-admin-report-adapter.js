@@ -135,7 +135,9 @@
         user_1: report.reporter_id,
         user_2: report.reported_user_id
       });
-      return { ok: true };
+      // The existing viewer returns void even when a PIN prompt is cancelled.
+      // A handoff is not proof that private messages were opened.
+      return { ok: true, handedOff: true };
     } catch (_) {
       return { ok: false, reason: "existing_viewer_unavailable" };
     }
