@@ -140,6 +140,10 @@ jobs:
         run: |
           NODE_PATH="$RUNNER_TEMP/xoxo-safety-playwright/node_modules" \
             node beta/browser-safety-admin-auth.cjs
+      - name: Check old DM report/evidence dialogs close on chat navigation in native WebKit and Chromium
+        run: |
+          NODE_PATH="$RUNNER_TEMP/xoxo-safety-playwright/node_modules" \
+            node beta/browser-safety-chat-navigation.cjs
       - name: Upload synthetic BETA screenshots for visual review
         if: always()
         uses: actions/upload-artifact@v4
