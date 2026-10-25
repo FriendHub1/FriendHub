@@ -19,6 +19,13 @@
   const ACTIONS = {
     en:{tips:"More safety tips",report:"Report conversation 🚩",meet:"If you meet in person, choose a public place, tell someone you trust and arrange your own transport.",threat:"If someone threatens or blackmails you, keep evidence, stop engaging and do not pay."},
     es:{tips:"Más consejos de seguridad",report:"Denunciar conversación 🚩",meet:"Si decides conocer a alguien, elige un lugar público, avisa a alguien de confianza y organiza tu propio transporte.",threat:"Si alguien te amenaza o chantajea, conserva las pruebas, deja de responder y no pagues."}
+,
+    "pt-BR":{tips:"Mais dicas de segurança",report:"Denunciar conversa 🚩",meet:"Se for encontrar alguém pessoalmente, escolha um lugar público, avise alguém de confiança e organize seu próprio transporte.",threat:"Se alguém ameaçar ou chantagear você, guarde as provas, interrompa o contato e não pague."},
+    "fr":{tips:"Plus de conseils de sécurité",report:"Signaler la conversation 🚩",meet:"Pour une rencontre en personne, choisis un lieu public, préviens une personne de confiance et organise ton propre transport.",threat:"En cas de menace ou de chantage, conserve les preuves, cesse de répondre et ne paie pas."},
+    "pl":{tips:"Więcej wskazówek bezpieczeństwa",report:"Zgłoś rozmowę 🚩",meet:"Jeśli spotykasz kogoś osobiście, wybierz miejsce publiczne, poinformuj zaufaną osobę i zorganizuj własny transport.",threat:"Jeśli ktoś Ci grozi lub szantażuje, zachowaj dowody, przerwij kontakt i nie płać."},
+    "de":{tips:"Weitere Sicherheitstipps",report:"Unterhaltung melden 🚩",meet:"Wenn du jemanden persönlich triffst, wähle einen öffentlichen Ort, informiere eine Vertrauensperson und organisiere deine eigene Anreise.",threat:"Bei Drohungen oder Erpressung: Sichere Beweise, brich den Kontakt ab und zahle nicht."},
+    "cs":{tips:"Další bezpečnostní tipy",report:"Nahlásit konverzaci 🚩",meet:"Pokud se s někým setkáš osobně, zvol veřejné místo, řekni o tom důvěryhodné osobě a zajisti si vlastní dopravu.",threat:"Pokud ti někdo vyhrožuje nebo tě vydírá, uchovej důkazy, přestaň reagovat a neplať."},
+    "no":{tips:"Flere sikkerhetstips",report:"Rapporter samtalen 🚩",meet:"Hvis du møter noen personlig, velg et offentlig sted, fortell det til noen du stoler på, og ordne egen transport.",threat:"Hvis noen truer eller utpresser deg, ta vare på bevis, avslutt kontakten og ikke betal."}
   };
   const css = `
 .xoxo-safe-backdrop{position:fixed;inset:0;z-index:2147483000;background:#000a;display:grid;place-items:center;padding:16px}
