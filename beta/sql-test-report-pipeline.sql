@@ -420,6 +420,7 @@ begin
     raise exception 'BUG: expected 10 saved, PIN-authorized reports, got %',v_queue;
   end if;
   v_report := (v_queue->0->>'id')::uuid;
+  perform set_config('xoxo.safety_ci_audited_report_id',v_report::text,false);
   -- A valid PIN does not eliminate the existing mandatory moderation reason.
   begin
     perform public.xoxo_admin_list_conversation_reports_beta('short');
@@ -428,6 +429,22 @@ begin
   begin
     perform public.xoxo_admin_update_conversation_report_beta(v_report,'reviewed','short');
     raise exception 'BUG: status change accepted a missing/short reason';
+  exception when sqlstate '22023' then null; end;
+  -- No newline/control byte may forge a second-looking moderation log line.
+  begin
+    perform public.xoxo_admin_list_conversation_reports_beta(
+      'Reviewing evidence' || chr(10) || 'FORGED ADMIN ACTION');
+    raise exception 'BUG: multiline queue reason accepted';
+  exception when sqlstate '22023' then null; end;
+  begin
+    perform public.xoxo_admin_page_conversation_reports_beta(
+      'Reviewing evidence' || chr(13) || 'FORGED PAGINATION',null,null,null,10);
+    raise exception 'BUG: multiline page reason accepted';
+  exception when sqlstate '22023' then null; end;
+  begin
+    perform public.xoxo_admin_update_conversation_report_beta(
+      v_report,'reviewed','Reviewing evidence' || chr(10) || 'FORGED STATUS');
+    raise exception 'BUG: multiline status reason accepted';
   exception when sqlstate '22023' then null; end;
   if not public.xoxo_admin_update_conversation_report_beta(v_report,'reviewed','Reviewed evidence from reported conversation') then
     raise exception 'BUG: admin status change not saved';
@@ -455,8 +472,19 @@ begin
     raise exception 'BUG: authorized report queue read did not have one audit event';
   end if;
   if (select count(*) from public.xoxo_message_access_log
-      where action like 'conversation_report_status:reviewed:%') <> 1 then
-    raise exception 'BUG: status update has no moderation audit record';
+      where action =
+        'conversation_report_status:reviewed: report=' ||
+        current_setting('xoxo.safety_ci_audited_report_id') ||
+        ' previous=pending reason=Reviewed evidence from reported conversation'
+      and admin_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid) <> 1 then
+    raise exception 'BUG: audit missing exact report UUID, old status or reason';
+  end if;
+  if exists (
+    select 1 from public.xoxo_message_access_log
+    where action like 'conversation_report_status:%'
+      and (action like '%' || chr(10) || '%' or action like '%' || chr(13) || '%')
+  ) then
+    raise exception 'BUG: newline injected into moderation audit';
   end if;
   if exists (
     select 1 from information_schema.columns
