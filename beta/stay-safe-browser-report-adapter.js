@@ -13,6 +13,15 @@
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const validId = value => typeof value === "string" && UUID.test(value);
 
+  async function currentAccount(client) {
+    try {
+      const response = await client.auth.getUser();
+      if (response?.error || !validId(response?.data?.user?.id) ||
+          response.data.user.is_anonymous === true) return null;
+      return response.data.user.id.toLowerCase();
+    } catch { return null; }
+  }
+
   async function submit(client, input) {
     if (typeof client?.auth?.getUser !== "function" ||
         typeof client?.from !== "function" || typeof client?.rpc !== "function") {
@@ -31,16 +40,8 @@
         new Set(messageIds.map(id => id.toLowerCase())).size !== messageIds.length) {
       return { ok: false, reason: "invalid_input" };
     }
-    let userId;
-    try {
-      const response = await client.auth.getUser();
-      if (response?.error || !validId(response?.data?.user?.id)) {
-        return { ok: false, reason: "authentication_failed" };
-      }
-      userId = response.data.user.id.toLowerCase();
-    } catch {
-      return { ok: false, reason: "authentication_failed" };
-    }
+    const userId = await currentAccount(client);
+    if (!userId) return { ok: false, reason: "authentication_failed" };
     const peer = otherUserId.toLowerCase();
     if (userId === peer || (accountId && accountId.toLowerCase() !== userId)) {
       return { ok: false, reason: "wrong_account" };
@@ -69,6 +70,12 @@
            (row.sender_id.toLowerCase() === peer && row.recipient_id.toLowerCase() === userId)))) {
       return { ok: false, reason: "evidence_not_authorized" };
     }
+    // The evidence query is asynchronous; a user can switch accounts while
+    // it is pending. Re-check the current account BEFORE any report RPC.
+    const beforeRpcAccount = await currentAccount(client);
+    if (!beforeRpcAccount || beforeRpcAccount !== userId) {
+      return { ok: false, reason: "wrong_account" };
+    }
     try {
       const { data, error } = await client.rpc("xoxo_submit_conversation_report_beta", {
         p_other_user_id: peer,
@@ -78,6 +85,13 @@
         p_idempotency_key: idempotencyKey.toLowerCase()
       });
       if (error || !validId(data)) return { ok: false, reason: "submission_failed" };
+      // A successful remote write may finish after logout. Suppress the old
+      // account's receipt in a new signed-in user's UI; the immutable key
+      // allows the original member to recover that receipt when logged in.
+      const afterRpcAccount = await currentAccount(client);
+      if (!afterRpcAccount || afterRpcAccount !== userId) {
+        return { ok: false, reason: "wrong_account" };
+      }
       return { ok: true, reportId: data.toLowerCase() };
     } catch {
       return { ok: false, reason: "submission_failed" };
