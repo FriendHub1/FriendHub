@@ -10,9 +10,14 @@ async function verifyVisibleMessages(client, userId, peerId, messageIds) {
       new Set(messageIds.map(id => id.toLowerCase())).size !== messageIds.length) {
     return { ok: false, reason: "invalid_input" };
   }
-  const { data, error } = await client.from("direct_messages")
-    .select("id,sender_id,recipient_id")
-    .in("id", messageIds);
+  let data, error;
+  try {
+    ({ data, error } = await client.from("direct_messages")
+      .select("id,sender_id,recipient_id")
+      .in("id", messageIds));
+  } catch {
+    return { ok: false, reason: "query_failed" };
+  }
   if (error || !Array.isArray(data) || data.length !== messageIds.length) {
     return { ok: false, reason: "not_visible" };
   }
