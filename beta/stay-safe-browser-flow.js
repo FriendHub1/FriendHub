@@ -56,6 +56,7 @@
     const account = accountId.toLowerCase();
     const peer = otherUserId.toLowerCase();
     let sending = false;
+    let loadingEvidence = false;
     let retry = null;
 
     function contextActive() {
@@ -89,14 +90,20 @@
     }
 
     async function startEvidence(formData) {
+      if (loadingEvidence || sending || !contextActive()) return;
       if (!config.enabled && !config.previewOnly) { inform({ ok: false, reason: "disabled" }); return; }
       if (!formData || formData.conversationId !== conversationId) {
         inform({ ok: false, reason: "invalid_conversation" }); return;
       }
+      // Lock BEFORE the async load. An earlier form may have closed while
+      // the previous evidence query is still pending; multiple callbacks
+      // must not open competing pickers or expose stale messages.
+      loadingEvidence = true;
       let visible;
-      try { visible = await getMessages(); }
-      catch { inform({ ok: false, reason: "no_messages" }); return; }
-      if (!contextActive()) return;
+      try {
+        try { visible = await getMessages(); }
+        catch { inform({ ok: false, reason: "no_messages" }); return; }
+        if (!contextActive()) return;
       if (!Array.isArray(visible)) { inform({ ok: false, reason: "no_messages" }); return; }
       const seen = new Set();
       const safe = [];
@@ -129,6 +136,9 @@
         }
       });
       if (!opened) inform({ ok: false, reason: "missing_module" });
+      } finally {
+        loadingEvidence = false;
+      }
     }
 
     async function send(input) {
@@ -214,8 +224,9 @@
     function openReport() {
       if (!contextActive()) return false;
       if (!config.enabled && !config.previewOnly) { inform({ ok: false, reason: "disabled" }); return false; }
-      if (sending || typeof root?.XOXOReportFormBeta?.open !== "function") {
-        if (!sending) inform({ ok: false, reason: "missing_module" });
+      if (sending || loadingEvidence) return false;
+      if (typeof root?.XOXOReportFormBeta?.open !== "function") {
+        inform({ ok: false, reason: "missing_module" });
         return false;
       }
       return root.XOXOReportFormBeta.open({
