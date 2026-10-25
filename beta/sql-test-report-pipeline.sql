@@ -7,6 +7,15 @@ begin
   if has_schema_privilege('authenticated','xoxo_safety_private','USAGE') then
     raise exception 'BUG: signed-in user can access private report schema';
   end if;
+  if has_table_privilege('authenticated','auth.sessions','SELECT') then
+    raise exception 'BUG: authenticated browser user can list auth.sessions';
+  end if;
+  if has_function_privilege('authenticated',
+     'xoxo_safety_private.active_session_for(uuid)','EXECUTE') or
+     has_function_privilege('anon',
+     'xoxo_safety_private.active_session_for(uuid)','EXECUTE') then
+    raise exception 'BUG: private session verification helper can be called directly';
+  end if;
   if has_function_privilege('anon',
     'public.xoxo_submit_conversation_report_beta(uuid,integer,text,uuid[],uuid)','EXECUTE') then
     raise exception 'BUG: anonymous user may submit reports';
