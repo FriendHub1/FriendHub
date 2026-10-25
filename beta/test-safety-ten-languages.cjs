@@ -14,6 +14,7 @@ const fields = {
   actions: ["tips", "report", "meet", "threat"],
   form: ["title", "intro", "reason", "details", "placeholder", "submit", "cancel", "privacy"],
   picker: ["title", "help", "empty", "continue", "cancel", "none", "limit"],
+  preview: ["more", "less"],
   admin: ["title", "user", "peer", "reason", "evidence", "details", "none", "empty",
     "view", "loading", "locked", "unlock", "failed", "saveFailed", "status"],
   activeAdmin: ["title", "by", "target", "reason", "details", "empty", "evidence",
@@ -56,6 +57,7 @@ const dictionaries = {
   actions: window.XOXOSafetyReminderBeta.actions,
   form: window.XOXOReportFormBeta.translations,
   picker: window.XOXOEvidencePickerBeta.translations,
+  preview: window.XOXOEvidencePickerBeta.previewLabels,
   admin: window.XOXOAdminConversationReportsBeta.translations,
   activeAdmin: activeAdminRoot.XOXOActiveAdminSafetyCopyBeta
 };
