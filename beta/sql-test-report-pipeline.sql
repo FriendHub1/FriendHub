@@ -71,7 +71,9 @@ end $test_allowlist$;
 reset role;
 insert into xoxo_safety_private.report_beta_testers (user_id) values
  ('11111111-1111-4111-8111-111111111111'),
- ('22222222-2222-4222-8222-222222222222');
+ ('22222222-2222-4222-8222-222222222222'),
+ -- The later parallel rate-limit fixture submits as this synthetic member.
+ ('33333333-3333-4333-8333-333333333333');
 update xoxo_safety_private.report_beta_testers
    set expires_at=now()-interval '1 minute'
  where user_id='11111111-1111-4111-8111-111111111111';
