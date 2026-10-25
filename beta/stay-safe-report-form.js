@@ -3,6 +3,7 @@
  */
 (function(){
 "use strict";
+let activeDialog=null;
 const translations={
 en:{title:"Report Conversation 🚩",intro:"Tell us what happened. Your safety matters. 💛",reason:"Why are you reporting?",details:"Tell us more (optional)",placeholder:"Describe what happened...",submit:"Continue to select evidence",cancel:"Cancel",privacy:"Only messages you explicitly select will be shared as evidence.",reasons:["Scam or money requests","Threats or blackmail","Harassment or unwanted messages","Fake profile or identity","Intimate photo threats","Other"]},
 es:{title:"Denunciar conversación 🚩",intro:"Cuéntanos qué ocurrió. Tu seguridad importa. 💛",reason:"¿Por qué denuncias esta conversación?",details:"Cuéntanos más (opcional)",placeholder:"Describe lo sucedido...",submit:"Continuar para seleccionar pruebas",cancel:"Cancelar",privacy:"Solo se compartirán como pruebas los mensajes que selecciones expresamente.",reasons:["Estafa o solicitudes de dinero","Amenazas o chantaje","Acoso o mensajes no deseados","Perfil o identidad falsa","Amenazas con fotografías íntimas","Otro"]}
@@ -16,7 +17,7 @@ no:{title:"Rapporter samtalen 🚩",intro:"Fortell oss hva som skjedde. Din tryg
 sv:{"title":"Anmäl konversation 🚩","intro":"Berätta vad som hände. Din säkerhet är viktig. 💛","reason":"Varför anmäler du den här konversationen?","details":"Berätta mer (valfritt)","placeholder":"Beskriv vad som hände...","submit":"Fortsätt för att välja bevis","cancel":"Avbryt","privacy":"Endast meddelanden du själv väljer bifogas som bevis.","reasons":["Bedrägeri eller krav på pengar","Hot eller utpressning","Trakasserier eller oönskade meddelanden","Falsk profil eller identitet","Hot med intima bilder","Annat"]},
 it:{"title":"Segnala conversazione 🚩","intro":"Raccontaci cosa è successo. La tua sicurezza conta. 💛","reason":"Perché segnali questa conversazione?","details":"Aggiungi dettagli (facoltativo)","placeholder":"Descrivi cosa è successo...","submit":"Continua per scegliere le prove","cancel":"Annulla","privacy":"Solo i messaggi che selezioni saranno allegati come prove.","reasons":["Truffa o richieste di denaro","Minacce o ricatto","Molestie o messaggi indesiderati","Profilo o identità falsa","Minacce con foto intime","Altro"]}
 };
-function open({conversationId,locale="es",onContinue}={}){
+function open({conversationId,locale="es",onContinue,owner=null}={}){
  if(typeof conversationId!=="string"||!conversationId||typeof onContinue!=="function")return false;
  if(document.querySelector("[data-xoxo-report-beta]"))return false;
  const language=locale==="nb"||locale==="nb-NO"?"no":locale;
@@ -43,6 +44,7 @@ function open({conversationId,locale="es",onContinue}={}){
   if(closed)return;
   closed=true;
   overlay.remove();document.body.style.overflow=overflow;
+  if(activeDialog?.close===close)activeDialog=null;
   document.removeEventListener("keydown",onKey);
   if(previous?.isConnected)previous.focus();
  }
@@ -59,7 +61,12 @@ function open({conversationId,locale="es",onContinue}={}){
    reasonCode:Number(selected.value),details:details.value.trim()};
   close();onContinue(payload);
  };
- document.body.append(overlay);document.addEventListener("keydown",onKey);radios[0].focus();return true;
+ document.body.append(overlay);activeDialog={owner,close};
+ document.addEventListener("keydown",onKey);radios[0].focus();return true;
 }
-window.XOXOReportFormBeta=Object.freeze({open,translations});
+function dismiss(owner){
+ if(!owner || !activeDialog || activeDialog.owner!==owner)return false;
+ activeDialog.close();return true;
+}
+window.XOXOReportFormBeta=Object.freeze({open,dismiss,translations});
 })();
