@@ -53,7 +53,7 @@
     const t=COPY[language]||COPY[language.split("-")[0]]||COPY.en;
     const style=document.createElement("style");style.textContent=css;document.head.append(style);
     const backdrop=document.createElement("div");backdrop.className="xoxo-safe-backdrop";
-    const dialog=document.createElement("section");dialog.className="xoxo-safe-dialog";dialog.setAttribute("role","dialog");dialog.setAttribute("aria-modal","true");dialog.setAttribute("aria-labelledby","xoxo-safe-title");
+    const dialog=document.createElement("section");dialog.className="xoxo-safe-dialog";dialog.setAttribute("role","dialog");dialog.setAttribute("aria-modal","true");dialog.setAttribute("aria-labelledby","xoxo-safe-title");dialog.setAttribute("tabindex","-1");
     const heading=document.createElement("h2");heading.id="xoxo-safe-title";heading.textContent=t.title;dialog.append(heading);
     const intro=document.createElement("p");intro.textContent=t.intro;dialog.append(intro);
     const list=document.createElement("ul");
@@ -90,7 +90,12 @@
     }
     function dismiss(remember=true){if(remember){try{localStorage.setItem(key,"seen")}catch{}} document.removeEventListener("keydown",onKeyDown);backdrop.remove();style.remove();document.body.style.overflow=previousBodyOverflow;if(previousFocus?.isConnected && typeof previousFocus.focus==="function") previousFocus.focus();}
     close.addEventListener("click",()=>dismiss());dialog.append(close);
-    backdrop.append(dialog);document.body.append(backdrop);document.addEventListener("keydown",onKeyDown);close.focus();
+    backdrop.append(dialog);document.body.append(backdrop);document.addEventListener("keydown",onKeyDown);
+    // Focusing the ACKNOWLEDGE button scrolled Safari/WebKit to the end of
+    // this long warning on 320px screens, hiding the opening safety advice.
+    // Focus the dialog itself so screen readers announce its heading, while
+    // always showing the warning from the top.
+    dialog.scrollTop=0;dialog.focus({preventScroll:true});
     return true;
   }
   window.XOXOSafetyReminderBeta=Object.freeze({show,copy:COPY,actions:ACTIONS});
