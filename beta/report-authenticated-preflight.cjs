@@ -16,6 +16,10 @@ async function authenticatedReportPreflight(client, {otherUserId,messageIds}={})
   if(auth?.error || !auth?.data?.user?.id) {
     return {ok:false,reason:"authentication_failed"};
   }
-  return verifyVisibleMessages(client,auth.data.user.id,otherUserId,messageIds);
+  try {
+    return await verifyVisibleMessages(client,auth.data.user.id,otherUserId,messageIds);
+  } catch {
+    return {ok:false,reason:"verification_failed"};
+  }
 }
 module.exports={authenticatedReportPreflight};
