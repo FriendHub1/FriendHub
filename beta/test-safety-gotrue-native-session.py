@@ -189,6 +189,11 @@ def run():
     quick_admin=os.environ.get("XOXO_SAFETY_NATIVE_QUICK_ADMIN")=="1"
     assert db("select current_database()") == "xoxo_gotrue_ci"
     assert db("select to_regclass('auth.sessions') is not null") == "t"
+    # The workflow intentionally uses the SAME disposable DB for the quick
+    # backend pass and the later real-browser pass. The second pass must
+    # preserve the first pass's fictional reports, not assume an empty DB.
+    reports_before=int(db(
+        "select count(*) from xoxo_safety_private.conversation_reports"))
     email="xoxo-native-"+uuid.uuid4().hex[:14]+"@example.invalid"
     password="NativeLocalOnly!"+uuid.uuid4().hex[:18]
     code,session=http(AUTH,"POST","/signup",{"email":email,"password":password})
@@ -261,7 +266,8 @@ def run():
         "/rpc/xoxo_submit_conversation_report_beta",outsider_payload,outsider_token)
     assert code in (400,401,403,404,406),(
         "Unrelated real Auth user submitted another account's evidence",code,denied_other)
-    assert db("select count(*) from xoxo_safety_private.conversation_reports") == "1",(
+    assert db("select count(*) from xoxo_safety_private.conversation_reports") == str(
+        reports_before+1),(
         "An unrelated account created a report despite invalid evidence")
 
     code,replayed=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",

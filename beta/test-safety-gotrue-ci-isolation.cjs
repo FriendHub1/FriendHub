@@ -51,6 +51,8 @@ assert.match(native,/js_report_pipeline\("active",token,outsider_token,message,u
 assert.match(native,/js_report_pipeline\("revoked",token,outsider_token,message,user,outsider_user\)/);
 assert.match(native,/real_browser_report_flow\(token,message,user\)/);
 assert.match(native,/native_admin_moderation_queue\(token,outsider_token,outsider_user,/);
+assert.match(native,/reports_before=int\(db\(/);
+assert.match(native,/reports_before\+1/);
 assert.match(native,/xoxo_admin_list_conversation_reports_beta/);
 assert.match(native,/xoxo_admin_update_conversation_report_beta/);
 assert.match(native,/xoxo_admin_page_conversation_reports_beta/);
