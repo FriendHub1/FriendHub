@@ -71,8 +71,11 @@ assert.ok(bridge);
  assert.equal(reported.length,0,"preview must never call the report RPC");
  assert.equal(bridge.reportWritesEnabled(),false);
  selectedPeer=foreign;
- assert.equal(bridge.visibleContext().messages.length,0,
-   "foreign conversation cannot retain evidence from the prior chat");
+ const foreignContext=bridge.visibleContext();
+ assert.equal(foreignContext.messages.length,1,
+   "the new conversation should contain only its own loaded messages");
+ assert.equal(foreignContext.messages[0].id,outsiderMsg,
+   "evidence from the previous peer must not leak across chats");
  selectedPeer=peer;
  assert.equal(bridge.openReport(),true);
  chat.style.display="none";
