@@ -175,19 +175,29 @@
       action.type="button";
       action.setAttribute("data-xoxo-safety-report-unlock","1");
       action.addEventListener("click",async()=>{
-        if(!isActiveAdmin()||typeof xoxoModerationPinAuthorize!=="function")return;
+        if(action.disabled || !isActiveAdmin() ||
+           typeof xoxoModerationPinAuthorize!=="function")return;
+        // A PIN dialog can remain open while the user signs out or switches
+        // accounts. Its delayed completion belongs ONLY to this auth epoch.
+        const authorizationGeneration=generation;
+        const authorizationAccount=accountId;
+        const sameAuthorization=()=>authorizationGeneration===generation &&
+          authorizationAccount===accountId && isActiveAdmin();
         action.disabled=true;
         try{
           // Reuse the EXACT existing PIN + moderation-reason dialog.
           const authorization=await xoxoModerationPinAuthorize(
             typeof getFriendHubLanguage==="function" && getFriendHubLanguage()==="es");
+          if(!sameAuthorization())return;
           const reason=typeof authorization?.reason==="string" ? authorization.reason.trim() : "";
-          if(reason.length<10 || reason.length>300 || !isActiveAdmin())return;
+          if(reason.length<10 || reason.length>300)return;
           moderationReason=reason;
           unlocked=true;
           await window.loadXoxoDmReports();
         }catch{
-          // PIN failure must not leave a locally unlocked queue.
+          // An obsolete dialog must NEVER invalidate a newer account's PIN
+          // session; only its own epoch is eligible for error handling.
+          if(!sameAuthorization())return;
           invalidate();
           paintUnlockControl();
         }finally{action.disabled=false;}
@@ -232,8 +242,10 @@
           moderationReason,cursor,limit:50
         });
       }catch{page={ok:false};}
-      loadingMore=false;
+      // A stale response must not clear the loading lock belonging to a new
+      // authenticated admin session.
       if(version!==generation || !isActiveAdmin())return;
+      loadingMore=false;
       if(!page?.ok || !Array.isArray(page.reports)){
         invalidate();paintUnlockControl();showWarning("reauthorize");
         return;
