@@ -38,10 +38,11 @@ def b64(data):
     return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
 
 
-def token(user, session, *, exp=None, key=SECRET):
+def token(user, session, *, exp=None, key=SECRET, anonymous=False):
     header = b64(b'{"alg":"HS256","typ":"JWT"}')
     payload = b64(json.dumps({
         "role": "authenticated", "sub": user, "session_id": session,
+        "is_anonymous": anonymous,
         "iat": int(time.time()) - 5,
         "exp": int(time.time()) + 300 if exp is None else exp
     }, separators=(",", ":")).encode())
@@ -147,6 +148,11 @@ def check():
     status, _ = request("POST", "/rpc/xoxo_submit_conversation_report_beta",
                         token(U, SES_PEER), rpc_payload())
     blocked(status, "signed JWT with another person's session")
+    # Temporary anonymous Supabase sign-ins also carry the authenticated role.
+    # They must not bypass the permanent-account reporting requirement.
+    status, _ = request("POST", "/rpc/xoxo_submit_conversation_report_beta",
+                        token(U, SES_U, anonymous=True), rpc_payload())
+    blocked(status, "anonymous Auth session with authenticated role")
 
     status, _ = request("POST", "/rpc/xoxo_submit_conversation_report_beta",
                         reporter, rpc_payload(evidence=[MSG, MSG]))
@@ -200,6 +206,10 @@ def check():
     status, _ = request("POST", "/rpc/xoxo_admin_list_conversation_reports_beta",
                         token(ADMIN, SES_PEER), {"p_reason": REASON})
     blocked(status, "admin JWT with wrong session")
+    status, _ = request("POST", "/rpc/xoxo_admin_list_conversation_reports_beta",
+                        token(ADMIN, SES_ADMIN, anonymous=True),
+                        {"p_reason": REASON})
+    blocked(status, "anonymous Auth session cannot bypass admin PIN")
 
     audit_before = int(db(
         "select count(*) from public.xoxo_message_access_log "
