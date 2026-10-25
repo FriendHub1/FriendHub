@@ -8,47 +8,61 @@ const report={id:"22222222-2222-4222-8222-222222222222",reporter_id:reporter,rep
  reason:"Scam or money requests",details:"Reported",status:"pending",evidence_count:2,
  created_at:"2026-10-24T12:00:00Z",source:"conversation_beta"};
 function element(tag){
-  return {tag,children:[],textContent:"",listeners:{},attributes:{},className:"",disabled:false,
-   append(...items){for(const item of items){item.parent=this;this.children.push(item)}},
-   setAttribute(name,value){this.attributes[name]=value},
-   addEventListener(name,fn){this.listeners[name]=fn},
-   querySelectorAll(selector){return this.children.filter(x=>selector==="button"?x.tag==="button":selector==="[data-xoxo-conversation-beta-report]"?!!x.attributes["data-xoxo-conversation-beta-report"]:selector===".xmm-report-feedback"?x.className==="xmm-report-feedback":false)},
-   remove(){this.removed=true;if(this.parent)this.parent.children=this.parent.children.filter(x=>x!==this)}};
+ return {tag,children:[],textContent:"",listeners:{},attributes:{},className:"",disabled:false,
+  append(...items){for(const item of items){item.parent=this;this.children.push(item)}},
+  setAttribute(name,value){this.attributes[name]=value},
+  addEventListener(name,fn){this.listeners[name]=fn},
+  querySelectorAll(selector){return this.children.filter(x=>selector==="button"?x.tag==="button":
+    selector==="[data-xoxo-conversation-beta-report]"?!!x.attributes["data-xoxo-conversation-beta-report"]:
+    selector==="[data-xoxo-safety-report-unlock]"?!!x.attributes["data-xoxo-safety-report-unlock"]:
+    selector===".xmm-report-feedback"?x.className==="xmm-report-feedback":false)},
+  remove(){this.removed=true;if(this.parent)this.parent.children=this.parent.children.filter(x=>x!==this)}};
 }
 (async()=>{
  const list=element("section");const moderation={classList:{contains:()=>true}};
- const calls={legacy:0,queue:0,pin:0,updates:0};
- let betaAvailable=true;
+ const calls={legacy:0,queue:0,pin:0,unlock:0,updates:0};
+ let betaAvailable=true,admin=true;
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;list.children=[element("legacy-card")];},
    renderXoxoDmReports:()=>{list.children=[element("legacy-card")];},
    XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");return betaAvailable?{ok:true,reports:[report]}:{ok:false};},
     updateReportStatus:async()=>{calls.updates++;return {ok:true};}}},
   document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xoxoAdminModeration"?moderation:null},
-  xoxoIsAdmin:true,supabaseClient:{},
+  supabaseClient:{},
+  get xoxoIsAdmin(){return admin;},
+  getFriendHubLanguage:()=> "es",
+  xoxoModerationPinAuthorize:async()=>{calls.unlock++;return {reason:"Report queue moderation access"};},
   openXoxoDmConversation:c=>{calls.pin++;assert.equal(c.user_1,reporter);assert.equal(c.user_2,peer);}
  };
  vm.runInNewContext(source,context);
  assert.equal(context.window.__xoxoAdminReportBridgeBetaInstalled,true);
  await context.window.loadXoxoDmReports();
- assert.equal(calls.legacy,1);assert.equal(calls.queue,1);
+ assert.equal(calls.legacy,1);
+ assert.equal(calls.queue,0,"MUST NOT fetch report metadata before PIN verification");
+ assert.equal(list.querySelectorAll("[data-xoxo-safety-report-unlock]").length,1);
+ const unlock=list.querySelectorAll("[data-xoxo-safety-report-unlock]")[0];
+ await unlock.listeners.click();
+ assert.equal(calls.unlock,1);
+ assert.equal(calls.queue,1);
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
  assert.equal(list.children.length,2,"existing legacy card must remain alongside BETA report");
  context.window.renderXoxoDmReports();
  assert.equal(list.children.length,2,"dashboard re-render must preserve BETA card");
  context.window.renderXoxoDmReports();
  assert.equal(list.children.length,2,"repeated renders must never duplicate BETA reports");
- const card=list.children[1];assert.equal(card.attributes["data-xoxo-conversation-beta-report"],report.id);
+ const card=list.querySelectorAll("[data-xoxo-conversation-beta-report]")[0];
  const actions=card.children.find(x=>x.className==="xmm-report-actions");
- const view=actions.children[0];view.listeners.click();assert.equal(calls.pin,1,"existing PIN-gated viewer must be reused");
- await actions.children[1].listeners.click();assert.equal(calls.updates,1);assert.equal(calls.legacy,2);
- assert.equal(list.children.length,2,"reloading must not duplicate report cards");
+ actions.children[0].listeners.click();
+ assert.equal(calls.pin,1,"the existing PIN-gated viewer must be reused");
+ await actions.children[1].listeners.click();
+ assert.equal(calls.updates,1);assert.equal(calls.queue,2);
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
  betaAvailable=false;
  await context.window.loadXoxoDmReports();
- context.window.renderXoxoDmReports();
- assert.equal(list.children.length,1,"failed BETA refresh must clear cached BETA reports");
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,"failed BETA refresh clears stale cards");
  betaAvailable=true;
- context.xoxoIsAdmin=false;
+ admin=false;
  await context.window.loadXoxoDmReports();
- assert.equal(calls.queue,3,"non-admin reload must not request BETA report metadata");
- console.log("PASS: admin bridge preserves legacy reports, survives rerenders, clears stale cache on errors and restricts non-admin access");
+ assert.equal(calls.queue,3,"non-admin reload must not request report metadata");
+ console.log("PASS: existing admin bridge requires PIN, keeps legacy cards, reuses audited viewer and clears stale reports");
 })().catch(e=>{console.error(e);process.exitCode=1;});
