@@ -42,14 +42,14 @@ select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111'
 
 -- The disposable fixture enforces the same sender/recipient RLS as production.
 -- The user's direct SELECT must expose only the two messages of their own chat.
-do $
+do $$
 begin
   if (select count(*) from public.direct_messages) <> 2 then
     raise exception 'BUG: fixture RLS leaked or hid DM rows for reporting user';
   end if;
-end $;
+end $$;
 
-do $
+do $$
 declare
   v_first uuid;
   v_retry uuid;
@@ -154,7 +154,7 @@ insert into public.dm_conversation_clears(user_id,other_user_id,cleared_at) valu
   '11111111-1111-4111-8111-111111111111',now());
 set role authenticated;
 select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
-do $
+do $$
 begin
   if (select count(*) from public.direct_messages) <> 1 then
     raise exception 'BUG: clearing a DM exposed previously cleared messages';
@@ -175,12 +175,12 @@ end $$;
 -- Cleared conversation rows are private: other participants cannot
 -- inspect when a user personally clears their chat.
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
-do $
+do $$
 begin
   if exists(select 1 from public.dm_conversation_clears) then
     raise exception 'BUG: cleared state visible to the other participant';
   end if;
-end $;
+end $$;
 
 -- Anonymous JWT must not be accepted by public authenticated submit RPC.
 select set_config('request.jwt.claim.sub','',false);
