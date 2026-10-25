@@ -79,6 +79,18 @@ async function runScenario(browser,engine,viewport,language,url){
     },{user,language});
     assert.equal(opened,true,"new warning should open");
     await page.locator(".xoxo-safe-dialog").waitFor();
+    const initial = await page.locator(".xoxo-safe-dialog").evaluate(el=>{
+      const dialog=el.getBoundingClientRect();
+      const heading=el.querySelector("#xoxo-safe-title").getBoundingClientRect();
+      return {scrollTop:el.scrollTop,
+        headingTop:heading.top, headingBottom:heading.bottom,
+        dialogTop:dialog.top, dialogBottom:dialog.bottom};
+    });
+    assert.ok(initial.scrollTop<=1 &&
+      initial.headingTop >= initial.dialogTop-1 &&
+      initial.headingBottom <= initial.dialogBottom+1,
+      label+" must START with visible safety title, not scrolled to bottom: "+
+        JSON.stringify(initial));
     await fits(page,".xoxo-safe-dialog",label+" warning");
     await page.screenshot({path:path.join(captures,label+"-warning.png")});
     assert.equal(await page.locator(".xoxo-safe-dialog").getAttribute("aria-modal"),"true");
