@@ -128,3 +128,21 @@ is too large for the current connector update channel).
 ### Safe next gate
 
 Run the isolated SQL job through an approved CI trigger (or on a separate local PostgreSQL 17 environment), inspect the first true SQL errors if any, and only then plan backend RLS/permission tests against a disposable Supabase environment. Preserve the existing PIN-protected conversation viewer, audit log and individual DM report cards.
+
+## Audit alignment and regression review (2026-10-25)
+
+- Live schema READ-ONLY inspection reconfirmed: the existing direct_messages SELECT RLS only exposes sender/recipient messages and excludes messages cleared by the reporting user; the existing xoxo_admin_read_dm_conversation requires a verified PIN and a moderation reason of 10–300 characters.
+- The REVIEW-ONLY SQL draft now takes p_reason text in both xoxo_admin_list_conversation_reports_beta(text) and xoxo_admin_update_conversation_report_beta(uuid,text,text). It validates a 10–300 character reason. Status changes append the reason to the existing xoxo_message_access_log action. This SQL HAS NOT BEEN APPLIED to Supabase.
+- The ACTIVE bridge (admin-report-panel-bridge.js + admin-report-queue.js) obtains the reason from the EXISTING PIN authorization dialogue, forwards it on list and status RPCs, and erases it when locked. A failed status update purges sensitive cards immediately and requires PIN reauthorization.
+- Existing get_xoxo_dm_reports and update_xoxo_dm_report_status are not changed. The full-DM conversation viewer remains the only viewer and still performs its own PIN + reason + access-log checks.
+- Disposable PostgreSQL fixtures now enable RLS for dm_conversation_clears and assert that a user's clear state is private. SQL contract cases check visible/cleared messages, authorized roles, reason checks, audit text and evidence atomicity.
+- Worker preview routes are tested for workers.dev-only opt-in, no-store response headers, dependency script ordering, and disabled report writes. The actual main Worker is NOT changed in this task.
+- Regression result this session: 10 selected BETA JavaScript test suites passed through a V8 compatibility harness, including 28 SQL source-contract assertions. This is NOT a PostgreSQL database execution, Node CI run, real account E2E test or production deployment.
+- Isolated PostgreSQL 17 workflow is manual-only and exists only in the feature branch. PostgreSQL binaries are unavailable in this working environment. No external Supabase development branch was created (to avoid potential costs).
+
+### Release blocking checks
+
+1. Execute all SQL fixtures and RPC tests in a disposable PostgreSQL 17 environment, inspect failures and repair the draft.
+2. Verify with a separate test Supabase project/auth context before any production DB migration; confirm RLS, ownership, session/PIN expiry, evidence deletion and resource constraints.
+3. Decide incident evidence retention and rate-limit policy (draft uses 10 per 24h) and document privacy handling.
+4. Approve deployment and enable report writes only after tests. Keep the active admin bridge; do not enable the unused prototype adapter concurrently.
