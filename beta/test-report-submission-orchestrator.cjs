@@ -15,5 +15,11 @@ const client={auth:{getUser:async()=>({data:{user:{id:self}},error:null})},from:
  assert.deepEqual(await submitPreparedConversationReport(client,input,null),{ok:false,reason:"writer_unavailable"});
  assert.deepEqual(await submitPreparedConversationReport(client,input,async()=>({ok:true,reportId:"bad"})),{ok:false,reason:"submission_failed"});
  assert.deepEqual(await submitPreparedConversationReport(client,input,async()=>{throw Error("database down")}),{ok:false,reason:"submission_failed"});
- console.log("PASS: 5 report submission orchestration cases");
+ const unauthenticated={...client,auth:{getUser:async()=>({data:{user:null},error:null})}};
+ assert.deepEqual(await submitPreparedConversationReport(unauthenticated,input,write),{ok:false,reason:"authentication_failed"});
+ assert.equal(writes,1,"unauthenticated reports must never reach writer");
+ const invisible={...client,from:()=>({select:()=>({in:async()=>({data:[],error:null})})})};
+ assert.deepEqual(await submitPreparedConversationReport(invisible,input,write),{ok:false,reason:"not_visible"});
+ assert.equal(writes,1,"invisible evidence must never reach writer");
+ console.log("PASS: 7 report submission orchestration cases");
 })().catch(e=>{console.error(e);process.exitCode=1;});
