@@ -26,7 +26,17 @@ function normalizeConversationReportForAdmin(row) {
     status,
     created_at:row.created_at||null,
     report_kind:"conversation",
+    status_rpc:"update_xoxo_conversation_report_status_beta",
     evidence_count:Number.isInteger(row.evidence_count)&&row.evidence_count>=1&&row.evidence_count<=20?row.evidence_count:null
   };
 }
-module.exports={normalizeConversationReportForAdmin};
+function mergeAdminReportQueues(legacyRows, conversationRows) {
+  const legacy=Array.isArray(legacyRows)?legacyRows.filter(row=>row&&typeof row==="object"&&!Array.isArray(row)).map(row=>({...row,report_kind:"legacy",status_rpc:"update_xoxo_dm_report_status"})):[];
+  const modern=Array.isArray(conversationRows)?conversationRows.map(normalizeConversationReportForAdmin).filter(Boolean):[];
+  return [...legacy,...modern].sort((a,b)=>{
+    const left=Date.parse(a.created_at||"")||0;
+    const right=Date.parse(b.created_at||"")||0;
+    return right-left;
+  });
+}
+module.exports={normalizeConversationReportForAdmin,mergeAdminReportQueues};
