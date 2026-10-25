@@ -31,7 +31,7 @@ const header={
 const document={
  readyState:"loading",
  addEventListener:()=>{},
- getElementById:id=>id==="dmChat"?chat:null,
+ getElementById:id=>id==="dmChat"?chat:id==="xoxoSafetyConversationReportBeta"?header.buttons.find(b=>b.id===id)||null:null,
  querySelector:s=>s==="#dmChat .dm-chat-header"?header:null,
  createElement:tag=>({tag,style:{},listeners:{},setAttribute(k,v){this[k]=v;},
    addEventListener(k,fn){this.listeners[k]=fn;}})
