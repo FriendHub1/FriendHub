@@ -14,8 +14,12 @@
   const reasons=["Scam or money requests","Threats or blackmail","Harassment or unwanted messages","Fake profile or identity","Intimate photo threats","Other"];
   const rpcBySource=Object.freeze({message:"update_xoxo_dm_report_status",conversation_beta:"xoxo_admin_update_conversation_report_beta"});
   const uuid=value=>typeof value==="string" && UUID.test(value);
+  // Match the server's 10–300-character PIN audit reason contract.
+  // Reject control characters locally rather than sending a malformed reason
+  // to the privileged admin RPC (and potentially logging it elsewhere).
   const validReason=value=>typeof value==="string" &&
-    value.trim().length>=10 && value.trim().length<=300;
+    value.trim().length>=10 && value.trim().length<=300 &&
+    !/[\u0000-\u001f\u007f-\u009f]/u.test(value);
   function normalizeLegacy(report){
     if(!report || !uuid(report.id))return null;
     return {...report,source:"message"};
