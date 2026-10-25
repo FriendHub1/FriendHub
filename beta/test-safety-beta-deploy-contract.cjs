@@ -21,7 +21,8 @@ for (const key of ["route","routes","zone_id","custom_domains","account_id","tri
 const workflow = read(".github/workflows/xoxo-safety-beta-deploy.yml");
 assert.match(workflow, /feature\/xoxo-safety-reminder-beta/);
 assert.match(workflow, /XOXO_SAFETY_BETA_DEPLOY_ENABLED: \$\{\{ vars\.XOXO_SAFETY_BETA_DEPLOY_ENABLED \}\}/);
-assert.match(workflow, /test "\$XOXO_SAFETY_BETA_DEPLOY_ENABLED" = 'true'/);
+assert.match(workflow, /BETA deployment flag must be true/);
+assert.match(workflow, /tr -d/);
 assert.match(workflow, /secrets\.XOXO_SAFETY_BETA_CF_API_TOKEN/);
 assert.match(workflow, /secrets\.XOXO_SAFETY_BETA_CF_ACCOUNT_ID/);
 assert.match(workflow, /environment:\s*xoxo-safety-beta/);
