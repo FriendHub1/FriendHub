@@ -42,7 +42,8 @@ const window={
  alert:()=>{},
  XOXOSafetyReminderBeta:{show:()=>true},
  XOXOReportFormBeta:{open:()=>true},
- XOXOEvidencePickerBeta:{open:()=>true}
+ XOXOEvidencePickerBeta:{open:()=>true},
+ XOXOSafetyFlowBeta:{create:()=>({showReminder:()=>true,openReport:()=>true})}
 };
 const context={window,document,currentUser:{id:self},supabaseClient:client,
  get currentDmUserId(){return selectedPeer;},
@@ -64,28 +65,19 @@ assert.ok(bridge);
  assert.equal(bridge.refresh(),true);
  assert.equal(header.buttons.length,1,"no duplicate report buttons");
  const draft={reasonCode:1,details:"Threatening message"};
- const ok=await bridge.submit(ctx,draft,[msg]);
- assert.equal(ok.ok,true);
- assert.equal(reported.length,1);
- assert.equal(reported[0].name,"xoxo_submit_conversation_report_beta");
- assert.equal(reported[0].args.p_other_user_id,peer);
- assert.equal(reported[0].args.p_reason_code,1);
- assert.equal(reported[0].args.p_message_ids[0],msg);
- assert.equal((await bridge.submit(ctx,draft,[outsiderMsg])).reason,"not_visible");
- assert.equal((await bridge.submit(ctx,draft,[msg,msg])).reason,"invalid_input");
- assert.equal(reported.length,1);
- authUser=null;
- assert.equal((await bridge.submit(ctx,draft,[msg])).reason,"authentication_failed");
- authUser=self;
- rows=[{id:msg,sender_id:foreign,recipient_id:self}];
- assert.equal((await bridge.submit(ctx,draft,[msg])).reason,"wrong_conversation");
- rows=[{id:msg,sender_id:peer,recipient_id:self}];
+ const blocked=await bridge.submit(ctx,draft,[msg]);
+ assert.equal(blocked.ok,false,"read-only preview cannot pretend to submit");
+ assert.equal(blocked.reason,"beta_backend_disabled");
+ assert.equal(reported.length,0,"preview must never call the report RPC");
+ assert.equal(bridge.reportWritesEnabled(),false);
  selectedPeer=foreign;
- assert.equal((await bridge.submit(ctx,draft,[msg])).reason,"invalid_input");
+ assert.equal(bridge.visibleContext().messages.length,0,
+   "foreign conversation cannot retain evidence from the prior chat");
  selectedPeer=peer;
+ assert.equal(bridge.openReport(),true);
  chat.style.display="none";
  assert.equal(bridge.visibleContext(),null);
  assert.equal(bridge.openReport(),false);
- assert.equal(reported.length,1,"no unauthorized or wrong-conversation writes");
- console.log("PASS: chat preview verifies membership, RLS evidence, auth, pair changes and single-button UI");
+ assert.equal(reported.length,0,"preview must never write reports");
+ console.log("PASS: chat preview is read-only, filters messages by pair and keeps a single report button");
 })().catch(e=>{console.error(e);process.exitCode=1});
