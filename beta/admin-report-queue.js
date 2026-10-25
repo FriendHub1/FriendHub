@@ -90,10 +90,69 @@
       const urgency=Number(b.status==="pending")-Number(a.status==="pending");
       if(urgency)return urgency;
       const aTime=Date.parse(a.created_at||"");const bTime=Date.parse(b.created_at||"");
-      return (Number.isFinite(bTime)?bTime:0)-(Number.isFinite(aTime)?aTime:0);
+      const chronological=(Number.isFinite(bTime)?bTime:0)-(Number.isFinite(aTime)?aTime:0);
+      return chronological || String(b.id).localeCompare(String(a.id),"en");
     });
     return {ok:true,reports,warning};
   }
+  // No offset: follow the (pending, created_at, UUID) order used by the
+  // backend, with independently checked PIN/session/reason on EVERY page.
+  async function loadMoreReports(client,{moderationReason,cursor,limit=50}={}){
+    if(typeof client?.rpc!=="function" || !validReason(moderationReason) ||
+       !Number.isInteger(limit) || limit<1 || limit>50 ||
+       !cursor || typeof cursor.pending!=="boolean" ||
+       !uuid(cursor.id) || typeof cursor.created_at!=="string" ||
+       !Number.isFinite(Date.parse(cursor.created_at))) {
+      return {ok:false,reason:"invalid_request"};
+    }
+    let response;
+    try {
+      response=await client.rpc("xoxo_admin_page_conversation_reports_beta",{
+        p_reason:moderationReason.trim(),
+        p_after_pending:cursor.pending,
+        p_after_created_at:cursor.created_at,
+        p_after_id:cursor.id,
+        p_limit:limit
+      });
+    }catch{return {ok:false,reason:"conversation_reports_unavailable"};}
+    if(response?.error || !response?.data ||
+       typeof response.data!=="object" || Array.isArray(response.data))
+      return {ok:false,reason:"conversation_reports_unavailable"};
+    const page=response.data;
+    if(!Array.isArray(page.reports) || page.reports.length>limit ||
+       typeof page.has_more!=="boolean") {
+      return {ok:false,reason:"conversation_reports_invalid_response"};
+    }
+    const reports=page.reports.map(normalizeConversation);
+    if(reports.some(item=>!item) ||
+       new Set(reports.map(item=>item.id.toLowerCase())).size!==reports.length) {
+      return {ok:false,reason:"conversation_reports_invalid_response"};
+    }
+    let nextCursor=null;
+    if(page.has_more){
+      const next=page.next_cursor,last=reports.at(-1);
+      if(!last || !next || typeof next!=="object" ||
+         typeof next.pending!=="boolean" || !uuid(next.id) ||
+         !Number.isFinite(Date.parse(next.created_at)) ||
+         next.pending!==(last.status==="pending") ||
+         next.id.toLowerCase()!==last.id.toLowerCase() ||
+         Date.parse(next.created_at)!==Date.parse(last.created_at))
+        return {ok:false,reason:"conversation_reports_invalid_response"};
+      nextCursor={pending:next.pending,created_at:next.created_at,id:next.id};
+    }else if(page.next_cursor!==null){
+      return {ok:false,reason:"conversation_reports_invalid_response"};
+    }
+    return {ok:true,reports,hasMore:page.has_more,nextCursor};
+  }
+
+  function cursorAfter(report){
+    if(!report || !uuid(report.id) || !statuses.has(report.status) ||
+       typeof report.created_at!=="string" ||
+       !Number.isFinite(Date.parse(report.created_at)))return null;
+    return {pending:report.status==="pending",
+      created_at:report.created_at,id:report.id};
+  }
+
   async function updateReportStatus(client,report,status,moderationReason){
     if(typeof client?.rpc!=="function" || !report || !uuid(report.id) ||
        !statuses.has(status) || !Object.hasOwn(rpcBySource,report.source) ||
@@ -106,5 +165,5 @@
       return result?.error || result?.data!==true ? {ok:false,reason:"status_update_failed"}:{ok:true};
     }catch{return {ok:false,reason:"status_update_failed"};}
   }
-  return Object.freeze({loadReportQueue,updateReportStatus});
+  return Object.freeze({loadReportQueue,loadMoreReports,cursorAfter,updateReportStatus});
 });
