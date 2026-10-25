@@ -24,6 +24,15 @@ function load(file) {
   const source = fs.readFileSync(path.join(__dirname, file), "utf8");
   vm.runInNewContext(source, { window }, { filename: file });
 }
+// Prevent JS object-literal duplicate keys from silently replacing
+// Swedish/Italian copy or actions (one occurrence per dictionary).
+const reminderLines = fs.readFileSync(
+  path.join(__dirname, "stay-safe-sweetheart.js"), "utf8").split(/\r?\n/);
+for (const code of ["sv", "it"]) {
+  assert.equal(reminderLines.filter(line =>
+    line.trim().startsWith(code + ":")).length, 2,
+    code + " must appear only once in COPY and once in ACTIONS");
+}
 load("stay-safe-sweetheart.js");
 load("stay-safe-report-form.js");
 load("stay-safe-evidence-picker.js");
