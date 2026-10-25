@@ -27,7 +27,10 @@
     const key = "xoxo:safety:v1:"+encodeURIComponent(accountId)+":"+encodeURIComponent(conversationId);
     try { if (localStorage.getItem(key)==="seen") return false; } catch {}
     if (document.querySelector(".xoxo-safe-backdrop")) return false;
-    const t=COPY[locale]||COPY.en;
+    const aliases={"pt":"pt-BR","pt-br":"pt-BR","nb":"no","nb-NO":"no","nn":"no","cz":"cs"};
+    const normalized=String(locale).trim();
+    const language=aliases[normalized]||aliases[normalized.toLowerCase()]||normalized;
+    const t=COPY[language]||COPY[language.split("-")[0]]||COPY.en;
     const style=document.createElement("style");style.textContent=css;document.head.append(style);
     const backdrop=document.createElement("div");backdrop.className="xoxo-safe-backdrop";
     const dialog=document.createElement("section");dialog.className="xoxo-safe-dialog";dialog.setAttribute("role","dialog");dialog.setAttribute("aria-modal","true");dialog.setAttribute("aria-labelledby","xoxo-safe-title");
