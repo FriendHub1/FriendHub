@@ -14,6 +14,10 @@ const required = [
   ["report RLS", /alter table xoxo_safety_private\.conversation_reports enable row level security/i],
   ["evidence RLS", /alter table xoxo_safety_private\.conversation_report_evidence enable row level security/i],
   ["authenticated identity", /v_reporter uuid := auth\.uid\(\)/i],
+  ["session verification helper", /create or replace function xoxo_safety_private\.active_session_for\(/i],
+  ["server-side Auth sessions lookup", /from auth\.sessions s/i],
+  ["signed JWT session identity", /auth\.jwt\(\)\s*->>\s*'session_id'/i],
+  ["session time-box enforcement", /s\.not_after is null or s\.not_after > now\(\)/i],
   ["1-20 messages", /cardinality\(p_message_ids\) not between 1 and 20/i],
   ["six report reasons", /p_reason_code not between 0 and 5/i],
   ["details maximum", /char_length\(p_details\) > 2000/i],
@@ -39,6 +43,12 @@ const required = [
 for (const [name, pattern] of required) {
   assert.match(source, pattern, `Required safety contract missing: ${name}`);
 }
+assert.equal((source.match(/xoxo_safety_private\.active_session_for\((?:v_reporter|auth\.uid\(\))\)/g)||[]).length,3,
+  "Submission, report queue, and status changes must all reject revoked sessions");
+assert.match(source,/revoke all on function xoxo_safety_private\.active_session_for\(uuid\)/i,
+  "Private session guard must not be executable by public roles");
+assert.equal((source.match(/security definer/g)||[]).length,3,
+  "Only the three reviewed public BETA RPCs may use SECURITY DEFINER");
 assert.equal((source.match(/pg_catalog\.length\(v_reason\) not between 10 and 300/g)||[]).length,2,
   "Both admin RPCs must reject missing, short or oversized moderation reasons");
 assert.match(source,/revoke all on function public\.xoxo_admin_list_conversation_reports_beta\(text\)/i);
