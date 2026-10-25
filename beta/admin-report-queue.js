@@ -59,7 +59,7 @@
     try{
       const extra=await client.rpc("xoxo_admin_list_conversation_reports_beta");
       if(extra?.error){
-        if(!["PGRST202","42883"].includes(String(extra.error.code)))warning="conversation_reports_unavailable";
+        warning=["PGRST202","42883"].includes(String(extra.error.code))\n          ? "conversation_reports_not_deployed" : "conversation_reports_unavailable";
       }else if(Array.isArray(extra?.data)){
         reports.push(...extra.data.map(normalizeConversation).filter(Boolean));
       }else warning="conversation_reports_invalid_response";
