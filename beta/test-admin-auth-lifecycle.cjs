@@ -136,7 +136,10 @@ function tick(){return new Promise(done=>setImmediate(done))}
  assert.equal(cards(),1);
  visibilityHandler();
  assert.equal(cards(),0,"navigation must erase private report metadata");
- assert.ok(unlock());
+ // The OS pagehide event erases sensitive data, but the unlock control can
+ // be rebuilt by a fresh moderation load if the browser restores the page.
+ await context.window.loadXoxoDmReports();
+ assert.ok(unlock(),"restored moderation view requires a fresh PIN");
 
  // SIGNED_IN for the SAME account is also a session boundary: do not keep
  // a previously verified PIN across a new login.
