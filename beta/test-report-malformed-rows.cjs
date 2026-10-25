@@ -11,6 +11,9 @@ const mock=row=>({from:()=>({select:()=>({in:async()=>({data:[row],error:null})}
   const result=await verifyVisibleMessages(mock(row),user,peer,[id]);
   assert.deepEqual(result,{ok:false,reason:"invalid_result"});
  }
+ for(const row of [{...base,id:{toString:()=>id}},{...base,sender_id:{toString:()=>user}},{...base,recipient_id:{toString:()=>peer}}]){
+  assert.deepEqual(await verifyVisibleMessages(mock(row),user,peer,[id]),{ok:false,reason:"invalid_result"});
+ }
  assert.equal((await verifyVisibleMessages(mock(base),user,peer,[id])).ok,true);
- console.log("PASS: 6 malformed-row regression cases");
+ console.log("PASS: 9 malformed-row regression cases");
 })().catch(e=>{console.error(e);process.exitCode=1;});
