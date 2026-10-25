@@ -106,6 +106,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-admin-queue-priority.sql
       - name: Verify pending-first 100-card queue over signed local HTTP API
         run: python3 beta/test-safety-postgrest-queue-priority.py
+      - name: Paginate all reports beyond 100 using PIN-protected SQL cursor
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-admin-pagination.sql
       - name: Clean up disposable PostgREST container
         if: always()
         run: docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
