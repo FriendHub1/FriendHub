@@ -22,7 +22,7 @@ for(const name of [
 }
 assert.match(sql,/other_user_id as reported_user_id/);
 assert.match(sql,/r\.message_ids/);
-assert.match(adapter,/report\.reported_user_id \|\| report\?\.other_user_id/);
+assert.match(adapter,/report\?\.reported_user_id \|\| report\?\.other_user_id/);
 assert.match(adapter,/report\.message_ids\.length/);
 assert.match(admin,/xoxoModerationPinAuthorize/);
 assert.match(admin,/openXoxoDmConversation/);
