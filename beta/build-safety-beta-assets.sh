@@ -46,3 +46,49 @@ test ! -e "$OUT/.github"
 test ! -e "$OUT/worker.js"
 test ! -e "$OUT/wrangler.jsonc"
 echo "PASS: BETA public assets assembled without private SQL, GitHub or fixture files"
+
+# Inject the opt-in loader into the BETA COPY only. Production index.html stays untouched.
+python3 - "$OUT/index.html" <<'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+html = p.read_text(encoding="utf-8")
+loader = """
+<script id="xoxo-safety-beta-asset-loader">
+(function(){
+  if (!/(?:^|\\.)workers\\.dev$/i.test(location.hostname)) return;
+  var params = new URLSearchParams(location.search);
+  if (params.get("xoxo_safety_chat_beta") !== "1") return;
+  var names = [
+    "stay-safe-sweetheart.js",
+    "stay-safe-report-form.js",
+    "stay-safe-evidence-picker.js",
+    "stay-safe-browser-report-adapter.js",
+    "stay-safe-browser-flow.js",
+    "stay-safe-chat-preview-bridge.js"
+  ];
+  if (params.get("xoxo_safety_admin_beta") === "1") {
+    names.push("admin-report-queue.js", "admin-report-panel-bridge.js");
+  }
+  (async function(){
+    for (var i=0;i<names.length;i++) {
+      await new Promise(function(resolve,reject){
+        var s=document.createElement("script");
+        s.src="/beta/"+names[i];
+        s.onload=resolve;
+        s.onerror=function(){reject(new Error("Safety BETA script unavailable: "+names[i]));};
+        document.head.appendChild(s);
+      });
+    }
+  })().catch(function(err){console.error("[XOXO Safety BETA]",err);});
+})();
+</script>
+"""
+if 'id="xoxo-safety-beta-asset-loader"' in html:
+    raise SystemExit("Duplicate safety BETA loader")
+if "</body>" not in html:
+    raise SystemExit("Missing closing body in BETA index")
+html = html.replace("</body>", loader + "\n</body>", 1)
+p.write_text(html, encoding="utf-8")
+PY
+grep -q 'xoxo-safety-beta-asset-loader' "$OUT/index.html"
