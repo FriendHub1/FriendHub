@@ -285,3 +285,17 @@ Tests include:
 - The static guard `beta/test-safety-gotrue-ci-isolation.cjs` prohibits project URLs, remote keys, non-loopback targets, and manually mirrored Auth sessions in the stronger test. On failure, the temporary GoTrue and PostgREST containers are removed.
 
 **Remaining non-negotiable release gates:** The BETA write flag is still `false`; no real Supabase RPC, table or migration is installed. An owner-approved non-production hosted Supabase validation, the evidence retention/erasure policy, the proposed ten-reports-per-24-hours limit, physical iPhone acceptance, and explicit release authorization remain pending. This isolated real-Auth success does not mean the hosted project's existing configuration has been tested or that production can receive reports.
+
+### Live Supabase catalog compatibility gate (read-only, 2026-10-25)
+
+- Added `beta/sql-preflight-existing-supabase-schema-readonly.sql`, an **entirely SELECT-only** inventory of 18 existing column contracts, 9 Auth/PIN/legacy-moderation function contracts and 9 structure/permissions/deployment checks. It reads only PostgreSQL catalogs, **never DM contents, user rows, secrets or report records**.
+- Executed the exact query against project `cxosofpxfmjkrhfabrqc` through the connected Supabase SQL tool: **36/36 `PASS`**, zero `BLOCK_RELEASE`. Confirmed `auth.sessions.not_after`, the PIN session fields and the original message audit log have the types the proposed RPC actually references. The original audit table has no custom insert/update trigger or CHECK restriction that would block a BETA queue/status audit entry.
+- Tested fail-closed behavior by changing **one expected column type only in the read-only query sent to the connector**. It returned `BLOCK_RELEASE` for `auth.sessions.id`, with 35 other checks passing; **no database structure or content was changed**.
+- `beta/test-live-schema-preflight-contract.cjs` statically guards the executable SQL against DDL/DML, accidental personal DM-row scans, missing catalog dependencies and missing collision checks for the four planned RPCs. Rerun both this SQL and `beta/sql-verify-existing-dm-rls-readonly.sql` immediately before any separately approved schema installation.
+- This is not a hosted Supabase Auth/report-write E2E test. The four BETA RPC names and the private BETA tables remain **absent** by design. Their installation and live submissions still require explicit owner approval and the retention/rate-limit decisions.
+
+### Existing-viewer evidence highlighting (BETA-only, 2026-10-25)
+
+- The normalized PIN-authorized admin queue now retains only the 1–20 validated **message UUIDs**, never additional message bodies or media links. The BETA bridge decorates those exact messages when the **existing** `xoxoDmMakeMessage` renderer displays them in the original, separately PIN-gated paginated conversation viewer.
+- Other messages remain visible as usual; no duplicate viewer, extra read RPC, or change to `index.html`. A moderation session expiry, admin logout or failed authorization removes only the BETA evidence markers from already-mounted original messages, not the viewer or its existing DM contents.
+- Node DOM regressions validate selected versus unrelated messages, cross-conversation isolation, PIN expiry and cleanup of mounted badges. [GitHub Actions run 40224284067](https://github.com/FriendHub1/FriendHub/actions/runs/40224284067) passed all three jobs, including native WebKit/Chromium integration with the actual original moderator PIN/viewer functions.
