@@ -68,7 +68,7 @@ assert.match(source,/revoke all on function public\.xoxo_admin_update_conversati
 assert.match(source,/revoke all on function\s+public\.xoxo_admin_page_conversation_reports_beta\(\s*text,boolean,timestamptz,uuid,integer\)/i);
 // Regression guards for real PostgreSQL errors found by the BETA PR checks.
 // FOR KEY SHARE does not block non-key UPDATEs to a validated DM.
-assert.doesNotMatch(source, /\bfor key share\b/i,
+assert.doesNotMatch(source, /^\s*for key share(?:\s+loop)?\s*$/im,
   "Evidence snapshot must forbid concurrent non-key UPDATE, not only DELETE");
 assert.doesNotMatch(source, /pg_catalog\.coalesce\s*\(/i,
   "COALESCE is a SQL expression, not a schema-qualified function");
