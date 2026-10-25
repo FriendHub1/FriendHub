@@ -41,7 +41,7 @@ function pause(){return new Promise(r=>setImmediate(r))}
  const list=element("div");
  const moderation={classList:{contains:value=>value==="active"}};
  const calls={pin:0,old:0,page:0,queue:0};
- let resolver=null,nextPage=1,failed=false;
+ let resolver=null,nextPage=1,failed=false,authChanged=null;
  const adapter={
    cursorAfter:r=>({pending:r.status==="pending",created_at:r.created_at,id:r.id}),
    loadReportQueue:async(_client,options)=>{
@@ -74,7 +74,11 @@ function pause(){return new Promise(r=>setImmediate(r))}
    document:{readyState:"complete",createElement:element,
      getElementById:id=>id==="xmmReportsList"?list:
        id==="xoxoAdminModeration"?moderation:null},
-   supabaseClient:{},
+   supabaseClient:{auth:{
+     onAuthStateChange:callback=>{authChanged=callback;return {
+       data:{subscription:{unsubscribe(){}}}
+     };}
+   }},
    xoxoIsAdmin:true,
    getFriendHubLanguage:()=>"es",
    xoxoModerationPinAuthorize:async()=>{calls.pin++;return {reason}}
@@ -128,6 +132,28 @@ function pause(){return new Promise(r=>setImmediate(r))}
    "Expired PIN must offer reauthorization, not stale report data");
  assert.equal(list.children[0].tag,"legacy-report");
  assert.equal(calls.pin,1);
+
+ // A completed authorization is NOT reusable after logout. In particular,
+ // an old Load more response must never rebuild 100+ report cards.
+ failed=false;
+ await sel("[data-xoxo-safety-report-unlock]")[0].listeners.click();
+ assert.equal(sel("[data-xoxo-conversation-beta-report]").length,100);
+ resolver=()=>{};
+ sel("[data-xoxo-safety-load-more]")[0].listeners.click();
+ assert.equal(sel("[data-xoxo-conversation-beta-report]").length,0);
+ const delayedAfterLogout=resolver;
+ assert.equal(typeof delayedAfterLogout,"function");
+ resolver=null;
+ authChanged("SIGNED_OUT",null);
+ delayedAfterLogout({ok:true,reports:more1,hasMore:true,
+    nextCursor:adapter.cursorAfter(more1.at(-1))});
+ await pause();await pause();
+ assert.equal(sel("[data-xoxo-conversation-beta-report]").length,0,
+   "Late continuation response after logout must never repaint 150 private cards");
+ assert.equal(sel("[data-xoxo-safety-load-more]").length,0);
+ assert.equal(sel("[data-xoxo-safety-report-unlock]").length,1);
+ assert.equal(list.children[0].tag,"legacy-report");
+
  const translations=context.window.XOXOActiveAdminSafetyCopyBeta;
  for(const language of ["en","es","pt-BR","fr","pl","de","cs","no","sv","it"]){
    assert.ok(translations[language].more && translations[language].loadingMore,
