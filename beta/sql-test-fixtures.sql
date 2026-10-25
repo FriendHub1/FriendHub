@@ -12,6 +12,25 @@ create function auth.uid() returns uuid
   as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
 grant usage on schema auth to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
+-- Simulate the server-signed JWT's session_id in this disposable CI database.
+-- It is NOT a real Supabase access token; production auth.jwt() is untouched.
+create function auth.jwt() returns jsonb
+  language sql stable set search_path=''
+  as $ select jsonb_build_object(
+    'session_id', nullif(current_setting('request.jwt.claim.session_id',true),'')
+  ) $;
+grant execute on function auth.jwt() to anon, authenticated;
+
+create table auth.sessions (
+  id uuid primary key,
+  user_id uuid not null,
+  not_after timestamptz
+);
+insert into auth.sessions(id,user_id) values
+ ('aaaaaaaa-0000-4000-8000-000000000001','11111111-1111-4111-8111-111111111111'),
+ ('bbbbbbbb-0000-4000-8000-000000000002','22222222-2222-4222-8222-222222222222'),
+ ('cccccccc-0000-4000-8000-000000000003','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+ ('dddddddd-0000-4000-8000-000000000004','33333333-3333-4333-8333-333333333333');
 grant usage on schema public to anon, authenticated;
 
 create table public.direct_messages (
