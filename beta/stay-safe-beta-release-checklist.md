@@ -194,3 +194,12 @@ Tests include:
 - `beta/test-browser-report-flow.cjs` verifies the old form/picker are inert with no RPC or status alert while the new form/picker remains functional and can submit exactly once.
 - [**GitHub Actions run 40210683738**](https://github.com/FriendHub1/FriendHub/actions/runs/40210683738) passed **all three** jobs: Node.js 22, disposable PostgreSQL 17/PostgREST, and WebKit/Chromium browser checks.
 - The BETA reporting write flag remains off. No production SQL, Cloudflare Worker or existing live moderator viewer changed.
+
+### Cancelled report dialogs cannot submit stale evidence (2026-10-25)
+
+- Both standalone BETA dialogs (`stay-safe-report-form.js` and `stay-safe-evidence-picker.js`) now close **idempotently**, with a per-dialog `closed` guard set before DOM removal. Queued/detached submit callbacks after **Cancel, Escape or successful submission** cannot invoke their reporting callback again.
+- The evidence picker also ignores checkbox change notifications from a closed dialog, and reopening a fresh picker remains functional.
+- DOM regression checks in `beta/test-evidence-picker-dom.cjs` exercise Cancel followed by a stale submit and a valid double-click that must invoke the callback exactly once.
+- Native browser tests in `beta/test-safety-browser-visual.cjs` exercise the report form and picker in **WebKit (320/390px) and desktop Chromium**: cancelled old handlers do nothing, double submission invokes once, and no sensitive modal remains mounted.
+- [**GitHub Actions run 40211235284**](https://github.com/FriendHub1/FriendHub/actions/runs/40211235284) passed **all three** jobs: Node.js, disposable PostgreSQL 17/local PostgREST, and WebKit/Chromium.
+- No live Supabase schema, production Worker, admin panel, user conversations, or report-write flags were changed. The original non-production Auth, retention/erasure approval and physical-iPhone release gates remain in place.
