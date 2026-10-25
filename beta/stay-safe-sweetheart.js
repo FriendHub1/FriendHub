@@ -93,5 +93,5 @@ it:{"tips":"Altri consigli di sicurezza","report":"Segnala la conversazione 🚩
     backdrop.append(dialog);document.body.append(backdrop);document.addEventListener("keydown",onKeyDown);close.focus();
     return true;
   }
-  window.XOXOSafetyReminderBeta=Object.freeze({show,copy:COPY});
+  window.XOXOSafetyReminderBeta=Object.freeze({show,copy:COPY,actions:ACTIONS});
 })();
