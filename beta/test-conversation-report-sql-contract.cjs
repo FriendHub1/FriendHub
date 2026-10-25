@@ -31,11 +31,18 @@ const required = [
   ["no partial evidence commit", /Evidence could not be saved atomically/i],
   ["explicit anon revocation", /from public, anon, authenticated/i],
   ["authenticated RPC grant", /to authenticated;/i],
+  ["admin reason is a required RPC parameter", /xoxo_admin_list_conversation_reports_beta\(\s*p_reason text\s*\)/i],
+  ["status reason is a required RPC parameter", /xoxo_admin_update_conversation_report_beta\(\s*p_report_id uuid,\s*p_status text,\s*p_reason text\s*\)/i],
+  ["moderation audit includes reason", /'conversation_report_status:'\s*\|\|\s*p_status\s*\|\|\s*': '\s*\|\|\s*v_reason/i],
   ["fixed search path", /set search_path = ''/i]
 ];
 for (const [name, pattern] of required) {
   assert.match(source, pattern, `Required safety contract missing: ${name}`);
 }
+assert.equal((source.match(/pg_catalog\.length\(v_reason\) not between 10 and 300/g)||[]).length,2,
+  "Both admin RPCs must reject missing, short or oversized moderation reasons");
+assert.match(source,/revoke all on function public\.xoxo_admin_list_conversation_reports_beta\(text\)/i);
+assert.match(source,/revoke all on function public\.xoxo_admin_update_conversation_report_beta\(uuid, text, text\)/i);
 assert.doesNotMatch(source, /\b(?:drop|truncate)\s+table\s+(?:public\.)?direct_message_reports/i);
 assert.doesNotMatch(source, /\b(?:update|delete\s+from)\s+public\.direct_message_reports\b/i);
 assert.doesNotMatch(source, /\bgrant\s+(?:select|insert|update|delete|all)\s+on\s+(?:all\s+tables|xoxo_safety_private\.)[^;]*to\s+(?:anon|authenticated)/i);
