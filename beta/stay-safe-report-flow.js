@@ -8,7 +8,8 @@ function start({conversationId,locale="es",messages=[],onPrepared}={}){
  if(typeof conversationId!=="string"||!conversationId||typeof onPrepared!=="function"||!Array.isArray(messages))return false;
  const form=window.XOXOReportFormBeta;
  const evidence=window.XOXOEvidencePickerBeta;
- if(!form?.open||!evidence?.open)return false;
+ const validator=window.XOXOReportValidationBeta;
+ if(!form?.open||!evidence?.open||!validator?.validate)return false;
  return form.open({
   conversationId,locale,
   onContinue:report=>{
@@ -17,12 +18,15 @@ function start({conversationId,locale="es",messages=[],onPrepared}={}){
     onContinue:selection=>{
      // A prepared report is not a submitted report.
      // The host must validate permissions and persist server-side.
-     onPrepared(Object.freeze({
+     const prepared=Object.freeze({
       conversationId,
       reasonCode:report.reasonCode,
       details:report.details,
       messageIds:Object.freeze([...selection.messageIds])
-     }));
+     });
+     const check=validator.validate(prepared);
+     if(!check.ok){console.warn("XOXO BETA report validation failed",check.errors);return;}
+     onPrepared(prepared);
     }
    });
   }
