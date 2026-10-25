@@ -3,10 +3,11 @@
 // Never use the service-role client for this check.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 async function verifyVisibleMessages(client, userId, peerId, messageIds) {
-  if (!client?.from || !UUID.test(userId || "") || !UUID.test(peerId || "") ||
+  if (!client?.from || !(typeof userId !== "string" || !UUID.test(userId)) ||
+      (typeof peerId !== "string" || !UUID.test(peerId)) ||
       userId.toLowerCase() === peerId.toLowerCase() ||
       !Array.isArray(messageIds) || messageIds.length < 1 ||
-      messageIds.length > 20 || messageIds.some(id => !UUID.test(id)) ||
+      messageIds.length > 20 || messageIds.some(id => typeof id !== "string" || !UUID.test(id)) ||
       new Set(messageIds.map(id => id.toLowerCase())).size !== messageIds.length) {
     return { ok: false, reason: "invalid_input" };
   }
@@ -21,7 +22,9 @@ async function verifyVisibleMessages(client, userId, peerId, messageIds) {
   if (error || !Array.isArray(data) || data.length !== messageIds.length) {
     return { ok: false, reason: "not_visible" };
   }
-  if (data.some(m => !m || !UUID.test(m.id || "") || !UUID.test(m.sender_id || "") || !UUID.test(m.recipient_id || ""))) {
+  if (data.some(m => !m || typeof m.id !== "string" || !UUID.test(m.id) ||
+    typeof m.sender_id !== "string" || !UUID.test(m.sender_id) ||
+    typeof m.recipient_id !== "string" || !UUID.test(m.recipient_id))) {
     return { ok: false, reason: "invalid_result" };
   }
   const ids = new Set(messageIds.map(id => id.toLowerCase()));
