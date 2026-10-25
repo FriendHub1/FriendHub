@@ -4,13 +4,15 @@
  */
 (function(){
 "use strict";
-function start({conversationId,otherUserId,locale="es",messages=[],onPrepared}={}){
- if(typeof conversationId!=="string"||!conversationId||typeof otherUserId!=="string"||!otherUserId||typeof onPrepared!=="function"||!Array.isArray(messages))return false;
+function start({conversationId,currentUserId,otherUserId,locale="es",messages=[],onPrepared}={}){
+ if(typeof conversationId!=="string"||!conversationId||typeof currentUserId!=="string"||!currentUserId||typeof otherUserId!=="string"||!otherUserId||typeof onPrepared!=="function"||!Array.isArray(messages))return false;
  const form=window.XOXOReportFormBeta;
  const evidence=window.XOXOEvidencePickerBeta;
  const validator=window.XOXOReportValidationBeta;
  const peer=otherUserId.toLowerCase();
- const available=new Set(messages.filter(m=>m&&typeof m.id==="string"&&typeof m.senderId==="string"&&typeof m.recipientId==="string"&&((m.senderId.toLowerCase()===peer)||(m.recipientId.toLowerCase()===peer))).map(m=>m.id));
+ const self=currentUserId.toLowerCase();
+ if(self===peer)return false;
+ const available=new Set(messages.filter(m=>m&&typeof m.id==="string"&&typeof m.senderId==="string"&&typeof m.recipientId==="string"&&((m.senderId.toLowerCase()===peer&&m.recipientId.toLowerCase()===self)||(m.senderId.toLowerCase()===self&&m.recipientId.toLowerCase()===peer))).map(m=>m.id));
  if(!form?.open||!evidence?.open||!validator?.validate)return false;
  return form.open({
   conversationId,locale,
