@@ -9,6 +9,8 @@
 --
 -- Pending privacy decision: retention and account deletion handling.
 
+begin;
+
 create table if not exists public.xoxo_conversation_reports_beta (
   id uuid primary key default gen_random_uuid(),
   reporter_id uuid not null references auth.users(id),
@@ -50,3 +52,5 @@ revoke all on public.xoxo_conversation_report_evidence_beta from anon, authentic
 -- Explicitly NO direct INSERT/SELECT policies for ordinary users.
 -- Admin metadata reads use a dedicated admin-verified RPC. Admin opens full
 -- conversations only via the pre-existing audited PIN-gated DM viewer.
+
+commit;
