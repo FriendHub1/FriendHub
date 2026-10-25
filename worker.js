@@ -2931,6 +2931,33 @@ export default {
 
     // Localized homepage social previews for WhatsApp and other link unfurlers.
     // Preserve profile/post previews, all other routes, and the default English metadata.
+    // Opt-in, branch-only preview of conversation reports inside the existing
+    // administrator moderation panel. No database writes or permission changes.
+    if (url.pathname === "/" &&
+        url.searchParams.get("xoxo_safety_admin_beta") === "1" &&
+        request.method === "GET") {
+      const preview = await env.ASSETS.fetch(request);
+      if (preview.ok && String(preview.headers.get("content-type") || "").includes("text/html")) {
+        const updated = new HTMLRewriter()
+          .on("head", {
+            element(element) {
+              element.append(
+                '<script src="/beta/admin-report-queue.js" defer></script>' +
+                '<script src="/beta/admin-report-panel-bridge.js" defer></script>',
+                { html: true }
+              );
+            }
+          })
+          .transform(preview);
+        const headers = new Headers(updated.headers);
+        headers.set("Cache-Control", "no-store");
+        headers.set("X-XOXO-Worker", "admin-report-beta-opt-in");
+        return new Response(updated.body, {
+          status: updated.status, statusText: updated.statusText, headers
+        });
+      }
+    }
+
     const xoxoShareLanguage = String(url.searchParams.get("lang") || "").toLowerCase();
     const xoxoShareDescriptions = {
       es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
