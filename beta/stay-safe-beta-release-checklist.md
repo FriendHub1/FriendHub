@@ -160,3 +160,11 @@ Tests include:
 - `beta/test-browser-report-flow.cjs` simulates a user swapping accounts during a suspended evidence query, a report request that completes after logout, an async message listing finishing after chat navigation, and rejection of temporary anonymous Supabase sign-ins.
 - **[GitHub Actions 40207700106](https://github.com/FriendHub1/FriendHub/actions/runs/40207700106)**: all three suites passed — Node.js 22, PostgreSQL 17/local PostgREST, and WebKit/Chromium browsers. No production SQL, account, messages, or Worker deployment changed.
 - Remaining release prerequisites are actual non-production Supabase Auth-issued sessions, owner-approved deletion/retention policy and daily reporting limit, physical iPhone/integrated BETA acceptance, and explicit production rollout authorization.
+
+### Prevent duplicate taps during asynchronous evidence reload (2026-10-25)
+
+- Fixed an actual browser concurrency window: the `sending` guard previously activated **after awaiting** the current chat's message re-read. Two rapid taps on Send could therefore start overlapping evidence reads and potentially duplicate status messages/RPCs.
+- `beta/stay-safe-browser-flow.js` now acquires the guard **before** awaiting `getMessages()` and releases it with a `finally` block on every success, validation failure, network exception, or change of conversation.
+- Added regressions in `beta/test-browser-report-flow.cjs`: two immediate submit callbacks during a delayed evidence query must make **one** query, **one** report submission, and **one** status notification; a failed evidence reload must release the guard so a later valid retry works.
+- **[GitHub Actions 40208148813](https://github.com/FriendHub1/FriendHub/actions/runs/40208148813)** passed all three jobs: Node.js 22, disposable PostgreSQL 17 with signed local PostgREST, and WebKit/Chromium browsers.
+- The existing server-side idempotency key remains an independent defense. No production Supabase SQL or Worker was changed; report writing remains disabled in the BETA preview.
