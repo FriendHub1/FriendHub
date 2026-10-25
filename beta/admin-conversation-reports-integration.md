@@ -40,3 +40,17 @@ Status: design contract updated to match owner feedback; no live implementation 
 
 ### Concrete next integration step
 Inspect the admin viewer's exact query/open functions and choose a safe route to the existing conversation using the reported user pair. Keep report metadata and evidence access under server-verified admin authorization and audit logging. Never add unrestricted report-table SELECT policies.
+
+## Draft backend integration — 2026-10-25
+
+Review-only SQL: `beta/stay-safe-conversation-reports-schema.sql`. **Not deployed to Supabase.**
+
+- Private reporting and evidence tables with RLS enabled and no direct authenticated-user table grants.
+- `xoxo_submit_conversation_report_beta`: validates the authenticated reporter, 1–20 distinct messages, pair membership and `dm_conversation_clears` visibility; enforces idempotency and a proposed limit of 10 reports per 24h; atomically writes report and selected evidence metadata.
+- `xoxo_admin_list_conversation_reports_beta`: returns up to 100 report metadata rows after verifying existing admin status and the moderation PIN session. It does not return full message content or replace the DM viewer.
+- `xoxo_admin_update_conversation_report_beta`: accepts the four existing moderation statuses with admin/PIN checks and logs a status change in `xoxo_message_access_log`.
+- The existing individual-message reports and their functions remain unchanged. The existing DM viewer retains its PIN + reason requirement and access logging.
+- Evidence holds message IDs, sender, recipient and timestamps; no content/media snapshots. Physically deleted messages may no longer be readable in the existing viewer. Confirm retention policy before enabling.
+- `beta/test-conversation-report-sql-contract.cjs` adds static source checks only; no SQL execution or authenticated end-to-end testing has been performed.
+
+Next: complete review of SQL against a test database; verify authenticated and unauthorized roles; connect the existing admin reports area to metadata and open reported participant pairs through the current audited viewer. Review proposed rate limit, evidence retention and all 10 language translations before release.
