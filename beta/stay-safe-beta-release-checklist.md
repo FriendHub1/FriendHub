@@ -307,3 +307,10 @@ Tests include:
 - The existing admin report card displays a corresponding notice in all ten XOXO Avenue languages when the count is positive. The client validates the count is an integer between zero and the number of explicitly selected messages; malformed metadata fails closed.
 - `beta/sql-test-evidence-after-delete.sql` now uses a disposable database and an existing PIN/role/session to page through the original admin report queue and assert the deleted-message report shows exactly one unavailable evidence item with **no copied DM body**. Node tests cover validation and all ten translations.
 - **Not a retention-policy decision:** This only reports availability of existing IDs. It does not preserve deleted message contents, change user deletion behavior, or authorize historical content retention. Owner approval is still required before real reporting or SQL deployment.
+
+### Reauthorize admin report metadata after Auth token refresh (BETA-only, 2026-10-25)
+
+- Supabase can emit `TOKEN_REFRESHED` without changing the authenticated user's UUID. The BETA PIN display previously invalidated sensitive report cards on logout/sign-in/account change, but not on a same-user token refresh.
+- The admin queue bridge now invalidates its private report cards, selected-evidence highlights, pagination cursor and in-flight RPC generation on `TOKEN_REFRESHED` and `INITIAL_SESSION`. A renewed session must use the **existing moderation PIN dialog** before loading BETA reports again; the original DM viewer and its messages are not cleared or duplicated.
+- Node DOM regression and native Chromium/WebKit checks cover the same-account token change, immediate removal of mounted evidence badges and rejection of an older in-flight queue response. The separate server-side PIN/session checks remain mandatory on every request.
+- No live Supabase migration, user-message changes, real report writes or Cloudflare production deployment are involved.

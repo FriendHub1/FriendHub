@@ -251,8 +251,12 @@
         const nextId=typeof session?.user?.id==="string"?session.user.id:null;
         const changed=nextId!==accountId;
         accountId=nextId;
+        // Token refresh retains the SAME user ID. Revoke the previous PIN
+        // display epoch anyway: an admin session must reauthorize its private
+        // report metadata after credentials are replaced or reissued.
         if(event==="SIGNED_OUT" || event==="SIGNED_IN" ||
-           event==="USER_DELETED" || changed){
+           event==="USER_DELETED" || event==="TOKEN_REFRESHED" ||
+           event==="INITIAL_SESSION" || changed){
           invalidate();
           if(isActiveAdmin())paintUnlockControl();
         }

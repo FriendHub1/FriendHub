@@ -88,6 +88,9 @@ async function exercise(browser,engine){
   },{sample,reason});
   await page.addScriptTag({path:path.join(__dirname,"admin-report-panel-bridge.js")});
   assert.equal(await page.evaluate(()=>typeof window.__authEvents),"function");
+  await page.evaluate(()=>window.__authEvents("INITIAL_SESSION",{
+    user:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}
+  }));
   await page.evaluate(()=>window.loadXoxoDmReports());
   assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0,
     engine+" private cards opened without PIN");
@@ -95,6 +98,19 @@ async function exercise(browser,engine){
   await page.locator("[data-xoxo-safety-report-unlock]").click();
   await page.locator("[data-xoxo-conversation-beta-report]").waitFor();
   assert.equal(await page.locator("#preserved-legacy-moderation").count(),1);
+
+  // TOKEN_REFRESHED can keep the exact same user. PIN-protected report
+  // metadata must not remain in the DOM across an updated Auth session.
+  await page.evaluate(()=>window.__authEvents("TOKEN_REFRESHED",{
+    user:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}
+  }));
+  assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0,
+    engine+" retained PIN-protected cards after same-user token refresh");
+  assert.equal(await page.locator("[data-xoxo-safety-report-unlock]").count(),1,
+    engine+" did not require a new moderation PIN after token refresh");
+  assert.equal(await page.locator("#preserved-legacy-moderation").count(),1);
+  await page.locator("[data-xoxo-safety-report-unlock]").click();
+  await page.locator("[data-xoxo-conversation-beta-report]").waitFor();
 
   // In both native browser engines, a throttled background timer must not
   // leave report metadata readable when the tab regains focus after expiry.
@@ -132,7 +148,9 @@ async function exercise(browser,engine){
   await page.waitForFunction(()=>typeof window.__queueResolve==="function");
   assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0);
   await page.evaluate(()=>{
-   window.__authEvents("SIGNED_OUT",null);
+   window.__authEvents("TOKEN_REFRESHED",{
+     user:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}
+   });
    window.__queueResolve({ok:true,reports:[window.__testRow||{
     id:"dddddddd-dddd-4ddd-8ddd-000000000001",
     reporter_id:"11111111-1111-4111-8111-111111111111",
@@ -145,7 +163,7 @@ async function exercise(browser,engine){
   });
   await page.waitForTimeout(100);
   assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0,
-    engine+" displayed a stale authenticated server response");
+    engine+" displayed an old queue response after the session's token changed");
 
   await page.locator("[data-xoxo-safety-report-unlock]").click();
   await page.locator("[data-xoxo-conversation-beta-report]").waitFor();

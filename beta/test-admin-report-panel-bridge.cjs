@@ -28,6 +28,7 @@ function element(tag){
  const moderation={classList:{contains:()=>true}};
  const calls={legacy:0,queue:0,pin:0,unlock:0,updates:0};
  let betaAvailable=true,admin=true,legacyFails=false,updateFails=false;
+ let emitAuth=()=>{};
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;if(legacyFails)throw Error("legacy loader failed");list.children=[element("legacy-card")];},
    xoxoDmMakeMessage:(message)=>{const bubble=element("article");bubble.textContent=message.content;return bubble;},
@@ -41,7 +42,7 @@ function element(tag){
         "status changes need the same PIN moderation reason");
       calls.updates++;return updateFails?{ok:false}:{ok:true};}}},
   document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xmmMessages"?viewer:id==="xoxoAdminModeration"?moderation:null},
-  supabaseClient:{},
+  supabaseClient:{auth:{onAuthStateChange:fn=>{emitAuth=fn;}}},
   get xoxoIsAdmin(){return admin;},
   getFriendHubLanguage:()=> "es",
   xoxoModerationPinAuthorize:async()=>{calls.unlock++;return {reason:"Report queue moderation access"};},
@@ -147,5 +148,25 @@ function element(tag){
  const beforeNonAdmin=calls.queue;
  await context.window.loadXoxoDmReports();
  assert.equal(calls.queue,beforeNonAdmin,"non-admin reload must not request report metadata");
+ admin=true;
+ const sameAdmin="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+ emitAuth("INITIAL_SESSION",{user:{id:sameAdmin}});
+ await context.window.loadXoxoDmReports();
+ await list.querySelectorAll("[data-xoxo-safety-report-unlock]")[0].listeners.click();
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
+ const tokenRefreshCard=list.querySelectorAll("[data-xoxo-conversation-beta-report]")[0];
+ tokenRefreshCard.children.find(x=>x.className==="xmm-report-actions").children[0].listeners.click();
+ const beforeRefresh=context.window.xoxoDmMakeMessage({id:report.evidence_message_ids[1],content:"Synthetic"},
+   {user_1:reporter,user_2:peer});
+ viewer.append(beforeRefresh);
+ assert.equal(beforeRefresh.attributes["data-xoxo-safety-report-evidence"],"1");
+ emitAuth("TOKEN_REFRESHED",{user:{id:sameAdmin}});
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,
+   "same-account token rotation must remove private report metadata");
+ assert.equal(beforeRefresh.attributes["data-xoxo-safety-report-evidence"],undefined,
+   "token rotation must also remove evidence decorations from the original viewer");
+ assert.equal(beforeRefresh.children.length,0);
+ assert.equal(list.querySelectorAll("[data-xoxo-safety-report-unlock]").length,1,
+   "a new moderator PIN is required after rotating the session token");
  console.log("PASS: existing admin bridge requires PIN, keeps legacy cards, reuses audited viewer and clears stale reports");
 })().catch(e=>{console.error(e);process.exitCode=1;});
