@@ -5,6 +5,8 @@
 -- Returns NO message content. Full DM history remains controlled by
 -- xoxo_admin_read_dm_page_pin (existing audited PIN-gated RPC).
 
+begin;
+
 create or replace function public.xoxo_admin_list_conversation_reports_beta()
 returns table (
   id uuid,
@@ -85,3 +87,5 @@ grant execute on function public.xoxo_admin_update_conversation_report_status_be
 -- IMPORTANT: Both functions are server-authorized. No browser client is
 -- trusted for admin status. Run security advisor and permission/RLS tests
 -- before deployment. Do not replace existing get_xoxo_dm_reports functions.
+
+commit;
