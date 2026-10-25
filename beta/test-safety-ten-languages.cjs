@@ -34,6 +34,14 @@ for (const code of ["sv", "it"]) {
     code + " must appear only once in COPY and once in ACTIONS");
 }
 load("stay-safe-sweetheart.js");
+// The standalone report modal must not silently overwrite translation keys.
+const formLines = fs.readFileSync(
+  path.join(__dirname, "stay-safe-report-form.js"), "utf8").split(/\r?\n/);
+for (const code of ["sv", "it"]) {
+  assert.equal(formLines.filter(line =>
+    line.trim().startsWith(code + ":")).length, 1,
+    code + " must appear exactly once in the six-reason report form");
+}
 load("stay-safe-report-form.js");
 load("stay-safe-evidence-picker.js");
 load("stay-safe-admin-reports-bridge.js");
