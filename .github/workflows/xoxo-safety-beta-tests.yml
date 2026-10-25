@@ -36,7 +36,7 @@ jobs:
 
   postgres-contract:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     services:
       postgres:
         image: postgres:17
@@ -71,3 +71,34 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-report-pipeline.sql
       - name: Stress-test parallel rate limits and idempotency on disposable DB
         run: python3 beta/test-safety-postgres-concurrency.py
+      - name: Seed isolated PostgREST HTTP session fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-postgrest-fixtures.sql
+      - name: Start pinned PostgREST HTTP API on runner loopback only
+        env:
+          XOXO_HTTP_JWT_KEY: xoxo-local-ci-jwt-secret-not-for-production-1234567890
+        run: |
+          set -euo pipefail
+          docker run -d --name xoxo-safety-ci-postgrest --network host \
+            -e PGRST_DB_URI="postgres://xoxo_ci_authenticator:local-ci-only-password@127.0.0.1:5432/xoxo_safety_test" \
+            -e PGRST_DB_SCHEMAS="public" \
+            -e PGRST_DB_ANON_ROLE="anon" \
+            -e PGRST_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
+            -e PGRST_SERVER_PORT="3001" \
+            -e PGRST_LOG_LEVEL="error" \
+            postgrest/postgrest:v12.2.12
+          ready=0
+          for i in $(seq 1 35); do
+            code="$(curl --max-time 2 -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3001/ || true)"
+            if [ "$code" = "200" ]; then ready=1; break; fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            docker logs xoxo-safety-ci-postgrest
+            echo "ERROR: Ephemeral PostgREST HTTP API did not become ready" >&2
+            exit 1
+          fi
+      - name: Test real signed JWTs through PostgREST HTTP and RPC permissions
+        run: python3 beta/test-safety-postgrest-http.py
+      - name: Clean up disposable PostgREST container
+        if: always()
+        run: docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
