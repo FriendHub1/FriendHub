@@ -103,4 +103,32 @@ picks=h.find(h.document.body,n=>n.tagName==="INPUT"&&n.type==="checkbox");
 assert.equal(picks[0].value,uuid(100));
 assert.equal(picks.at(-1).value,uuid(1));
 
-console.log("PASS: latest 100 dated DMs in forward/reverse/shuffled order, no-date fallback, max 20 selected, unique IDs, ten-language picker");
+// Cancelled pickers must be inert even if a stale click callback was queued.
+h=createDOM();
+let afterCancel=0;
+assert.equal(h.api.open({conversationId:"cancelled-picker",
+  messages:[{id:uuid(1),text:"Mock evidence"}],locale:"es",
+  onContinue:()=>{afterCancel++}}),true);
+picks=h.find(h.document.body,n=>n.tagName==="INPUT"&&n.type==="checkbox");
+picks[0].checked=true;
+let controls=h.find(h.document.body,n=>n.tagName==="BUTTON");
+const staleSubmit=controls[0].onclick;
+controls[1].onclick();
+staleSubmit();
+assert.equal(afterCancel,0,"Cancel must invalidate queued picker submit");
+assert.equal(h.document.body.children.length,0);
+
+// Double click after a valid send must never invoke the callback twice.
+h=createDOM();
+let accepted=0;
+assert.equal(h.api.open({conversationId:"single-submit-picker",
+  messages:[{id:uuid(2),text:"One selected evidence"}],locale:"en",
+  onContinue:()=>{accepted++}}),true);
+picks=h.find(h.document.body,n=>n.tagName==="INPUT"&&n.type==="checkbox");
+picks[0].checked=true;
+controls=h.find(h.document.body,n=>n.tagName==="BUTTON");
+controls[0].onclick();
+controls[0].onclick();
+assert.equal(accepted,1,"Rapid double tap must invoke picker callback once");
+
+console.log("PASS: latest 100 dated DMs, cancel/double-click inertness, max 20 selected, unique IDs, ten-language picker");
