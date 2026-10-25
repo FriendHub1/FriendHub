@@ -15,6 +15,8 @@
 -- Review this SECURITY DEFINER function and run RLS/security advisors before
 -- deployment. The cap (20 per 24 hours) is a proposal, not an approved policy.
 
+begin;
+
 create or replace function public.xoxo_submit_conversation_report_beta(
   p_other_user_id uuid,
   p_reason_code smallint,
@@ -139,3 +141,5 @@ grant execute on function public.xoxo_submit_conversation_report_beta(
 -- Verify with real authenticated/unauthorized accounts before enabling:
 -- no user/peer spoofing, 0/21/duplicate/foreign/cleared/expired messages,
 -- concurrent retries, reused keys, account deletion, and deleted DMs.
+
+commit;
