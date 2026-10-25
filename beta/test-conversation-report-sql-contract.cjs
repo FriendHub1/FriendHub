@@ -43,6 +43,12 @@ assert.equal((source.match(/pg_catalog\.length\(v_reason\) not between 10 and 30
   "Both admin RPCs must reject missing, short or oversized moderation reasons");
 assert.match(source,/revoke all on function public\.xoxo_admin_list_conversation_reports_beta\(text\)/i);
 assert.match(source,/revoke all on function public\.xoxo_admin_update_conversation_report_beta\(uuid, text, text\)/i);
+// Regression guards for real PostgreSQL errors found by the BETA PR checks.
+assert.doesNotMatch(source, /pg_catalog\.coalesce\s*\(/i,
+  "COALESCE is a SQL expression, not a schema-qualified function");
+const dbTests = fs.readFileSync(path.join(__dirname, "sql-test-report-pipeline.sql"), "utf8");
+assert.doesNotMatch(dbTests, /^do \$|^end \$;$/gm,
+  "All PL/pgSQL DO blocks must use matched double-dollar delimiters");
 assert.doesNotMatch(source, /\b(?:drop|truncate)\s+table\s+(?:public\.)?direct_message_reports/i);
 assert.doesNotMatch(source, /\b(?:update|delete\s+from)\s+public\.direct_message_reports\b/i);
 assert.doesNotMatch(source, /\bgrant\s+(?:select|insert|update|delete|all)\s+on\s+(?:all\s+tables|xoxo_safety_private\.)[^;]*to\s+(?:anon|authenticated)/i);
