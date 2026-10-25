@@ -177,9 +177,17 @@ def check():
                         token(ADMIN, SES_PEER), {"p_reason": REASON})
     blocked(status, "admin JWT with wrong session")
 
+    audit_before = int(db(
+        "select count(*) from public.xoxo_message_access_log "
+        "where action like 'conversation_report_queue:view count=%'"))
     status, queue = request("POST", "/rpc/xoxo_admin_list_conversation_reports_beta",
                             administrator, {"p_reason": REASON})
     assert status == 200 and isinstance(queue, list), ("PIN-gated admin queue failed", status, queue)
+    audit_after = int(db(
+        "select count(*) from public.xoxo_message_access_log "
+        "where action like 'conversation_report_queue:view count=%'"))
+    assert audit_after == audit_before + 1, (
+        "A PIN-authorized report queue read must create a moderation access audit event")
     matching = [item for item in queue if item.get("id") == report]
     assert len(matching) == 1 and matching[0]["reason_code"] == 0, (
         "admin queue did not include the HTTP report", status, queue)
@@ -251,7 +259,12 @@ def check():
         "select status from xoxo_safety_private.conversation_reports "
         f"where id='{report}'::uuid") == "reviewed", (
             "A denied PIN status update modified a report")
-    print("PASS: 23 local HTTP/JWT/PostgREST checks — real signed API requests, "
+    assert int(db(
+        "select count(*) from public.xoxo_message_access_log "
+        "where action like 'conversation_report_queue:view count=%'"
+    )) == audit_after, (
+        "Expired/locked PIN must not leave new queue access audit records")
+    print("PASS: local HTTP/JWT/PostgREST checks — read-audited moderation, real signed API requests, "
           "chat clears, denied revoked session, private data, idempotency, PIN expiry/lockout + audit")
 
 
