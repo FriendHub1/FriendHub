@@ -375,7 +375,7 @@ begin
 end $invalid_admin_session$;
 select set_config('request.jwt.claim.session_id','cccccccc-0000-4000-8000-000000000003',false);
 
-do $
+do $authorized_admin$
 declare
   v_queue jsonb;
   v_report uuid;
@@ -401,7 +401,7 @@ begin
     perform public.xoxo_admin_update_conversation_report_beta(v_report,'unknown','Reviewed evidence from reported conversation');
     raise exception 'BUG: invalid status accepted';
   exception when sqlstate '22023' then null; end;
-end $$;
+end $authorized_admin$;
 
 reset role;
 do $$
