@@ -42,4 +42,4 @@ assert.equal(prepared.messageIds[0],id1);
 prepared=null;selection=[id2];start(opts);assert.equal(prepared,null,"Reject unrelated message");
 prepared=null;selection=[id1];assert.equal(start({...opts,currentUserId:peer}),false,"Reject self-report");
 assert.equal(prepared,null);
-console.log("PASS: 10 validation and conversation-membership checks");
+console.log("PASS: 12 validation and conversation-membership checks");
