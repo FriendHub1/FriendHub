@@ -186,3 +186,11 @@ Tests include:
 - Real WebKit at 320×568/390×844 and Chromium desktop each now exercise a **120-message newest-first synthetic chat**, require exactly IDs 21–120 to be presented in the 100-choice picker, and confirm message 120 remains selectable.
 - [GitHub Actions run 40209397348](https://github.com/FriendHub1/FriendHub/actions/runs/40209397348) passed all three jobs (Node.js 22, disposable PostgreSQL 17/PostgREST, WebKit/Chromium).
 - This is BETA only. Production DM order, real user content, Supabase schema, moderator PIN and Cloudflare Worker were not modified.
+
+### Reject detached report forms/pickers within the same conversation (2026-10-25)
+
+- Fixed an additional stale-callback scenario that **chat/account identity checks alone did not cover**. While still in the same DM, a user could open a newer report form while an older evidence picker or detached form retained a callback with its former reason and message selection.
+- `beta/stay-safe-browser-flow.js` now assigns each report-form opening a monotonically increasing **form epoch**. An obsolete form cannot load evidence, and an obsolete picker cannot submit it after a newer attempt opens in the same conversation. This is independent of the existing current-account, active-chat and in-flight submit locks.
+- `beta/test-browser-report-flow.cjs` verifies the old form/picker are inert with no RPC or status alert while the new form/picker remains functional and can submit exactly once.
+- [**GitHub Actions run 40210683738**](https://github.com/FriendHub1/FriendHub/actions/runs/40210683738) passed **all three** jobs: Node.js 22, disposable PostgreSQL 17/PostgREST, and WebKit/Chromium browser checks.
+- The BETA reporting write flag remains off. No production SQL, Cloudflare Worker or existing live moderator viewer changed.
