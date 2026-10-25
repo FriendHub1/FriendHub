@@ -73,6 +73,12 @@ function getFlow(){
    client:ctx.client, accountId:ctx.self, otherUserId:ctx.peer,
    conversationId:ctx.conversationId, locale:ctx.locale,
    previewOnly:true, enabled:REPORT_RPC_WRITES_ENABLED,
+   isContextActive:()=>{
+     const latest=visibleContext();
+     return !!latest && latest.conversationId===ctx.conversationId &&
+       latest.self===ctx.self && latest.peer===ctx.peer &&
+       latest.client===ctx.client;
+   },
    getMessages:()=>{
      const latest=visibleContext();
      if(!latest||latest.conversationId!==ctx.conversationId||
