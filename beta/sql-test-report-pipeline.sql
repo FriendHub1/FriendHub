@@ -355,7 +355,27 @@ update public.xoxo_moderation_pin_security set verified_until=now()+interval '5 
 set role authenticated;
 select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
 select set_config('request.jwt.claim.session_id','cccccccc-0000-4000-8000-000000000003',false);
-do $$
+
+-- Even with a verified PIN, an admin token claiming a session belonging to
+-- another account must not list or mutate report metadata.
+select set_config('request.jwt.claim.session_id','bbbbbbbb-0000-4000-8000-000000000002',false);
+do $invalid_admin_session$
+begin
+  begin
+    perform public.xoxo_admin_list_conversation_reports_beta(
+      'Reviewing a report with a mismatched session');
+    raise exception 'BUG: admin report list accepted another user session';
+  exception when sqlstate '42501' then null; end;
+  begin
+    perform public.xoxo_admin_update_conversation_report_beta(
+      current_setting('xoxo.safety_ci_report_id')::uuid,
+      'dismissed','Checking blocked admin session status updates');
+    raise exception 'BUG: admin report status updated with wrong session';
+  exception when sqlstate '42501' then null; end;
+end $invalid_admin_session$;
+select set_config('request.jwt.claim.session_id','cccccccc-0000-4000-8000-000000000003',false);
+
+do $
 declare
   v_queue jsonb;
   v_report uuid;
