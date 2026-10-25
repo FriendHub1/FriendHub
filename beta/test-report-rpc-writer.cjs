@@ -12,9 +12,10 @@ const payload={otherUserId:peer,reasonCode:0,details:"",messageIds:[id],idempote
  for(const invalid of [{...payload,messageIds:[]},{...payload,messageIds:[id,id]},{...payload,reasonCode:6},{...payload,idempotencyKey:"bad"}]){
   assert.deepEqual(await createReportRpcWriter(client)(invalid),{ok:false});
  }
+ assert.deepEqual(await createReportRpcWriter(client)([]),{ok:false});
  assert.equal(calls,1,"invalid payload must never call RPC");
  assert.deepEqual(await createReportRpcWriter(null)(payload),{ok:false});
  assert.deepEqual(await createReportRpcWriter({rpc:async()=>({data:null,error:{message:"not installed"}})})(payload),{ok:false});
  assert.deepEqual(await createReportRpcWriter({rpc:async()=>{throw Error("offline")}})(payload),{ok:false});
- console.log("PASS: 8 BETA RPC transport cases");
+ console.log("PASS: 9 BETA RPC transport cases");
 })().catch(e=>{console.error(e);process.exitCode=1;});
