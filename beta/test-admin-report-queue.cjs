@@ -28,6 +28,26 @@ const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,d
   assert.equal(oldOnly.ok,true);assert.equal(oldOnly.reports.length,1);assert.equal(oldOnly.warning,"conversation_reports_not_deployed");
   const damaged=await loadReportQueue({rpc:async name=>({data:name==="get_xoxo_dm_reports"?[legacy]:[{...beta,reported_user_id:"bad"}]})});
   assert.equal(damaged.reports.length,1,"malformed conversation report must not display");
+  assert.equal(damaged.warning,"conversation_reports_invalid_response",
+    "do not silently disguise invalid RPC output as an empty queue");
+  const invalidStatus=await loadReportQueue({rpc:async name=>({
+    data:name==="get_xoxo_dm_reports"?[legacy]:[{...beta,status:"unknown"}],error:null
+  })});
+  assert.equal(invalidStatus.warning,"conversation_reports_invalid_response");
+  assert.equal(invalidStatus.reports.length,1);
+  const duplicateReports=await loadReportQueue({rpc:async name=>({
+    data:name==="get_xoxo_dm_reports"?[legacy]:[beta,{...beta}],error:null
+  })});
+  assert.equal(duplicateReports.warning,"conversation_reports_invalid_response",
+    "duplicate report IDs must not be appended");
+  assert.equal(duplicateReports.reports.length,1);
+  const tooManyReports=await loadReportQueue({rpc:async name=>({
+    data:name==="get_xoxo_dm_reports"?[legacy]:Array.from({length:101},(_,i)=>({
+      ...beta,id:(i+1).toString(16).padStart(8,"0")+"-1111-4111-8111-111111111111"
+    })),error:null
+  })});
+  assert.equal(tooManyReports.warning,"conversation_reports_invalid_response",
+    "the admin RPC must not return more than 100 records");
   assert.deepEqual(await loadReportQueue({rpc:async()=>({error:{code:"42501"}})}),{ok:false,reason:"legacy_reports_unavailable"});
   assert.deepEqual(await loadReportQueue(null),{ok:false,reason:"invalid_client"});
   let invoked=[];
