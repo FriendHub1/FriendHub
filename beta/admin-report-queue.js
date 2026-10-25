@@ -1,0 +1,61 @@
+/* XOXO Avenue — admin reports adapter (BETA only).
+ * Reuses the existing moderation panel. Server RPCs MUST authorize each call.
+ * No message contents are requested by this adapter.
+ */
+(function(root,factory){
+  "use strict";
+  const api=factory();
+  if(typeof module==="object" && module.exports)module.exports=api;
+  if(root)root.XOXOAdminReportQueueBeta=api;
+})(typeof window!=="undefined"?window:null,function(){
+  "use strict";
+  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const statuses=new Set(["pending","reviewed","resolved","dismissed"]);
+  const reasons=["Scam or money requests","Threats or blackmail","Harassment or unwanted messages","Fake profile or identity","Intimate photo threats","Other"];
+  const rpcBySource=Object.freeze({message:"update_xoxo_dm_report_status",conversation_beta:"xoxo_admin_update_conversation_report_status_beta"});
+  const uuid=value=>typeof value==="string" && UUID.test(value);
+  function normalizeLegacy(report){
+    if(!report || !uuid(report.id))return null;
+    return {...report,source:"message"};
+  }
+  function normalizeConversation(report){
+    if(!report || !uuid(report.id) || !uuid(report.reporter_id) || !uuid(report.other_user_id) ||
+       !Number.isInteger(report.reason_code) || report.reason_code<0 || report.reason_code>5)return null;
+    const count=Number.isInteger(report.evidence_count)&&report.evidence_count>=1&&report.evidence_count<=20?report.evidence_count:null;
+    return {id:report.id,reporter_id:report.reporter_id,reported_user_id:report.other_user_id,
+      reason:reasons[report.reason_code],details:typeof report.details==="string"?report.details:"",
+      created_at:report.created_at,status:statuses.has(report.status)?report.status:"pending",
+      evidence_count:count,source:"conversation_beta"};
+  }
+  async function loadReportQueue(client){
+    if(typeof client?.rpc!=="function")return {ok:false,reason:"invalid_client"};
+    let original;
+    try{original=await client.rpc("get_xoxo_dm_reports");}
+    catch{return {ok:false,reason:"legacy_reports_unavailable"};}
+    if(original?.error || !Array.isArray(original?.data))return {ok:false,reason:"legacy_reports_unavailable"};
+    const reports=original.data.map(normalizeLegacy).filter(Boolean);
+    let warning=null;
+    try{
+      const extra=await client.rpc("xoxo_admin_list_conversation_reports_beta");
+      if(extra?.error){
+        if(!["PGRST202","42883"].includes(String(extra.error.code)))warning="conversation_reports_unavailable";
+      }else if(Array.isArray(extra?.data)){
+        reports.push(...extra.data.map(normalizeConversation).filter(Boolean));
+      }else warning="conversation_reports_invalid_response";
+    }catch{warning="conversation_reports_unavailable";}
+    reports.sort((a,b)=>{
+      const aTime=Date.parse(a.created_at||"");const bTime=Date.parse(b.created_at||"");
+      return (Number.isFinite(bTime)?bTime:0)-(Number.isFinite(aTime)?aTime:0);
+    });
+    return {ok:true,reports,warning};
+  }
+  async function updateReportStatus(client,report,status){
+    if(typeof client?.rpc!=="function" || !report || !uuid(report.id) ||
+       !statuses.has(status) || !Object.hasOwn(rpcBySource,report.source))return {ok:false,reason:"invalid_request"};
+    try{
+      const result=await client.rpc(rpcBySource[report.source],{p_report_id:report.id,p_status:status});
+      return result?.error || result?.data!==true ? {ok:false,reason:"status_update_failed"}:{ok:true};
+    }catch{return {ok:false,reason:"status_update_failed"};}
+  }
+  return Object.freeze({loadReportQueue,updateReportStatus});
+});
