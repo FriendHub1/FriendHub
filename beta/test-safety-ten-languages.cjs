@@ -61,6 +61,14 @@ const dictionaries = {
   admin: window.XOXOAdminConversationReportsBeta.translations,
   activeAdmin: activeAdminRoot.XOXOActiveAdminSafetyCopyBeta
 };
+const missingEvidenceCopy=activeAdminRoot.XOXOActiveAdminSafetyMissingEvidenceCopyBeta;
+assert.deepEqual(Object.keys(missingEvidenceCopy).sort(),[...locales].sort(),
+  "deleted/unavailable evidence notice must support all ten site languages");
+for(const locale of locales)assert.ok(
+  missingEvidenceCopy[locale].includes("{count}") &&
+  missingEvidenceCopy[locale].length>25,
+  "missing localized unavailable-evidence count for "+locale
+);
 for (const [section, dictionary] of Object.entries(dictionaries)) {
   assert.deepEqual(Object.keys(dictionary).sort(), [...locales].sort(),
     section + " must have exactly the 10 enabled language keys");

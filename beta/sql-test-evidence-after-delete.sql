@@ -123,6 +123,54 @@ begin
 end $deleted_receipt$;
 
 reset role;
+-- Even after the source DM was physically removed, a PIN-authorized admin
+-- can see how many selected IDs are missing WITHOUT reading/copying content.
+-- Earlier tests can create over 100 reports, so navigate real cursor pages.
+update public.xoxo_moderation_pin_security
+   set verified_until=now()+interval '5 minutes', locked_until=null
+ where admin_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid;
+set role authenticated;
+select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
+select set_config('request.jwt.claim.session_id','cccccccc-0000-4000-8000-000000000003',false);
+do $missing_evidence_queue$
+declare
+  v_report uuid:=current_setting('xoxo.safety_delete_report_id')::uuid;
+  v_cursor jsonb:=null;
+  v_page jsonb;
+  v_row jsonb;
+  v_found boolean:=false;
+begin
+  for attempt in 1..20 loop
+    v_page:=public.xoxo_admin_page_conversation_reports_beta(
+      'Reviewing unavailable evidence after physical DM deletion',
+      (v_cursor->>'pending')::boolean,
+      (v_cursor->>'created_at')::timestamptz,
+      (v_cursor->>'id')::uuid,50
+    );
+    select evidence into v_row from jsonb_array_elements(v_page->'reports') evidence
+     where evidence->>'id'=v_report::text;
+    if v_row is not null then
+      if (v_row->>'unavailable_evidence_count')::integer<>1 then
+        raise exception 'BUG: missing DM evidence count was not retained in PIN queue';
+      end if;
+      if v_row ? 'content' or v_row ? 'attachment_path' then
+        raise exception 'BUG: PIN report metadata exposed DM content';
+      end if;
+      v_found:=true;
+      exit;
+    end if;
+    exit when not coalesce((v_page->>'has_more')::boolean,false);
+    v_cursor:=v_page->'next_cursor';
+    if v_cursor is null then
+      raise exception 'BUG: report pagination lost its next cursor';
+    end if;
+  end loop;
+  if not v_found then
+    raise exception 'BUG: deleted-message evidence report vanished from admin pages';
+  end if;
+end $missing_evidence_queue$;
+
+reset role;
 do $final_integrity$
 declare v_report uuid:=current_setting('xoxo.safety_delete_report_id')::uuid;
 begin

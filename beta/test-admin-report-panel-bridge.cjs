@@ -6,6 +6,7 @@ const source=fs.readFileSync(require("node:path").join(__dirname,"admin-report-p
 const reporter="33333333-3333-4333-8333-333333333333",peer="44444444-4444-4444-8444-444444444444";
 const report={id:"22222222-2222-4222-8222-222222222222",reporter_id:reporter,reported_user_id:peer,
  reason:"Scam or money requests",details:"Reported",status:"pending",evidence_count:2,
+ unavailable_evidence_count:1,
  evidence_message_ids:["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2"],
  created_at:"2026-10-24T12:00:00Z",source:"conversation_beta"};
 function element(tag){
@@ -73,6 +74,8 @@ function element(tag){
  assert.equal(calls.queue,beforeSecondRender+1);
  assert.equal(list.children.length,2,"repeated renders must not duplicate BETA reports");
  const card=list.querySelectorAll("[data-xoxo-conversation-beta-report]")[0];
+ assert.ok(card.children.some(x=>x.textContent.includes("1 mensaje(s) seleccionado(s) ya no están")),
+   "PIN-authorized admin must see the localized unavailable-evidence count");
  const actions=card.children.find(x=>x.className==="xmm-report-actions");
  actions.children[0].listeners.click();
  assert.equal(calls.pin,1,"the existing PIN-gated viewer must be reused");

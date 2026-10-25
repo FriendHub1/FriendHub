@@ -273,7 +273,16 @@ begin
     into v_rows
   from (
     select r.id, r.reporter_id, r.other_user_id as reported_user_id,
-           r.reason_code, r.details, r.message_ids, r.status, r.created_at
+           r.reason_code, r.details, r.message_ids, r.status, r.created_at,
+           -- A deleted DM leaves immutable evidence metadata, not its body.
+           -- Tell the PIN-authorized moderator how many selected messages
+           -- no longer exist; never read or copy private message contents.
+           (select count(*)::integer
+              from pg_catalog.unnest(r.message_ids) as selected(message_id)
+             where not exists (
+               select 1 from public.direct_messages dm
+                where dm.id=selected.message_id
+             )) as unavailable_evidence_count
       from xoxo_safety_private.conversation_reports r
       order by (r.status = 'pending') desc, r.created_at desc, r.id desc
       limit 100
@@ -431,6 +440,12 @@ begin
   with batch as materialized (
     select r.id, r.reporter_id, r.other_user_id as reported_user_id,
       r.reason_code, r.details, r.message_ids, r.status, r.created_at,
+      (select count(*)::integer
+         from pg_catalog.unnest(r.message_ids) as selected(message_id)
+        where not exists (
+          select 1 from public.direct_messages dm
+           where dm.id=selected.message_id
+        )) as unavailable_evidence_count,
       (r.status = 'pending') as sort_pending
     from xoxo_safety_private.conversation_reports r
     where p_after_id is null

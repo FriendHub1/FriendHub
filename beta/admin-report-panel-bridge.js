@@ -20,15 +20,29 @@
     sv:{title:"Konversationsanmälan",by:"Anmält av",target:"Anmäld användare",reason:"Orsak",details:"Ytterligare information",empty:"Inga detaljer",evidence:"Valda bevis",units:"meddelande(n)",view:"🔐 Öppna i befintlig modereringsvy",unlock:"🔐 Verifiera PIN för att granska anmälningar",saving:"Sparar…",saveFailed:"Det gick inte att uppdatera anmälan.",unavailable:"Stay Safe BETA: anmälningar är ännu inte tillgängliga i Supabase.",retryPin:"Det gick inte att läsa in anmälningar. Verifiera PIN igen.",more:"Läs in fler anmälningar",loadingMore:"Läser in fler anmälningar…",confirm:"Ändra anmälans status till ",statuses:{pending:"Väntar",reviewed:"Granskad",resolved:"Löst",dismissed:"Avvisad"},actions:{pending:"↺ Öppna igen",reviewed:"✓ Markera granskad",resolved:"✓ Lös",dismissed:"× Avvisa"},reasons:["Bedrägeri eller begäran om pengar","Hot eller utpressning","Trakasserier eller oönskade meddelanden","Falsk profil eller identitet","Hot med intima bilder","Annat"]},
     it:{title:"Segnalazione conversazione",by:"Segnalato da",target:"Utente segnalato",reason:"Motivo",details:"Dettagli aggiuntivi",empty:"Nessun dettaglio",evidence:"Prove selezionate",units:"messaggio/i",view:"🔐 Apri nel visualizzatore di moderazione esistente",unlock:"🔐 Verifica il PIN per consultare le segnalazioni",saving:"Salvataggio…",saveFailed:"Impossibile aggiornare la segnalazione.",unavailable:"Stay Safe BETA: le segnalazioni non sono ancora disponibili su Supabase.",retryPin:"Impossibile caricare le segnalazioni. Verifica di nuovo il PIN.",more:"Carica altre segnalazioni",loadingMore:"Caricamento segnalazioni…",confirm:"Cambiare lo stato della segnalazione in ",statuses:{pending:"In attesa",reviewed:"Esaminata",resolved:"Risolta",dismissed:"Respinta"},actions:{pending:"↺ Riapri",reviewed:"✓ Segna esaminata",resolved:"✓ Risolvi",dismissed:"× Respingi"},reasons:["Truffa o richieste di denaro","Minacce o ricatto","Molestie o messaggi indesiderati","Profilo o identità falsa","Minacce con foto intime","Altro"]}
   };
-  function localized(){
+  const UNAVAILABLE_EVIDENCE_COPY=Object.freeze({
+    en:"{count} selected message(s) are no longer in this conversation.",
+    es:"{count} mensaje(s) seleccionado(s) ya no están en esta conversación.",
+    "pt-BR":"{count} mensagem(ns) selecionada(s) não está(ão) mais nesta conversa.",
+    fr:"{count} message(s) sélectionné(s) ne sont plus dans cette conversation.",
+    pl:"{count} wybranych wiadomości nie ma już w tej rozmowie.",
+    de:"{count} ausgewählte Nachricht(en) sind nicht mehr in dieser Unterhaltung.",
+    cs:"{count} vybraných zpráv už není v této konverzaci.",
+    no:"{count} valgte meldinger finnes ikke lenger i denne samtalen.",
+    sv:"{count} valda meddelanden finns inte längre i den här konversationen.",
+    it:"{count} messaggi selezionati non sono più in questa conversazione."
+  });
+  function localizedCode(){
     let code = typeof getFriendHubLanguage==="function" ? String(getFriendHubLanguage()) : "en";
     if (/^pt(-|$)/i.test(code)) code="pt-BR";
     else if (/^(nb|nn|no)(-|$)/i.test(code)) code="no";
     else code=code.split("-")[0].toLowerCase();
-    return COPY[code] || COPY.en;
+    return COPY[code]?code:"en";
   }
+  function localized(){return COPY[localizedCode()];}
   // Static translations only; safe to expose for independent coverage tests.
   window.XOXOActiveAdminSafetyCopyBeta = Object.freeze(COPY);
+  window.XOXOActiveAdminSafetyMissingEvidenceCopyBeta = UNAVAILABLE_EVIDENCE_COPY;
 
   function node(tag,text,className){
     const el=document.createElement(tag);
@@ -55,6 +69,12 @@
       (report.created_at?new Date(report.created_at).toLocaleString():""),"xmm-report-meta"));
     card.append(node("div",t.details+": "+(report.details?.trim()||t.empty),"xmm-report-details"));
     card.append(node("div",t.evidence+": "+(report.evidence_count??"—")+" "+t.units,"xmm-report-meta"));
+    if(Number.isInteger(report.unavailable_evidence_count) &&
+       report.unavailable_evidence_count>0){
+      const label=UNAVAILABLE_EVIDENCE_COPY[localizedCode()].replace(
+        "{count}",String(report.unavailable_evidence_count));
+      card.append(node("div","⚠️ "+label,"xmm-report-feedback"));
+    }
     const actions=node("div","","xmm-report-actions");
     const feedback=node("div","","xmm-report-feedback");
     const view=node("button",t.view);

@@ -39,6 +39,7 @@ const required = [
   ["existing moderation audit", /insert into public\.xoxo_message_access_log/i],
   ["report queue read audited", /conversation_report_queue:view count=/i],
   ["paginated queue RPC", /create or replace function public\.xoxo_admin_page_conversation_reports_beta\(/i],
+  ["server counts physically unavailable selected evidence", /as unavailable_evidence_count/i],
   ["keyset comparison", /\(\(r\.status = 'pending'\), r\.created_at, r\.id\)\s*<\s*\(p_after_pending, p_after_created_at, p_after_id\)/i],
   ["page size capped", /p_limit not between 1 and 50/i],
   ["page audit", /conversation_report_page:view count=/i],
@@ -69,6 +70,10 @@ assert.equal((source.match(/pg_catalog\.length\(v_reason\) not between 10 and 30
   "All three admin RPCs must reject missing, short or oversized moderation reasons");
 assert.equal((source.match(/v_reason\s*~\s*'\[\[:cntrl:\]\]'/g)||[]).length,3,
   "All three admin RPCs must reject multiline/control-character audit log injection");
+assert.equal((source.match(/as unavailable_evidence_count/g)||[]).length,2,
+  "both PIN-gated queue RPCs must report selected evidence no longer present");
+assert.doesNotMatch(source,/select\s+dm\.(?:content|attachment_path)\b/i,
+  "PIN report list may count unavailable evidence IDs, never read DM bodies or media paths");
 assert.match(source,/revoke all on function public\.xoxo_admin_list_conversation_reports_beta\(text\)/i);
 assert.match(source,/revoke all on function public\.xoxo_admin_update_conversation_report_beta\(uuid, text, text\)/i);
 assert.match(source,/revoke all on function\s+public\.xoxo_admin_page_conversation_reports_beta\(\s*text,boolean,timestamptz,uuid,integer\)/i);

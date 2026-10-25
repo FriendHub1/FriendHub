@@ -12,7 +12,7 @@ const updateReportStatus=(client,report,status)=>updateUnwrapped(
 const legacyId="11111111-1111-4111-8111-111111111111",betaId="22222222-2222-4222-8222-222222222222";
 const reporter="33333333-3333-4333-8333-333333333333",peer="44444444-4444-4444-8444-444444444444";
 const legacy={id:legacyId,reporter_id:reporter,reported_user_id:peer,reason:"spam",created_at:"2026-10-20T00:00:00Z",status:"pending"};
-const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,details:"Scary message",status:"pending",message_ids:["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3"],created_at:"2026-10-21T00:00:00Z"};
+const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,details:"Scary message",status:"pending",message_ids:["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3"],unavailable_evidence_count:1,created_at:"2026-10-21T00:00:00Z"};
 (async()=>{
   const names=[];
   const both=await loadReportQueue({rpc:async(name)=>{names.push(name);return {data:name==="get_xoxo_dm_reports"?[legacy]:[beta],error:null};}});
@@ -56,12 +56,20 @@ const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,d
   assert.deepEqual(both.reports.map(x=>x.source),["conversation_beta","message"]);
   assert.equal(both.reports[0].reason,"Threats or blackmail");
   assert.equal(both.reports[0].evidence_count,3);
+  assert.equal(both.reports[0].unavailable_evidence_count,1,
+    "the PIN-only queue must retain the count of physically unavailable evidence");
   assert.deepEqual(both.reports[0].evidence_message_ids,beta.message_ids,
     "selected evidence IDs must reach the existing admin viewer");
   assert.equal(both.reports[0].message_ids,undefined,
     "the normalized admin payload should expose only validated evidence IDs");
   const duplicateEvidence=await loadReportQueue({rpc:async name=>({data:name==="get_xoxo_dm_reports"?[legacy]:[{...beta,message_ids:[beta.message_ids[0],beta.message_ids[0]]}],error:null})});
   assert.equal(duplicateEvidence.reports.length,1,"duplicate evidence must be rejected");
+  for(const badCount of [-1,4,1.5,"1",null]){
+    const invalidMissing=await loadReportQueue({rpc:async name=>({data:name==="get_xoxo_dm_reports"?[legacy]:[{...beta,unavailable_evidence_count:badCount}],error:null})});
+    assert.equal(invalidMissing.warning,"conversation_reports_invalid_response",
+      "invalid unavailable-evidence count must fail closed");
+    assert.equal(invalidMissing.reports.length,1);
+  }
   const betaOnlyCalls=[];
   const betaOnly=await loadReportQueue({rpc:async name=>{
     betaOnlyCalls.push(name);

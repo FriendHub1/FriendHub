@@ -51,10 +51,18 @@
       count=report.evidence_count;
     }
     if(count===null)return null;
+    let unavailableCount=null;
+    if(Object.hasOwn(report,"unavailable_evidence_count")){
+      if(!Number.isInteger(report.unavailable_evidence_count) ||
+         report.unavailable_evidence_count<0 ||
+         report.unavailable_evidence_count>count)return null;
+      unavailableCount=report.unavailable_evidence_count;
+    }
     return {id:report.id,reporter_id:report.reporter_id,reported_user_id:reportedId,
       reason:reasons[report.reason_code],reason_code:report.reason_code,details:report.details,
       created_at:report.created_at,status:report.status,
       evidence_count:count,evidence_message_ids:evidenceMessageIds,
+      unavailable_evidence_count:unavailableCount,
       source:"conversation_beta"};
   }
   async function loadReportQueue(client,{includeLegacy=true,moderationReason}={}){
