@@ -112,9 +112,49 @@ jobs:
         run: python3 beta/test-safety-postgrest-pagination.py
       - name: Check immutable report metadata after physical DM deletion in disposable database
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-evidence-after-delete.sql
-      - name: Clean up disposable PostgREST container
+      - name: Run real Supabase GoTrue Auth in a separate disposable database
+        env:
+          XOXO_HTTP_JWT_KEY: xoxo-local-ci-jwt-secret-not-for-production-1234567890
+        run: |
+          set -euo pipefail
+          test "${PGDATABASE}" = xoxo_safety_test
+          psql -X -v ON_ERROR_STOP=1 -c "create database xoxo_gotrue_ci"
+          psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -c "create schema if not exists auth"
+          docker run -d --name xoxo-safety-ci-gotrue --network host \
+            -e GOTRUE_API_HOST=127.0.0.1 \
+            -e GOTRUE_API_PORT=9999 \
+            -e API_EXTERNAL_URL=http://127.0.0.1:9999 \
+            -e GOTRUE_DB_DRIVER=postgres \
+            -e GOTRUE_DB_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5432/xoxo_gotrue_ci?sslmode=disable" \
+            -e GOTRUE_SITE_URL=http://127.0.0.1:9999 \
+            -e GOTRUE_DISABLE_SIGNUP=false \
+            -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true \
+            -e GOTRUE_MAILER_AUTOCONFIRM=true \
+            -e GOTRUE_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
+            -e GOTRUE_JWT_AUD=authenticated \
+            -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
+            -e GOTRUE_JWT_EXP=3600 \
+            -e GOTRUE_LOG_LEVEL=warn \
+            supabase/gotrue:v2.197.0
+          ready=0
+          for i in $(seq 1 60); do
+            if curl --max-time 2 -fsS http://127.0.0.1:9999/health >/dev/null 2>&1; then
+              ready=1;break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            docker logs --tail 80 xoxo-safety-ci-gotrue
+            echo "ERROR: isolated Supabase GoTrue did not start" >&2
+            exit 1
+          fi
+      - name: Verify genuine Auth-issued access token through signed local PostgREST
+        run: python3 beta/test-safety-gotrue-auth-http.py
+      - name: Clean up disposable PostgREST and GoTrue containers
         if: always()
-        run: docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
+        run: |
+          docker rm -f xoxo-safety-ci-gotrue 2>/dev/null || true
+          docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
 
   safety-browser:
     runs-on: ubuntu-latest
