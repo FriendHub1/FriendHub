@@ -32,9 +32,16 @@ async function exercise(browser,engine){
   );
   await page.evaluate(({sample,reason})=>{
    window.xoxoIsAdmin=true;
+   window.currentUser=null;
+   window.__adminAuthId="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
    window.getFriendHubLanguage=()=> "es";
    window.confirm=()=>true;
    window.__authEvents=null;
+   window.__emitAuth=(event,session)=>{
+     // The original SPA registers before the BETA and updates this first.
+     window.currentUser=session?.user||null;
+     window.__authEvents(event,session);
+   };
    window.__holdQueue=false;
    window.__holdStatus=false;
    window.__queueResolve=null;
@@ -88,12 +95,31 @@ async function exercise(browser,engine){
   },{sample,reason});
   await page.addScriptTag({path:path.join(__dirname,"admin-report-panel-bridge.js")});
   assert.equal(await page.evaluate(()=>typeof window.__authEvents),"function");
-  await page.evaluate(()=>window.__authEvents("INITIAL_SESSION",{
-    user:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}
-  }));
   await page.evaluate(()=>window.loadXoxoDmReports());
   assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0,
     engine+" private cards opened without PIN");
+  assert.equal(await page.locator("[data-xoxo-safety-report-unlock]").count(),0,
+    engine+" exposed a BETA PIN action before Auth INITIAL_SESSION");
+  await page.evaluate(()=>window.__emitAuth("INITIAL_SESSION",null));
+  assert.equal(await page.locator("[data-xoxo-safety-report-unlock]").count(),0,
+    engine+" exposed a BETA PIN action for missing initial session");
+  await page.evaluate(()=>window.__emitAuth("INITIAL_SESSION",{
+    user:{id:window.__adminAuthId,is_anonymous:true}
+  }));
+  assert.equal(await page.locator("[data-xoxo-safety-report-unlock]").count(),0,
+    engine+" exposed moderator action to anonymous Auth session");
+  await page.evaluate(()=>{
+    window.currentUser={id:window.__adminAuthId};
+    window.__authEvents("INITIAL_SESSION",{
+      user:{id:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",is_anonymous:false}
+    });
+  });
+  assert.equal(await page.locator("[data-xoxo-safety-report-unlock]").count(),0,
+    engine+" trusted a Supabase session belonging to a different displayed account");
+  await page.evaluate(()=>window.__emitAuth("INITIAL_SESSION",{
+    user:{id:window.__adminAuthId,is_anonymous:false}
+  }));
+  assert.equal(await page.locator("[data-xoxo-safety-report-unlock]").count(),1);
   assert.equal(await page.locator("#preserved-legacy-moderation").count(),1);
   await page.locator("[data-xoxo-safety-report-unlock]").click();
   await page.locator("[data-xoxo-conversation-beta-report]").waitFor();
@@ -101,8 +127,8 @@ async function exercise(browser,engine){
 
   // TOKEN_REFRESHED can keep the exact same user. PIN-protected report
   // metadata must not remain in the DOM across an updated Auth session.
-  await page.evaluate(()=>window.__authEvents("TOKEN_REFRESHED",{
-    user:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}
+  await page.evaluate(()=>window.__emitAuth("TOKEN_REFRESHED",{
+    user:{id:window.__adminAuthId}
   }));
   assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0,
     engine+" retained PIN-protected cards after same-user token refresh");
@@ -148,8 +174,8 @@ async function exercise(browser,engine){
   await page.waitForFunction(()=>typeof window.__queueResolve==="function");
   assert.equal(await page.locator("[data-xoxo-conversation-beta-report]").count(),0);
   await page.evaluate(()=>{
-   window.__authEvents("TOKEN_REFRESHED",{
-     user:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"}
+   window.__emitAuth("TOKEN_REFRESHED",{
+     user:{id:window.__adminAuthId}
    });
    window.__queueResolve({ok:true,reports:[window.__testRow||{
     id:"dddddddd-dddd-4ddd-8ddd-000000000001",
@@ -173,7 +199,7 @@ async function exercise(browser,engine){
   await page.locator(".xmm-report-actions button").nth(1).click();
   await page.waitForFunction(()=>typeof window.__statusResolve==="function");
   await page.evaluate(()=>{
-    window.__authEvents("SIGNED_OUT",null);
+   window.__emitAuth("SIGNED_OUT",null);
     window.__statusResolve({ok:true});
     window.__holdStatus=false;
   });
@@ -182,6 +208,11 @@ async function exercise(browser,engine){
   assert.equal(await page.evaluate(()=>window.__loadCount),before,
     engine+" late status update reloaded admin reports after logout");
 
+  assert.equal(await page.locator("[data-xoxo-safety-report-unlock]").count(),0,
+    engine+" left a BETA PIN prompt after logout");
+  await page.evaluate(()=>window.__emitAuth("SIGNED_IN",{
+    user:{id:window.__adminAuthId,is_anonymous:false}
+  }));
   await page.locator("[data-xoxo-safety-report-unlock]").click();
   await page.locator("[data-xoxo-conversation-beta-report]").waitFor();
   await page.evaluate(()=>window.dispatchEvent(new Event("pagehide")));
@@ -198,7 +229,7 @@ async function exercise(browser,engine){
   await page.locator("[data-xoxo-safety-report-unlock]").click();
   await page.waitForFunction(()=>typeof window.__pinResolve==="function");
   await page.evaluate(({reason})=>{
-    window.__authEvents("SIGNED_OUT",null);
+    window.__emitAuth("SIGNED_OUT",null);
     window.__pinResolve({reason});
     window.__holdPin=false;
   },{reason});

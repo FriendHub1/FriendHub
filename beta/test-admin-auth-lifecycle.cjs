@@ -95,6 +95,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
    MutationObserver:Observer,
    Date:TestDate,
    supabaseClient:{auth},
+   currentUser:null,
    get xoxoIsAdmin(){return admin;},
    getFriendHubLanguage:()=>"es",
    xoxoModerationPinAuthorize:async()=>{
@@ -116,8 +117,22 @@ function tick(){return new Promise(done=>setImmediate(done))}
  const cards=()=>sel("[data-xoxo-conversation-beta-report]").length;
  const unlock=()=>sel("[data-xoxo-safety-report-unlock]")[0];
  const authorize=async()=>{await unlock().listeners.click();assert.equal(cards(),1)};
- const login=user=>authChange("SIGNED_IN",{user:{id:user}});
- authChange("INITIAL_SESSION",{user:{id:adminA}});
+ const authEvent=(event,session)=>{
+   // The original SPA listens first and updates currentUser synchronously.
+   context.currentUser=session?.user||null;
+   authChange(event,session);
+ };
+ const login=user=>authEvent("SIGNED_IN",{user:{id:user}});
+ await context.window.loadXoxoDmReports();
+ assert.equal(unlock(),undefined,"before Supabase INITIAL_SESSION, no BETA PIN action");
+ authEvent("INITIAL_SESSION",null);
+ assert.equal(unlock(),undefined,"missing Auth session must not unlock moderation reports");
+ authEvent("INITIAL_SESSION",{user:{id:adminA,is_anonymous:true}});
+ assert.equal(unlock(),undefined,"anonymous Auth session must not unlock admin reports");
+ context.currentUser={id:adminA};
+ authChange("INITIAL_SESSION",{user:{id:adminB,is_anonymous:false}});
+ assert.equal(unlock(),undefined,"session ID must match currently displayed admin account");
+ authEvent("INITIAL_SESSION",{user:{id:adminA}});
  await context.window.loadXoxoDmReports();
  assert.equal(cards(),0);
  await authorize();
@@ -148,7 +163,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
  await tick();
  assert.equal(cards(),0);
  assert.equal(typeof resolveFetch,"function");
- authChange("SIGNED_OUT",null);
+ authEvent("SIGNED_OUT",null);
  assert.equal(cards(),0,"logout while request pending leaked report cards");
  fetchDeferred=false;
  const delayed=resolveFetch;
@@ -156,7 +171,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
  delayed({ok:true,reports:[report]});
  await tick();await tick();
  assert.equal(cards(),0,"stale post-logout HTTP response repainted private cards");
- assert.ok(unlock(),"signed-out user must reauthorize");
+ assert.equal(unlock(),undefined,"signed-out user must not receive a BETA PIN prompt");
 
  // The OS/browser page-hide event also removes previously authorized rows.
  login(adminA);
@@ -187,7 +202,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
  await tick();
  assert.equal(counts.statusUpdates,1);
  assert.equal(typeof resolveStatus,"function");
- authChange("SIGNED_OUT",null);
+ authEvent("SIGNED_OUT",null);
  assert.equal(cards(),0);
  const finishStatus=resolveStatus;
  resolveStatus=null;
@@ -197,7 +212,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
  assert.equal(counts.legacy,beforeStatusReload,
    "Late status-write success from old login must not reload admin reports");
  assert.equal(cards(),0);
- assert.ok(unlock());
+ assert.equal(unlock(),undefined,"signed-out user must not retain the BETA unlock control");
  actions.children[0].listeners.click();
  assert.equal(counts.viewer,0,
    "Detached conversation button from previous PIN session must be inert");

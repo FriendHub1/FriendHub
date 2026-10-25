@@ -29,6 +29,7 @@ function element(tag){
  const calls={legacy:0,queue:0,pin:0,unlock:0,updates:0};
  let betaAvailable=true,admin=true,legacyFails=false,updateFails=false;
  let emitAuth=()=>{};
+ const sameAdmin="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;if(legacyFails)throw Error("legacy loader failed");list.children=[element("legacy-card")];},
    xoxoDmMakeMessage:(message)=>{const bubble=element("article");bubble.textContent=message.content;return bubble;},
@@ -43,6 +44,7 @@ function element(tag){
       calls.updates++;return updateFails?{ok:false}:{ok:true};}}},
   document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xmmMessages"?viewer:id==="xoxoAdminModeration"?moderation:null},
   supabaseClient:{auth:{onAuthStateChange:fn=>{emitAuth=fn;}}},
+  currentUser:{id:sameAdmin},
   get xoxoIsAdmin(){return admin;},
   getFriendHubLanguage:()=> "es",
   xoxoModerationPinAuthorize:async()=>{calls.unlock++;return {reason:"Report queue moderation access"};},
@@ -50,6 +52,7 @@ function element(tag){
  };
  vm.runInNewContext(source,context);
  assert.equal(context.window.__xoxoAdminReportBridgeBetaInstalled,true);
+ emitAuth("INITIAL_SESSION",{user:{id:sameAdmin}});
  await context.window.loadXoxoDmReports();
  assert.equal(calls.legacy,1);
  assert.equal(calls.queue,0,"MUST NOT fetch report metadata before PIN verification");
@@ -149,7 +152,6 @@ function element(tag){
  await context.window.loadXoxoDmReports();
  assert.equal(calls.queue,beforeNonAdmin,"non-admin reload must not request report metadata");
  admin=true;
- const sameAdmin="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
  emitAuth("INITIAL_SESSION",{user:{id:sameAdmin}});
  await context.window.loadXoxoDmReports();
  await list.querySelectorAll("[data-xoxo-safety-report-unlock]")[0].listeners.click();

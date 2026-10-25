@@ -154,8 +154,16 @@
       }
     }
 
+    let accountId=null;
+    let authReady=false;
     function isActiveAdmin(){
-      return typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
+      // A remembered SPA admin flag is not proof of the CURRENT Auth session.
+      // Do not offer a BETA PIN prompt or report RPC until INITIAL_SESSION /
+      // SIGNED_IN confirms the same, non-anonymous displayed account.
+      const displayedId=typeof currentUser!=="undefined" &&
+        typeof currentUser?.id==="string" ? currentUser.id : null;
+      return authReady && !!accountId && displayedId===accountId &&
+        typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
         !!document.getElementById("xoxoAdminModeration")?.classList.contains("active");
     }
     function reportList(){
@@ -167,6 +175,7 @@
       for(const item of list.querySelectorAll("[data-xoxo-conversation-beta-report]"))item.remove();
       for(const item of list.querySelectorAll("[data-xoxo-safety-report-notice]"))item.remove();
       for(const item of list.querySelectorAll("[data-xoxo-safety-load-more]"))item.remove();
+      for(const item of list.querySelectorAll("[data-xoxo-safety-report-unlock]"))item.remove();
     }
     function invalidate(){
       if(pinExpiryTimer!==null && typeof window.clearTimeout==="function")
@@ -244,13 +253,15 @@
     // Supabase Auth events are synchronous notifications. Drop sensitive BETA
     // cards immediately when a session is signed out/switched; incrementing
     // generation means an older, in-flight RPC can NEVER repaint them.
-    let accountId=null;
     if(typeof supabaseClient!=="undefined" &&
        typeof supabaseClient?.auth?.onAuthStateChange==="function"){
       supabaseClient.auth.onAuthStateChange((event,session)=>{
-        const nextId=typeof session?.user?.id==="string"?session.user.id:null;
+        const nextId=event!=="SIGNED_OUT" && event!=="USER_DELETED" &&
+          session?.user?.is_anonymous!==true &&
+          typeof session?.user?.id==="string"?session.user.id:null;
         const changed=nextId!==accountId;
         accountId=nextId;
+        authReady=!!nextId;
         // Token refresh retains the SAME user ID. Revoke the previous PIN
         // display epoch anyway: an admin session must reauthorize its private
         // report metadata after credentials are replaced or reissued.

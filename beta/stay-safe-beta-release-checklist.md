@@ -314,3 +314,10 @@ Tests include:
 - The admin queue bridge now invalidates its private report cards, selected-evidence highlights, pagination cursor and in-flight RPC generation on `TOKEN_REFRESHED` and `INITIAL_SESSION`. A renewed session must use the **existing moderation PIN dialog** before loading BETA reports again; the original DM viewer and its messages are not cleared or duplicated.
 - Node DOM regression and native Chromium/WebKit checks cover the same-account token change, immediate removal of mounted evidence badges and rejection of an older in-flight queue response. The separate server-side PIN/session checks remain mandatory on every request.
 - No live Supabase migration, user-message changes, real report writes or Cloudflare production deployment are involved.
+
+### Bind BETA admin report unlock to initialized, matching Supabase Auth (2026-10-25)
+
+- Hardened the existing-panel BETA bridge against the same pre-`INITIAL_SESSION` gap already closed in the user-facing report preview. The admin BETA PIN action and report queue are now **absent until Supabase confirms a non-anonymous session matching `currentUser.id`** and the site's original `xoxoIsAdmin`/moderation-section checks also pass.
+- A null session, anonymous session, different displayed-account ID or sign-out immediately invalidates sensitive BETA cards, evidence badges and even stale BETA unlock buttons. A subsequently confirmed account must use the unchanged original moderation PIN/reason dialog; the original DM viewer and legacy reports are not removed.
+- Node lifecycle/pagination regressions plus native WebKit/Chromium browser checks explicitly simulate missing and mismatched initial sessions, anonymous accounts, logout, later legitimate login and preserved legacy moderation UI. Authorization still happens **again server-side** for each queue RPC.
+- Entirely BETA frontend/test hardening. Does not install SQL, enable report writes or change the real Auth project, Cloudflare Worker or production panel.

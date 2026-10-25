@@ -79,11 +79,13 @@ function pause(){return new Promise(r=>setImmediate(r))}
        data:{subscription:{unsubscribe(){}}}
      };}
    }},
+   currentUser:{id:reporter},
    xoxoIsAdmin:true,
    getFriendHubLanguage:()=>"es",
    xoxoModerationPinAuthorize:async()=>{calls.pin++;return {reason}}
  };
  vm.runInNewContext(source,context);
+ authChanged("INITIAL_SESSION",{user:{id:reporter}});
  const sel=name=>list.querySelectorAll(name);
  await context.window.loadXoxoDmReports();
  assert.equal(calls.page,0);
@@ -144,6 +146,7 @@ function pause(){return new Promise(r=>setImmediate(r))}
  const delayedAfterLogout=resolver;
  assert.equal(typeof delayedAfterLogout,"function");
  resolver=null;
+ context.currentUser=null;
  authChanged("SIGNED_OUT",null);
  delayedAfterLogout({ok:true,reports:more1,hasMore:true,
     nextCursor:adapter.cursorAfter(more1.at(-1))});
@@ -151,7 +154,8 @@ function pause(){return new Promise(r=>setImmediate(r))}
  assert.equal(sel("[data-xoxo-conversation-beta-report]").length,0,
    "Late continuation response after logout must never repaint 150 private cards");
  assert.equal(sel("[data-xoxo-safety-load-more]").length,0);
- assert.equal(sel("[data-xoxo-safety-report-unlock]").length,1);
+ assert.equal(sel("[data-xoxo-safety-report-unlock]").length,0,
+   "signed-out admin must not see a BETA PIN control");
  assert.equal(list.children[0].tag,"legacy-report");
 
  const translations=context.window.XOXOActiveAdminSafetyCopyBeta;
