@@ -24,7 +24,8 @@ jobs:
           node-version: "22"
       - name: Check JavaScript syntax
         run: |
-          for f in beta/*.cjs; do node --check "$f"; done
+          node --check worker.js
+          for f in beta/*.cjs beta/*.js; do node --check "$f"; done
       - name: Run report evidence regression suites
         run: |
           set -eu
