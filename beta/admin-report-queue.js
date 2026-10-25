@@ -22,7 +22,10 @@
     const reportedId=report?.reported_user_id || report?.other_user_id;
     if(!report || !uuid(report.id) || !uuid(report.reporter_id) || !uuid(reportedId) ||
        report.reporter_id.toLowerCase()===reportedId.toLowerCase() ||
-       !Number.isInteger(report.reason_code) || report.reason_code<0 || report.reason_code>5)
+       !Number.isInteger(report.reason_code) || report.reason_code<0 || report.reason_code>5 ||
+       typeof report.details!=="string" || report.details.length>2000 ||
+       !statuses.has(report.status) || typeof report.created_at!=="string" ||
+       !Number.isFinite(Date.parse(report.created_at)))
       return null;
     // The new private-schema RPC returns the selected message IDs, whereas
     // earlier mock adapters returned only evidence_count.
@@ -39,8 +42,8 @@
     }
     if(count===null)return null;
     return {id:report.id,reporter_id:report.reporter_id,reported_user_id:reportedId,
-      reason:reasons[report.reason_code],details:typeof report.details==="string"?report.details:"",
-      created_at:report.created_at,status:statuses.has(report.status)?report.status:"pending",
+      reason:reasons[report.reason_code],reason_code:report.reason_code,details:report.details,
+      created_at:report.created_at,status:report.status,
       evidence_count:count,source:"conversation_beta"};
   }
   async function loadReportQueue(client,{includeLegacy=true}={}){
@@ -62,7 +65,15 @@
         warning=["PGRST202","42883"].includes(String(extra.error.code)) 
           ? "conversation_reports_not_deployed" : "conversation_reports_unavailable";
       }else if(Array.isArray(extra?.data)){
-        reports.push(...extra.data.map(normalizeConversation).filter(Boolean));
+        const normalized=extra.data.map(normalizeConversation);
+        if(normalized.some(item=>!item) || normalized.length>100 ||
+           new Set(normalized.map(item=>item?.id)).size!==normalized.length) {
+          // Fail closed: a malformed or duplicated server response must
+          // never be silently presented as an empty/partial report queue.
+          warning="conversation_reports_invalid_response";
+        } else {
+          reports.push(...normalized);
+        }
       }else warning="conversation_reports_invalid_response";
     }catch{warning="conversation_reports_unavailable";}
     reports.sort((a,b)=>{
