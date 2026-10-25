@@ -160,7 +160,7 @@ function install(){
  observer.observe(messages,{childList:true,subtree:false});
  refresh();
 }
-window.XOXOSafetyChatPreviewBeta=Object.freeze({refresh,openReport,submit,visibleContext,reportWritesEnabled:()=>REPORT_RPC_WRITES_ENABLED});
+window.XOXOSafetyChatPreviewBeta=Object.freeze({refresh,openReport,submit,visibleContext,reportWritesEnabled:()=>REPORT_RPC_WRITES_ENABLED,translations:UI});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});
 else install();
 })();
