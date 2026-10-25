@@ -51,6 +51,26 @@ async function testAdapter() {
   assert.deepEqual(await adapter.submit(test.client, input), { ok: true, reportId });
   assert.deepEqual(test.calls, ["auth", "evidence", "auth", "rpc", "auth"]);
 
+  // The same explicitly selected evidence IDs, clicked in different orders,
+  // must reach Supabase in ONE deterministic UUID order for idempotent retry.
+  const canonical=clientWith({rows:[
+    {id:id1,sender_id:peer,recipient_id:user},
+    {id:id2,sender_id:user,recipient_id:peer}
+  ]});
+  const actualRpcIds=[];
+  canonical.client.rpc=async (_name,params)=>{
+    actualRpcIds.push(params.p_message_ids);
+    return {data:reportId,error:null};
+  };
+  for(const evidenceOrder of [[id2,id1],[id1,id2]]){
+    const response=await adapter.submit(canonical.client,{
+      ...input,messageIds:evidenceOrder
+    });
+    assert.deepEqual(response,{ok:true,reportId});
+  }
+  assert.deepEqual(actualRpcIds,[[id1,id2],[id1,id2]],
+    "Reordering the same evidence must not change the RPC payload");
+
   test = clientWith({ authId: null });
   assert.equal((await adapter.submit(test.client, input)).reason, "authentication_failed");
   assert.deepEqual(test.calls, ["auth"]);
