@@ -57,19 +57,40 @@
   function install(){
     const adapter=window.XOXOAdminReportQueueBeta;
     const original=window.loadXoxoDmReports;
-    if(window.__xoxoAdminReportBridgeBetaInstalled||typeof original!=="function"||!adapter?.loadReportQueue)return;
+    if(window.__xoxoAdminReportBridgeBetaInstalled||
+       typeof original!=="function"||!adapter?.loadReportQueue)return;
     window.__xoxoAdminReportBridgeBetaInstalled=true;
+
     let generation=0;
+    let insideLegacyLoad=0;
     let cached=[];
+    // This only enables attempts to fetch the queue. Actual access is checked
+    // by the PIN-protected Supabase RPC on EVERY retrieval.
     let unlocked=false;
-    let warning=null;
+
     function isActiveAdmin(){
       return typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
         !!document.getElementById("xoxoAdminModeration")?.classList.contains("active");
     }
+    function reportList(){
+      return document.getElementById("xmmReportsList");
+    }
+    function clearBetaUI(){
+      const list=reportList();
+      if(!list)return;
+      for(const item of list.querySelectorAll("[data-xoxo-conversation-beta-report]"))item.remove();
+      for(const item of list.querySelectorAll("[data-xoxo-safety-report-notice]"))item.remove();
+    }
+    function invalidate(){
+      ++generation;
+      cached=[];
+      unlocked=false;
+      clearBetaUI();
+      // Never touch cards owned by the existing DM report renderer.
+    }
     function paintUnlockControl(){
       if(!isActiveAdmin())return;
-      const list=document.getElementById("xmmReportsList");
+      const list=reportList();
       if(!list)return;
       for(const old of list.querySelectorAll("[data-xoxo-safety-report-unlock]"))old.remove();
       if(unlocked)return;
@@ -87,60 +108,102 @@
           // Reuse the EXACT existing PIN + moderation-reason dialog.
           const authorization=await xoxoModerationPinAuthorize(
             typeof getFriendHubLanguage==="function" && getFriendHubLanguage()==="es");
-          if(!authorization?.reason)return;
+          if(!authorization?.reason || !isActiveAdmin())return;
           unlocked=true;
           await window.loadXoxoDmReports();
+        }catch{
+          // PIN failure must not leave a locally unlocked queue.
+          invalidate();
+          paintUnlockControl();
         }finally{action.disabled=false;}
       });
       list.append(action);
     }
     function paintCachedReports(){
-      if(!isActiveAdmin())return;
-      const list=document.getElementById("xmmReportsList");
-      if(!list)return;
-      // The legacy renderer owns legacy cards. Remove only previously
-      // appended BETA cards, so repeated panel renders never duplicate them.
-      for(const card of list.querySelectorAll("[data-xoxo-conversation-beta-report]"))card.remove();
+      const list=reportList();
+      if(!list||!isActiveAdmin())return;
+      clearBetaUI();
       if(!cached.length)return;
       const empty=Array.from(list.querySelectorAll(".xmm-report-feedback"))
         .find(x=>x.textContent.includes("No private-message reports yet"));
       if(empty)empty.remove();
       for(const report of cached)addReportCard(report,list,adapter);
     }
-    // The existing admin dashboard may call renderXoxoDmReports() directly,
-    // clearing the DOM without refreshing. Reapply only cached BETA cards.
+    function showWarning(){
+      const list=reportList();
+      if(!list||!isActiveAdmin())return;
+      for(const item of list.querySelectorAll("[data-xoxo-safety-report-notice]"))item.remove();
+      const message=node("div",
+        "Stay Safe BETA: conversation reports are not available in Supabase yet.",
+        "xmm-report-feedback");
+      message.setAttribute("data-xoxo-safety-report-notice","1");
+      list.append(message);
+    }
+    async function refreshBetaQueue(){
+      const version=++generation;
+      // CRITICAL: never replay sensitive cached report metadata while the
+      // server's PIN authorization is unknown or a new request is pending.
+      cached=[];
+      clearBetaUI();
+      if(!isActiveAdmin()){invalidate();return;}
+      if(!unlocked){paintUnlockControl();return;}
+      let queue;
+      try{
+        queue=await adapter.loadReportQueue(supabaseClient,{includeLegacy:false});
+      }catch{
+        queue={ok:false,reason:"conversation_reports_unavailable"};
+      }
+      if(version!==generation||!isActiveAdmin())return;
+
+      const error=queue?.warning;
+      const denied=!queue?.ok || !Array.isArray(queue.reports) ||
+        (error && error!=="conversation_reports_not_deployed");
+      if(denied){
+        // PIN may have expired. Fail closed, purge metadata and allow a new
+        // verification; do not present an authorization failure as "empty".
+        unlocked=false;
+        cached=[];
+        paintUnlockControl();
+        showWarning();
+        return;
+      }
+      cached=queue.reports.filter(x=>x.source==="conversation_beta");
+      paintCachedReports();
+      if(error==="conversation_reports_not_deployed")showWarning();
+    }
+
+    // Direct renderer calls can occur after a PIN expires. Re-query the
+    // authenticated server every time; cached rows are NEVER repainted first.
     const originalRender=window.renderXoxoDmReports;
     if(typeof originalRender==="function"){
       window.renderXoxoDmReports=function(...args){
         const result=originalRender.apply(this,args);
-        paintCachedReports();
+        cached=[];
+        clearBetaUI();
+        if(!isActiveAdmin()){invalidate();return result;}
         paintUnlockControl();
+        if(!insideLegacyLoad && unlocked)void refreshBetaQueue();
         return result;
       };
     }
+
     window.loadXoxoDmReports=async function(...args){
       const version=++generation;
-      await original.apply(this,args);
-      if(!isActiveAdmin())return;
+      insideLegacyLoad++;
+      try{
+        await original.apply(this,args);
+      }finally{
+        insideLegacyLoad--;
+      }
+      if(version!==generation)return;
+      if(!isActiveAdmin()){invalidate();return;}
       if(!unlocked){
         cached=[];
-        paintCachedReports();
+        clearBetaUI();
         paintUnlockControl();
         return;
       }
-      const queue=await adapter.loadReportQueue(supabaseClient,{includeLegacy:false});
-      if(version!==generation||!isActiveAdmin())return;
-      // Fail closed: do not show stale BETA reports after a failed refresh.
-      cached=queue?.ok && Array.isArray(queue.reports)
-        ? queue.reports.filter(x=>x.source==="conversation_beta") : [];
-      warning=queue?.warning||(!queue?.ok?"conversation_reports_unavailable":null);
-      paintCachedReports();
-      if(warning){
-        const list=document.getElementById("xmmReportsList");
-        if(list)list.append(node("div",
-          "Stay Safe BETA: conversation reports are not available in Supabase yet.",
-          "xmm-report-feedback"));
-      }
+      await refreshBetaQueue();
     };
   }
   if(document.readyState==="loading")window.addEventListener("DOMContentLoaded",install,{once:true});
