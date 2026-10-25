@@ -33,3 +33,39 @@ jobs:
             echo "Running $test_file"
             node "$test_file"
           done
+
+  postgres-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: xoxo_safety_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d xoxo_safety_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: xoxo_safety_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure local disposable test database
+        run: |
+          set -euo pipefail
+          psql -XAtqc "select current_database()" | grep -Fx xoxo_safety_test
+      - name: Set up isolated test fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-fixtures.sql
+      - name: Create safety BETA SQL within ephemeral PostgreSQL 17
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/stay-safe-conversation-reports-schema.sql
+      - name: Execute authenticated report and moderation security tests
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-report-pipeline.sql
