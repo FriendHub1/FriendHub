@@ -110,6 +110,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-admin-pagination.sql
       - name: Check every report page via authenticated local PostgREST HTTP
         run: python3 beta/test-safety-postgrest-pagination.py
+      - name: Check immutable report metadata after physical DM deletion in disposable database
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-evidence-after-delete.sql
       - name: Clean up disposable PostgREST container
         if: always()
         run: docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
