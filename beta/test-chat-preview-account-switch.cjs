@@ -37,6 +37,25 @@ assert.equal(captured.length,1);
 assert.equal(captured[0].accountId,userA);
 assert.equal(captured[0].isContextActive(),true);
 
+// The preview bridge must forward server-provided DM timestamps even if
+// its loaded message list arrives newest-first. The picker then chooses the
+// newest 100 by date, without making a network request or storing text.
+window.__xoxoCurrentDmMessages=[{
+  id:"dddddddd-dddd-4ddd-8ddd-000000000002",
+  sender_id:userB,recipient_id:userA,content:"newest preview",
+  created_at:"2026-10-25T14:10:00Z"
+},{
+  id:"dddddddd-dddd-4ddd-8ddd-000000000001",
+  sender_id:userA,recipient_id:userB,content:"older preview",
+  created_at:"2026-10-25T11:10:00Z"
+}];
+const visibleMessages=window.XOXOSafetyChatPreviewBeta.visibleContext().messages;
+assert.equal(visibleMessages.length,2);
+assert.deepEqual(visibleMessages.map(m=>m.created_at),
+  ["2026-10-25T14:10:00Z","2026-10-25T11:10:00Z"]);
+assert.equal(visibleMessages[0].text,"newest preview");
+assert.equal(window.XOXOSafetyChatPreviewBeta.reportWritesEnabled(),false);
+
 // Opposite participants reuse the SAME sorted conversation ID but not
 // the same signed-in user or localStorage safety acknowledgement.
 loggedIn = {id:userB};peer=userA;
