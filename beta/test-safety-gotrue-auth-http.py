@@ -106,6 +106,12 @@ def run():
     payload={"p_other_user_id":PEER,"p_reason_code":1,
       "p_details":"An isolated Auth token test, no real user data",
       "p_message_ids":[MESSAGE],"p_idempotency_key":RECEIPT_KEY}
+    status,_=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",
+      payload,token)
+    assert status in (400,401,403,404,406),(
+      "Non-allowlisted GoTrue member reached the report RPC",status)
+    db("insert into xoxo_safety_private.report_beta_testers(user_id) "
+       f"values ('{user}'::uuid)")
     status,report=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",
       payload,token)
     assert status==200 and isinstance(report,str),(

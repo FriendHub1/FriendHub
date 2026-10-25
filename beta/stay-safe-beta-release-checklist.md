@@ -44,6 +44,7 @@ Tests include:
 - [x] Verify unauthorized users, expired PINs and locked PINs cannot change report status or create an administrative status audit entry.
 - [ ] Audit SQL function privileges, behavior and RLS in an isolated non-production Supabase environment.
 - [ ] Approve evidence retention (the draft stores selected IDs + participant/timestamps, not copies of message text/media); confirm treatment of physical deletion. The current server SQL explicitly **rejects** expiring whispers and non-normal/once-view media, including mixed selections; supporting these later requires a separate privacy decision.
+- [x] Stage the authorized database installation behind an **empty-by-default** private table of expiring BETA test accounts. Every report RPC call checks active allowlist membership on the server; the public site stays disabled until separate approval. Real test-account IDs are NOT seeded by the migration.
 - [x] Mirror that rule in the opt-in chat evidence picker: visible whispers and once-view media are never offered as selectable evidence, and a message changing to once-view before submission invalidates the selection. The server remains authoritative.
 - [ ] Approve or modify the proposed rate limit of 10 reports per user per 24 hours.
 - [ ] Deploy and audit the four BETA RPC functions after explicit approval. Verify no broader table grants or admin access.

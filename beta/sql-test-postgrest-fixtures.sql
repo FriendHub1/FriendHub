@@ -14,6 +14,11 @@ insert into auth.sessions(id, user_id, not_after) values
  ('bbbb0000-0000-4000-8000-000000000002','ffffffff-ffff-4fff-8fff-ffffffffffff',null),
  ('cccc0000-0000-4000-8000-000000000003','99999999-8888-4777-8666-555555555555',null);
 
+-- Only synthetic accounts within this disposable database are authorized.
+insert into xoxo_safety_private.report_beta_testers (user_id) values
+ ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'),
+ ('99999999-8888-4777-8666-555555555555');
+
 insert into public.direct_messages(id, sender_id, recipient_id, content, created_at) values
  ('88888888-8888-4888-8888-888888888881',
   'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',

@@ -11,6 +11,16 @@ begin;
 create schema if not exists xoxo_safety_private;
 revoke all on schema xoxo_safety_private from public, anon, authenticated;
 
+-- Owner-authorized staging on the existing Supabase project must start
+-- DENY-ALL. This table is deliberately empty when the migration runs.
+-- Only explicitly approved temporary test accounts may submit reports,
+-- and each approval expires automatically after its short test window.
+create table if not exists xoxo_safety_private.report_beta_testers (
+  user_id uuid primary key,
+  expires_at timestamptz not null default (now() + interval '7 days')
+);
+alter table xoxo_safety_private.report_beta_testers enable row level security;
+
 create table if not exists xoxo_safety_private.conversation_reports (
   id uuid primary key default gen_random_uuid(),
   reporter_id uuid not null,
@@ -109,6 +119,16 @@ begin
   if not xoxo_safety_private.active_session_for(v_reporter) then
     raise exception 'Active authenticated session required'
       using errcode = '28000';
+  end if;
+  -- A published authenticated RPC is technically callable directly over
+  -- PostgREST, even with the production UI disabled. Restrict it SERVER-SIDE
+  -- to an empty-by-default, expiring owner-approved test allowlist.
+  if not exists (
+    select 1 from xoxo_safety_private.report_beta_testers tester
+     where tester.user_id = v_reporter and tester.expires_at > now()
+  ) then
+    raise exception 'BETA reporting is not enabled for this account'
+      using errcode = '42501';
   end if;
   if p_other_user_id is null or p_other_user_id = v_reporter
      or p_reason_code is null or p_reason_code not between 0 and 5

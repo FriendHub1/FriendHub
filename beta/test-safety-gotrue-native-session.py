@@ -258,6 +258,11 @@ def run():
     payload={"p_other_user_id":PEER,"p_reason_code":1,
         "p_details":"Native self-hosted Auth + report RPC integration",
         "p_message_ids":[message],"p_idempotency_key":str(uuid.uuid4())}
+    code,_=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",payload,token)
+    assert code in (400,401,403,404,406),(
+        "Valid native session bypassed empty-by-default reporter allowlist",code)
+    db("insert into xoxo_safety_private.report_beta_testers(user_id) "
+       f"values ('{user}'::uuid)")
     code,report=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",payload,token)
     assert code==200 and isinstance(report,str),(
         "Native Auth session denied report RPC",code,report)

@@ -42,6 +42,11 @@ begin
     'xoxo_safety_private.conversation_report_evidence','SELECT') then
     raise exception 'BUG: private report tables readable without the PIN RPC';
   end if;
+  if has_table_privilege('authenticated',
+     'xoxo_safety_private.report_beta_testers','SELECT') or
+     (select count(*) from xoxo_safety_private.report_beta_testers) <> 0 then
+    raise exception 'BUG: test access list not private and empty at installation';
+  end if;
 end $$;
 
 -- Fake JWT subject values are injected by THIS LOCAL TEST FIXTURE,
@@ -49,6 +54,43 @@ end $$;
 set role authenticated;
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
 select set_config('request.jwt.claim.session_id','aaaaaaaa-0000-4000-8000-000000000001',false);
+
+-- Before the owner explicitly allows any test accounts, even a correct
+-- participant with a valid session and visible DM MUST be denied.
+do $test_allowlist$
+begin
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '22222222-2222-4222-8222-222222222222',1,'No BETA access',
+      array['77777777-7777-4777-8777-777777777771'::uuid],
+      '88888888-8888-4888-8888-100000000010');
+    raise exception 'BUG: real account reached BETA report RPC before opt-in';
+  exception when sqlstate '42501' then null; end;
+end $test_allowlist$;
+
+reset role;
+insert into xoxo_safety_private.report_beta_testers (user_id) values
+ ('11111111-1111-4111-8111-111111111111'),
+ ('22222222-2222-4222-8222-222222222222');
+update xoxo_safety_private.report_beta_testers
+   set expires_at=now()-interval '1 minute'
+ where user_id='11111111-1111-4111-8111-111111111111';
+set role authenticated;
+do $expired_beta_access$
+begin
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '22222222-2222-4222-8222-222222222222',1,'Expired BETA access',
+      array['77777777-7777-4777-8777-777777777771'::uuid],
+      '88888888-8888-4888-8888-100000000011');
+    raise exception 'BUG: expired tester authorization accepted';
+  exception when sqlstate '42501' then null; end;
+end $expired_beta_access$;
+reset role;
+update xoxo_safety_private.report_beta_testers
+   set expires_at=now()+interval '7 days'
+ where user_id='11111111-1111-4111-8111-111111111111';
+set role authenticated;
 
 -- Verify sensitive reporting requires a CURRENT auth.sessions row.
 -- A JWT with a valid user subject but no session or somebody else's session
