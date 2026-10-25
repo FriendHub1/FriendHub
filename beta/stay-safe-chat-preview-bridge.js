@@ -10,7 +10,7 @@ if(typeof window==="undefined")return;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REPORT_RPC_WRITES_ENABLED=false;
 let flow=null,flowKey="",flowClient=null;
-let authSignedOut=false;
+let authSignedOut=false,authenticatedUserId=null;
 function disposeFlow(){
  if(typeof flow?.dispose==="function")flow.dispose();
  flow=null;flowKey="";flowClient=null;
@@ -47,6 +47,7 @@ function visibleContext(){
  const other=typeof currentDmUserId==="undefined"?null:currentDmUserId;
  const client=typeof supabaseClient==="undefined"?null:supabaseClient;
  if(!valid(user?.id)||!valid(other)||user.id.toLowerCase()===other.toLowerCase()||
+   (authenticatedUserId!==null&&authenticatedUserId!==user.id.toLowerCase())||
    typeof client?.auth?.getUser!=="function"||typeof client?.from!=="function"||
    typeof client?.rpc!=="function")return null;
  const self=user.id.toLowerCase(),peer=other.toLowerCase();
@@ -151,9 +152,11 @@ function install(){
    client.auth.onAuthStateChange((event,session)=>{
      if(event==="SIGNED_OUT" || event==="USER_DELETED"){
        authSignedOut=true;
+       authenticatedUserId=null;
        disposeFlow();
      }else if(event==="SIGNED_IN"){
        authSignedOut=!valid(session?.user?.id);
+       authenticatedUserId=authSignedOut?null:session.user.id.toLowerCase();
        disposeFlow();
      }
    });
