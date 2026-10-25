@@ -141,5 +141,5 @@ Tests include:
 - An obsolete PIN-error callback also **cannot invalidate or erase a newly authenticated administrator's reports**. This prevents cross-login asynchronous callback interference without changing the existing six-digit server PIN or audit.
 - Fixed the continuation-load bookkeeping: when a late `Load more` response belongs to an invalidated auth generation, it is discarded **before** touching the newer generation's loading lock.
 - Added explicit adversarial regressions in `beta/test-admin-auth-lifecycle.cjs` for both stale PIN success and stale PIN failure. Added real WebKit/Chromium browser coverage in `beta/browser-safety-admin-auth.cjs` for PIN dialog completion after SIGNED_OUT.
-- Node.js 22 and disposable PostgreSQL 17 jobs passed on [GitHub Actions 40205418499](https://github.com/FriendHub1/FriendHub/actions/runs/40205418499). Browser job result must also be verified before declaring this whole run green.
+- All three jobs—Node.js 22, disposable PostgreSQL 17/PostgREST and WebKit/Chromium—passed in [GitHub Actions 40205626563](https://github.com/FriendHub1/FriendHub/actions/runs/40205626563), including the PIN-dialog race regressions.
 - No live SQL, production users, Cloudflare Workers or actual Supabase Auth sessions were changed or used. The non-production Auth, retention, report-limit and physical-device approvals remain open.
