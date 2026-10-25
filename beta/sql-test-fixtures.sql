@@ -5,20 +5,33 @@
 create role anon nologin;
 create role authenticated nologin;
 create role service_role nologin;
+-- Disposable database credentials only; never use these in production.
+create role xoxo_ci_authenticator login password 'local-ci-only-password';
+grant anon, authenticated to xoxo_ci_authenticator;
 
 create schema auth;
 create function auth.uid() returns uuid
   language sql stable set search_path=''
-  as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
+  as $xoxo_auth_uid_fixture$
+    select coalesce(
+      nullif(current_setting('request.jwt.claim.sub', true),''),
+      nullif(current_setting('request.jwt.claims', true),'')::jsonb ->> 'sub'
+    )::uuid
+  $xoxo_auth_uid_fixture$;
 grant usage on schema auth to anon, authenticated;
 grant execute on function auth.uid() to anon, authenticated;
 -- Simulate the server-signed JWT's session_id in this disposable CI database.
 -- It is NOT a real Supabase access token; production auth.jwt() is untouched.
 create function auth.jwt() returns jsonb
   language sql stable set search_path=''
-  as 'select jsonb_build_object(
-    ''session_id'', nullif(current_setting(''request.jwt.claim.session_id'',true),'''')
-  )';
+  as $xoxo_auth_jwt_fixture$
+    select coalesce(
+      nullif(current_setting('request.jwt.claims', true),'')::jsonb,
+      jsonb_build_object(
+        'session_id',nullif(current_setting('request.jwt.claim.session_id',true),'')
+      )
+    )
+  $xoxo_auth_jwt_fixture$;
 grant execute on function auth.jwt() to anon, authenticated;
 
 create table auth.sessions (
