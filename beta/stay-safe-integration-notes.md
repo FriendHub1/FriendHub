@@ -29,3 +29,20 @@ Only on first entry to each distinct chat; localStorage currently remembers ackn
 - Current locale getter: `getFriendHubLanguage()`.
 - Exact 10 locale values: `en`, `es`, `pt-BR`, `de`, `nb`, `pl`, `fr`, `cs`, `sv`, `it`.
 - The opt-in wrapper is in `beta/stay-safe-chat-hook.js`. Do not load it until translations, report flow, and BETA integration are reviewed.
+
+## Verified DM entrypoint (main branch inspected 2026-10-24)
+The actual entrypoint is `async function openDirectChat(userId, username, profilePhoto = "")` in `index.html`. It sets `currentDmUserId = String(userId)`, calls `openMessagesPage()`, then makes `#dmChat` visible. The current user is `currentUser.id`. The current locale helper is `getFriendHubLanguage()`.
+
+**Suggested BETA hook after the chat becomes visible:**
+```js
+window.XOXOSafetyReminderBeta?.show({
+  conversationId: [String(currentUser.id), String(currentDmUserId)].sort().join(":"),
+  accountId: String(currentUser.id),
+  locale: getFriendHubLanguage()
+});
+```
+Use the sorted user pair only if DMs are one-to-one. Confirm against backend schema before release. This is a client-only acknowledgement: another browser will show the notice again.
+
+**Important discrepancy:** The inspected `getFriendHubLanguage()` currently recognizes `es`, `pt-BR`, `pl`, `fr`, `nb`, `de`, `cs`, plus English fallback: eight locale codes. The owner reports ten live languages. Discover the other two from the latest application source before adding translations; do not guess.
+
+The 5MB `index.html` was retrieved via GitHub blob SHA after the file-range fetch returned empty content. Do not overwrite the huge file without validating the latest branch blob and testing a precise patch.
