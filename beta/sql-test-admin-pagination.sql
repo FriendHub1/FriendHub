@@ -47,6 +47,7 @@ declare
  v_seen uuid[]:=array[]::uuid[];
  v_count int:=0;
  v_pages int:=0;
+ v_iteration integer;
  v_prior_pending boolean:=null;
  v_prior_created timestamptz:=null;
  v_prior_id uuid:=null;
@@ -64,7 +65,8 @@ begin
  end if;
  v_items:=v_first;
 
- for v_pages in 1..25 loop
+ for v_iteration in 1..25 loop
+   v_pages:=v_pages+1;
    for v_case in select value from jsonb_array_elements(v_items) as t(value) loop
      if (v_case->>'id')::uuid=any(v_seen) then
        raise exception 'BUG: duplicate report ID across pages';
