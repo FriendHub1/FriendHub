@@ -18,10 +18,11 @@ function element(tag){
 (async()=>{
  const list=element("section");const moderation={classList:{contains:()=>true}};
  const calls={legacy:0,queue:0,pin:0,updates:0};
+ let betaAvailable=true;
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;list.children=[element("legacy-card")];},
    renderXoxoDmReports:()=>{list.children=[element("legacy-card")];},
-   XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");return {ok:true,reports:[report]};},
+   XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");return betaAvailable?{ok:true,reports:[report]}:{ok:false};},
     updateReportStatus:async()=>{calls.updates++;return {ok:true};}}},
   document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xoxoAdminModeration"?moderation:null},
   xoxoIsAdmin:true,supabaseClient:{},
@@ -41,8 +42,13 @@ function element(tag){
  const view=actions.children[0];view.listeners.click();assert.equal(calls.pin,1,"existing PIN-gated viewer must be reused");
  await actions.children[1].listeners.click();assert.equal(calls.updates,1);assert.equal(calls.legacy,2);
  assert.equal(list.children.length,2,"reloading must not duplicate report cards");
+ betaAvailable=false;
+ await context.window.loadXoxoDmReports();
+ context.window.renderXoxoDmReports();
+ assert.equal(list.children.length,1,"failed BETA refresh must clear cached BETA reports");
+ betaAvailable=true;
  context.xoxoIsAdmin=false;
  await context.window.loadXoxoDmReports();
- assert.equal(calls.queue,2,"non-admin reload must not request BETA report metadata");
- console.log("PASS: admin bridge preserves existing reports, survives dashboard rerenders, reuses viewer, updates status and blocks non-admin queue reads");
+ assert.equal(calls.queue,3,"non-admin reload must not request BETA report metadata");
+ console.log("PASS: admin bridge preserves legacy reports, survives rerenders, clears stale cache on errors and restricts non-admin access");
 })().catch(e=>{console.error(e);process.exitCode=1;});
