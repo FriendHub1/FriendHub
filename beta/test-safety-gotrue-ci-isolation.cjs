@@ -11,6 +11,8 @@ const harness=fs.readFileSync(path.join(__dirname,
   "test-safety-gotrue-auth-http.py"),"utf8");
 const native=fs.readFileSync(path.join(__dirname,
   "test-safety-gotrue-native-session.py"),"utf8");
+const jsClient=fs.readFileSync(path.join(__dirname,
+  "test-safety-native-js-client.cjs"),"utf8");
 const nativeFixture=fs.readFileSync(path.join(__dirname,
   "sql-test-gotrue-native-session-fixture.sql"),"utf8");
 for(const value of ["cxosofpxfmjkrhfabrqc","xoxoavenue.com",
@@ -34,8 +36,17 @@ for(const url of ["http://127.0.0.1:9999","http://127.0.0.1:3001"])
 assert.ok(!/cxosofpxfmjkrhfabrqc|https:\/\//.test(harness),
   "experimental token test must never connect to remote services");
 assert.match(workflow,/PGRST_SERVER_PORT=3002/);
-assert.match(workflow,/Verify real GoTrue-managed session and report RPC use same temporary database/);
+assert.match(workflow,/Verify native GoTrue session and actual JavaScript submission pipeline in same disposable database/);
+assert.match(workflow,/node-version:\s*"22"/);
+assert.match(workflow,/beta\/test-safety-native-js-client\.cjs/);
 assert.match(native,/http:\/\/127\.0\.0\.1:3002/);
+assert.match(native,/js_report_pipeline\("active",token,outsider_token,message\)/);
+assert.match(native,/js_report_pipeline\("revoked",token,outsider_token,message\)/);
+assert.match(jsClient,/require\("\.\/submit-conversation-report-beta\.cjs"\)/);
+assert.match(jsClient,/http:\/\/127\.0\.0\.1:9999/);
+assert.match(jsClient,/http:\/\/127\.0\.0\.1:3002/);
+assert.doesNotMatch(jsClient,/cxosofpxfmjkrhfabrqc|xoxoavenue\.com|supabase\.co|https:\/\//i,
+  "real-JS Auth/RLS harness may contact only isolated loopback services");
 assert.match(native,/from auth\.sessions where/);
 assert.doesNotMatch(native,/(insert into|update) auth\.sessions/i,
   "native session test must read real GoTrue records rather than mirror them");

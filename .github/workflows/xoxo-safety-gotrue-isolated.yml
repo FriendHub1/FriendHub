@@ -11,6 +11,7 @@ on:
       - ".github/workflows/xoxo-safety-gotrue-isolated.yml"
       - "beta/test-safety-gotrue-auth-http.py"
       - "beta/test-safety-gotrue-native-session.py"
+      - "beta/test-safety-native-js-client.cjs"
       - "beta/sql-test-gotrue-native-session-fixture.sql"
       - "beta/test-safety-gotrue-ci-isolation.cjs"
   workflow_dispatch:
@@ -45,6 +46,9 @@ jobs:
       XOXO_HTTP_JWT_KEY: xoxo-local-ci-jwt-secret-not-for-production-1234567890
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - name: Reject non-isolated targets before starting containers
         run: |
           set -euo pipefail
@@ -156,7 +160,7 @@ jobs:
             sleep 1
           done
           test "$ready" = 1
-      - name: Verify real GoTrue-managed session and report RPC use same temporary database
+      - name: Verify native GoTrue session and actual JavaScript submission pipeline in same disposable database
         run: python3 beta/test-safety-gotrue-native-session.py
       - name: Clean up disposable services even after failure
         if: always()
