@@ -237,6 +237,19 @@ def check():
         "where action like 'conversation_report_status:reviewed:%' "
         f"and conversation_user_1=least('{U}'::uuid,'{PEER}'::uuid)")
     assert int(audit_rows) == 1, "admin moderation status change was not audited"
+    # Two reports from the SAME participants are different cases. Each
+    # moderation action must identify the exact report UUID, its preceding
+    # status, the requested new status, and the moderator's entered reason.
+    audit_action = db(
+        "select action from public.xoxo_message_access_log "
+        "where action like 'conversation_report_status:reviewed:%' "
+        f"and conversation_user_1=least('{U}'::uuid,'{PEER}'::uuid)")
+    assert f"report={report}" in audit_action, (
+        "Audited moderation status change does not identify which report was changed")
+    assert "previous=pending" in audit_action, (
+        "Audited moderation status change omitted original report status")
+    assert f"reason={REASON}" in audit_action, (
+        "Audited moderation status change omitted mandatory PIN-review reason")
 
     # A user's own chat-clear state must hide evidence from that user while
     # preserving its existing moderation record for the administrator.
