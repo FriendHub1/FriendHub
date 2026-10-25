@@ -207,6 +207,22 @@ begin
     raise exception 'BUG: valid multi-evidence report not created';
   end if;
 
+  -- A retry with the SAME evidence selected in reverse order must recover
+  -- the original report, not be treated as a new or tampered submission.
+  v_retry := public.xoxo_submit_conversation_report_beta(
+    '22222222-2222-4222-8222-222222222222',0,'Multiple valid messages',
+    array['77777777-7777-4777-8777-777777777772'::uuid,
+          '77777777-7777-4777-8777-777777777771'::uuid],
+    '88888888-8888-4888-8888-000000000002'
+  );
+  if v_retry <> v_second then
+    raise exception 'BUG: reordered evidence created a different receipt';
+  end if;
+  if (select count(*) from xoxo_safety_private.conversation_report_evidence
+       where report_id=v_second) <> 2 then
+    raise exception 'BUG: reordered retry duplicated the stored evidence';
+  end if;
+
   for i in 3..10 loop
     v_key := ('88888888-8888-4888-8888-'||lpad(i::text,12,'0'))::uuid;
     perform public.xoxo_submit_conversation_report_beta(
