@@ -113,3 +113,18 @@ is too large for the current connector update channel).
 3. Consolidate on one chat integration and one admin integration, rather than loading competing prototypes.
 4. Add an always-available report action to live chat, independent of the one-time warning, only after backend readiness.
 5. Verify the existing PIN, moderation reason and access audit protections still work in the real admin panel.
+
+## Evidence picker regression + isolated PostgreSQL test gate (2026-10-25)
+
+- The BETA evidence picker now presents the last 100 validated loaded messages (in the existing oldest-first display order), so recent abusive messages are not omitted by first-100 clipping.
+- Case-insensitive evidence IDs are deduplicated before rendering; selecting a 21st message is rejected. The Swedish and Italian dictionaries were each reduced to one entry, retaining the correct submission labels.
+- `beta/test-evidence-picker-dom.cjs` executes the actual selector using a DOM fixture, checking 100 recent items, 20 selected messages, UUID-case duplicates, dialog dismissal and Swedish/Italian action labels.
+- Other targeted simulated suites verified account/session switching and the authenticated browser report flow. These are not proof that the server RPC is deployed.
+- `beta/sql-test-fixtures.sql` and `beta/sql-test-report-pipeline.sql` are designed for an isolated disposable PostgreSQL 17 instance. The live Supabase project has no development database branch and has NOT received the new schema.
+- IMPORTANT: `.github/workflows/xoxo-safety-postgres-isolated.yml` is currently manual-only (`workflow_dispatch`) and exists only on this feature branch, not `main`. GitHub normally requires the workflow file on the default branch for manual dispatch. Therefore these PostgreSQL tests are PREPARED BUT NOT EXECUTED, and the manual link should not be presented as immediately runnable.
+- An attempt to enable narrowly scoped push-based execution via the GitHub connector was blocked; no workflow change or branch merge was made. Do not raise the SQL gate to passing without an observed PostgreSQL job result.
+- GitHub Actions standard Ubuntu runners are free in public repositories, but no paid runner, Supabase branch, or production deployment has been used.
+
+### Safe next gate
+
+Run the isolated SQL job through an approved CI trigger (or on a separate local PostgreSQL 17 environment), inspect the first true SQL errors if any, and only then plan backend RLS/permission tests against a disposable Supabase environment. Preserve the existing PIN-protected conversation viewer, audit log and individual DM report cards.
