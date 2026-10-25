@@ -12,6 +12,7 @@
  *   conversationId, locale, getMessages, enabled, onStatus }).
  * getMessages supplies messages ALREADY loaded in the signed-in user's chat.
  * enabled MUST remain false until backend RPC is deployed and audited.
+ * previewOnly=true allows trying the form/picker without ever writing reports.
  */
 (function (root, factory) {
   "use strict";
@@ -79,7 +80,7 @@
     }
 
     async function startEvidence(formData) {
-      if (!config.enabled) { inform({ ok: false, reason: "disabled" }); return; }
+      if (!config.enabled && !config.previewOnly) { inform({ ok: false, reason: "disabled" }); return; }
       if (!formData || formData.conversationId !== conversationId) {
         inform({ ok: false, reason: "invalid_conversation" }); return;
       }
@@ -167,7 +168,7 @@
     }
 
     function openReport() {
-      if (!config.enabled) { inform({ ok: false, reason: "disabled" }); return false; }
+      if (!config.enabled && !config.previewOnly) { inform({ ok: false, reason: "disabled" }); return false; }
       if (sending || typeof root?.XOXOReportFormBeta?.open !== "function") {
         if (!sending) inform({ ok: false, reason: "missing_module" });
         return false;
@@ -182,7 +183,7 @@
       if (typeof root?.XOXOSafetyReminderBeta?.show !== "function") return false;
       return root.XOXOSafetyReminderBeta.show({
         conversationId, accountId, locale,
-        ...(config.enabled ? { onReport: () => { openReport(); } } : {})
+        ...((config.enabled || config.previewOnly) ? { onReport: () => { openReport(); } } : {})
       });
     }
 
