@@ -7,8 +7,14 @@ const vm = require("node:vm");
 const userA = "11111111-1111-4111-8111-111111111111";
 const userB = "22222222-2222-4222-8222-222222222222";
 let loggedIn = { id: userA }, peer = userB;
-let client = { auth: { getUser: async () => ({ data: {user: loggedIn} }) },
-  from: () => ({}), rpc: async () => ({}) };
+let authEvent=null,readyHandler=null;
+let client = { auth: {
+    getUser: async () => ({ data: {user: loggedIn} }),
+    onAuthStateChange: cb => {
+      authEvent=cb;
+      return {data:{subscription:{unsubscribe(){}}}};
+    }
+  },from: () => ({}), rpc: async () => ({}) };
 let visible = true;
 const captured = [], disposed = [];
 const window = {
@@ -20,9 +26,12 @@ const window = {
       dispose:()=>{disposed.push(flowIndex);return true;}};
   } }
 };
-const chat = {style:{display:"block"},get isConnected(){return visible;}};
-const document = {readyState:"loading",addEventListener:()=>{},
-  getElementById: id => id==="dmChat" ? chat : null};
+const chat = {style:{display:"block"},get isConnected(){return visible;},
+  querySelector:()=>null};
+const document = {readyState:"loading",
+  addEventListener:(event,cb)=>{if(event==="DOMContentLoaded")readyHandler=cb;},
+  getElementById:id=>id==="dmChat"?chat:null,
+  querySelector:()=>null};
 
 const context = {
   window,document,
@@ -34,6 +43,17 @@ const context = {
 const source=fs.readFileSync(path.join(__dirname,"stay-safe-chat-preview-bridge.js"),"utf8");
 vm.runInNewContext(source,context,{filename:"stay-safe-chat-preview-bridge.js"});
 
+// A stale local currentUser must not expose private reporting before
+// Supabase has confirmed INITIAL_SESSION, including an explicit null session.
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),false);
+assert.equal(captured.length,0);
+readyHandler();
+assert.equal(typeof authEvent,"function");
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),false);
+authEvent("INITIAL_SESSION",null);
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),false);
+assert.equal(captured.length,0);
+authEvent("INITIAL_SESSION",{user:loggedIn});
 assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),true);
 assert.equal(captured.length,1);
 assert.equal(captured[0].accountId,userA);
@@ -61,6 +81,7 @@ assert.equal(window.XOXOSafetyChatPreviewBeta.reportWritesEnabled(),false);
 // Opposite participants reuse the SAME sorted conversation ID but not
 // the same signed-in user or localStorage safety acknowledgement.
 loggedIn = {id:userB};peer=userA;
+authEvent("SIGNED_IN",{user:loggedIn});
 assert.equal(captured[0].isContextActive(),false);
 assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),true);
 assert.equal(captured.length,2,"new user must receive a new safety flow");
@@ -93,4 +114,23 @@ assert.deepEqual(disposed,[0,1,2,3],
   "Chat changes must dispose previous report/picker UI without touching next flow");
 
 assert.equal(window.XOXOSafetyChatPreviewBeta.reportWritesEnabled(),false);
-console.log("PASS: account swap, session swap and closed-chat safety flow cache isolation");
+
+// Null refresh/sign-out events must invalidate any remaining cached flow,
+// even if the SPA still exposes currentUser and rendered DM messages.
+authEvent("TOKEN_REFRESHED",null);
+assert.equal(window.XOXOSafetyChatPreviewBeta.visibleContext(),null);
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),false);
+// Anonymous Auth sign-ins have authenticated SQL roles, but are not members.
+authEvent("SIGNED_IN",{user:{id:userB,is_anonymous:true}});
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),false);
+// A valid recovered session must still match the SPA's CURRENT account.
+authEvent("SIGNED_IN",{user:{id:userA}});
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),false);
+authEvent("TOKEN_REFRESHED",{user:{id:userB}});
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),true);
+const beforeLogout=captured.length;
+authEvent("SIGNED_OUT",null);
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),false);
+assert.equal(captured.length,beforeLogout,
+  "A stale SPA account must not resurrect report controls after logout");
+console.log("PASS: initial null Auth, sign-in, anonymous, token refresh, cross-account and signed-out preview privacy");
