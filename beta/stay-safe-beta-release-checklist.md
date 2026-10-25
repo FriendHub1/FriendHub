@@ -265,3 +265,12 @@ Tests include:
 - `beta/sql-test-report-pipeline.sql` validates one exact UUID/status/reason event and confirms failed multiline calls create no extra records or status changes. Signed **real local PostgREST HTTP** tests separately attempt multiline reasons against all 3 RPCs and confirm denial.
 - **[GitHub Actions run 40215903952](https://github.com/FriendHub1/FriendHub/actions/runs/40215903952) passed all 3 jobs**: Node.js 22, disposable PostgreSQL 17 with signed local HTTP and WebKit/Chromium browsers.
 - BETA-only: no live Supabase SQL, Worker deployment, report-write activation or PR merge. Real non-production Supabase Auth testing, privacy/retention approval, draft reporting limit and physical iPhone acceptance remain pending.
+
+### Safety warning ownership and acknowledgement on chat navigation (2026-10-25)
+
+- The once-per-account/conversation warning previously could remain open when a DM was closed or a different conversation became active. That orphaned modal could block the next chat's warning and leave old safety controls visible.
+- `beta/stay-safe-sweetheart.js` now tracks the warning's unique flow owner and exposes `dismiss(owner)`. `beta/stay-safe-browser-flow.js` supplies that owner to the reminder and disposes its warning along with the report form/evidence picker on chat/account exit.
+- **A programmatic dismissal does not set the localStorage `seen` acknowledgement.** If the user navigates away before responding, the reminder still appears when they return. Explicit user acknowledgement continues to persist per account/conversation.
+- Closing an old flow cannot dismiss the new conversation's modal. Already-closed reminder callbacks cannot open reports or persist a second acknowledgement after cancellation.
+- [GitHub Actions 40216126347](https://github.com/FriendHub1/FriendHub/actions/runs/40216126347) passed **all three jobs**: Node.js 22, disposable PostgreSQL 17/PostgREST and real WebKit mobile/Chromium desktop tests. Browser tests verify both modal ownership and acknowledgement behavior for 320px/390px mobile and desktop.
+- **BETA only**: preview report writes remain disabled, PR #12 stays unmerged and no live Cloudflare Worker or Supabase migration was executed. Actual Supabase Auth-issued-session testing, approved evidence retention rules and physical-iPhone integrated acceptance are still pending.
