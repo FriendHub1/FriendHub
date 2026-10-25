@@ -112,6 +112,8 @@ jobs:
         run: python3 beta/test-safety-postgrest-pagination.py
       - name: Check immutable report metadata after physical DM deletion in disposable database
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-evidence-after-delete.sql
+      - name: Prove DM evidence cannot change during report's FOR SHARE snapshot
+        run: python3 beta/test-safety-evidence-row-lock.py
       - name: Run real Supabase GoTrue Auth in a separate disposable database
         env:
           XOXO_HTTP_JWT_KEY: xoxo-local-ci-jwt-secret-not-for-production-1234567890
