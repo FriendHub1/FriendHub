@@ -1,0 +1,59 @@
+name: XOXO Safety - Isolated PostgreSQL RPC Tests
+
+# Manual only: no paid Supabase branch or extra database resources.
+# Workflow connects exclusively to the ephemeral PostgreSQL 17 service below.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safety-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: xoxo_safety_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d xoxo_safety_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: xoxo_safety_test
+      PGCONNECT_TIMEOUT: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client if needed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Enforce local test database (no live Supabase access)
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = "127.0.0.1"
+          test "$PGDATABASE" = "xoxo_safety_test"
+          test "$PGUSER" = "postgres"
+          psql -XAtqc "select current_database()" | grep -Fx "xoxo_safety_test"
+      - name: Create stub auth, RLS and moderation fixtures
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-fixtures.sql
+      - name: Install reviewed BETA SQL into temporary PostgreSQL only
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/stay-safe-conversation-reports-schema.sql
+      - name: Verify authentic PostgreSQL RPC behavior, PIN and evidence
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-report-pipeline.sql
