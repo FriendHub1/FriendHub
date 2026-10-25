@@ -27,7 +27,7 @@ const required = [
   ["24 hour rate limit", /interval '24 hours'/i],
   ["idempotency pair", /unique \(reporter_id, idempotency_key\)/i],
   ["RLS clear visibility", /public\.dm_conversation_clears/i],
-  ["row-level lock", /for key share/i],
+  ["immutable evidence row lock", /from public\.direct_messages dm\s*where dm\.id = any\(v_normalized_ids\)\s*for share\s*loop/i],
   ["PIN-gated report queue", /xoxo_admin_list_conversation_reports_beta/i],
   ["pending priority before the 100-card cap",
     /order by\s*\(r\.status\s*=\s*'pending'\)\s*desc,\s*r\.created_at\s*desc,\s*r\.id\s*desc\s*limit\s+100/i],
@@ -67,6 +67,9 @@ assert.match(source,/revoke all on function public\.xoxo_admin_list_conversation
 assert.match(source,/revoke all on function public\.xoxo_admin_update_conversation_report_beta\(uuid, text, text\)/i);
 assert.match(source,/revoke all on function\s+public\.xoxo_admin_page_conversation_reports_beta\(\s*text,boolean,timestamptz,uuid,integer\)/i);
 // Regression guards for real PostgreSQL errors found by the BETA PR checks.
+// FOR KEY SHARE does not block non-key UPDATEs to a validated DM.
+assert.doesNotMatch(source, /\bfor key share\b/i,
+  "Evidence snapshot must forbid concurrent non-key UPDATE, not only DELETE");
 assert.doesNotMatch(source, /pg_catalog\.coalesce\s*\(/i,
   "COALESCE is a SQL expression, not a schema-qualified function");
 const dbTests = fs.readFileSync(path.join(__dirname, "sql-test-report-pipeline.sql"), "utf8");
