@@ -25,7 +25,7 @@ const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,d
   assert.equal(betaOnly.ok,true);
   assert.deepEqual(betaOnly.reports.map(r=>r.source),["conversation_beta"]);
   const oldOnly=await loadReportQueue({rpc:async name=>name==="get_xoxo_dm_reports"?{data:[legacy]}:{data:null,error:{code:"PGRST202"}}});
-  assert.equal(oldOnly.ok,true);assert.equal(oldOnly.reports.length,1);assert.equal(oldOnly.warning,null);
+  assert.equal(oldOnly.ok,true);assert.equal(oldOnly.reports.length,1);assert.equal(oldOnly.warning,"conversation_reports_not_deployed");
   const damaged=await loadReportQueue({rpc:async name=>({data:name==="get_xoxo_dm_reports"?[legacy]:[{...beta,reported_user_id:"bad"}]})});
   assert.equal(damaged.reports.length,1,"malformed conversation report must not display");
   assert.deepEqual(await loadReportQueue({rpc:async()=>({error:{code:"42501"}})}),{ok:false,reason:"legacy_reports_unavailable"});
