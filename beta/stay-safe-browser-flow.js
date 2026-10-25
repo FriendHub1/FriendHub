@@ -61,8 +61,13 @@
     // Distinguish separate attempts in the SAME chat, not just chat/account
     // switches. A detached form/picker cannot submit once a new form opens.
     let reportFormEpoch = 0;
+    let disposed = false;
+    // Unique owner object prevents an OLD chat flow from closing the NEW
+    // chat\'s form, even if both involve the same participant UUID pair.
+    const dialogOwner = Object.freeze({});
 
     function contextActive() {
+      if (disposed) return false;
       if (typeof config.isContextActive !== "function") return true;
       try { return config.isContextActive() === true; }
       catch { return false; }
@@ -124,7 +129,7 @@
         inform({ ok: false, reason: "missing_module" }); return;
       }
       const opened = root.XOXOEvidencePickerBeta.open({
-        conversationId, messages: safe, locale,
+        conversationId, messages: safe, locale, owner: dialogOwner,
         onContinue: selection => {
           if (formEpoch !== reportFormEpoch || !contextActive()) return;
           if (!selection || selection.conversationId !== conversationId ||
@@ -237,7 +242,7 @@
       }
       const formEpoch = ++reportFormEpoch;
       return root.XOXOReportFormBeta.open({
-        conversationId, locale,
+        conversationId, locale, owner: dialogOwner,
         onContinue: data => { void startEvidence(data, formEpoch); }
       });
     }
@@ -251,7 +256,19 @@
       });
     }
 
-    return Object.freeze({ showReminder, openReport });
+    function dispose() {
+      if (disposed) return false;
+      disposed = true;
+      reportFormEpoch++;
+      retry = null;
+      // Dismiss ONLY the overlays owned by this flow. Stale asynchronous
+      // fetches then fail the context checks and cannot reopen old evidence.
+      root?.XOXOReportFormBeta?.dismiss?.(dialogOwner);
+      root?.XOXOEvidencePickerBeta?.dismiss?.(dialogOwner);
+      return true;
+    }
+
+    return Object.freeze({ showReminder, openReport, dispose });
   }
 
   return Object.freeze({ create });
