@@ -7,7 +7,7 @@ const {verifyVisibleMessages}=require("./report-rls-check.cjs");
  * Do not pass a client shared across requests.
  */
 async function authenticatedReportPreflight(client, {otherUserId,messageIds}={}) {
-  if(!client?.auth?.getUser || !client?.from) {
+  if(typeof client?.auth?.getUser !== "function" || typeof client?.from !== "function") {
     return {ok:false,reason:"invalid_client"};
   }
   let auth;
