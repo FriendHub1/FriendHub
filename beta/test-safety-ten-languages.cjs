@@ -15,7 +15,9 @@ const fields = {
   form: ["title", "intro", "reason", "details", "placeholder", "submit", "cancel", "privacy"],
   picker: ["title", "help", "empty", "continue", "cancel", "none", "limit"],
   admin: ["title", "user", "peer", "reason", "evidence", "details", "none", "empty",
-    "view", "loading", "locked", "unlock", "failed", "saveFailed", "status"]
+    "view", "loading", "locked", "unlock", "failed", "saveFailed", "status"],
+  activeAdmin: ["title", "by", "target", "reason", "details", "empty", "evidence",
+    "units", "view", "unlock", "saving", "saveFailed", "unavailable", "retryPin", "confirm"]
 };
 const window = { alert: () => {}, crypto: { randomUUID: () => "11111111-1111-4111-8111-111111111111" } };
 function load(file) {
@@ -26,12 +28,19 @@ load("stay-safe-sweetheart.js");
 load("stay-safe-report-form.js");
 load("stay-safe-evidence-picker.js");
 load("stay-safe-admin-reports-bridge.js");
+const activeAdminRoot = { addEventListener: () => {} };
+const activeAdminSource = fs.readFileSync(path.join(__dirname, "admin-report-panel-bridge.js"), "utf8");
+vm.runInNewContext(activeAdminSource, {
+  window: activeAdminRoot,
+  document: { readyState: "loading" }
+}, { filename: "admin-report-panel-bridge.js" });
 const dictionaries = {
   warning: window.XOXOSafetyReminderBeta.copy,
   actions: window.XOXOSafetyReminderBeta.actions,
   form: window.XOXOReportFormBeta.translations,
   picker: window.XOXOEvidencePickerBeta.translations,
-  admin: window.XOXOAdminConversationReportsBeta.translations
+  admin: window.XOXOAdminConversationReportsBeta.translations,
+  activeAdmin: activeAdminRoot.XOXOActiveAdminSafetyCopyBeta
 };
 for (const [section, dictionary] of Object.entries(dictionaries)) {
   assert.deepEqual(Object.keys(dictionary).sort(), [...locales].sort(),
@@ -49,6 +58,14 @@ for (const locale of locales) {
     locale + ": all six report reasons are mandatory");
   assert.equal(dictionaries.admin[locale].states.length, 4,
     locale + ": all four status labels are mandatory");
+  for (const key of ["pending", "reviewed", "resolved", "dismissed"]) {
+    assert.ok(dictionaries.activeAdmin[locale].statuses[key]?.trim().length,
+      locale + ": active admin status missing " + key);
+    assert.ok(dictionaries.activeAdmin[locale].actions[key]?.trim().length,
+      locale + ": active admin action missing " + key);
+  }
+  assert.equal(dictionaries.activeAdmin[locale].reasons.length, 6,
+    locale + ": active admin must translate all six report reasons");
   for (const value of [...dictionaries.form[locale].reasons, ...dictionaries.admin[locale].states]) {
     assert.ok(typeof value === "string" && value.trim().length > 0);
   }
@@ -67,4 +84,4 @@ for (const locale of locales) {
   assert.equal(flow.openReport(), true, locale + ": report form should be available in BETA");
 }
 assert.deepEqual(seen, locales, "the browser flow must pass the requested locale through");
-console.log("PASS: 10 languages complete across warning, six reasons, evidence, admin and browser routing");
+console.log("PASS: 10 languages across the active admin preview, warning, report form, evidence and browser flow");
