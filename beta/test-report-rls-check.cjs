@@ -11,6 +11,9 @@ const mock=(data,error=null)=>({from:table=>{assert.equal(table,"direct_messages
 (async()=>{
  const cases=[
  ["valid",mock([msg]),self,peer,[a],true],
+ ["unknown returned id",mock([{...msg,id:b}]),self,peer,[a],false],
+ ["uppercase request",mock([msg]),self.toUpperCase(),peer.toUpperCase(),[a.toUpperCase()],true],
+ ["wrong row type",mock([{...msg,id:42}]),self,peer,[a],false],
  ["hidden",mock([]),self,peer,[a],false],
  ["query error",mock(null,{message:"blocked"}),self,peer,[a],false],
  ["wrong sender",mock([{...msg,sender_id:other}]),self,peer,[a],false],
