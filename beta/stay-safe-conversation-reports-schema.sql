@@ -257,13 +257,18 @@ begin
       using errcode = '22023';
   end if;
 
-  select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc), '[]'::jsonb)
+  -- Pending cases must not be crowded out by newer reviewed/resolved
+  -- reports. Within each tier, show the most recently submitted first.
+  -- Keep the same 100-row response cap for existing admin UI compatibility.
+  select coalesce(jsonb_agg(to_jsonb(x)
+      order by (x.status = 'pending') desc, x.created_at desc, x.id desc),
+      '[]'::jsonb)
     into v_rows
   from (
     select r.id, r.reporter_id, r.other_user_id as reported_user_id,
            r.reason_code, r.details, r.message_ids, r.status, r.created_at
       from xoxo_safety_private.conversation_reports r
-      order by r.created_at desc
+      order by (r.status = 'pending') desc, r.created_at desc, r.id desc
       limit 100
   ) x;
 
