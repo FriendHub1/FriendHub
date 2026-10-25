@@ -39,6 +39,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
  const counts={pin:0,queue:0,legacy:0,viewer:0,statusUpdates:0};
  let authChange,observer,fetchDeferred=false,resolveFetch,visibilityHandler;
  let statusDeferred=false,resolveStatus;
+ let pinDeferred=false,resolvePin,rejectPin;
  const auth={onAuthStateChange:fn=>{authChange=fn;return {
    data:{subscription:{unsubscribe(){}}}
  }}};
@@ -83,7 +84,13 @@ function tick(){return new Promise(done=>setImmediate(done))}
    supabaseClient:{auth},
    get xoxoIsAdmin(){return admin;},
    getFriendHubLanguage:()=>"es",
-   xoxoModerationPinAuthorize:async()=>{counts.pin++;return {reason}},
+   xoxoModerationPinAuthorize:async()=>{
+     counts.pin++;
+     if(pinDeferred)return new Promise((resolve,reject)=>{
+       resolvePin=resolve;rejectPin=reject;
+     });
+     return {reason};
+   },
    openXoxoDmConversation:()=>{counts.viewer++}
  };
  vm.runInNewContext(src,context);
@@ -181,5 +188,40 @@ function tick(){return new Promise(done=>setImmediate(done))}
  assert.equal(counts.viewer,0,
    "Detached conversation button from previous PIN session must be inert");
  assert.equal(counts.queue>=4,true);
- console.log("PASS: account switching, logout during report/page/status RPCs, tab exit and navigation purge private metadata");
+
+ // An old PIN dialog may resolve after account switching. Its successful
+ // result belongs to the former user and MUST NOT unlock the new account.
+ login(adminA);
+ pinDeferred=true;
+ const firstPin=unlock().listeners.click();
+ await tick();
+ assert.equal(typeof resolvePin,"function");
+ const beforeObsoletePin=counts.queue;
+ login(adminB);
+ resolvePin({reason});
+ await firstPin;await tick();
+ assert.equal(cards(),0,"PIN success from previous account exposed report cards");
+ assert.equal(counts.queue,beforeObsoletePin,
+   "Obsolete PIN success must not start a report RPC for the new account");
+ assert.ok(unlock(),"New account should have its own PIN prompt");
+
+ // Even an obsolete PIN rejection must not invalidate a NEW authorized
+ // session or remove that person's currently visible report cards.
+ pinDeferred=true;
+ login(adminA);
+ const oldPin=unlock().listeners.click();
+ await tick();
+ const rejectOutdated=rejectPin;
+ assert.equal(typeof rejectOutdated,"function");
+ login(adminB);
+ pinDeferred=false;
+ await authorize();
+ assert.equal(cards(),1);
+ const beforeRejectedPin=counts.queue;
+ rejectOutdated(new Error("Previous account PIN rejected"));
+ await oldPin;await tick();
+ assert.equal(cards(),1,"Old PIN error cleared newer account's authorized reports");
+ assert.equal(counts.queue,beforeRejectedPin,
+   "Old PIN error must not trigger new account report queries");
+ console.log("PASS: account switching, delayed PIN success/failure, logout during report/page/status RPCs, tab exit and navigation purge private metadata");
 })().catch(error=>{console.error(error);process.exitCode=1});
