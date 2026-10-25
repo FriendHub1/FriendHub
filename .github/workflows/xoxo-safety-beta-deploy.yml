@@ -67,3 +67,5 @@ jobs:
         run: bash beta/build-safety-beta-assets.sh
       - name: Deploy ONLY xoxo-safety-beta on workers.dev
         run: npx --yes wrangler@4.102.0 deploy --config ./wrangler.safety-beta.jsonc
+
+# Owner-authorized isolated BETA deployment trigger (2026-10-25).
