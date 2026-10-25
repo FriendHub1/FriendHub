@@ -64,6 +64,9 @@ security invoker
 set search_path = ''
 as $xoxo_active_session$
   select p_user_id is not null
+    -- Supabase anonymous sign-ins also use the authenticated DB role.
+    -- Abuse reporting and moderation require a permanent signed-in account.
+    and (auth.jwt() ->> 'is_anonymous') is distinct from 'true'
     and (auth.jwt() ->> 'session_id') is not null
     and exists (
       select 1 from auth.sessions s
