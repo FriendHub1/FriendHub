@@ -5,6 +5,7 @@
  */
 const assert=require("node:assert/strict");
 const {submitConversationReportBeta}=require("./submit-conversation-report-beta.cjs");
+const browserAdapter=require("./stay-safe-browser-report-adapter.js");
 const AUTH="http://127.0.0.1:9999";
 const REST="http://127.0.0.1:3002";
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -65,7 +66,8 @@ async function main(){
   const context=JSON.parse(input);
   for(const name of ["token","messageId","otherUserId","idempotencyKey"])
     assert.equal(typeof context[name],"string");
-  for(const name of ["messageId","otherUserId","idempotencyKey"])
+  for(const name of ["messageId","otherUserId","idempotencyKey",
+    "browserIdempotencyKey","expectedUserId","outsiderUserId"])
     assert.match(context[name],UUID);
   assert.ok(context.token.length>100,"a real GoTrue session JWT is required");
   const payload={otherUserId:context.otherUserId,reasonCode:1,
@@ -76,6 +78,11 @@ async function main(){
   if(context.phase==="revoked"){
     const blocked=await submitConversationReportBeta(client,payload);
     assert.equal(blocked.ok,false,"revoked Auth session submitted via JS module");
+    const browserBlocked=await browserAdapter.submit(client,{
+      ...payload,accountId:context.expectedUserId,
+      idempotencyKey:context.browserIdempotencyKey});
+    assert.equal(browserBlocked.ok,false,
+      "revoked Auth session submitted through browser RPC adapter");
     // GoTrue /user may validate the JWT before PostgREST checks auth.sessions;
     // either layer may reject first. Persistence MUST still fail atomically.
     console.log("PASS: JavaScript submit path rejects revoked native GoTrue session");
@@ -97,5 +104,30 @@ async function main(){
   assert.equal(outsider.rpcCalls,0,"cross-account RLS must reject before the RPC");
   console.log("PASS: genuine GoTrue -> JS auth preflight -> PostgREST RLS -> atomic RPC, " +
     "idempotency and outsider rejection; all loopback and synthetic");
+
+  // This is the distinct adapter wired to the actual DM form in the BETA
+  // browser. It re-checks Auth both BEFORE and AFTER the RPC response.
+  const browserClient=realSessionClient(context.token);
+  const browserPayload={...payload,accountId:context.expectedUserId,
+    idempotencyKey:context.browserIdempotencyKey};
+  const browserFirst=await browserAdapter.submit(browserClient,browserPayload);
+  assert.equal(browserFirst.ok,true,
+    "real browser report adapter failed: "+browserFirst.reason);
+  assert.match(browserFirst.reportId,UUID);
+  assert.equal(browserClient.rpcCalls,1);
+  const browserRetry=await browserAdapter.submit(browserClient,browserPayload);
+  assert.deepEqual(browserRetry,browserFirst,
+    "browser adapter retry must return the immutable server receipt");
+  assert.equal(browserClient.rpcCalls,2);
+  const outsiderBrowser=realSessionClient(context.outsiderToken);
+  const outsiderBrowserResult=await browserAdapter.submit(outsiderBrowser,{
+    ...browserPayload,accountId:context.outsiderUserId,
+    idempotencyKey:context.outsiderIdempotencyKey});
+  assert.equal(outsiderBrowserResult.ok,false,
+    "browser adapter exposed another user's selected private evidence");
+  assert.equal(outsiderBrowser.rpcCalls,0,
+    "browser adapter must reject outsider RLS evidence before its RPC");
+  console.log("PASS: genuine GoTrue -> actual browser report adapter -> " +
+    "PostgREST RLS/RPC, stable retry, outsider denial and post-RPC Auth recheck");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

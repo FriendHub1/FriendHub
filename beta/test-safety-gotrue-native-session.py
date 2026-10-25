@@ -40,7 +40,7 @@ def db(sql):
     return p.stdout.strip()
 
 
-def js_report_pipeline(phase,token,outsider_token,message):
+def js_report_pipeline(phase,token,outsider_token,message,user,outsider_user):
     """Exercise the ACTUAL JavaScript submit entry point over loopback HTTP.
 
     Pass JWTs on stdin only; never print, persist or put them on argv.
@@ -48,6 +48,8 @@ def js_report_pipeline(phase,token,outsider_token,message):
     payload={"phase":phase,"token":token,"outsiderToken":outsider_token,
         "messageId":message,"otherUserId":PEER,
         "idempotencyKey":str(uuid.uuid4()),
+        "browserIdempotencyKey":str(uuid.uuid4()),
+        "expectedUserId":user,"outsiderUserId":outsider_user,
         "outsiderIdempotencyKey":str(uuid.uuid4())}
     result=subprocess.run(["node","beta/test-safety-native-js-client.cjs"],
         input=json.dumps(payload),text=True,capture_output=True,timeout=35)
@@ -118,6 +120,10 @@ def run():
         assert code==200,("Second GoTrue login failed",code,outsider_auth)
         outsider_token=outsider_auth.get("access_token")
     assert isinstance(outsider_token,str)
+    outsider_middle=outsider_token.split(".")[1]
+    outsider_claims=json.loads(base64.urlsafe_b64decode(outsider_middle+
+        "="*((4-len(outsider_middle)%4)%4)))
+    outsider_user=str(uuid.UUID(outsider_claims["sub"]))
     code,outsider_visible=http(REST,"GET","/direct_messages?select=id",
         token=outsider_token)
     assert code==200 and all(row.get("id")!=message for row in outsider_visible),(
@@ -138,21 +144,21 @@ def run():
     # Join the genuine signed Auth session to the actual JS report submission
     # modules, with a real RLS read and a real atomic PostgREST write. This
     # second synthetic report is distinct from the direct-HTTP test above.
-    js_report_pipeline("active",token,outsider_token,message)
+    js_report_pipeline("active",token,outsider_token,message,user,outsider_user)
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
-      f"where reporter_id='{user}'::uuid") == "2"
-    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence") == "2"
+      f"where reporter_id='{user}'::uuid") == "3"
+    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence") == "3"
 
     # Simulate session revocation in the SAME native Auth DB, while the JWT
     # is still cryptographically valid; no real credentials are involved.
     db(f"delete from auth.sessions where id='{session_id}'::uuid")
-    js_report_pipeline("revoked",token,outsider_token,message)
+    js_report_pipeline("revoked",token,outsider_token,message,user,outsider_user)
     payload["p_idempotency_key"]=str(uuid.uuid4())
     code,denied=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",payload,token)
     assert code in (400,401,403,404,406),(
       "A revoked native Auth session submitted a report",code,denied)
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
-      f"where reporter_id='{user}'::uuid") == "2"
+      f"where reporter_id='{user}'::uuid") == "3"
     print("PASS: genuine GoTrue session checked in SAME disposable DB; "
           "RLS, report/evidence, JS submission, outsider denial, idempotency "
           "and revoked-session denial")

@@ -40,9 +40,10 @@ assert.match(workflow,/Verify native GoTrue session and actual JavaScript submis
 assert.match(workflow,/node-version:\s*"22"/);
 assert.match(workflow,/beta\/test-safety-native-js-client\.cjs/);
 assert.match(native,/http:\/\/127\.0\.0\.1:3002/);
-assert.match(native,/js_report_pipeline\("active",token,outsider_token,message\)/);
-assert.match(native,/js_report_pipeline\("revoked",token,outsider_token,message\)/);
+assert.match(native,/js_report_pipeline\("active",token,outsider_token,message,user,outsider_user\)/);
+assert.match(native,/js_report_pipeline\("revoked",token,outsider_token,message,user,outsider_user\)/);
 assert.match(jsClient,/require\("\.\/submit-conversation-report-beta\.cjs"\)/);
+assert.match(jsClient,/require\("\.\/stay-safe-browser-report-adapter\.js"\)/);
 assert.match(jsClient,/http:\/\/127\.0\.0\.1:9999/);
 assert.match(jsClient,/http:\/\/127\.0\.0\.1:3002/);
 assert.doesNotMatch(jsClient,/cxosofpxfmjkrhfabrqc|xoxoavenue\.com|supabase\.co|https:\/\//i,
