@@ -168,3 +168,11 @@ Tests include:
 - Added regressions in `beta/test-browser-report-flow.cjs`: two immediate submit callbacks during a delayed evidence query must make **one** query, **one** report submission, and **one** status notification; a failed evidence reload must release the guard so a later valid retry works.
 - **[GitHub Actions 40208148813](https://github.com/FriendHub1/FriendHub/actions/runs/40208148813)** passed all three jobs: Node.js 22, disposable PostgreSQL 17 with signed local PostgREST, and WebKit/Chromium browsers.
 - The existing server-side idempotency key remains an independent defense. No production Supabase SQL or Worker was changed; report writing remains disabled in the BETA preview.
+
+### Single evidence picker during async message loading (2026-10-25)
+
+- Fixed a race between a closed reporting form and the asynchronous `getMessages()` call: repeated form callbacks could previously start **multiple** evidence requests and competing pickers before the existing report-submission lock activated.
+- `beta/stay-safe-browser-flow.js` now uses a separate `loadingEvidence` guard, acquired **before** awaiting the initial messages and released in `finally`. It blocks reopening another report form during that load without interfering with the independent `sending` submission lock.
+- Regression tests invoke the form callback twice while a promise is suspended. They verify **one** message fetch, **one** evidence picker, no premature report RPC, and no duplicate alerts. They also verify failed evidence loads unlock correctly so the reporter can retry.
+- [GitHub Actions 40208534428](https://github.com/FriendHub1/FriendHub/actions/runs/40208534428): **all three jobs passed** — Node.js 22, disposable PostgreSQL 17/PostgREST, and WebKit/Chromium browser checks.
+- Live report writes remain disabled; no production deployment, migration, or merge was performed.
