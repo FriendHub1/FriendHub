@@ -30,7 +30,9 @@
     pl: { success: "Zgłoszenie zostało bezpiecznie wysłane. 💜", disabled: "Zgłaszanie rozmów jest jeszcze w wersji BETA.", failed: "Nie udało się wysłać zgłoszenia.", noMessages: "Brak wiadomości do załączenia.", missing: "Formularz zgłoszenia jest niedostępny.", attachment: "📎 Załącznik" },
     de: { success: "Deine Meldung wurde sicher gesendet. 💜", disabled: "Gesprächsmeldungen sind noch in der BETA.", failed: "Deine Meldung konnte nicht gesendet werden.", noMessages: "Keine Nachrichten zum Anhängen.", missing: "Das Meldeformular ist nicht verfügbar.", attachment: "📎 Anhang" },
     cs: { success: "Hlášení bylo bezpečně odesláno. 💜", disabled: "Hlášení konverzací je zatím ve verzi BETA.", failed: "Hlášení se nepodařilo odeslat.", noMessages: "Nejsou k dispozici zprávy k přiložení.", missing: "Formulář není dostupný.", attachment: "📎 Příloha" },
-    no: { success: "Rapporten din ble sendt trygt. 💜", disabled: "Rapportering av samtaler er fortsatt i BETA.", failed: "Kunne ikke sende rapporten.", noMessages: "Ingen meldinger tilgjengelig.", missing: "Rapportskjemaet er utilgjengelig.", attachment: "📎 Vedlegg" }
+    no: { success: "Rapporten din ble sendt trygt. 💜", disabled: "Rapportering av samtaler er fortsatt i BETA.", failed: "Kunne ikke sende rapporten.", noMessages: "Ingen meldinger tilgjengelig.", missing: "Rapportskjemaet er utilgjengelig.", attachment: "📎 Vedlegg" },
+    sv:{"success":"Din anmälan har skickats säkert. 💜","disabled":"Konversationsanmälningar är fortfarande i BETA.","failed":"Det gick inte att skicka anmälan. Försök igen.","noMessages":"Det finns inga meddelanden att bifoga.","missing":"Anmälningsformuläret är inte tillgängligt.","attachment":"📎 Bilaga"},
+    it:{"success":"La tua segnalazione è stata inviata in sicurezza. 💜","disabled":"Le segnalazioni delle conversazioni sono ancora in BETA.","failed":"Impossibile inviare la segnalazione. Riprova.","noMessages":"Non ci sono messaggi da allegare.","missing":"Il modulo di segnalazione non è disponibile.","attachment":"📎 Allegato"}
   };
   const normalizeLocale = locale => {
     const value = String(locale || "en");
