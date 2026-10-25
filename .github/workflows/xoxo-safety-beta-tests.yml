@@ -134,6 +134,10 @@ jobs:
         run: |
           NODE_PATH="$RUNNER_TEMP/xoxo-safety-playwright/node_modules" \
             node beta/test-safety-browser-visual.cjs
+      - name: Check moderator logout/account-switch privacy in native WebKit and Chromium
+        run: |
+          NODE_PATH="$RUNNER_TEMP/xoxo-safety-playwright/node_modules" \
+            node beta/browser-safety-admin-auth.cjs
       - name: Upload synthetic BETA screenshots for visual review
         if: always()
         uses: actions/upload-artifact@v4
