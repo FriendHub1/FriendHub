@@ -51,7 +51,7 @@ window.__xoxoCurrentDmMessages=[{
 }];
 const visibleMessages=window.XOXOSafetyChatPreviewBeta.visibleContext().messages;
 assert.equal(visibleMessages.length,2);
-assert.deepEqual(visibleMessages.map(m=>m.created_at),
+assert.deepEqual(Array.from(visibleMessages,m=>m.created_at),
   ["2026-10-25T14:10:00Z","2026-10-25T11:10:00Z"]);
 assert.equal(visibleMessages[0].text,"newest preview");
 assert.equal(window.XOXOSafetyChatPreviewBeta.reportWritesEnabled(),false);
