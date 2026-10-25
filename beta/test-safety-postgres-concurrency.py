@@ -15,6 +15,10 @@ assert os.environ.get("PGUSER") == "postgres", "Disposable PostgreSQL user requi
 A = "33333333-3333-4333-8333-333333333333"
 B = "22222222-2222-4222-8222-222222222222"
 MESSAGE = "77777777-7777-4777-8777-777777777773"
+SESSIONS = {
+    A: "dddddddd-0000-4000-8000-000000000004",
+    B: "bbbbbbbb-0000-4000-8000-000000000002",
+}
 UUID_PATTERN = re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$")
 
 
@@ -38,6 +42,7 @@ def submit(reporter, peer, key, details):
         "SET ROLE authenticated;"
         f"SELECT set_config('request.jwt.claim.sub','{reporter}',false);"
         "SELECT public.xoxo_submit_conversation_report_beta("
+        f"SELECT set_config('request.jwt.claim.session_id','{SESSIONS[reporter]}',false);"
         f"'{peer}'::uuid,0,'{details}',"
         f"ARRAY['{MESSAGE}'::uuid],'{key}'::uuid);"
     )
