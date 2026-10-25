@@ -50,6 +50,32 @@ alter table xoxo_safety_private.conversation_report_evidence enable row level se
 revoke all on all tables in schema xoxo_safety_private from public, anon, authenticated;
 revoke all on schema xoxo_safety_private from public, anon, authenticated;
 
+-- Verify the signed JWT's session_id against Supabase Auth's server-side
+-- session table. Prevent a still-unexpired access token from submitting after
+-- logout/revocation, and prevent an old admin token from reading reports.
+-- This is a private helper, not a PostgREST endpoint.
+create or replace function xoxo_safety_private.active_session_for(
+  p_user_id uuid
+)
+returns boolean
+language sql
+stable
+security invoker
+set search_path = ''
+as $xoxo_active_session$
+  select p_user_id is not null
+    and (auth.jwt() ->> 'session_id') is not null
+    and exists (
+      select 1 from auth.sessions s
+       where s.id = nullif(auth.jwt() ->> 'session_id','')::uuid
+         and s.user_id = p_user_id
+         and (s.not_after is null or s.not_after > now())
+    )
+$xoxo_active_session$;
+
+revoke all on function xoxo_safety_private.active_session_for(uuid)
+  from public, anon, authenticated;
+
 create or replace function public.xoxo_submit_conversation_report_beta(
   p_other_user_id uuid,
   p_reason_code integer,
@@ -76,6 +102,10 @@ begin
   -- every message; it must be audited before enabling in production.
   if v_reporter is null then
     raise exception 'Authentication required' using errcode = '28000';
+  end if;
+  if not xoxo_safety_private.active_session_for(v_reporter) then
+    raise exception 'Active authenticated session required'
+      using errcode = '28000';
   end if;
   if p_other_user_id is null or p_other_user_id = v_reporter
      or p_reason_code is null or p_reason_code not between 0 and 5
@@ -208,7 +238,8 @@ declare
   v_rows jsonb;
   v_reason text := pg_catalog.btrim(coalesce(p_reason,''));
 begin
-  if auth.uid() is null or not public.is_xoxo_admin() then
+  if auth.uid() is null or not public.is_xoxo_admin()
+     or not xoxo_safety_private.active_session_for(auth.uid()) then
     raise exception 'Administrator access required' using errcode = '42501';
   end if;
   if not exists (
@@ -261,7 +292,8 @@ declare
   v_other_user uuid;
   v_reason text := pg_catalog.btrim(coalesce(p_reason,''));
 begin
-  if auth.uid() is null or not public.is_xoxo_admin() then
+  if auth.uid() is null or not public.is_xoxo_admin()
+     or not xoxo_safety_private.active_session_for(auth.uid()) then
     raise exception 'Administrator access required' using errcode = '42501';
   end if;
   if not exists (
