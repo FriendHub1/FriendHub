@@ -21,7 +21,7 @@ const REPORT_RPC_WRITES_ENABLED=Boolean(
  previewSearch?.get("xoxo_safety_report_write_beta")==="1"
 );
 // Explicit, local-only simulation. It never invokes the report RPC.
-const SIMULATE=Boolean(/(?:^|\\.)workers\\.dev$/i.test(String(location.hostname||"")) &&
+const SIMULATE=Boolean(/(?:^|\.)workers\.dev$/i.test(String(location.hostname||"")) &&
  previewSearch?.get("xoxo_safety_simulate_beta")==="1");
 const MOCK_IDS=[
  "00000000-0000-4000-8000-000000000101",
@@ -126,7 +126,7 @@ function getFlow(){
  flow=window.XOXOSafetyFlowBeta.create({
    client:ctx.client, accountId:ctx.self, otherUserId:ctx.peer,
    conversationId:ctx.conversationId, locale:ctx.locale,
-   previewOnly:SIMULATE||!REPORT_RPC_WRITES_ENABLED, enabled:!SIMULATE&&REPORT_RPC_WRITES_ENABLED,
+   simulate:SIMULATE, previewOnly:SIMULATE||!REPORT_RPC_WRITES_ENABLED, enabled:!SIMULATE&&REPORT_RPC_WRITES_ENABLED,
    isContextActive:()=>{
      const latest=visibleContext();
      return !!latest && latest.conversationId===ctx.conversationId &&
