@@ -47,7 +47,10 @@
       return { ok: false, reason: "wrong_account" };
     }
 
-    const ids = messageIds.map(id => id.toLowerCase());
+    // Canonicalize evidence order before both the authorized DM lookup and
+    // the report RPC. A retry with the SAME selected IDs in another order
+    // represents the same report, matching the server's sorted UUID array.
+    const ids = messageIds.map(id => id.toLowerCase()).sort();
     let evidence;
     try {
       const result = await client.from("direct_messages")
