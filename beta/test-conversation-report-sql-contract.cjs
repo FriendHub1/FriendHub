@@ -17,6 +17,7 @@ const required = [
   ["session verification helper", /create or replace function xoxo_safety_private\.active_session_for\(/i],
   ["server-side Auth sessions lookup", /from auth\.sessions s/i],
   ["signed JWT session identity", /auth\.jwt\(\)\s*->>\s*'session_id'/i],
+  ["anonymous Supabase Auth sign-ins cannot submit", /auth\.jwt\(\)\s*->>\s*'is_anonymous'\)\s*is distinct from 'true'/i],
   ["session time-box enforcement", /s\.not_after is null or s\.not_after > now\(\)/i],
   ["1-20 messages", /cardinality\(p_message_ids\) not between 1 and 20/i],
   ["six report reasons", /p_reason_code not between 0 and 5/i],
