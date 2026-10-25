@@ -17,17 +17,22 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
  const title=document.createElement("h2");title.textContent=t.title;title.style.color="#ffe28a";panel.append(title);
  const help=document.createElement("p");help.textContent=t.help;panel.append(help);
  const items=document.createElement("div");const checkboxes=[];
- const safeMessages=messages.filter(m=>m&&typeof m.id==="string"&&typeof m.text==="string").slice(0,100);
+ const seenIds=new Set();
+ const safeMessages=messages.filter(m=>{
+  if(!m||typeof m.id!=="string"||!m.id||typeof m.text!=="string"||seenIds.has(m.id))return false;
+  seenIds.add(m.id);return true;
+ }).slice(0,100);
  for(const m of safeMessages){
   const label=document.createElement("label");label.style.cssText="display:flex;gap:10px;padding:12px;margin:8px 0;border-radius:10px;background:#302043";
   const check=document.createElement("input");check.type="checkbox";check.value=m.id;
   const span=document.createElement("span");span.textContent=m.text.slice(0,1000);
+  check.addEventListener("change",()=>{const count=checkboxes.filter(x=>x.checked).length;if(count>20){check.checked=false;notice.textContent=t.limit;}else{notice.textContent="";}});
   label.append(check,span);items.append(label);checkboxes.push(check);
  }
  if(!safeMessages.length){const empty=document.createElement("p");empty.textContent=t.empty;items.append(empty)}
  panel.append(items);
  const notice=document.createElement("p");notice.setAttribute("role","status");notice.style.color="#ffe28a";panel.append(notice);
- const next=document.createElement("button");next.type="button";next.textContent=t.continue;
+ const next=document.createElement("button");next.type="button";next.textContent=t.continue;next.disabled=!safeMessages.length;
  const cancel=document.createElement("button");cancel.type="button";cancel.textContent=t.cancel;
  for(const b of [next,cancel])b.style.cssText="padding:11px;border-radius:10px;margin:5px;cursor:pointer";
  next.style.background="#ffda60";next.style.color="#231432";cancel.style.background="#34234b";cancel.style.color="white";
