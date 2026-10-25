@@ -27,7 +27,6 @@ jobs:
         shell: python
         run: |
           from pathlib import Path
-          import re
 
           worker = Path("worker.js")
           bridge = Path("beta/stay-safe-chat-preview-bridge.js")
@@ -43,11 +42,15 @@ jobs:
           worker.write_text(text[:start] + new + text[end:])
 
           b = bridge.read_text()
-          gate_pattern = re.compile(r'const REPORT_RPC_WRITES_ENABLED=Boolean\(\s*/\(\?:\^\|\\\\\.\)workers\\\\\.dev\$/i\.test\(String\(window\.location\?\.hostname\|\|""\)\) &&\s*previewSearch\?\.get\("xoxo_safety_chat_beta"\)==="1" &&\s*previewSearch\?\.get\("xoxo_safety_report_write_beta"\)==="1"\s*\);')
-          if not gate_pattern.search(b):
+          start = b.find('const REPORT_RPC_WRITES_ENABLED=Boolean(')
+          if start < 0:
               raise SystemExit("Expected BETA report-write gate was not found; refusing to modify safety bridge.")
+          end = b.find(');', start)
+          if end < 0:
+              raise SystemExit("Could not locate end of safety report-write gate.")
+          end += 2
           production_gate = '''const isProductionHost=/^(?:www\\.)?xoxoavenue\\.com$/i.test(String(window.location?.hostname||""));\nconst REPORT_RPC_WRITES_ENABLED=Boolean(\n isProductionHost || (\n   /(?:^|\\.)workers\\.dev$/i.test(String(window.location?.hostname||"")) &&\n   previewSearch?.get("xoxo_safety_chat_beta")==="1" &&\n   previewSearch?.get("xoxo_safety_report_write_beta")==="1"\n )\n);'''
-          bridge.write_text(gate_pattern.sub(production_gate, b, count=1))
+          bridge.write_text(b[:start] + production_gate + b[end:])
 
       - name: Verify the production integration diff
         run: |
