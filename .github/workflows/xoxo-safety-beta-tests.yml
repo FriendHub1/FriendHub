@@ -124,9 +124,14 @@ jobs:
           # Supabase stack, this standalone test must apply its official
           # Auth migrations explicitly before issuing signed sessions.
           docker run --rm --network host \
+            -e API_EXTERNAL_URL=http://127.0.0.1:9999 \
+            -e GOTRUE_SITE_URL=http://127.0.0.1:9999 \
             -e GOTRUE_DB_DRIVER=postgres \
             -e GOTRUE_DB_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5432/xoxo_gotrue_ci?sslmode=disable" \
             -e GOTRUE_DB_DB_NAMESPACE=auth \
+            -e GOTRUE_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
+            -e GOTRUE_JWT_AUD=authenticated \
+            -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
             supabase/gotrue:v2.197.0 auth migrate
           docker run -d --name xoxo-safety-ci-gotrue --network host \
             -e GOTRUE_API_HOST=127.0.0.1 \
