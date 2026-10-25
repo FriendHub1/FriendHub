@@ -22,9 +22,9 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
  if(document.querySelector("[data-xoxo-evidence-beta]"))return false;
  const language=locale==="nb"||locale==="nb-NO"?"no":locale;
  const t=translations[language]||translations[language.split("-")[0]]||translations.en;
- const backdrop=document.createElement("div");backdrop.dataset.xoxoEvidenceBeta="";backdrop.style.cssText="position:fixed;inset:0;z-index:2147483002;background:#000b;display:grid;place-items:center;padding:16px";
- const panel=document.createElement("section");panel.style.cssText="box-sizing:border-box;width:min(460px,100%);max-height:90vh;overflow:auto;background:#170e29;color:#f6edff;border:1px solid #78529c;border-radius:20px;padding:22px;font:16px system-ui";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
- const title=document.createElement("h2");title.textContent=t.title;title.style.color="#ffe28a";panel.append(title);
+ const backdrop=document.createElement("div");backdrop.dataset.xoxoEvidenceBeta="";backdrop.style.cssText="position:fixed;inset:0;z-index:2147483002;box-sizing:border-box;background:#000b;display:grid;place-items:center;padding:12px;padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom))";
+ const panel=document.createElement("section");panel.style.cssText="box-sizing:border-box;width:min(460px,100%);max-width:100%;max-height:90vh;max-height:90dvh;overflow:auto;overscroll-behavior:contain;background:#170e29;color:#f6edff;border:1px solid #78529c;border-radius:20px;padding:clamp(14px,4vw,22px);font:16px system-ui";panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");panel.setAttribute("aria-labelledby","xoxo-safety-evidence-title");
+ const title=document.createElement("h2");title.id="xoxo-safety-evidence-title";title.textContent=t.title;title.style.color="#ffe28a";panel.append(title);
  const help=document.createElement("p");help.textContent=t.help;panel.append(help);
  const items=document.createElement("div");const checkboxes=[];
  const seenIds=new Set();
@@ -37,8 +37,8 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
   seenIds.add(id);return true;
  }).slice(-100);
  for(const m of safeMessages){
-  const label=document.createElement("label");label.style.cssText="display:flex;gap:10px;padding:12px;margin:8px 0;border-radius:10px;background:#302043";
-  const check=document.createElement("input");check.type="checkbox";check.value=m.id;
+  const label=document.createElement("label");label.style.cssText="display:flex;align-items:flex-start;gap:10px;padding:12px;margin:8px 0;border-radius:10px;background:#302043;overflow-wrap:anywhere";
+  const check=document.createElement("input");check.type="checkbox";check.value=m.id;check.style.cssText="flex:0 0 18px;width:18px;height:18px;margin:2px 0";
   const span=document.createElement("span");span.textContent=m.text.slice(0,1000);
   check.addEventListener("change",()=>{const count=checkboxes.filter(x=>x.checked).length;if(count>20){check.checked=false;notice.textContent=t.limit;}else{notice.textContent="";}});
   label.append(check,span);items.append(label);checkboxes.push(check);
@@ -48,12 +48,23 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
  const notice=document.createElement("p");notice.setAttribute("role","status");notice.style.color="#ffe28a";panel.append(notice);
  const next=document.createElement("button");next.type="button";next.textContent=t.continue;next.disabled=!safeMessages.length;
  const cancel=document.createElement("button");cancel.type="button";cancel.textContent=t.cancel;
- for(const b of [next,cancel])b.style.cssText="padding:11px;border-radius:10px;margin:5px;cursor:pointer";
+ for(const b of [next,cancel])b.style.cssText="box-sizing:border-box;display:block;width:100%;min-height:44px;padding:11px;border-radius:10px;margin:9px 0 0;white-space:normal;overflow-wrap:anywhere;cursor:pointer";
  next.style.background="#ffda60";next.style.color="#231432";cancel.style.background="#34234b";cancel.style.color="white";
  panel.append(next,cancel);backdrop.append(panel);
  const previous=document.activeElement,oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";
  function close(){backdrop.remove();document.body.style.overflow=oldOverflow;document.removeEventListener("keydown",keyHandler);if(previous?.isConnected)previous.focus();}
- function keyHandler(e){if(e.key==="Escape"){e.preventDefault();close();}}
+ function keyHandler(e){
+  if(e.key==="Escape"){e.preventDefault();close();return;}
+  if(e.key==="Tab"){
+   const focusable=[...checkboxes,next,cancel].filter(el=>!el.disabled);
+   if(!focusable.length)return;
+   const i=focusable.indexOf(document.activeElement);
+   if(e.shiftKey && i<=0){e.preventDefault();focusable[focusable.length-1].focus();}
+   else if(!e.shiftKey && (i<0 || i===focusable.length-1)){
+    e.preventDefault();focusable[0].focus();
+   }
+  }
+ }
  cancel.onclick=close;
  next.onclick=()=>{
   const selected=checkboxes.filter(x=>x.checked).map(x=>x.value);
