@@ -27,13 +27,18 @@
       created_at:report.created_at,status:statuses.has(report.status)?report.status:"pending",
       evidence_count:count,source:"conversation_beta"};
   }
-  async function loadReportQueue(client){
-    if(typeof client?.rpc!=="function")return {ok:false,reason:"invalid_client"};
-    let original;
-    try{original=await client.rpc("get_xoxo_dm_reports");}
-    catch{return {ok:false,reason:"legacy_reports_unavailable"};}
-    if(original?.error || !Array.isArray(original?.data))return {ok:false,reason:"legacy_reports_unavailable"};
-    const reports=original.data.map(normalizeLegacy).filter(Boolean);
+  async function loadReportQueue(client,{includeLegacy=true}={}){
+    if(typeof client?.rpc!=="function" || typeof includeLegacy!=="boolean")
+      return {ok:false,reason:"invalid_client"};
+    let reports=[];
+    if(includeLegacy){
+      let original;
+      try{original=await client.rpc("get_xoxo_dm_reports");}
+      catch{return {ok:false,reason:"legacy_reports_unavailable"};}
+      if(original?.error || !Array.isArray(original?.data))
+        return {ok:false,reason:"legacy_reports_unavailable"};
+      reports=original.data.map(normalizeLegacy).filter(Boolean);
+    }
     let warning=null;
     try{
       const extra=await client.rpc("xoxo_admin_list_conversation_reports_beta");
