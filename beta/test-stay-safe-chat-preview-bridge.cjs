@@ -9,10 +9,16 @@ const foreign="55555555-5555-4555-8555-555555555555";
 const msg="22222222-2222-4222-8222-222222222222";
 const outsiderMsg="11111111-1111-4111-8111-111111111111";
 const report="66666666-6666-4666-8666-666666666666";
-const chat={style:{display:"block"},isConnected:true};
+const chat={style:{display:"block"},isConnected:true,querySelector:()=>null};
 let selectedPeer=peer,authUser=self,rows=[],reported=[],messageStore=[];
+let readyHandler=null,authChange=null;
 const client={
- auth:{getUser:async()=>({data:{user:authUser?{id:authUser}:null},error:null})},
+ auth:{
+   getUser:async()=>({data:{user:authUser?{id:authUser}:null},error:null}),
+   onAuthStateChange:callback=>{
+     authChange=callback;return {data:{subscription:{unsubscribe(){}}}};
+   }
+ },
  from:table=>{
   assert.equal(table,"direct_messages");
   return {select:fields=>{
@@ -30,7 +36,9 @@ const header={
 };
 const document={
  readyState:"loading",
- addEventListener:()=>{},
+ addEventListener:(event,cb)=>{
+   if(event==="DOMContentLoaded")readyHandler=cb;
+ },
  getElementById:id=>id==="dmChat"?chat:id==="xoxoSafetyConversationReportBeta"?header.buttons.find(b=>b.id===id)||null:null,
  querySelector:s=>s==="#dmChat .dm-chat-header"?header:null,
  createElement:tag=>({tag,style:{},listeners:{},setAttribute(k,v){this[k]=v;},
@@ -57,6 +65,16 @@ assert.ok(bridge);
   {id:outsiderMsg,sender_id:foreign,recipient_id:self,content:"NEVER SHOW THIS"}
  ];
  rows=[{id:msg,sender_id:peer,recipient_id:self}];
+ assert.equal(bridge.visibleContext(),null,
+   "Stale SPA identity must not expose cached DM text before Auth initializes");
+ assert.equal(bridge.openReport(),false);
+ readyHandler();
+ assert.equal(typeof authChange,"function");
+ assert.equal(header.buttons.length,1);
+ assert.equal(header.buttons[0].hidden,true);
+ authChange("INITIAL_SESSION",null);
+ assert.equal(bridge.visibleContext(),null);
+ authChange("INITIAL_SESSION",{user:{id:self,is_anonymous:false}});
  let ctx=bridge.visibleContext();
  assert.equal(ctx.messages.length,1);
  assert.equal(ctx.messages[0].text,"Example evidence");
@@ -82,5 +100,18 @@ assert.ok(bridge);
  assert.equal(bridge.visibleContext(),null);
  assert.equal(bridge.openReport(),false);
  assert.equal(reported.length,0,"preview must never write reports");
- console.log("PASS: chat preview is read-only, filters messages by pair and keeps a single report button");
+ // A token refresh failure invalidates the preview immediately; it cannot
+ // rely on the SPA's cached currentUser or previously rendered DM messages.
+ chat.style.display="block";
+ authChange("TOKEN_REFRESHED",null);
+ assert.equal(bridge.visibleContext(),null);
+ assert.equal(header.buttons[0].hidden,true);
+ authChange("TOKEN_REFRESHED",{user:{id:self,is_anonymous:true}});
+ assert.equal(bridge.visibleContext(),null);
+ authChange("TOKEN_REFRESHED",{user:{id:self}});
+ assert.equal(bridge.visibleContext().self,self);
+ authChange("SIGNED_OUT",null);
+ assert.equal(bridge.openReport(),false);
+ assert.equal(reported.length,0);
+ console.log("PASS: chat preview verifies initial Auth, ignores invalid/anonymous refresh, filters peers and never writes");
 })().catch(e=>{console.error(e);process.exitCode=1});
