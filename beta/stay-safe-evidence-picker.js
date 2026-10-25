@@ -17,6 +17,18 @@ const translations={
 sv:{"title":"Välj meddelanden som bevis","help":"Markera bara de meddelanden du vill bifoga din anmälan.","empty":"Det finns inga meddelanden att välja.","continue":"Skicka anmälan","cancel":"Avbryt","none":"Välj minst ett meddelande.","limit":"Du kan välja högst 20 meddelanden."},
 it:{"title":"Seleziona i messaggi come prova","help":"Seleziona solo i messaggi che vuoi allegare alla segnalazione.","empty":"Nessun messaggio disponibile.","continue":"Invia segnalazione","cancel":"Annulla","none":"Seleziona almeno un messaggio.","limit":"Puoi selezionare fino a 20 messaggi."}
 };
+const previewLabels={
+ en:{more:"Read full message",less:"Show less"},
+ es:{more:"Leer mensaje completo",less:"Mostrar menos"},
+ "pt-BR":{more:"Ler mensagem completa",less:"Mostrar menos"},
+ fr:{more:"Lire le message entier",less:"Afficher moins"},
+ pl:{more:"Przeczytaj całą wiadomość",less:"Pokaż mniej"},
+ de:{more:"Ganze Nachricht lesen",less:"Weniger anzeigen"},
+ cs:{more:"Přečíst celou zprávu",less:"Zobrazit méně"},
+ no:{more:"Les hele meldingen",less:"Vis mindre"},
+ sv:{more:"Läs hela meddelandet",less:"Visa mindre"},
+ it:{more:"Leggi il messaggio completo",less:"Mostra meno"}
+};
 function open({conversationId,messages=[],locale="es",onContinue}={}){
  if(typeof conversationId!=="string"||!conversationId||!Array.isArray(messages)||typeof onContinue!=="function")return false;
  if(document.querySelector("[data-xoxo-evidence-beta]"))return false;
@@ -37,11 +49,28 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
   seenIds.add(id);return true;
  }).slice(-100);
  for(const m of safeMessages){
-  const label=document.createElement("label");label.style.cssText="display:flex;align-items:flex-start;gap:10px;padding:12px;margin:8px 0;border-radius:10px;background:#302043;overflow-wrap:anywhere";
+  const row=document.createElement("div");
+  row.style.cssText="box-sizing:border-box;padding:12px;margin:8px 0;border-radius:10px;background:#302043;overflow-wrap:anywhere";
+  const label=document.createElement("label");label.style.cssText="display:flex;align-items:flex-start;gap:10px;cursor:pointer";
   const check=document.createElement("input");check.type="checkbox";check.value=m.id;check.style.cssText="flex:0 0 18px;width:18px;height:18px;margin:2px 0";
-  const span=document.createElement("span");span.textContent=m.text.slice(0,1000);
+  const span=document.createElement("span");
+  span.style.cssText="min-width:0;overflow-wrap:anywhere;white-space:pre-wrap";
+  span.textContent=m.text.length>240 ? m.text.slice(0,240).trimEnd()+"…" : m.text;
   check.addEventListener("change",()=>{const count=checkboxes.filter(x=>x.checked).length;if(count>20){check.checked=false;notice.textContent=t.limit;}else{notice.textContent="";}});
-  label.append(check,span);items.append(label);checkboxes.push(check);
+  label.append(check,span);row.append(label);
+  if(m.text.length>240){
+   const words=previewLabels[language]||previewLabels.en;
+   const details=document.createElement("details");
+   details.style.cssText="margin:8px 0 0 28px;color:#f6edff";
+   const summary=document.createElement("summary");summary.textContent=words.more;
+   summary.style.cssText="color:#ffe28a;cursor:pointer;min-height:28px;overflow-wrap:anywhere";
+   const full=document.createElement("p");full.textContent=m.text;
+   full.style.cssText="font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere";
+   details.append(summary,full);
+   details.addEventListener("toggle",()=>{summary.textContent=details.open?words.less:words.more;});
+   row.append(details);
+  }
+  items.append(row);checkboxes.push(check);
  }
  if(!safeMessages.length){const empty=document.createElement("p");empty.textContent=t.empty;items.append(empty)}
  panel.append(items);
@@ -75,5 +104,5 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
  document.body.append(backdrop);document.addEventListener("keydown",keyHandler);(checkboxes[0]||cancel).focus();
  return true;
 }
-window.XOXOEvidencePickerBeta=Object.freeze({open,translations});
+window.XOXOEvidencePickerBeta=Object.freeze({open,translations,previewLabels});
 })();
