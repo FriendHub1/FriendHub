@@ -4,6 +4,7 @@
  */
 (function(){
 "use strict";
+let activeDialog=null;
 const translations={
  es:{title:"Selecciona los mensajes como prueba",help:"Marca únicamente los mensajes que quieras incluir en tu denuncia.",empty:"No hay mensajes disponibles para seleccionar.",continue:"Enviar denuncia",cancel:"Cancelar",none:"Selecciona al menos un mensaje.",limit:"Puedes seleccionar hasta 20 mensajes."},
  en:{title:"Select messages as evidence",help:"Choose only the messages you want to include in your report.",empty:"No messages available to select.",continue:"Submit report",cancel:"Cancel",none:"Select at least one message.",limit:"You can select up to 20 messages."}
@@ -29,7 +30,7 @@ const previewLabels={
  sv:{more:"Läs hela meddelandet",less:"Visa mindre"},
  it:{more:"Leggi il messaggio completo",less:"Mostra meno"}
 };
-function open({conversationId,messages=[],locale="es",onContinue}={}){
+function open({conversationId,messages=[],locale="es",onContinue,owner=null}={}){
  if(typeof conversationId!=="string"||!conversationId||!Array.isArray(messages)||typeof onContinue!=="function")return false;
  if(document.querySelector("[data-xoxo-evidence-beta]"))return false;
  const language=locale==="nb"||locale==="nb-NO"?"no":locale;
@@ -99,6 +100,7 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
   if(closed)return;
   closed=true;
   backdrop.remove();document.body.style.overflow=oldOverflow;
+  if(activeDialog?.close===close)activeDialog=null;
   document.removeEventListener("keydown",keyHandler);
   if(previous?.isConnected)previous.focus();
  }
@@ -124,8 +126,13 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
   if(selected.length>20){notice.textContent=t.limit;return}
   close();onContinue({conversationId,messageIds:selected});
  };
- document.body.append(backdrop);document.addEventListener("keydown",keyHandler);(checkboxes[0]||cancel).focus();
+ document.body.append(backdrop);activeDialog={owner,close};
+ document.addEventListener("keydown",keyHandler);(checkboxes[0]||cancel).focus();
  return true;
 }
-window.XOXOEvidencePickerBeta=Object.freeze({open,translations,previewLabels});
+function dismiss(owner){
+ if(!owner || !activeDialog || activeDialog.owner!==owner)return false;
+ activeDialog.close();return true;
+}
+window.XOXOEvidencePickerBeta=Object.freeze({open,dismiss,translations,previewLabels});
 })();
