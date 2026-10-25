@@ -3,7 +3,7 @@
 // Never use the service-role client for this check.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 async function verifyVisibleMessages(client, userId, peerId, messageIds) {
-  if (!client?.from || !(typeof userId !== "string" || !UUID.test(userId)) ||
+  if (!client?.from || (typeof userId !== "string" || !UUID.test(userId)) ||
       (typeof peerId !== "string" || !UUID.test(peerId)) ||
       userId.toLowerCase() === peerId.toLowerCase() ||
       !Array.isArray(messageIds) || messageIds.length < 1 ||
