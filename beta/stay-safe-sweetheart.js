@@ -43,11 +43,13 @@
     const support=document.createElement("p");support.textContent=t.support;dialog.append(support);
     const close=document.createElement("button");close.type="button";close.textContent=t.ack;
     const previousFocus=document.activeElement;
+    const previousBodyOverflow=document.body.style.overflow;
+    document.body.style.overflow="hidden";
     function onKeyDown(event){
       if(event.key==="Tab"){event.preventDefault();close.focus();}
       if(event.key==="Escape"){event.preventDefault();dismiss();}
     }
-    function dismiss(){try{localStorage.setItem(key,"seen")}catch{} document.removeEventListener("keydown",onKeyDown);backdrop.remove();style.remove();if(previousFocus?.isConnected && typeof previousFocus.focus==="function") previousFocus.focus();}
+    function dismiss(){try{localStorage.setItem(key,"seen")}catch{} document.removeEventListener("keydown",onKeyDown);backdrop.remove();style.remove();document.body.style.overflow=previousBodyOverflow;if(previousFocus?.isConnected && typeof previousFocus.focus==="function") previousFocus.focus();}
     close.addEventListener("click",dismiss);dialog.append(close);
     backdrop.append(dialog);document.body.append(backdrop);document.addEventListener("keydown",onKeyDown);close.focus();
     return true;
