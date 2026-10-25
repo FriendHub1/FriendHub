@@ -55,6 +55,36 @@ async function scenario(engine,browserType) {
   assert.equal(await page.locator("#xoxoSafetyConversationReportBeta").count(),1);
   assert.equal(await page.evaluate(()=>typeof window.__authEvents),"function");
 
+  // The DOM may still contain a stale SPA user while Supabase is loading
+  // the INITIAL_SESSION. No reporting UI may appear until verified.
+  assert.equal(await page.evaluate(
+    ()=>window.XOXOSafetyChatPreviewBeta.openReport()),false);
+  assert.equal(await page.evaluate(()=>document.getElementById(
+    "xoxoSafetyConversationReportBeta").hidden),true);
+  await page.evaluate(()=>window.__authEvents("INITIAL_SESSION",null));
+  assert.equal(await page.evaluate(
+    ()=>window.XOXOSafetyChatPreviewBeta.openReport()),false,
+    engine+" null initial Auth session exposed old UI");
+  await page.evaluate(({a})=>window.__authEvents("INITIAL_SESSION",{
+    user:{id:a,is_anonymous:false}
+  }),{a});
+  assert.equal(await page.evaluate(()=>document.getElementById(
+    "xoxoSafetyConversationReportBeta").hidden),false);
+  // A token refresh that revokes the session must immediately hide the
+  // currently displayed account, even without a SIGNED_OUT notification.
+  await page.evaluate(()=>window.__authEvents("TOKEN_REFRESHED",null));
+  assert.equal(await page.evaluate(
+    ()=>window.XOXOSafetyChatPreviewBeta.openReport()),false);
+  await page.evaluate(({a})=>window.__authEvents("TOKEN_REFRESHED",{
+    user:{id:a,is_anonymous:true}
+  }),{a});
+  assert.equal(await page.evaluate(
+    ()=>window.XOXOSafetyChatPreviewBeta.openReport()),false,
+    engine+" anonymous Supabase Auth leaked reporting UI");
+  await page.evaluate(({a})=>window.__authEvents("SIGNED_IN",{
+    user:{id:a,is_anonymous:false}
+  }),{a});
+
   // A peer change triggers the installed *native* MutationObserver.
   assert.equal(await page.evaluate(()=>window.XOXOSafetyChatPreviewBeta.openReport()),true);
   await page.locator("[data-xoxo-report-beta]").waitFor();
