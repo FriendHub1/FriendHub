@@ -54,3 +54,51 @@ Review-only SQL: `beta/stay-safe-conversation-reports-schema.sql`. **Not deploye
 - `beta/test-conversation-report-sql-contract.cjs` adds static source checks only; no SQL execution or authenticated end-to-end testing has been performed.
 
 Next: complete review of SQL against a test database; verify authenticated and unauthorized roles; connect the existing admin reports area to metadata and open reported participant pairs through the current audited viewer. Review proposed rate limit, evidence retention and all 10 language translations before release.
+
+## Verified opt-in preview paths (2026-10-25)
+
+The BETA \`worker.js\` already has **separate workers.dev-only opt-in routes**.
+No change to the production \`index.html\` was applied (the 5.1 MB HTML file
+is too large for the current connector update channel).
+
+### DM safety UI
+- \`/?xoxo_safety_chat_beta=1\` injects:
+  \`stay-safe-sweetheart.js\`, \`stay-safe-report-form.js\`,
+  \`stay-safe-evidence-picker.js\`, and \`stay-safe-chat-preview-bridge.js\`.
+- This is an interface preview only. \`REPORT_RPC_WRITES_ENABLED=false\` in
+  \`stay-safe-chat-preview-bridge.js\` explicitly blocks RPC submission even
+  if the user completes the form and chooses messages. UI displays that the
+  report was not sent.
+- The warning and report interface now include all ten site languages:
+  \`en, es, pt-BR, fr, pl, de, cs, no, sv, it\`.
+- Automated regression checks:
+  \`test-chat-preview-safe-mode.cjs\`, \`test-safety-ten-languages.cjs\`.
+- Additional browser-flow preparation exists in \`stay-safe-browser-flow.js\`,
+  \`stay-safe-browser-report-adapter.js\`, and \`stay-safe-index-hooks.js\`;
+  these are not currently loaded by the opt-in Worker route. Avoid running two
+  competing chat bridges when the feature is enabled.
+
+### Existing admin panel
+- \`/?xoxo_safety_admin_beta=1\` injects
+  \`admin-report-queue.js\` and \`admin-report-panel-bridge.js\`.
+- That bridge hooks the *existing* \`loadXoxoDmReports\` panel and uses the
+  existing \`openXoxoDmConversation\` read-only viewer, which requires PIN
+  verification, moderation reason, and audit logging.
+- New conversation reports do not appear until the audited backend RPC
+  exists. Existing individual-message reporting is unaffected.
+- \`stay-safe-admin-reports-bridge.js\` is a separate draft adapter, **not**
+  loaded by this route. Retain only one admin integration approach before
+  release; never add a duplicate DM viewer.
+
+### Pending release gates
+- The SQL draft is **not deployed**. Verify and test it in an isolated
+  database before any production migration.
+- Decide data retention and deletion semantics for evidence IDs; no message
+  content/media is snapshotted by the draft, so physically deleted DMs may
+  no longer be readable from the existing admin viewer.
+- Connect ONE validated browser flow to the actual chat and panel only after
+  backend tests, and ensure the report action works after the one-time popup
+  has already been dismissed.
+- Test with real authenticated users and admin/non-admin accounts, including
+  cleared conversations, invalid evidence, PIN expiry, status changes and
+  all ten locales.
