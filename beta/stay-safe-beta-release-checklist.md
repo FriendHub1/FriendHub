@@ -214,3 +214,12 @@ Tests include:
 - Added ownership/disposal tests to the browser-flow and preview-bridge Node suites, plus mobile WebKit/Chromium tests for preventing old disposal from closing a new chat's dialogs.
 - [**GitHub Actions run 40212566379**](https://github.com/FriendHub1/FriendHub/actions/runs/40212566379) passed **all three jobs:** Node.js 22, disposable PostgreSQL 17/PostgREST, and WebKit/Chromium. All data are synthetic.
 - The BETA report RPC write flag stays off; no production changes were made. Physical iPhone integrated acceptance, real non-production Supabase Auth tokens, privacy retention policy and deployment permission remain open.
+
+### Same-chat report reopens now dismiss earlier private evidence UI (2026-10-25)
+
+- Fixed a visual privacy/UX issue: opening a **second report in the same DM** already invalidated callbacks from the old form/picker, but the old picker could remain *visibly open with private text behind the new form*. This is different from switching peers and needed a separate safeguard.
+- `beta/stay-safe-browser-flow.js` now increments the form-attempt epoch and **dismisses its own currently displayed form and evidence picker** before opening the replacement form. Ownership scoped to the current flow ensures another conversation's modal cannot be closed accidentally.
+- `beta/test-browser-report-flow.cjs` verifies the old picker is actually dismissed, not merely made inert; the replacement form still works and submits once.
+- `beta/test-safety-browser-visual.cjs` verifies in real WebKit (320px and 390px mobile simulation) and Chromium (desktop) that two consecutive report openings leave **one form**, reopening from the evidence stage removes the old private picker, and disposing the flow leaves zero overlays.
+- **[GitHub Actions 40213041646](https://github.com/FriendHub1/FriendHub/actions/runs/40213041646) passed all 3 jobs** (Node.js 22, disposable PostgreSQL 17 + local PostgREST, WebKit/Chromium). Test data remained synthetic.
+- No production deployment, Supabase migration, live report writes or PR merge. Owner decisions on evidence retention, reporting limit, real Supabase Auth testing and physical iPhone review remain release prerequisites.
