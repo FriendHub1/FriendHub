@@ -10,6 +10,10 @@ if(typeof window==="undefined")return;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REPORT_RPC_WRITES_ENABLED=false;
 let flow=null,flowKey="",flowClient=null;
+function disposeFlow(){
+ if(typeof flow?.dispose==="function")flow.dispose();
+ flow=null;flowKey="";flowClient=null;
+}
 function valid(id){return typeof id==="string"&&UUID.test(id);}
 function locale(){
  return typeof getFriendHubLanguage==="function"?getFriendHubLanguage():"en";
@@ -63,12 +67,13 @@ function reportStatus(result){
 function getFlow(){
  const ctx=visibleContext();
  if(!ctx||typeof window.XOXOSafetyFlowBeta?.create!=="function"){
-   flow=null;flowKey="";flowClient=null;return null;
+   disposeFlow();return null;
  }
  // A->B account switches can reuse the same participant pair but MUST NOT
  // reuse a safety reminder or report flow belonging to the old account.
  const key=ctx.self+"|"+ctx.conversationId+"|"+String(ctx.locale);
  if(flow && flowKey===key && flowClient===ctx.client)return flow;
+ disposeFlow();
  flowKey=key;flowClient=ctx.client;
  flow=window.XOXOSafetyFlowBeta.create({
    client:ctx.client, accountId:ctx.self, otherUserId:ctx.peer,
@@ -123,10 +128,26 @@ async function submit(){
 }
 function install(){
  const messages=document.getElementById("dmMessages");
- if(messages&&typeof MutationObserver==="function"){
+ const chat=document.getElementById("dmChat");
+ const header=chat?.querySelector(".dm-chat-header");
+ if(typeof MutationObserver==="function"){
    const observer=new MutationObserver(()=>{refresh()});
-   observer.observe(messages,{childList:true,subtree:false});
+   if(messages)observer.observe(messages,{childList:true,subtree:false});
+   // Closing a chat often changes display/style without mutating messages.
+   if(chat)observer.observe(chat,{attributes:true,attributeFilter:["style","class"]});
+   // Switching peers typically updates the header, not just the messages.
+   if(header)observer.observe(header,{childList:true,subtree:false});
  }
+ if(typeof window.addEventListener==="function")
+   window.addEventListener("pagehide",disposeFlow);
+ // Auth invalidation also closes sensitive dialogs immediately, even when
+ // a user signs out while a chat DOM remains visible during transition.
+ const client=typeof supabaseClient==="undefined"?null:supabaseClient;
+ if(typeof client?.auth?.onAuthStateChange==="function")
+   client.auth.onAuthStateChange((event)=>{
+     if(event==="SIGNED_OUT" || event==="SIGNED_IN" ||
+        event==="USER_DELETED")disposeFlow();
+   });
  refresh();
 }
 window.XOXOSafetyChatPreviewBeta=Object.freeze({
