@@ -61,7 +61,7 @@ jobs:
       - name: Require isolated Cloudflare credentials
         run: |
           set -euo pipefail
-          test "$XOXO_SAFETY_BETA_DEPLOY_ENABLED" = 'true' || { echo 'BETA deployment flag must be true'; exit 1; }
+          test "$(printf '%s' "$XOXO_SAFETY_BETA_DEPLOY_ENABLED" | tr -d '[:space:]')" = 'true' || { echo 'BETA deployment flag must be true'; exit 1; }
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing XOXO_SAFETY_BETA_CF_API_TOKEN'; exit 1; }
           test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing XOXO_SAFETY_BETA_CF_ACCOUNT_ID'; exit 1; }
           node beta/test-safety-beta-deploy-contract.cjs
