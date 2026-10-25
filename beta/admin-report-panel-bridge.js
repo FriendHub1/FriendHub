@@ -39,7 +39,7 @@
   function adminName(id){
     return typeof xoxoDmAdminName==="function"?xoxoDmAdminName(id):String(id||"Unknown");
   }
-  function addReportCard(report,list,adapter){
+  function addReportCard(report,list,adapter,moderationReason){
     const t=localized();
     const card=node("article","","xmm-report-card");
     card.setAttribute("data-xoxo-conversation-beta-report",report.id);
@@ -75,7 +75,7 @@
            !window.confirm(t.confirm+t.statuses[status]+"?"))return;
         for(const item of actions.querySelectorAll("button"))item.disabled=true;
         feedback.textContent=t.saving;
-        const result=await adapter.updateReportStatus(supabaseClient,report,status);
+        const result=await adapter.updateReportStatus(supabaseClient,report,status,moderationReason);
         if(result?.ok){await window.loadXoxoDmReports();return;}
         feedback.textContent=t.saveFailed;
         for(const item of actions.querySelectorAll("button"))item.disabled=false;
@@ -98,6 +98,7 @@
     // This only enables attempts to fetch the queue. Actual access is checked
     // by the PIN-protected Supabase RPC on EVERY retrieval.
     let unlocked=false;
+    let moderationReason="";
 
     function isActiveAdmin(){
       return typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
@@ -116,6 +117,7 @@
       ++generation;
       cached=[];
       unlocked=false;
+      moderationReason="";
       clearBetaUI();
       // Never touch cards owned by the existing DM report renderer.
     }
@@ -135,7 +137,9 @@
           // Reuse the EXACT existing PIN + moderation-reason dialog.
           const authorization=await xoxoModerationPinAuthorize(
             typeof getFriendHubLanguage==="function" && getFriendHubLanguage()==="es");
-          if(!authorization?.reason || !isActiveAdmin())return;
+          const reason=typeof authorization?.reason==="string" ? authorization.reason.trim() : "";
+          if(reason.length<10 || reason.length>300 || !isActiveAdmin())return;
+          moderationReason=reason;
           unlocked=true;
           await window.loadXoxoDmReports();
         }catch{
@@ -154,7 +158,7 @@
       const empty=Array.from(list.querySelectorAll(".xmm-report-feedback"))
         .find(x=>x.textContent.includes("No private-message reports yet"));
       if(empty)empty.remove();
-      for(const report of cached)addReportCard(report,list,adapter);
+      for(const report of cached)addReportCard(report,list,adapter,moderationReason);
     }
     function showWarning(kind="unavailable"){
       const list=reportList();
@@ -173,10 +177,14 @@
       cached=[];
       clearBetaUI();
       if(!isActiveAdmin()){invalidate();return;}
-      if(!unlocked){paintUnlockControl();return;}
+      if(!unlocked || moderationReason.length<10 || moderationReason.length>300){
+        invalidate();paintUnlockControl();return;
+      }
       let queue;
       try{
-        queue=await adapter.loadReportQueue(supabaseClient,{includeLegacy:false});
+        queue=await adapter.loadReportQueue(supabaseClient,{
+          includeLegacy:false,moderationReason
+        });
       }catch{
         queue={ok:false,reason:"conversation_reports_unavailable"};
       }
@@ -189,6 +197,7 @@
         // PIN may have expired. Fail closed, purge metadata and allow a new
         // verification; do not present an authorization failure as "empty".
         unlocked=false;
+        moderationReason="";
         cached=[];
         paintUnlockControl();
         showWarning("reauthorize");
