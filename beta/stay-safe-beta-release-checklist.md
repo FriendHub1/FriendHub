@@ -34,11 +34,12 @@ Tests include:
 - `test-safety-rpc-compatibility.cjs`: consistent server RPC names, metadata fields, preview wiring.
 - `test-conversation-report-sql-contract.cjs`: 32 static SQL safety rules plus regressions for invalid PostgreSQL expressions and DO block quoting.
 
-**Verified green run:** [GitHub Actions 40170693777](https://github.com/FriendHub1/FriendHub/actions/runs/40170693777) — both Node.js 22 and isolated PostgreSQL 17 jobs succeeded, including concurrency, active-session enforcement and unauthorized-admin checks. The PostgreSQL job executed 17 named groups of integration/security assertions on temporary fixtures: report inserts, evidence bounds, access controls, cleared messages, duplicate/rate-limit handling, PIN, audit and status. The SQL was compiled and executed on PostgreSQL **but has NOT been deployed to real Supabase or exercised with live authentication/session tokens**. The website and production Cloudflare deployment remain untouched.
+**Verified green run:** [GitHub Actions 40171472217](https://github.com/FriendHub1/FriendHub/actions/runs/40171472217) — Node.js 22, isolated PostgreSQL 17, and a local PostgREST 12 HTTP API with signed test JWTs all passed, including session guards, privacy, concurrency and PIN checks. The PostgreSQL job executed 17 named groups of integration/security assertions on temporary fixtures: report inserts, evidence bounds, access controls, cleared messages, duplicate/rate-limit handling, PIN, audit and status. The SQL was compiled and executed on PostgreSQL **but has NOT been deployed to real Supabase or exercised with live authentication/session tokens**. The website and production Cloudflare deployment remain untouched.
 
 ## Release blockers
 
-- [x] Execute SQL and RLS report/admin integration tests against isolated PostgreSQL 17 with GitHub Actions; run 40170693777 passed. This is NOT a live Supabase E2E test.
+- [x] Execute SQL and RLS report/admin integration tests against isolated PostgreSQL 17 with GitHub Actions; run 40171472217 passed. This is NOT a live Supabase E2E test.
+- [x] Exercise the actual PostgREST HTTP API using signed, synthetic JWTs: authenticated report submission, revoked tokens, anonymous denial, private RLS, admin PIN expiry/lockout, deleted chat visibility and audited status changes.
 - [x] Verify 12 concurrent submissions respect 10-per-day limit, 8 identical retries create a single report, and retry after quota returns the original report ID.
 - [x] Verify unauthorized users, expired PINs and locked PINs cannot change report status or create an administrative status audit entry.
 - [ ] Audit SQL function privileges, behavior and RLS in an isolated non-production Supabase environment.
@@ -70,3 +71,14 @@ Tests include:
 - Removed duplicate `sv` and `it` object keys from the safety-warning COPY and ACTIONS dictionaries. A new Node regression prevents silent key overwrites; all ten locales still pass.
 
 **Important:** SQL CI uses stubbed JWT claims and session rows, not live Supabase Auth. This is a proven PostgreSQL behavior test, **not** an Auth/PostgREST integration certification. Real-login testing remains a release blocker. This feature branch and PR #12 have not been merged or deployed; live Supabase has not been modified.
+
+### Real HTTP/PostgREST interoperability verified (2026-10-25)
+
+- [GitHub Actions 40171472217](https://github.com/FriendHub1/FriendHub/actions/runs/40171472217) passed Node 22 and PostgreSQL 17 jobs. The disposable database hosted **PostgREST 12.2.12 bound exclusively to 127.0.0.1** with a limited SQL authenticator role.
+- `beta/test-safety-postgrest-http.py` signed synthetic HS256 JWTs with an explicitly test-only local key, then sent real HTTP `/rpc/xoxo_submit_conversation_report_beta` and PIN-protected admin RPC requests. This exercised authentication/role switching, database RLS, server-side session revocation, wrong identity and JWT signature, expired tokens, evidence limits, idempotency, and audit logs through the HTTP transport.
+- Expanded test coverage confirms that **one person's chat clear hides their own messages but does not erase the other person's history**, and that a cleared message cannot be attached to a NEW report. Previously saved report metadata persists for moderation subject to the still-unapproved retention policy.
+- The admin API refused list and status changes with expired PIN, locked PIN, or mismatched authenticated session. The report status remained unchanged after denied changes.
+- `beta/test-safety-ci-http-isolation.cjs` prevents weakening the localhost-only HTTP/DB settings or accidentally adding production deployment commands to the CI workflow. It passed along with all other Node checks.
+- The JWT signing key and database credentials are **fictional values hardcoded solely for temporary CI**. No project API key, service-role key, real email, user record or production message was accessed. Neither the production Workers service nor Supabase schema was modified.
+
+**Critical scope:** PostgREST HTTP and PostgreSQL RPC interoperability are now demonstrated using *locally signed synthetic JWTs and stubbed Auth tables*, **not actual Supabase Auth-issued logins**. A separate real Supabase Auth/PostgREST environment, owner-approved retention/deletion policy, final rate-limit decision and device visual checks remain required before enabling or deploying this feature. PR #12 remains in DRAFT state with no merge.
