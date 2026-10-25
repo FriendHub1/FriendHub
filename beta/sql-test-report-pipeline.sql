@@ -218,7 +218,7 @@ begin
       'dismissed','Unrelated user may not update a report');
     raise exception 'BUG: unrelated user updated another member report';
   exception when sqlstate '42501' then null; end;
-end $;
+end $$;
 
 -- Even admin accounts without a valid PIN MUST be denied.
 select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
@@ -234,7 +234,7 @@ begin
       'dismissed','Reviewing report with an expired PIN');
     raise exception 'BUG: expired PIN changed report status';
   exception when sqlstate '42501' then null; end;
-end $;
+end $$;
 
 -- A time-valid but LOCKED PIN must prevent both list and status update.
 reset role;
@@ -243,7 +243,7 @@ update public.xoxo_moderation_pin_security
        locked_until=now()+interval '5 minutes'
  where admin_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 set role authenticated;
-do $
+do $$
 begin
   begin
     perform public.xoxo_admin_list_conversation_reports_beta('Checking a PIN locked report');
@@ -255,12 +255,12 @@ begin
       'dismissed','Checking a PIN locked status action');
     raise exception 'BUG: locked PIN changed a report status';
   exception when sqlstate '42501' then null; end;
-end $;
+end $$;
 
 -- Neither a normal user, expired PIN nor locked PIN may leave a changed row
 -- or moderation status audit event in the disposable database.
 reset role;
-do $
+do $$
 begin
   if (select status from xoxo_safety_private.conversation_reports
       where id=current_setting('xoxo.safety_ci_report_id')::uuid) <> 'pending' then
@@ -270,7 +270,7 @@ begin
             where action like 'conversation_report_status:%') then
     raise exception 'BUG: denied status update produced an audit side effect';
   end if;
-end $;
+end $$;
 
 -- Set up a verified admin PIN only in the temporary test database.
 reset role;
