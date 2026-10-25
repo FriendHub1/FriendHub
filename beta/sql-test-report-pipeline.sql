@@ -68,6 +68,49 @@ begin
 end $$;
 select set_config('request.jwt.claim.session_id','aaaaaaaa-0000-4000-8000-000000000001',false);
 
+-- Expired server-side session must reject a still-signed user JWT.
+reset role;
+update auth.sessions set not_after=now()-interval '1 minute'
+ where id='aaaaaaaa-0000-4000-8000-000000000001';
+set role authenticated;
+
+do $
+begin
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '22222222-2222-4222-8222-222222222222',1,'Expired login session',
+      array['77777777-7777-4777-8777-777777777771'::uuid],
+      '88888888-8888-4888-8888-100000000003');
+    raise exception 'BUG: expired server-side login session accepted';
+  exception when sqlstate '28000' then null; end;
+end $;
+
+reset role;
+update auth.sessions set not_after=null
+ where id='aaaaaaaa-0000-4000-8000-000000000001';
+
+-- Simulate logout/revocation by removing the active session row.
+delete from auth.sessions
+ where id='aaaaaaaa-0000-4000-8000-000000000001';
+set role authenticated;
+
+do $
+begin
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '22222222-2222-4222-8222-222222222222',1,'Logged out session',
+      array['77777777-7777-4777-8777-777777777771'::uuid],
+      '88888888-8888-4888-8888-100000000004');
+    raise exception 'BUG: revoked/deleted session accepted';
+  exception when sqlstate '28000' then null; end;
+end $;
+
+reset role;
+insert into auth.sessions(id,user_id)
+values('aaaaaaaa-0000-4000-8000-000000000001',
+       '11111111-1111-4111-8111-111111111111');
+set role authenticated;
+
 -- The disposable fixture enforces the same sender/recipient RLS as production.
 -- The user's direct SELECT must expose only the two messages of their own chat.
 do $$
