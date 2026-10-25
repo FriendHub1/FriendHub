@@ -75,6 +75,112 @@ def real_browser_report_flow(token,message,user):
     print(result.stdout.strip())
 
 
+def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
+                                  admin_session_id,report_id):
+    """Prove PIN + admin role + active GoTrue session guard the real RPCs.
+
+    This is the existing moderator's metadata queue, NOT a second DM viewer.
+    All grants, verification windows, reports and audits are disposable.
+    """
+    reason="Review of synthetic conversation safety reports"
+    listing="/rpc/xoxo_admin_list_conversation_reports_beta"
+    update="/rpc/xoxo_admin_update_conversation_report_beta"
+    page="/rpc/xoxo_admin_page_conversation_reports_beta"
+    list_body={"p_reason":reason}
+
+    # A genuine member cannot browse the queue, even with a valid JWT.
+    code,_=http(REST,"POST",listing,list_body,reporter_token)
+    assert code in (400,401,403),("Member read moderator queue",code)
+    code,_=http(REST,"POST",listing,list_body,admin_token)
+    assert code in (400,401,403),("Non-admin read moderator queue",code)
+
+    db("insert into public.xoxo_admins(user_id) "
+       f"values ('{admin_user}'::uuid)")
+    code,_=http(REST,"POST",listing,list_body,admin_token)
+    assert code in (400,401,403),("Admin skipped mandatory PIN",code)
+    db("insert into public.xoxo_moderation_pin_security "
+       "(admin_id,verified_until,locked_until) values "
+       f"('{admin_user}'::uuid,now()+interval '10 minutes',null)")
+    code,_=http(REST,"POST",listing,{"p_reason":"too short"},admin_token)
+    assert code in (400,401,403),("Admin skipped moderation reason",code)
+
+    code,rows=http(REST,"POST",listing,list_body,admin_token)
+    assert code==200 and isinstance(rows,list) and len(rows)==6,(
+        "PIN-authorized report queue missing real stored reports",code,rows)
+    assert any(r.get("id")==report_id for r in rows)
+    assert all(len(r.get("message_ids",[]))==1 and
+        r.get("unavailable_evidence_count")==0 for r in rows)
+    assert all(not any(key in r for key in
+        ("content","message_content","message_text","body","attachment_url"))
+        for r in rows),"Report queue leaked private message content"
+    assert db("select count(*) from public.xoxo_message_access_log "
+      "where action like 'conversation_report_queue:view count=6:%'") == "1",(
+      "Existing moderator audit did not log queue access")
+
+    # Verify server-side cursor paging; every page must itself be PIN-checked
+    # and audited, with no cross-page duplicate or unbounded result.
+    cursor=None
+    seen=set()
+    for index in range(4):
+        page_body={"p_reason":reason,"p_after_pending":None,
+            "p_after_created_at":None,"p_after_id":None,"p_limit":2}
+        if cursor:
+            page_body.update({"p_after_pending":cursor["pending"],
+                "p_after_created_at":cursor["created_at"],
+                "p_after_id":cursor["id"]})
+        code,batch=http(REST,"POST",page,page_body,admin_token)
+        assert code==200 and isinstance(batch,dict),(
+            "Admin report page unavailable",code,batch)
+        results=batch.get("reports")
+        assert isinstance(results,list) and len(results)<=2
+        assert not seen.intersection(r["id"] for r in results),(
+            "Admin queue returned duplicate report across pages",index)
+        seen.update(r["id"] for r in results)
+        cursor=batch.get("next_cursor")
+        if not batch.get("has_more"):
+            assert cursor is None
+            break
+        assert isinstance(cursor,dict)
+    assert seen=={r["id"] for r in rows},("Incomplete admin pagination",seen)
+    assert db("select count(*) from public.xoxo_message_access_log "
+      "where action like 'conversation_report_page:view count=%'") == "3"
+
+    update_body={"p_report_id":report_id,"p_status":"reviewed",
+        "p_reason":reason}
+    code,updated=http(REST,"POST",update,update_body,admin_token)
+    assert code==200 and updated is True,(
+        "PIN-authorized report status update failed",code,updated)
+    assert db("select status from xoxo_safety_private.conversation_reports "
+      f"where id='{report_id}'::uuid") == "reviewed"
+    assert db("select count(*) from public.xoxo_message_access_log "
+      f"where action like 'conversation_report_status:reviewed: report={report_id}%'") == "1"
+
+    db("update public.xoxo_moderation_pin_security "
+       "set verified_until=now()-interval '1 minute' "
+       f"where admin_id='{admin_user}'::uuid")
+    for route,body in ((listing,list_body),(update,update_body),
+        (page,{"p_reason":reason,"p_after_pending":None,
+            "p_after_created_at":None,"p_after_id":None,"p_limit":2})):
+        code,_=http(REST,"POST",route,body,admin_token)
+        assert code in (400,401,403),(
+            "Expired PIN accessed or mutated private report metadata",route,code)
+    assert db("select status from xoxo_safety_private.conversation_reports "
+      f"where id='{report_id}'::uuid") == "reviewed"
+
+    # Even if the PIN still looks verified, revoking the native Auth session
+    # must immediately invalidate this SECURITY DEFINER metadata RPC.
+    db("update public.xoxo_moderation_pin_security "
+       "set verified_until=now()+interval '10 minutes' "
+       f"where admin_id='{admin_user}'::uuid")
+    db(f"delete from auth.sessions where id='{admin_session_id}'::uuid")
+    code,_=http(REST,"POST",listing,list_body,admin_token)
+    assert code in (400,401,403),(
+        "Revoked genuine admin session read PIN-protected reports",code)
+    print("PASS: real GoTrue admin/moderator session -> PIN-gated queue, "
+          "existing audit, cursor pages, status changes, expired PIN and "
+          "revoked-session denial; six fictional reports")
+
+
 def run():
     assert db("select current_database()") == "xoxo_gotrue_ci"
     assert db("select to_regclass('auth.sessions') is not null") == "t"
@@ -140,6 +246,7 @@ def run():
     outsider_claims=json.loads(base64.urlsafe_b64decode(outsider_middle+
         "="*((4-len(outsider_middle)%4)%4)))
     outsider_user=str(uuid.UUID(outsider_claims["sub"]))
+    outsider_session_id=str(uuid.UUID(outsider_claims["session_id"]))
     code,outsider_visible=http(REST,"GET","/direct_messages?select=id",
         token=outsider_token)
     assert code==200 and all(row.get("id")!=message for row in outsider_visible),(
@@ -165,6 +272,12 @@ def run():
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
       f"where reporter_id='{user}'::uuid") == "6"
     assert db("select count(*) from xoxo_safety_private.conversation_report_evidence") == "6"
+
+    # Reuse the authenticated outsider after its denial as a disposable
+    # administrator. This proves role and fixed-PIN checks on the actual
+    # moderated report RPCs, not only on mocked frontend adapters.
+    native_admin_moderation_queue(token,outsider_token,outsider_user,
+        outsider_session_id,report_id)
 
     # Simulate session revocation in the SAME native Auth DB, while the JWT
     # is still cryptographically valid; no real credentials are involved.
