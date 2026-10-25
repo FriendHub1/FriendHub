@@ -319,9 +319,57 @@ async function runScenario(browser,engine,viewport,language,url){
       evidenceAfterReopen:0,formsAfterReopen:1,remainingOverlays:0
     },label+" reopening a report must close old same-chat evidence UI");
 
+    // The one-time safety warning must ALSO belong to its chat. Leaving
+    // before acknowledging may dismiss it, but must NEVER mark it as seen.
+    // Otherwise the next conversation is blocked by an orphaned overlay.
+    const reminderLifecycle=await page.evaluate(({user,language})=>{
+      const peer="22222222-2222-4222-8222-222222222222";
+      const create=conversationId=>window.XOXOSafetyFlowBeta.create({
+        client:{},accountId:user,otherUserId:peer,
+        conversationId,locale:language,previewOnly:true,enabled:false,
+        getMessages:()=>[]
+      });
+      const old=create("notice-owner-old-"+language);
+      const next=create("notice-owner-next-"+language);
+      const oldKey="xoxo:safety:v1:"+encodeURIComponent(user)+":"+
+        encodeURIComponent("notice-owner-old-"+language);
+      const nextKey="xoxo:safety:v1:"+encodeURIComponent(user)+":"+
+        encodeURIComponent("notice-owner-next-"+language);
+      localStorage.removeItem(oldKey);localStorage.removeItem(nextKey);
+      const firstOpen=old.showReminder();
+      const blockedByOld=next.showReminder();
+      const oldClosed=old.dispose() &&
+        !document.querySelector(".xoxo-safe-backdrop");
+      const oldUnseen=localStorage.getItem(oldKey)===null;
+      const nextOpen=next.showReminder();
+      old.dispose(); // Repeated disposal cannot close another chat's modal.
+      const nextPreserved=!!document.querySelector(".xoxo-safe-backdrop");
+      next.dispose();
+      const nextUnseen=localStorage.getItem(nextKey)===null;
+      const revisit=create("notice-owner-old-"+language);
+      const oldReappeared=revisit.showReminder();
+      // The actual user's acknowledgement persists, unlike auto-dismissal.
+      const close=document.querySelector(".xoxo-safe-dialog button:last-child");
+      close.click();
+      const acknowledged=localStorage.getItem(oldKey)==="seen";
+      const noRepeat=revisit.showReminder()===false;
+      revisit.dispose();
+      const noResidualOverlay=!document.querySelector(".xoxo-safe-backdrop");
+      return {
+        firstOpen,blockedByOld,oldClosed,oldUnseen,
+        nextOpen,nextPreserved,nextUnseen,oldReappeared,
+        acknowledged,noRepeat,noResidualOverlay
+      };
+    },{user,language});
+    assert.deepEqual(reminderLifecycle,{
+      firstOpen:true,blockedByOld:false,oldClosed:true,oldUnseen:true,
+      nextOpen:true,nextPreserved:true,nextUnseen:true,oldReappeared:true,
+      acknowledged:true,noRepeat:true,noResidualOverlay:true
+    },label+" owned safety reminder must close without falsely marking seen");
+
     assert.deepEqual(errors,[],"browser page errors");
     console.log("PASS: "+label+
-      " responsive safety, one-shot callbacks, chat-change private modal disposal");
+      " responsive safety, one-shot callbacks, chat-owned warning and evidence disposal");
   }finally{await context.close();}
 }
 
