@@ -9,6 +9,10 @@ on:
       - feature/xoxo-safety-reminder-beta
     paths:
       - ".github/workflows/xoxo-safety-gotrue-isolated.yml"
+      - "beta/stay-safe-conversation-reports-schema.sql"
+      - "beta/sql-test-fixtures.sql"
+      - "beta/sql-test-postgrest-fixtures.sql"
+      - "beta/sql-test-report-pipeline.sql"
       - "beta/test-safety-gotrue-auth-http.py"
       - "beta/test-safety-gotrue-native-session.py"
       - "beta/test-safety-native-js-client.cjs"
