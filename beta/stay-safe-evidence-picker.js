@@ -40,15 +40,23 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
  const help=document.createElement("p");help.textContent=t.help;panel.append(help);
  const items=document.createElement("div");const checkboxes=[];
  const seenIds=new Set();
- // Keep the latest 100 authorized messages so recent abuse is selectable.
- // Normalize UUID casing to prevent the same evidence appearing twice.
+ // Keep 100 most recent authorized messages. The host may supply DM rows
+ // newest-first OR oldest-first: when all dates are valid, sort explicitly.
+ // If any date is unavailable, preserve the legacy host ordering rather
+ // than mistakenly treating an untrusted or missing date as authoritative.
  const safeMessages=messages.filter(m=>{
   if(!m||typeof m.id!=="string"||!m.id||typeof m.text!=="string")return false;
   const id=m.id.toLowerCase();
   if(seenIds.has(id))return false;
   seenIds.add(id);return true;
- }).slice(-100);
- for(const m of safeMessages){
+ });
+ if(safeMessages.length && safeMessages.every(m=>
+    typeof m.created_at==="string" && m.created_at.trim()!=="" &&
+    Number.isFinite(Date.parse(m.created_at)))){
+  safeMessages.sort((a,b)=>Date.parse(a.created_at)-Date.parse(b.created_at));
+ }
+ const recentMessages=safeMessages.slice(-100);
+ for(const m of recentMessages){
   const row=document.createElement("div");
   row.style.cssText="box-sizing:border-box;padding:12px;margin:8px 0;border-radius:10px;background:#302043;overflow-wrap:anywhere";
   const label=document.createElement("label");label.style.cssText="display:flex;align-items:flex-start;gap:10px;cursor:pointer";
@@ -72,10 +80,10 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
   }
   items.append(row);checkboxes.push(check);
  }
- if(!safeMessages.length){const empty=document.createElement("p");empty.textContent=t.empty;items.append(empty)}
+ if(!recentMessages.length){const empty=document.createElement("p");empty.textContent=t.empty;items.append(empty)}
  panel.append(items);
  const notice=document.createElement("p");notice.setAttribute("role","status");notice.style.color="#ffe28a";panel.append(notice);
- const next=document.createElement("button");next.type="button";next.textContent=t.continue;next.disabled=!safeMessages.length;
+ const next=document.createElement("button");next.type="button";next.textContent=t.continue;next.disabled=!recentMessages.length;
  const cancel=document.createElement("button");cancel.type="button";cancel.textContent=t.cancel;
  for(const b of [next,cancel])b.style.cssText="box-sizing:border-box;display:block;width:100%;min-height:44px;padding:11px;border-radius:10px;margin:9px 0 0;white-space:normal;overflow-wrap:anywhere;cursor:pointer";
  next.style.background="#ffda60";next.style.color="#231432";cancel.style.background="#34234b";cancel.style.color="white";
