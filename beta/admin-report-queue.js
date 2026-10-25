@@ -84,7 +84,11 @@
         }
       }else warning="conversation_reports_invalid_response";
     }catch{warning="conversation_reports_unavailable";}
+    // Match the server queue: never bury an old pending case beneath
+    // newer reviewed, resolved or dismissed reports.
     reports.sort((a,b)=>{
+      const urgency=Number(b.status==="pending")-Number(a.status==="pending");
+      if(urgency)return urgency;
       const aTime=Date.parse(a.created_at||"");const bTime=Date.parse(b.created_at||"");
       return (Number.isFinite(bTime)?bTime:0)-(Number.isFinite(aTime)?aTime:0);
     });
