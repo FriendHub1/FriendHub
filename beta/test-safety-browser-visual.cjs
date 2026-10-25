@@ -105,7 +105,9 @@ async function runScenario(browser,engine,viewport,language,url){
     // Explicitly choose most recent as well as 19 older messages.
     await checkboxes.last().check();
     for(let i=0;i<19;i++)await checkboxes.nth(i).check();
-    await checkboxes.nth(19).check();
+    // A 21st checkbox is intentionally reset by application logic.
+    // Use click(), not Playwright check(): check() requires it to remain checked.
+    await checkboxes.nth(19).click();
     assert.equal(await checkboxes.nth(19).isChecked(),false,
       "21st selected message should be rejected");
     await picker.locator("button").last().focus();
