@@ -102,6 +102,8 @@ jobs:
           fi
       - name: Test real signed JWTs through PostgREST HTTP and RPC permissions
         run: python3 beta/test-safety-postgrest-http.py
+      - name: Verify old pending reports survive a 120-case closed-report flood
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-admin-queue-priority.sql
       - name: Clean up disposable PostgREST container
         if: always()
         run: docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
