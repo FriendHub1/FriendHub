@@ -160,12 +160,15 @@ begin
 
   -- The owner of this definer RPC bypasses RLS. Replicate the existing
   -- direct_messages SELECT policy explicitly, including per-user clears.
-  -- FOR KEY SHARE prevents deletion of validated DMs until commit.
+  -- FOR SHARE blocks deletes AND concurrent non-key UPDATEs to validated
+  -- rows (sender/recipient/created_at/content) until the evidence snapshot
+  -- has been persisted atomically. FOR KEY SHARE is not sufficient here:
+  -- a concurrent content/timestamp UPDATE could otherwise slip through.
   for v_message in
     select dm.id, dm.sender_id, dm.recipient_id, dm.created_at
       from public.direct_messages dm
       where dm.id = any(v_normalized_ids)
-      for key share
+      for share
   loop
     if not (
       (v_message.sender_id = v_reporter and v_message.recipient_id = p_other_user_id)
