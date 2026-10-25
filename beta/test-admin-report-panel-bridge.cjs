@@ -12,15 +12,19 @@ function element(tag){
  return {tag,children:[],textContent:"",listeners:{},attributes:{},style:{},className:"",disabled:false,
   append(...items){for(const item of items){item.parent=this;this.children.push(item)}},
   setAttribute(name,value){this.attributes[name]=value},
+  removeAttribute(name){delete this.attributes[name]},
   addEventListener(name,fn){this.listeners[name]=fn},
   querySelectorAll(selector){return this.children.filter(x=>selector==="button"?x.tag==="button":
     selector==="[data-xoxo-conversation-beta-report]"?!!x.attributes["data-xoxo-conversation-beta-report"]:
+    selector==='[data-xoxo-safety-report-evidence="1"]'?x.attributes["data-xoxo-safety-report-evidence"]==="1":
+    selector==="[data-xoxo-safety-evidence-label]"?!!x.attributes["data-xoxo-safety-evidence-label"]:
     selector==="[data-xoxo-safety-report-unlock]"?!!x.attributes["data-xoxo-safety-report-unlock"]:
     selector===".xmm-report-feedback"?x.className==="xmm-report-feedback":false)},
   remove(){this.removed=true;if(this.parent)this.parent.children=this.parent.children.filter(x=>x!==this)}};
 }
 (async()=>{
- const list=element("section");const moderation={classList:{contains:()=>true}};
+ const list=element("section");const viewer=element("section");
+ const moderation={classList:{contains:()=>true}};
  const calls={legacy:0,queue:0,pin:0,unlock:0,updates:0};
  let betaAvailable=true,admin=true,legacyFails=false,updateFails=false;
  const context={
@@ -35,7 +39,7 @@ function element(tag){
       assert.equal(reason,"Report queue moderation access",
         "status changes need the same PIN moderation reason");
       calls.updates++;return updateFails?{ok:false}:{ok:true};}}},
-  document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xoxoAdminModeration"?moderation:null},
+  document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xmmMessages"?viewer:id==="xoxoAdminModeration"?moderation:null},
   supabaseClient:{},
   get xoxoIsAdmin(){return admin;},
   getFriendHubLanguage:()=> "es",
@@ -78,6 +82,7 @@ function element(tag){
    "only selected evidence must be marked in the existing viewer");
  assert.equal(selected.children.length,1,"a visible localized evidence marker is required");
  assert.match(selected.children[0].textContent,/Pruebas seleccionadas/);
+ viewer.append(selected);
  const unselected=context.window.xoxoDmMakeMessage({id:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",content:"Unselected"},
    {user_1:reporter,user_2:peer});
  assert.equal(unselected.attributes["data-xoxo-safety-report-evidence"],undefined);
@@ -96,6 +101,11 @@ function element(tag){
    "a status update failure must immediately purge sensitive BETA metadata");
  assert.equal(list.querySelectorAll("[data-xoxo-safety-report-unlock]").length,1,
    "after an update failure the existing PIN must be verified again");
+ assert.equal(viewer.children.length,1,"the original viewer history must remain mounted");
+ assert.equal(selected.attributes["data-xoxo-safety-report-evidence"],undefined,
+   "PIN invalidation must remove markers from already mounted original messages");
+ assert.equal(selected.children.length,0,
+   "PIN invalidation must remove the evidence badge, not its original message");
  const revokedEvidence=context.window.xoxoDmMakeMessage({id:report.evidence_message_ids[0]},
    {user_1:reporter,user_2:peer});
  assert.equal(revokedEvidence.attributes["data-xoxo-safety-report-evidence"],undefined,
