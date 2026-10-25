@@ -2,6 +2,8 @@
 // Integration-contract tests for the EXISTING xmm moderation area.
 // Uses mock RPCs; never reads real private messages or contacts production.
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const {
   combine, load, updateStatus, openInExistingViewer, REASON_CODES
 } = require("./stay-safe-admin-report-adapter.js");
@@ -77,12 +79,22 @@ const conversation = {
     viewerArgs = c;
     // Existing openXoxoDmConversation handles PIN + reason + audit log.
   });
-  assert.deepEqual(handedOff, { ok: true });
+  assert.deepEqual(handedOff, { ok: true, handedOff: true });
   assert.deepEqual(viewerArgs, { user_1: SELF, user_2: OTHER });
   viewerArgs = null;
   assert.equal((await openInExistingViewer(merged[1], async c => {viewerArgs = c;})).reason,
     "invalid_input");
   assert.equal(viewerArgs, null, "Legacy reports do not open a new conversation viewer");
+
+  const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
+  assert.match(html, /async function openXoxoDmConversation\(c\)/,
+    "New reports must reuse existing viewer");
+  assert.match(html, /xoxoModerationPinAuthorize\(es\)/,
+    "Existing PIN + reason prompt must remain");
+  assert.match(html, /supabaseClient\.rpc\("xoxo_admin_read_dm_page_pin"/,
+    "Existing PIN-protected, audited viewer endpoint must remain");
+  assert.match(html, /id="xmmReportsList"/,
+    "Reports belong in existing admin list");
 
   console.log("PASS: admin report merge, safe fallback, RPC routing and existing PIN-viewer handoff");
 })().catch(err => {
