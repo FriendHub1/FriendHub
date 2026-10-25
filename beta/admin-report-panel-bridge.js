@@ -219,6 +219,12 @@
       insideLegacyLoad++;
       try{
         await original.apply(this,args);
+      }catch(error){
+        // A failure in the legacy loader must also invalidate any report
+        // metadata from an earlier PIN session; do not leave it in the DOM.
+        invalidate();
+        if(isActiveAdmin())paintUnlockControl();
+        throw error;
       }finally{
         insideLegacyLoad--;
       }
