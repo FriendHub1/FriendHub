@@ -133,6 +133,12 @@ jobs:
             -e GOTRUE_JWT_AUD=authenticated \
             -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
             supabase/gotrue:v2.197.0 auth migrate
+          # GoTrue executes unqualified identities/sessions queries. The
+          # disposable PostgreSQL account must search auth before public.
+          psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -c \
+            "alter role postgres in database xoxo_gotrue_ci set search_path = auth, public"
+          psql -XAtq -d xoxo_gotrue_ci -c \
+            "select to_regclass('auth.identities') is not null and to_regclass('auth.users') is not null" | grep -Fx t
           docker run -d --name xoxo-safety-ci-gotrue --network host \
             -e GOTRUE_API_HOST=127.0.0.1 \
             -e GOTRUE_API_PORT=9999 \
