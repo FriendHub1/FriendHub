@@ -87,6 +87,37 @@ def run():
     assert db("select count(*) from xoxo_safety_private.conversation_report_evidence "
       f"where report_id='{report_id}'::uuid") == "1"
 
+    # A second ACTUAL GoTrue sign-in must not read or report the first
+    # member's private DM evidence, even though both tokens are valid.
+    outsider_email="xoxo-outsider-"+uuid.uuid4().hex[:12]+"@example.invalid"
+    outsider_password="NativeOutsiderOnly!"+uuid.uuid4().hex[:18]
+    code,outsider_auth=http(AUTH,"POST","/signup",
+        {"email":outsider_email,"password":outsider_password})
+    assert code in (200,201),("Second GoTrue signup failed",code,outsider_auth)
+    outsider_token=outsider_auth.get("access_token")
+    if not outsider_token:
+        code,outsider_auth=http(AUTH,"POST","/token?grant_type=password",
+            {"email":outsider_email,"password":outsider_password})
+        assert code==200,("Second GoTrue login failed",code,outsider_auth)
+        outsider_token=outsider_auth.get("access_token")
+    assert isinstance(outsider_token,str)
+    code,outsider_visible=http(REST,"GET","/direct_messages?select=id",
+        token=outsider_token)
+    assert code==200 and all(row.get("id")!=message for row in outsider_visible),(
+        "Unrelated real Auth user could see private evidence",code,outsider_visible)
+    outsider_payload={**payload,"p_idempotency_key":str(uuid.uuid4())}
+    code,denied_other=http(REST,"POST",
+        "/rpc/xoxo_submit_conversation_report_beta",outsider_payload,outsider_token)
+    assert code in (400,401,403,404,406),(
+        "Unrelated real Auth user submitted another account's evidence",code,denied_other)
+    assert db("select count(*) from xoxo_safety_private.conversation_reports") == "1",(
+        "An unrelated account created a report despite invalid evidence")
+
+    code,replayed=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",
+        payload,token)
+    assert code==200 and replayed==report_id,(
+        "Native Auth idempotent retry created another report",code,replayed)
+
     # Simulate session revocation in the SAME native Auth DB, while the JWT
     # is still cryptographically valid; no real credentials are involved.
     db(f"delete from auth.sessions where id='{session_id}'::uuid")
@@ -96,8 +127,8 @@ def run():
       "A revoked native Auth session submitted a report",code,denied)
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
       f"where reporter_id='{user}'::uuid") == "1"
-    print("PASS: genuine GoTrue session stored and checked in SAME disposable DB; "
-          "RLS, report RPC, evidence and native session revocation denied safely")
+    print("PASS: genuine GoTrue session checked in SAME disposable DB; "
+          "RLS, report/evidence, outsider denial, idempotency and revoked-session denial")
 
 
 if __name__=="__main__":run()
