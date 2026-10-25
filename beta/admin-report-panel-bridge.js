@@ -60,19 +60,44 @@
     if(window.__xoxoAdminReportBridgeBetaInstalled||typeof original!=="function"||!adapter?.loadReportQueue)return;
     window.__xoxoAdminReportBridgeBetaInstalled=true;
     let generation=0;
+    let cached=[];
+    function isActiveAdmin(){
+      return typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
+        !!document.getElementById("xoxoAdminModeration")?.classList.contains("active");
+    }
+    function paintCachedReports(){
+      if(!isActiveAdmin())return;
+      const list=document.getElementById("xmmReportsList");
+      if(!list)return;
+      // The legacy renderer owns legacy cards. Remove only previously
+      // appended BETA cards, so repeated panel renders never duplicate them.
+      for(const card of list.querySelectorAll("[data-xoxo-conversation-beta-report]"))card.remove();
+      if(!cached.length)return;
+      const empty=Array.from(list.querySelectorAll(".xmm-report-feedback"))
+        .find(x=>x.textContent.includes("No private-message reports yet"));
+      if(empty)empty.remove();
+      for(const report of cached)addReportCard(report,list,adapter);
+    }
+    // The existing admin dashboard may call renderXoxoDmReports() directly,
+    // clearing the DOM without refreshing. Reapply only cached BETA cards.
+    const originalRender=window.renderXoxoDmReports;
+    if(typeof originalRender==="function"){
+      window.renderXoxoDmReports=function(...args){
+        const result=originalRender.apply(this,args);
+        paintCachedReports();
+        return result;
+      };
+    }
     window.loadXoxoDmReports=async function(...args){
       const version=++generation;
       await original.apply(this,args);
-      if(typeof xoxoIsAdmin==="undefined"||!xoxoIsAdmin||!document.getElementById("xoxoAdminModeration")?.classList.contains("active"))return;
-      const list=document.getElementById("xmmReportsList");
-      if(!list)return;
+      if(!isActiveAdmin())return;
       const queue=await adapter.loadReportQueue(supabaseClient,{includeLegacy:false});
-      if(version!==generation||!queue?.ok||typeof xoxoIsAdmin==="undefined"||!xoxoIsAdmin)return;
-      const conversationReports=queue.reports.filter(x=>x.source==="conversation_beta");
-      if(!conversationReports.length)return;
-      const empty=Array.from(list.querySelectorAll(".xmm-report-feedback")).find(x=>x.textContent.includes("No private-message reports yet"));
-      if(empty)empty.remove();
-      for(const report of conversationReports)addReportCard(report,list,adapter);
+      if(version!==generation||!isActiveAdmin())return;
+      // Fail closed: do not show stale BETA reports after a failed refresh.
+      cached=queue?.ok && Array.isArray(queue.reports)
+        ? queue.reports.filter(x=>x.source==="conversation_beta") : [];
+      paintCachedReports();
     };
   }
   if(document.readyState==="loading")window.addEventListener("DOMContentLoaded",install,{once:true});
