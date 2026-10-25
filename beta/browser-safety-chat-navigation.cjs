@@ -103,6 +103,40 @@ async function scenario(engine,browserType) {
   await page.locator("[data-xoxo-report-beta]").waitFor();
   await page.evaluate(()=>window.__authEvents("SIGNED_OUT",null));
   await page.waitForFunction(()=>!document.querySelector("[data-xoxo-report-beta]"));
+
+  // The SPA may redraw the OLD chat after Auth signed out but before it
+  // clears window.currentUser. Never rebuild the old report modal.
+  await page.evaluate(()=>{
+    document.getElementById("peerTitle").textContent="Stale post-logout header";
+    document.getElementById("dmMessages").textContent="Old UI rerender";
+  });
+  await page.waitForFunction(()=>document.getElementById(
+    "xoxoSafetyConversationReportBeta")?.hidden===true);
+  assert.equal(await page.evaluate(
+    ()=>window.XOXOSafetyChatPreviewBeta.visibleContext()),null);
+  assert.equal(await page.evaluate(
+    ()=>window.XOXOSafetyChatPreviewBeta.openReport()),false);
+  assert.equal(await page.locator("[data-xoxo-report-beta]").count(),0);
+
+  // A NEW Auth identity must not revive the previous account's old DOM.
+  await page.evaluate(({c})=>window.__authEvents("SIGNED_IN",{
+    user:{id:c}
+  }),{c});
+  assert.equal(await page.evaluate(
+    ()=>window.XOXOSafetyChatPreviewBeta.visibleContext()),null,
+    "New sign-in must not use the previous account's stale currentUser");
+  // Once the SPA installs the newly signed-in identity, reporting can
+  // reopen normally and new UI is still owned by the correct flow.
+  await page.evaluate(({c})=>{
+    window.currentUser={id:c};
+    window.currentDmUserId="11111111-1111-4111-8111-111111111111";
+    window.XOXOSafetyChatPreviewBeta.refresh();
+  },{c});
+  assert.equal(await page.evaluate(
+    ()=>window.XOXOSafetyChatPreviewBeta.openReport()),true);
+  await page.locator("[data-xoxo-report-beta]").waitFor();
+  await page.evaluate(()=>window.dispatchEvent(new Event("pagehide")));
+  await page.waitForFunction(()=>!document.querySelector("[data-xoxo-report-beta]"));
   assert.equal(await page.evaluate(()=>window.__noticeCount),0);
   assert.deepEqual(errors,[],engine+" browser exceptions");
   console.log("PASS: "+engine+
