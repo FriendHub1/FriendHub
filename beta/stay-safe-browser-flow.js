@@ -256,7 +256,7 @@
       if (!contextActive()) return false;
       if (typeof root?.XOXOSafetyReminderBeta?.show !== "function") return false;
       return root.XOXOSafetyReminderBeta.show({
-        conversationId, accountId, locale,
+        conversationId, accountId, locale, owner: dialogOwner,
         ...((config.enabled || config.previewOnly) ? { onReport: () => { openReport(); } } : {})
       });
     }
@@ -268,6 +268,7 @@
       retry = null;
       // Dismiss ONLY the overlays owned by this flow. Stale asynchronous
       // fetches then fail the context checks and cannot reopen old evidence.
+      root?.XOXOSafetyReminderBeta?.dismiss?.(dialogOwner);
       root?.XOXOReportFormBeta?.dismiss?.(dialogOwner);
       root?.XOXOEvidencePickerBeta?.dismiss?.(dialogOwner);
       return true;
