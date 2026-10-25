@@ -240,7 +240,12 @@
         inform({ ok: false, reason: "missing_module" });
         return false;
       }
+      // Reopening reporting in the SAME chat invalidates old callbacks,
+      // but must also remove the old private evidence UI itself. Otherwise
+      // stale messages remain visually accessible behind the new form.
       const formEpoch = ++reportFormEpoch;
+      root?.XOXOReportFormBeta?.dismiss?.(dialogOwner);
+      root?.XOXOEvidencePickerBeta?.dismiss?.(dialogOwner);
       return root.XOXOReportFormBeta.open({
         conversationId, locale, owner: dialogOwner,
         onContinue: data => { void startEvidence(data, formEpoch); }
