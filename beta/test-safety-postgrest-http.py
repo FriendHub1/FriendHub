@@ -126,6 +126,19 @@ def check():
 
     status, _ = request("GET", "/auth.sessions?select=id", reporter)
     blocked(status, "Auth sessions table")
+    # The auth schema is not exposed by this PostgREST instance, even when
+    # a client manually requests it via a profile header.
+    auth_req = urllib.request.Request(
+        HOST + "/sessions?select=id",
+        headers={"Authorization": "Bearer " + reporter,
+                 "Accept": "application/json", "Accept-Profile": "auth"},
+        method="GET")
+    try:
+        with urllib.request.urlopen(auth_req, timeout=8) as response:
+            raise AssertionError("Auth sessions were exposed over HTTP: "
+                                 + str(response.status))
+    except urllib.error.HTTPError as error:
+        blocked(error.code, "auth schema profile")
 
     status, _ = request("POST", "/rpc/xoxo_submit_conversation_report_beta",
                         outsider, rpc_payload())
@@ -183,6 +196,25 @@ def check():
         f"and conversation_user_1=least('{U}'::uuid,'{PEER}'::uuid)")
     assert int(audit_rows) == 1, "admin moderation status change was not audited"
 
+    # A user's own chat-clear state must hide evidence from that user while
+    # preserving its existing moderation record for the administrator.
+    db("insert into public.dm_conversation_clears "
+       "(user_id,other_user_id,cleared_at) values "
+       f"('{U}'::uuid,'{PEER}'::uuid,now())")
+    status, cleared_rows = request("GET", "/direct_messages?select=id", reporter)
+    assert status == 200 and cleared_rows == [], (
+        "Cleared messages are still visible to the reporting user", status, cleared_rows)
+    status, peer_rows = request("GET", "/direct_messages?select=id", token(PEER, SES_PEER))
+    assert status == 200 and len(peer_rows) == 2, (
+        "Clearing one side must not erase the other participant's history", status, peer_rows)
+    status, _ = request("POST", "/rpc/xoxo_submit_conversation_report_beta",
+                        reporter, rpc_payload(evidence=[OTHER_MSG],
+                        key="abababab-abab-4bab-8bab-ababababab03"))
+    blocked(status, "cleared chat evidence")
+    assert db("select count(*) from xoxo_safety_private.conversation_reports "
+              f"where reporter_id='{U}'::uuid") == "1", (
+                  "Cleared evidence unexpectedly created another report")
+
     # Remove this synthetic session to test revocation with an otherwise valid JWT.
     db(f"delete from auth.sessions where id='{SES_U}'::uuid")
     status, _ = request("POST", "/rpc/xoxo_submit_conversation_report_beta",
@@ -200,8 +232,27 @@ def check():
     status, _ = request("POST", "/rpc/xoxo_admin_list_conversation_reports_beta",
                         administrator, {"p_reason": REASON})
     blocked(status, "admin PIN expiry")
-    print("PASS: 17 local HTTP/JWT/PostgREST checks — real HTTP RPC, JWT signature, "
-          "session revoke, DM RLS, private schema, idempotency, admin PIN + audit")
+    status, _ = request("POST", "/rpc/xoxo_admin_update_conversation_report_beta",
+                        administrator,
+                        {"p_report_id": report, "p_status": "dismissed", "p_reason": REASON})
+    blocked(status, "admin status update after PIN expiry")
+    db("update public.xoxo_moderation_pin_security "
+       "set verified_until=now()+interval '10 minutes',"
+       "locked_until=now()+interval '10 minutes' "
+       f"where admin_id='{ADMIN}'::uuid")
+    status, _ = request("POST", "/rpc/xoxo_admin_list_conversation_reports_beta",
+                        administrator, {"p_reason": REASON})
+    blocked(status, "admin PIN lockout")
+    status, _ = request("POST", "/rpc/xoxo_admin_update_conversation_report_beta",
+                        administrator,
+                        {"p_report_id": report, "p_status": "dismissed", "p_reason": REASON})
+    blocked(status, "admin status update during PIN lockout")
+    assert db(
+        "select status from xoxo_safety_private.conversation_reports "
+        f"where id='{report}'::uuid") == "reviewed", (
+            "A denied PIN status update modified a report")
+    print("PASS: 23 local HTTP/JWT/PostgREST checks — real signed API requests, "
+          "chat clears, denied revoked session, private data, idempotency, PIN expiry/lockout + audit")
 
 
 if __name__ == "__main__":
