@@ -86,7 +86,8 @@
       if (!((from === account && to === peer) || (from === peer && to === account))) return null;
       const content = typeof row.text === "string" ? row.text :
         typeof row.content === "string" ? row.content : "";
-      return { id: row.id.toLowerCase(), text: content || messages.attachment };
+      return { id: row.id.toLowerCase(), text: content || messages.attachment,
+        created_at: typeof row.created_at === "string" ? row.created_at : null };
     }
 
     async function startEvidence(formData) {
