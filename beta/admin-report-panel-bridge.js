@@ -61,9 +61,38 @@
     window.__xoxoAdminReportBridgeBetaInstalled=true;
     let generation=0;
     let cached=[];
+    let unlocked=false;
+    let warning=null;
     function isActiveAdmin(){
       return typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
         !!document.getElementById("xoxoAdminModeration")?.classList.contains("active");
+    }
+    function paintUnlockControl(){
+      if(!isActiveAdmin())return;
+      const list=document.getElementById("xmmReportsList");
+      if(!list)return;
+      for(const old of list.querySelectorAll("[data-xoxo-safety-report-unlock]"))old.remove();
+      if(unlocked)return;
+      const action=node("button",
+        typeof getFriendHubLanguage==="function" && getFriendHubLanguage()==="es"
+          ? "🔐 Verificar PIN para consultar denuncias de conversaciones"
+          : "🔐 Verify PIN to review conversation reports",
+        "xmm-reload");
+      action.type="button";
+      action.setAttribute("data-xoxo-safety-report-unlock","1");
+      action.addEventListener("click",async()=>{
+        if(!isActiveAdmin()||typeof xoxoModerationPinAuthorize!=="function")return;
+        action.disabled=true;
+        try{
+          // Reuse the EXACT existing PIN + moderation-reason dialog.
+          const authorization=await xoxoModerationPinAuthorize(
+            typeof getFriendHubLanguage==="function" && getFriendHubLanguage()==="es");
+          if(!authorization?.reason)return;
+          unlocked=true;
+          await window.loadXoxoDmReports();
+        }finally{action.disabled=false;}
+      });
+      list.append(action);
     }
     function paintCachedReports(){
       if(!isActiveAdmin())return;
@@ -85,6 +114,7 @@
       window.renderXoxoDmReports=function(...args){
         const result=originalRender.apply(this,args);
         paintCachedReports();
+        paintUnlockControl();
         return result;
       };
     }
@@ -92,12 +122,25 @@
       const version=++generation;
       await original.apply(this,args);
       if(!isActiveAdmin())return;
+      if(!unlocked){
+        cached=[];
+        paintCachedReports();
+        paintUnlockControl();
+        return;
+      }
       const queue=await adapter.loadReportQueue(supabaseClient,{includeLegacy:false});
       if(version!==generation||!isActiveAdmin())return;
       // Fail closed: do not show stale BETA reports after a failed refresh.
       cached=queue?.ok && Array.isArray(queue.reports)
         ? queue.reports.filter(x=>x.source==="conversation_beta") : [];
+      warning=queue?.warning||(!queue?.ok?"conversation_reports_unavailable":null);
       paintCachedReports();
+      if(warning){
+        const list=document.getElementById("xmmReportsList");
+        if(list)list.append(node("div",
+          "Stay Safe BETA: conversation reports are not available in Supabase yet.",
+          "xmm-report-feedback"));
+      }
     };
   }
   if(document.readyState==="loading")window.addEventListener("DOMContentLoaded",install,{once:true});
