@@ -4,6 +4,9 @@
  */
 (function () {
   "use strict";
+  // Only the report flow that opened a safety reminder can dismiss it.
+  // User acknowledgements are saved; programmatic chat changes are not.
+  let activeReminder=null;
   const COPY = {
     en: {title:"Stay Safe, Sweetheart! 💛",intro:"Your safety matters.",money:"Never send money, gift cards or crypto to someone you have not verified.",privacy:"Keep passwords, verification codes and banking details private.",images:"Intimate photos can be saved, shared or used for blackmail. Never feel pressured to send them.",links:"Be careful with suspicious links, fake identities and urgent requests.",support:"You're not alone, sweetheart. You deserve kindness, respect and support. Your feelings matter. Your safety matters. YOU matter. 💛",ack:"Got it, stay safe! 💛"},
     es: {title:"¡Cuídate, cariño! 💛",intro:"Tu seguridad importa.",money:"No envíes dinero, tarjetas regalo ni criptomonedas a personas cuya identidad no has verificado.",privacy:"Protege tus contraseñas, códigos de verificación y datos bancarios.",images:"Las fotos íntimas pueden guardarse, difundirse o usarse para chantajearte. Nunca tienes que enviarlas por presión.",links:"Ten cuidado con enlaces sospechosos, identidades falsas y solicitudes urgentes.",support:"No estás solo, cariño. Mereces respeto, comprensión y apoyo. Tus sentimientos importan. Tu seguridad importa. TÚ importas. 💛",ack:"Entendido, ¡cuídate! 💛"},
@@ -41,7 +44,7 @@
 .xoxo-safe-dialog [hidden]{display:none!important}
 .xoxo-safe-dialog button{box-sizing:border-box;background:#ffda60;color:#24132f;border:0;border-radius:11px;padding:12px 16px;min-height:44px;width:100%;font-weight:700;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
 `;
-  function show({conversationId, locale="en", accountId, onReport}={}) {
+  function show({conversationId, locale="en", accountId, onReport, owner=null}={}) {
     if (!conversationId || !accountId) return false;
     if (typeof conversationId!=="string" || typeof accountId!=="string") return false;
     const key = "xoxo:safety:v1:"+encodeURIComponent(accountId)+":"+encodeURIComponent(conversationId);
@@ -65,14 +68,15 @@
     const moreList=document.createElement("ul");
     [a.meet,a.threat].forEach(message=>{const li=document.createElement("li");li.textContent=message;moreList.append(li)});
     details.append(moreList);
+    let closed=false;
     const tips=document.createElement("button");tips.type="button";tips.className="xoxo-safe-secondary";
     tips.textContent=a.tips;tips.setAttribute("aria-expanded","false");tips.setAttribute("aria-controls",details.id);
-    tips.addEventListener("click",()=>{details.hidden=!details.hidden;tips.setAttribute("aria-expanded",String(!details.hidden))});
+    tips.addEventListener("click",()=>{if(closed)return;details.hidden=!details.hidden;tips.setAttribute("aria-expanded",String(!details.hidden))});
     dialog.append(tips,details);
     let report=null;
     if(typeof onReport==="function"){
       report=document.createElement("button");report.type="button";report.className="xoxo-safe-secondary";report.textContent=a.report;
-      report.addEventListener("click",()=>{dismiss(true);onReport({conversationId})});
+      report.addEventListener("click",()=>{if(closed)return;dismiss(true);onReport({conversationId})});
       dialog.append(report);
     }
     const close=document.createElement("button");close.type="button";close.textContent=t.ack;
@@ -88,9 +92,21 @@
       }
       if(event.key==="Escape"){event.preventDefault();dismiss();}
     }
-    function dismiss(remember=true){if(remember){try{localStorage.setItem(key,"seen")}catch{}} document.removeEventListener("keydown",onKeyDown);backdrop.remove();style.remove();document.body.style.overflow=previousBodyOverflow;if(previousFocus?.isConnected && typeof previousFocus.focus==="function") previousFocus.focus();}
+    function dismiss(remember=true){
+      // A delayed button click/escape from an already removed reminder is inert.
+      if(closed)return;
+      closed=true;
+      if(activeReminder?.close===dismiss)activeReminder=null;
+      if(remember){try{localStorage.setItem(key,"seen")}catch{}}
+      document.removeEventListener("keydown",onKeyDown);
+      backdrop.remove();style.remove();
+      document.body.style.overflow=previousBodyOverflow;
+      if(previousFocus?.isConnected && typeof previousFocus.focus==="function")previousFocus.focus();
+    }
     close.addEventListener("click",()=>dismiss());dialog.append(close);
-    backdrop.append(dialog);document.body.append(backdrop);document.addEventListener("keydown",onKeyDown);
+    backdrop.append(dialog);document.body.append(backdrop);
+    activeReminder={owner,close:dismiss};
+    document.addEventListener("keydown",onKeyDown);
     // Focusing the ACKNOWLEDGE button scrolled Safari/WebKit to the end of
     // this long warning on 320px screens, hiding the opening safety advice.
     // Focus the dialog itself so screen readers announce its heading, while
@@ -98,5 +114,10 @@
     dialog.scrollTop=0;dialog.focus({preventScroll:true});
     return true;
   }
-  window.XOXOSafetyReminderBeta=Object.freeze({show,copy:COPY,actions:ACTIONS});
+  function dismissOwned(owner){
+    if(!owner || !activeReminder || activeReminder.owner!==owner)return false;
+    // Leaving the chat does NOT count as acknowledging this safety warning.
+    activeReminder.close(false);return true;
+  }
+  window.XOXOSafetyReminderBeta=Object.freeze({show,dismiss:dismissOwned,copy:COPY,actions:ACTIONS});
 })();
