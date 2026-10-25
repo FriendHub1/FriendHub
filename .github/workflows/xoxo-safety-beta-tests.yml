@@ -30,6 +30,8 @@ jobs:
         run: |
           set -eu
           for test_file in beta/test-*.cjs; do
+            # Real browser integration runs in safety-browser with pinned Playwright.
+            if [ "$test_file" = "beta/test-safety-browser-visual.cjs" ]; then continue; fi
             echo "Running $test_file"
             node "$test_file"
           done
