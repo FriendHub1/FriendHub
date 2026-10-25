@@ -262,6 +262,52 @@ async function testFlow() {
   await flush();
   assert.equal(delayedReceipt.status.length,0,
     "Old successful receipt must not be displayed after account switch");
+
+  // Two rapid taps can happen while the asynchronous evidence re-read is
+  // pending. Exactly ONE adapter RPC and ONE status notification may happen.
+  const visible=[{id:id1,sender_id:peer,recipient_id:user,content:"Synthetic evidence"}];
+  let reads=0, releaseReload, duplicateCalls=0;
+  const doubleTap=browserHarness({
+    getMessages:()=>{
+      reads++;
+      return reads===1 ? visible : new Promise(resolve=>{releaseReload=resolve});
+    },
+    submit:async()=>{duplicateCalls++;return {ok:true,reportId}}
+  });
+  doubleTap.flow.openReport();
+  doubleTap.ui.form.onContinue({conversationId:"conversation-1",reasonCode:1,details:"Threats"});
+  await flush();
+  const selection={conversationId:"conversation-1",messageIds:[id1]};
+  doubleTap.ui.picker.onContinue(selection);
+  doubleTap.ui.picker.onContinue(selection);
+  await flush();
+  assert.equal(reads,2,"Repeated taps must not initiate a second evidence fetch");
+  assert.equal(duplicateCalls,0,"RPC must not begin before evidence is revalidated");
+  releaseReload(visible);
+  await flush();
+  assert.equal(duplicateCalls,1,"Repeated taps sent more than one report RPC");
+  assert.equal(doubleTap.status.length,1,"Repeated taps showed duplicate status alerts");
+
+  // An evidence-load failure must release the lock so a user can retry.
+  let reloads=0, retryCalls=0;
+  const readFailure=browserHarness({
+    getMessages:()=>{
+      reloads++;
+      if(reloads===2)throw Error("Temporary DM loading error");
+      return visible;
+    },
+    submit:async()=>{retryCalls++;return {ok:true,reportId}}
+  });
+  readFailure.flow.openReport();
+  readFailure.ui.form.onContinue({conversationId:"conversation-1",reasonCode:1,details:"Threats"});
+  await flush();
+  readFailure.ui.picker.onContinue(selection);
+  await flush();
+  assert.equal(readFailure.status.at(-1)?.reason,"conversation_changed");
+  readFailure.ui.picker.onContinue(selection);
+  await flush();
+  assert.equal(retryCalls,1,"Failed evidence reload permanently locked reporting");
+  assert.equal(readFailure.status.at(-1)?.ok,true);
 }
 
 (async () => {
