@@ -81,9 +81,16 @@ function verifyTenLanguages() {
   const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
   const picker = html.match(/<select id="languageSelect"[\s\S]*?<\/select>/);
   assert.ok(picker, "Live language selector must be present in index.html");
-  const languages = [...picker[0].matchAll(/<option value="([^"]+)"/g)]
+  const websiteLocales = [...picker[0].matchAll(/<option value="([^"]+)"/g)]
     .map(match => match[1]).sort();
-  assert.deepEqual(languages, expected, "BETA translations should follow actual site languages");
+  // The website uses the BCP-47 'nb' key for Norwegian Bokmål; the
+  // standalone safety dictionaries canonically store its copy under 'no'.
+  // Compare normalized locales without demanding a site-language rename.
+  assert.deepEqual(websiteLocales,
+    ["en", "es", "pt-BR", "de", "nb", "pl", "fr", "cs", "sv", "it"].sort(),
+    "The public site's actual ten language options must remain unchanged");
+  assert.deepEqual(websiteLocales.map(localeFor).sort(), expected,
+    "Safety BETA must support every website locale after alias normalization");
   const reminder = loadUi("stay-safe-sweetheart.js", "XOXOSafetyReminderBeta");
   const form = loadUi("stay-safe-report-form.js", "XOXOReportFormBeta");
   const evidence = loadUi("stay-safe-evidence-picker.js", "XOXOEvidencePickerBeta");
