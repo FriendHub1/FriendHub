@@ -322,6 +322,8 @@ async function testFlow() {
   const oldPicker=superseded.ui.picker;
   assert.ok(oldPicker);
   superseded.flow.openReport();
+  assert.equal(superseded.ui.pickerDismissed,true,
+    "Reopening a report in the SAME DM must remove old private evidence UI");
   assert.notEqual(superseded.ui.form,oldForm);
   oldForm.onContinue(submitData);
   oldPicker.onContinue(selectionData);
