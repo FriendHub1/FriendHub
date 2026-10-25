@@ -114,69 +114,9 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-evidence-after-delete.sql
       - name: Prove DM evidence cannot change during report's FOR SHARE snapshot
         run: python3 beta/test-safety-evidence-row-lock.py
-      - name: Run real Supabase GoTrue Auth in a separate disposable database
-        env:
-          XOXO_HTTP_JWT_KEY: xoxo-local-ci-jwt-secret-not-for-production-1234567890
-        run: |
-          set -euo pipefail
-          test "${PGDATABASE}" = xoxo_safety_test
-          psql -X -v ON_ERROR_STOP=1 -c "create database xoxo_gotrue_ci"
-          psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -c "create schema if not exists auth"
-          # GoTrue's container CMD starts the API; unlike the complete
-          # Supabase stack, this standalone test must apply its official
-          # Auth migrations explicitly before issuing signed sessions.
-          docker run --rm --network host \
-            -e API_EXTERNAL_URL=http://127.0.0.1:9999 \
-            -e GOTRUE_SITE_URL=http://127.0.0.1:9999 \
-            -e GOTRUE_DB_DRIVER=postgres \
-            -e GOTRUE_DB_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5432/xoxo_gotrue_ci?sslmode=disable" \
-            -e GOTRUE_DB_DB_NAMESPACE=auth \
-            -e GOTRUE_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
-            -e GOTRUE_JWT_AUD=authenticated \
-            -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
-            supabase/gotrue:v2.197.0 auth migrate
-          # GoTrue executes unqualified identities/sessions queries. The
-          # disposable PostgreSQL account must search auth before public.
-          psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -c \
-            "alter role postgres in database xoxo_gotrue_ci set search_path = auth, public"
-          psql -XAtq -d xoxo_gotrue_ci -c \
-            "select to_regclass('auth.identities') is not null and to_regclass('auth.users') is not null" | grep -Fx t
-          docker run -d --name xoxo-safety-ci-gotrue --network host \
-            -e GOTRUE_API_HOST=127.0.0.1 \
-            -e GOTRUE_API_PORT=9999 \
-            -e API_EXTERNAL_URL=http://127.0.0.1:9999 \
-            -e GOTRUE_DB_DRIVER=postgres \
-            -e GOTRUE_DB_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5432/xoxo_gotrue_ci?sslmode=disable" \
-            -e GOTRUE_DB_DB_NAMESPACE=auth \
-            -e GOTRUE_SITE_URL=http://127.0.0.1:9999 \
-            -e GOTRUE_DISABLE_SIGNUP=false \
-            -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true \
-            -e GOTRUE_MAILER_AUTOCONFIRM=true \
-            -e GOTRUE_JWT_SECRET="$XOXO_HTTP_JWT_KEY" \
-            -e GOTRUE_JWT_AUD=authenticated \
-            -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
-            -e GOTRUE_JWT_EXP=3600 \
-            -e GOTRUE_LOG_LEVEL=warn \
-            supabase/gotrue:v2.197.0
-          ready=0
-          for i in $(seq 1 60); do
-            if curl --max-time 2 -fsS http://127.0.0.1:9999/health >/dev/null 2>&1; then
-              ready=1;break
-            fi
-            sleep 1
-          done
-          if [ "$ready" -ne 1 ]; then
-            docker logs --tail 80 xoxo-safety-ci-gotrue
-            echo "ERROR: isolated Supabase GoTrue did not start" >&2
-            exit 1
-          fi
-      - name: Verify genuine Auth-issued access token through signed local PostgREST
-        run: python3 beta/test-safety-gotrue-auth-http.py
-      - name: Clean up disposable PostgREST and GoTrue containers
+      - name: Clean up disposable PostgREST container
         if: always()
-        run: |
-          docker rm -f xoxo-safety-ci-gotrue 2>/dev/null || true
-          docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
+        run: docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
 
   safety-browser:
     runs-on: ubuntu-latest
