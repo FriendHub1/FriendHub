@@ -58,6 +58,9 @@
     let sending = false;
     let loadingEvidence = false;
     let retry = null;
+    // Distinguish separate attempts in the SAME chat, not just chat/account
+    // switches. A detached form/picker cannot submit once a new form opens.
+    let reportFormEpoch = 0;
 
     function contextActive() {
       if (typeof config.isContextActive !== "function") return true;
@@ -90,8 +93,9 @@
         created_at: typeof row.created_at === "string" ? row.created_at : null };
     }
 
-    async function startEvidence(formData) {
-      if (loadingEvidence || sending || !contextActive()) return;
+    async function startEvidence(formData, formEpoch) {
+      if (formEpoch !== reportFormEpoch ||
+          loadingEvidence || sending || !contextActive()) return;
       if (!config.enabled && !config.previewOnly) { inform({ ok: false, reason: "disabled" }); return; }
       if (!formData || formData.conversationId !== conversationId) {
         inform({ ok: false, reason: "invalid_conversation" }); return;
@@ -104,7 +108,7 @@
       try {
         try { visible = await getMessages(); }
         catch { inform({ ok: false, reason: "no_messages" }); return; }
-        if (!contextActive()) return;
+        if (!contextActive() || formEpoch !== reportFormEpoch) return;
       if (!Array.isArray(visible)) { inform({ ok: false, reason: "no_messages" }); return; }
       const seen = new Set();
       const safe = [];
@@ -122,6 +126,7 @@
       const opened = root.XOXOEvidencePickerBeta.open({
         conversationId, messages: safe, locale,
         onContinue: selection => {
+          if (formEpoch !== reportFormEpoch || !contextActive()) return;
           if (!selection || selection.conversationId !== conversationId ||
               !Array.isArray(selection.messageIds) || selection.messageIds.length < 1 ||
               selection.messageIds.length > 20 || !selection.messageIds.every(isId) ||
@@ -230,9 +235,10 @@
         inform({ ok: false, reason: "missing_module" });
         return false;
       }
+      const formEpoch = ++reportFormEpoch;
       return root.XOXOReportFormBeta.open({
         conversationId, locale,
-        onContinue: data => { void startEvidence(data); }
+        onContinue: data => { void startEvidence(data, formEpoch); }
       });
     }
 
