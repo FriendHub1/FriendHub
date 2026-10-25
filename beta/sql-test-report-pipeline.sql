@@ -74,7 +74,7 @@ update auth.sessions set not_after=now()-interval '1 minute'
  where id='aaaaaaaa-0000-4000-8000-000000000001';
 set role authenticated;
 
-do $
+do $session_test$
 begin
   begin
     perform public.xoxo_submit_conversation_report_beta(
@@ -83,7 +83,7 @@ begin
       '88888888-8888-4888-8888-100000000003');
     raise exception 'BUG: expired server-side login session accepted';
   exception when sqlstate '28000' then null; end;
-end $;
+end $session_test$;
 
 reset role;
 update auth.sessions set not_after=null
@@ -94,7 +94,7 @@ delete from auth.sessions
  where id='aaaaaaaa-0000-4000-8000-000000000001';
 set role authenticated;
 
-do $
+do $session_test$
 begin
   begin
     perform public.xoxo_submit_conversation_report_beta(
@@ -103,7 +103,7 @@ begin
       '88888888-8888-4888-8888-100000000004');
     raise exception 'BUG: revoked/deleted session accepted';
   exception when sqlstate '28000' then null; end;
-end $;
+end $session_test$;
 
 reset role;
 insert into auth.sessions(id,user_id)
