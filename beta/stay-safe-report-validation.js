@@ -8,7 +8,7 @@ const VALID_CODES=new Set([0,1,2,3,4,5]);
 function validate(input){
  const errors=[];
  if(!input||typeof input!=="object"||Array.isArray(input))return {ok:false,errors:["invalid_payload"]};
- if(!UUID.test(input.conversationId||""))errors.push("invalid_conversation_id");
+ if(!UUID.test(input.otherUserId||""))errors.push("invalid_other_user_id");
  if(!Number.isInteger(input.reasonCode)||!VALID_CODES.has(input.reasonCode))errors.push("invalid_reason");
  if(typeof input.details!=="string"||input.details.length>2000)errors.push("invalid_details");
  if(!Array.isArray(input.messageIds)||input.messageIds.length<1||input.messageIds.length>20)errors.push("invalid_evidence_count");
