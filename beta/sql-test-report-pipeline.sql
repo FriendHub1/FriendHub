@@ -236,7 +236,7 @@ begin
   exception when sqlstate 'P0001' then
     if sqlerrm <> 'Daily report limit reached' then raise; end if;
   end;
-end $;
+end $$;
 
 -- The authenticated reporter must never gain direct SELECT on private
 -- moderation evidence. Verify the unchanged two-row metadata count only
