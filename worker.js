@@ -2929,41 +2929,33 @@ export default {
     const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
     if (publicSeoResponse) return publicSeoResponse;
 
-    // Stay Safe, Sweetheart! — opt-in BETA only on workers.dev.
-    // Chat and existing admin moderation can now be inspected TOGETHER in one
-    // browser session. Either flag still works by itself. No report writes,
-    // production-domain injection, duplicate DM viewer, or new admin access.
+    // Stay Safe, Sweetheart! — production integration.
+    // Keep workers.dev query flags available for isolated BETA review,
+    // while the real XOXO Avenue domain loads the same tested safety surface.
     const xoxoSafetyChatBeta = url.searchParams.get("xoxo_safety_chat_beta") === "1";
     const xoxoSafetyAdminBeta = url.searchParams.get("xoxo_safety_admin_beta") === "1";
-    if (url.pathname === "/" && url.hostname.endsWith(".workers.dev") &&
-        request.method === "GET" && (xoxoSafetyChatBeta || xoxoSafetyAdminBeta)) {
+    const isSafetyBetaHost = url.hostname.endsWith(".workers.dev");
+    const isXoxoProductionHost = url.hostname === "xoxoavenue.com" || url.hostname === "www.xoxoavenue.com";
+    const enableSafetyChat = request.method === "GET" && (isXoxoProductionHost || (isSafetyBetaHost && xoxoSafetyChatBeta));
+    const enableSafetyAdmin = request.method === "GET" && (isXoxoProductionHost || (isSafetyBetaHost && xoxoSafetyAdminBeta));
+    if (url.pathname === "/" && (enableSafetyChat || enableSafetyAdmin)) {
       const preview = await env.ASSETS.fetch(request);
       if (preview.ok && String(preview.headers.get("content-type") || "").includes("text/html")) {
-        const chatScripts = xoxoSafetyChatBeta ?
+        const chatScripts = enableSafetyChat ?
           '<script src="/beta/stay-safe-sweetheart.js" defer></script>' +
           '<script src="/beta/stay-safe-report-form.js" defer></script>' +
           '<script src="/beta/stay-safe-evidence-picker.js" defer></script>' +
           '<script src="/beta/stay-safe-browser-report-adapter.js" defer></script>' +
           '<script src="/beta/stay-safe-browser-flow.js" defer></script>' +
           '<script src="/beta/stay-safe-chat-preview-bridge.js" defer></script>' : "";
-        const adminScripts = xoxoSafetyAdminBeta ?
+        const adminScripts = enableSafetyAdmin ?
           '<script src="/beta/admin-report-queue.js" defer></script>' +
           '<script src="/beta/admin-report-panel-bridge.js" defer></script>' : "";
-        const updated = new HTMLRewriter()
-          .on("head", {
-            element(element) {
-              element.append(chatScripts + adminScripts, { html: true });
-            }
-          })
-          .transform(preview);
+        const updated = new HTMLRewriter().on("head", { element(element) { element.append(chatScripts + adminScripts, { html: true }); } }).transform(preview);
         const headers = new Headers(updated.headers);
         headers.set("Cache-Control", "no-store");
-        headers.set("X-XOXO-Worker", xoxoSafetyChatBeta && xoxoSafetyAdminBeta
-          ? "safety-combined-beta-opt-in" : xoxoSafetyChatBeta
-          ? "safety-chat-beta-opt-in" : "admin-report-beta-opt-in");
-        return new Response(updated.body, {
-          status: updated.status, statusText: updated.statusText, headers
-        });
+        headers.set("X-XOXO-Worker", isXoxoProductionHost ? "safety-production" : enableSafetyChat && enableSafetyAdmin ? "safety-combined-beta-opt-in" : enableSafetyChat ? "safety-chat-beta-opt-in" : "admin-report-beta-opt-in");
+        return new Response(updated.body, { status: updated.status, statusText: updated.statusText, headers });
       }
     }
 
