@@ -38,10 +38,27 @@ function open({conversationId,locale="es",onContinue}={}){
  submit.style.background="#ffda60";submit.style.color="#231432";cancel.style.background="#34234b";cancel.style.color="white";
  form.append(submit,cancel);overlay.append(form);
  const previous=document.activeElement;const overflow=document.body.style.overflow;document.body.style.overflow="hidden";
- function close(){overlay.remove();document.body.style.overflow=overflow;document.removeEventListener("keydown",onKey);if(previous?.isConnected)previous.focus();}
+ let closed=false;
+ function close(){
+  if(closed)return;
+  closed=true;
+  overlay.remove();document.body.style.overflow=overflow;
+  document.removeEventListener("keydown",onKey);
+  if(previous?.isConnected)previous.focus();
+ }
  function onKey(e){if(e.key==="Escape"){e.preventDefault();close();}if(e.key==="Tab"){const focusable=[...radios,details,submit,cancel];const i=focusable.indexOf(document.activeElement);if(e.shiftKey&&i===0){e.preventDefault();cancel.focus()}else if(!e.shiftKey&&i===focusable.length-1){e.preventDefault();radios[0].focus()}}}
  cancel.onclick=close;
- form.onsubmit=e=>{e.preventDefault();const selected=radios.find(x=>x.checked);const payload={conversationId,reason:t.reasons[Number(selected.value)],reasonCode:Number(selected.value),details:details.value.trim()};close();onContinue(payload);};
+ form.onsubmit=e=>{
+  e.preventDefault();
+  // A detached/cancelled form can still have a queued DOM submit callback.
+  // It must never reopen evidence selection after Cancel/Escape or submit twice.
+  if(closed)return;
+  const selected=radios.find(x=>x.checked);
+  if(!selected)return;
+  const payload={conversationId,reason:t.reasons[Number(selected.value)],
+   reasonCode:Number(selected.value),details:details.value.trim()};
+  close();onContinue(payload);
+ };
  document.body.append(overlay);document.addEventListener("keydown",onKey);radios[0].focus();return true;
 }
 window.XOXOReportFormBeta=Object.freeze({open,translations});
