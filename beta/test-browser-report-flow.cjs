@@ -122,11 +122,12 @@ async function testFlow() {
   assert.equal(h.status[0].reportId, reportId);
 
   const disabled = browserHarness({ enabled: false });
-  disabled.flow.openReport();
-  disabled.ui.form.onContinue({ conversationId: "conversation-1", reasonCode: 1, details: "Threats" });
-  await flush();
-  disabled.ui.picker.onContinue({ conversationId: "conversation-1", messageIds: [id1] });
-  await flush();
+  assert.equal(disabled.flow.showReminder(), true);
+  assert.equal(typeof disabled.ui.reminder.onReport, "undefined",
+    "disabled feature must not show a report button");
+  assert.equal(disabled.flow.openReport(), false,
+    "disabled feature must not open an unsendable form");
+  assert.equal(disabled.ui.form, null);
   assert.equal(disabled.status[0].reason, "disabled");
   assert.deepEqual(disabled.calls, [], "feature flag must prevent auth and RPC calls");
 
