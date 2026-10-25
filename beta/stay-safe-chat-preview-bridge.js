@@ -8,6 +8,8 @@
 if(typeof window==="undefined")return;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 let submitting=false;
+// Explicitly OFF: opt-in UI preview must never write to the live Supabase project.
+const REPORT_RPC_WRITES_ENABLED=false;
 function valid(id){return typeof id==="string" && UUID.test(id);}
 function locale(){
  return typeof getFriendHubLanguage==="function"?getFriendHubLanguage():"en";
@@ -20,7 +22,9 @@ const UI={
  pl:{button:"Zgłoś rozmowę",success:"🚩 Zgłoszenie wysłane. Dziękujemy za dbanie o bezpieczeństwo XOXO Avenue. 💜",failure:"Zgłoszenie nie zostało wysłane. Serwer BETA może być niedostępny lub dowody są już niedostępne."},
  de:{button:"Unterhaltung melden",success:"🚩 Meldung gesendet. Danke, dass du XOXO Avenue sicherer machst. 💜",failure:"Es wurde keine Meldung gesendet. Der BETA-Server ist möglicherweise nicht verfügbar oder die Beweise sind nicht mehr zugänglich."},
  cs:{button:"Nahlásit konverzaci",success:"🚩 Nahlášení bylo odesláno. Děkujeme, že pomáháš chránit XOXO Avenue. 💜",failure:"Nahlášení nebylo odesláno. Server BETA může být nedostupný nebo důkazy již nejsou přístupné."},
- no:{button:"Rapporter samtalen",success:"🚩 Rapport sendt. Takk for at du bidrar til et tryggere XOXO Avenue. 💜",failure:"Ingen rapport ble sendt. BETA-serveren kan være utilgjengelig, eller bevisene er ikke lenger tilgjengelige."}
+ no:{button:"Rapporter samtalen",success:"🚩 Rapport sendt. Takk for at du bidrar til et tryggere XOXO Avenue. 💜",failure:"Ingen rapport ble sendt. BETA-serveren kan være utilgjengelig, eller bevisene er ikke lenger tilgjengelige."},
+ sv:{button:"Anmäl konversation",success:"🚩 Anmälan skickades. Tack för att du hjälper till att hålla XOXO Avenue tryggt. 💜",failure:"Ingen anmälan skickades. BETA-systemet är inte aktiverat eller bevisen är inte längre tillgängliga."},
+ it:{button:"Segnala conversazione",success:"🚩 Segnalazione inviata. Grazie per contribuire alla sicurezza di XOXO Avenue. 💜",failure:"Nessuna segnalazione inviata. Il sistema BETA non è ancora attivo o le prove non sono più disponibili."}
 };
 function ui(){const code=locale();return UI[code==="nb"||code==="nb-NO"?"no":code]||UI.en;}
 function visibleContext(){
@@ -85,6 +89,7 @@ function sameContext(ctx){
         live.conversationId===ctx.conversationId && live.client===ctx.client;
 }
 async function submit(ctx,draft,selectedIds){
+ if(!REPORT_RPC_WRITES_ENABLED)return {ok:false,reason:"beta_backend_disabled"};
  if(submitting)return {ok:false,reason:"already_submitting"};
  if(!sameContext(ctx)||!draft||!Number.isInteger(draft.reasonCode)||
     draft.reasonCode<0||draft.reasonCode>5||
@@ -155,7 +160,7 @@ function install(){
  observer.observe(messages,{childList:true,subtree:false});
  refresh();
 }
-window.XOXOSafetyChatPreviewBeta=Object.freeze({refresh,openReport,submit,visibleContext});
+window.XOXOSafetyChatPreviewBeta=Object.freeze({refresh,openReport,submit,visibleContext,reportWritesEnabled:()=>REPORT_RPC_WRITES_ENABLED});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});
 else install();
 })();
