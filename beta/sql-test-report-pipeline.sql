@@ -15,6 +15,24 @@ begin
     'public.xoxo_submit_conversation_report_beta(uuid,integer,text,uuid[],uuid)','EXECUTE') then
     raise exception 'BUG: signed-in users cannot call submission RPC';
   end if;
+  if has_function_privilege('anon',
+    'public.xoxo_admin_list_conversation_reports_beta(text)','EXECUTE') or
+     has_function_privilege('anon',
+    'public.xoxo_admin_update_conversation_report_beta(uuid,text,text)','EXECUTE') then
+    raise exception 'BUG: anonymous caller can execute a moderation RPC';
+  end if;
+  if not has_function_privilege('authenticated',
+    'public.xoxo_admin_list_conversation_reports_beta(text)','EXECUTE') or
+     not has_function_privilege('authenticated',
+    'public.xoxo_admin_update_conversation_report_beta(uuid,text,text)','EXECUTE') then
+    raise exception 'BUG: authenticated moderator cannot call guarded admin RPC';
+  end if;
+  if has_table_privilege('authenticated',
+    'xoxo_safety_private.conversation_reports','SELECT') or
+     has_table_privilege('authenticated',
+    'xoxo_safety_private.conversation_report_evidence','SELECT') then
+    raise exception 'BUG: private report tables readable without the PIN RPC';
+  end if;
 end $$;
 
 -- Fake JWT subject values are injected by THIS LOCAL TEST FIXTURE,
