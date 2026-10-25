@@ -171,8 +171,57 @@ async function runScenario(browser,engine,viewport,language,url){
     await page.locator("[data-xoxo-evidence-beta] button").first().click();
     assert.deepEqual(await page.evaluate(()=>window.__timestampSelected.messageIds),
       [messageId(120)],"Must be able to select newest evidence when host is reversed");
+    // A detached form/picker might still have a queued click callback.
+    // Native WebKit and Chromium must ignore it after Cancel or success.
+    const modalLifecycle=await page.evaluate(({language})=>{
+      const values={formAfterCancel:0,formRepeated:0,
+        pickerAfterCancel:0,pickerRepeated:0,activeOverlays:0};
+      const single=[{
+        id:"dddddddd-dddd-4ddd-8ddd-000000000001",
+        text:"Synthetic safety evidence"
+      }];
+      window.XOXOReportFormBeta.open({
+        conversationId:"cancelled-modal",locale:language,
+        onContinue:()=>{values.formAfterCancel++;}
+      });
+      const cancelledForm=document.querySelector("[data-xoxo-report-beta] form");
+      const queuedSubmit=cancelledForm.onsubmit;
+      cancelledForm.querySelector('button[type="button"]').click();
+      queuedSubmit({preventDefault(){}});
+      window.XOXOReportFormBeta.open({
+        conversationId:"one-shot-modal",locale:language,
+        onContinue:()=>{values.formRepeated++;}
+      });
+      const currentForm=document.querySelector("[data-xoxo-report-beta] form");
+      currentForm.onsubmit({preventDefault(){}});
+      currentForm.onsubmit({preventDefault(){}});
+      window.XOXOEvidencePickerBeta.open({
+        conversationId:"cancelled-evidence",locale:language,messages:single,
+        onContinue:()=>{values.pickerAfterCancel++;}
+      });
+      const cancelledPicker=document.querySelector("[data-xoxo-evidence-beta]");
+      cancelledPicker.querySelector('input[type="checkbox"]').checked=true;
+      const queuedEvidence=cancelledPicker.querySelector("button").onclick;
+      cancelledPicker.querySelectorAll("button")[1].click();
+      queuedEvidence();
+      window.XOXOEvidencePickerBeta.open({
+        conversationId:"one-shot-evidence",locale:language,messages:single,
+        onContinue:()=>{values.pickerRepeated++;}
+      });
+      const currentPicker=document.querySelector("[data-xoxo-evidence-beta]");
+      currentPicker.querySelector('input[type="checkbox"]').checked=true;
+      const saveEvidence=currentPicker.querySelector("button").onclick;
+      saveEvidence();saveEvidence();
+      values.activeOverlays=document.querySelectorAll(
+        "[data-xoxo-report-beta],[data-xoxo-evidence-beta]").length;
+      return values;
+    },{language});
+    assert.deepEqual(modalLifecycle,{
+      formAfterCancel:0,formRepeated:1,
+      pickerAfterCancel:0,pickerRepeated:1,activeOverlays:0
+    },label+" stale/cancelled modal callbacks must never submit twice");
     assert.deepEqual(errors,[],"browser page errors");
-    console.log("PASS: "+label+" responsive notice, form, selected evidence, focus trap");
+    console.log("PASS: "+label+" responsive safety, evidence, and one-shot modal callbacks");
   }finally{await context.close();}
 }
 
