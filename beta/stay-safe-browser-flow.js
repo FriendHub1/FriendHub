@@ -142,6 +142,29 @@
         const result = { ok: false, reason: "invalid_input" };
         inform(result); return result;
       }
+      // A user may switch chats or accounts while the evidence picker is
+      // open. Reject stale selections before any authenticated RPC call.
+      // The host getMessages() must describe the CURRENT open conversation.
+      let currentMessages;
+      try { currentMessages = await getMessages(); }
+      catch {
+        const result = { ok: false, reason: "conversation_changed" };
+        inform(result); return result;
+      }
+      if (!Array.isArray(currentMessages)) {
+        const result = { ok: false, reason: "conversation_changed" };
+        inform(result); return result;
+      }
+      const currentIds = new Set(currentMessages.map(normalizeLoadedMessage)
+        .filter(Boolean).map(message => message.id));
+      if (!input.messageIds.every(id => currentIds.has(id.toLowerCase()))) {
+        const result = { ok: false, reason: "conversation_changed" };
+        inform(result); return result;
+      }
+      if (typeof config.isContextActive === "function" && !config.isContextActive()) {
+        const result = { ok: false, reason: "conversation_changed" };
+        inform(result); return result;
+      }
       // Reuse the same key when retrying an identical failed submission.
       const fingerprint = JSON.stringify([
         peer, input.reasonCode, input.details,
