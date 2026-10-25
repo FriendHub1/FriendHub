@@ -25,8 +25,14 @@ function element(tag){
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;if(legacyFails)throw Error("legacy loader failed");list.children=[element("legacy-card")];},
    renderXoxoDmReports:()=>{list.children=[element("legacy-card")];},
-   XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");return betaAvailable?{ok:true,reports:[report]}:{ok:false};},
-    updateReportStatus:async()=>{calls.updates++;return {ok:true};}}},
+   XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");
+      assert.equal(options?.moderationReason,"Report queue moderation access",
+        "forward the existing PIN moderation reason, not a new dialog");
+      return betaAvailable?{ok:true,reports:[report]}:{ok:false};},
+    updateReportStatus:async(_client,_report,_status,reason)=>{
+      assert.equal(reason,"Report queue moderation access",
+        "status changes need the same PIN moderation reason");
+      calls.updates++;return {ok:true};}}},
   document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xoxoAdminModeration"?moderation:null},
   supabaseClient:{},
   get xoxoIsAdmin(){return admin;},
