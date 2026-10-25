@@ -299,6 +299,42 @@ async function testFlow() {
   assert.equal(delayedReceipt.status.length,0,
     "Old successful receipt must not be displayed after account switch");
 
+  // Old forms/pickers in the SAME conversation must not submit after a
+  // newer form opens. Context checks alone cannot catch this scenario.
+  let attemptSubmissions=0;
+  const superseded=browserHarness({submit:async()=>{
+    attemptSubmissions++;
+    return {ok:true,reportId};
+  }});
+  const submitData={conversationId:"conversation-1",reasonCode:1,details:"Threats"};
+  const selectionData={conversationId:"conversation-1",messageIds:[id1]};
+  superseded.flow.openReport();
+  const oldForm=superseded.ui.form;
+  oldForm.onContinue(submitData);
+  await flush();
+  const oldPicker=superseded.ui.picker;
+  assert.ok(oldPicker);
+  superseded.flow.openReport();
+  assert.notEqual(superseded.ui.form,oldForm);
+  oldForm.onContinue(submitData);
+  oldPicker.onContinue(selectionData);
+  await flush();
+  assert.equal(attemptSubmissions,0,
+    "Detached form/picker must never submit with old reasons or evidence");
+  assert.equal(superseded.status.length,0,
+    "Stale callbacks should not alert over newer reporting flow");
+  assert.equal(superseded.ui.picker,oldPicker,
+    "Old form should not open a replacement evidence picker");
+  superseded.ui.form.onContinue(submitData);
+  await flush();
+  assert.notEqual(superseded.ui.picker,oldPicker,
+    "Current form must remain functional after rejecting stale callbacks");
+  superseded.ui.picker.onContinue(selectionData);
+  await flush();
+  assert.equal(attemptSubmissions,1,
+    "Only the latest form and picker may submit the current report");
+  assert.equal(superseded.status.length,1);
+
   // A form callback can fire twice while getMessages() is pending.
   // Only ONE evidence picker may open, with no obsolete form replacing it.
   let pickerReads=0,finishPickerLoad;
