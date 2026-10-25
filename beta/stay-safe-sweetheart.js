@@ -18,7 +18,7 @@
 `;
   function show({conversationId, locale="en", accountId, onReport}={}) {
     if (!conversationId || !accountId) return false;
-    const key = "xoxo:safety:v1:"+accountId+":"+conversationId;
+    const key = "xoxo:safety:v1:"+encodeURIComponent(accountId)+":"+encodeURIComponent(conversationId);
     try { if (localStorage.getItem(key)==="seen") return false; } catch {}
     if (document.querySelector(".xoxo-safe-backdrop")) return false;
     const t=COPY[locale]||COPY.en;
@@ -32,9 +32,14 @@
     dialog.append(list);
     const support=document.createElement("p");support.textContent=t.support;dialog.append(support);
     const close=document.createElement("button");close.type="button";close.textContent=t.ack;
-    function dismiss(){try{localStorage.setItem(key,"seen")}catch{} backdrop.remove();style.remove();}
+    const previousFocus=document.activeElement;
+    function onKeyDown(event){
+      if(event.key==="Tab"){event.preventDefault();close.focus();}
+      if(event.key==="Escape"){event.preventDefault();dismiss();}
+    }
+    function dismiss(){try{localStorage.setItem(key,"seen")}catch{} document.removeEventListener("keydown",onKeyDown);backdrop.remove();style.remove();if(previousFocus?.isConnected && typeof previousFocus.focus==="function") previousFocus.focus();}
     close.addEventListener("click",dismiss);dialog.append(close);
-    backdrop.append(dialog);document.body.append(backdrop);close.focus();
+    backdrop.append(dialog);document.body.append(backdrop);document.addEventListener("keydown",onKeyDown);close.focus();
     return true;
   }
   window.XOXOSafetyReminderBeta=Object.freeze({show,copy:COPY});
