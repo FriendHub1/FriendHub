@@ -275,6 +275,50 @@ async function runScenario(browser,engine,viewport,language,url){
       oldClosed:1,newPreserved:1,oldPickerClosed:1,
       staleReportSubmissions:0,overlaysAtEnd:0
     },label+" disposed chat must close its owned dialog but not new chat");
+
+    // Same-chat reopening must dismiss the old *visible evidence picker*,
+    // not merely invalidate its callback while old private text remains.
+    const sameChat=await page.evaluate(async ({user,language})=>{
+      const peer="22222222-2222-4222-8222-222222222222";
+      const flow=window.XOXOSafetyFlowBeta.create({
+        client:{},accountId:user,otherUserId:peer,
+        conversationId:"same-chat",locale:language,
+        previewOnly:true,enabled:false,
+        getMessages:()=>[{
+          id:"dddddddd-dddd-4ddd-8ddd-000000000001",
+          sender_id:peer,recipient_id:user,
+          text:"Only one private evidence picker should stay visible",
+          created_at:"2026-10-25T12:00:00Z"
+        }]
+      });
+      flow.openReport();
+      flow.openReport();
+      const formsAfterDoubleOpen=document.querySelectorAll(
+        "[data-xoxo-report-beta]").length;
+      const form=document.querySelector("[data-xoxo-report-beta] form");
+      if(!form)throw Error("Missing current report form");
+      form.onsubmit({preventDefault(){}});
+      await Promise.resolve();await Promise.resolve();
+      const pickerBefore=Number(!!document.querySelector(
+        "[data-xoxo-evidence-beta]"));
+      flow.openReport();
+      const evidenceAfterReopen=document.querySelectorAll(
+        "[data-xoxo-evidence-beta]").length;
+      const formsAfterReopen=document.querySelectorAll(
+        "[data-xoxo-report-beta]").length;
+      flow.dispose();
+      return {
+        formsAfterDoubleOpen,pickerBefore,
+        evidenceAfterReopen,formsAfterReopen,
+        remainingOverlays:document.querySelectorAll(
+          "[data-xoxo-report-beta],[data-xoxo-evidence-beta]").length
+      };
+    },{user,language});
+    assert.deepEqual(sameChat,{
+      formsAfterDoubleOpen:1,pickerBefore:1,
+      evidenceAfterReopen:0,formsAfterReopen:1,remainingOverlays:0
+    },label+" reopening a report must close old same-chat evidence UI");
+
     assert.deepEqual(errors,[],"browser page errors");
     console.log("PASS: "+label+
       " responsive safety, one-shot callbacks, chat-change private modal disposal");
