@@ -2957,6 +2957,7 @@ export default {
     // Opt-in, branch-only preview of conversation reports inside the existing
     // administrator moderation panel. No database writes or permission changes.
     if (url.pathname === "/" &&
+        url.hostname.endsWith(".workers.dev") &&
         url.searchParams.get("xoxo_safety_admin_beta") === "1" &&
         request.method === "GET") {
       const preview = await env.ASSETS.fetch(request);
