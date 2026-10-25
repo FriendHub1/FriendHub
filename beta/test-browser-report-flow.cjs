@@ -199,9 +199,13 @@ async function testFlow() {
   active = false; // user navigated away between picking and submission
   stale.ui.picker.onContinue({ conversationId: "conversation-1", messageIds: [id1] });
   await flush();
-  assert.equal(stale.status[0].reason, "conversation_changed",
-    "stale chat selection must fail before authenticated RPC");
+  assert.equal(stale.status.length, 0,
+    "stale chat must not alert a newly opened account or conversation");
   assert.deepEqual(stale.calls, [], "no account or evidence access after chat changes");
+  assert.equal(stale.flow.openReport(),false,
+    "detached flow must not open a report form for the new chat");
+  assert.equal(stale.flow.showReminder(),false,
+    "detached flow must not show an old safety reminder");
 
   let attempts = 0;
   const keys = [];
@@ -221,6 +225,43 @@ async function testFlow() {
   assert.equal(retry.status[0].ok, false);
   assert.equal(retry.status[1].ok, true);
   assert.deepEqual(keys, [key, key], "identical failed submissions must reuse idempotency key");
+
+  // An async getMessages call may complete after the user switched chats.
+  // Its obsolete evidence picker must never open in the NEW conversation.
+  let pickerActive=true,releaseMessages;
+  const waitingPicker=browserHarness({
+    isContextActive:()=>pickerActive,
+    getMessages:()=>new Promise(resolve=>{releaseMessages=resolve;})
+  });
+  waitingPicker.flow.openReport();
+  waitingPicker.ui.form.onContinue({conversationId:"conversation-1",reasonCode:1,details:"Threats"});
+  await flush();
+  pickerActive=false;
+  releaseMessages([{id:id1,sender_id:peer,recipient_id:user,content:"A message"}]);
+  await flush();
+  assert.equal(waitingPicker.ui.picker,null,
+    "Old async messages must not open evidence picker after chat switch");
+  assert.equal(waitingPicker.status.length,0,
+    "Old flow cannot display stale status in new account");
+
+  // A report RPC may finish after logout, including successfully. The old
+  // result must not be displayed in the newly signed-in user's UI.
+  let receiptActive=true,resolveReceipt,submitted=0;
+  const delayedReceipt=browserHarness({
+    isContextActive:()=>receiptActive,
+    submit:()=>{submitted++;return new Promise(resolve=>{resolveReceipt=resolve})}
+  });
+  delayedReceipt.flow.openReport();
+  delayedReceipt.ui.form.onContinue({conversationId:"conversation-1",reasonCode:1,details:"Threats"});
+  await flush();
+  delayedReceipt.ui.picker.onContinue({conversationId:"conversation-1",messageIds:[id1]});
+  await flush();
+  assert.equal(submitted,1);
+  receiptActive=false;
+  resolveReceipt({ok:true,reportId});
+  await flush();
+  assert.equal(delayedReceipt.status.length,0,
+    "Old successful receipt must not be displayed after account switch");
 }
 
 (async () => {
