@@ -44,6 +44,20 @@ const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,d
     "the panel already fetched legacy reports and must not fetch them twice");
   assert.equal(betaOnly.ok,true);
   assert.deepEqual(betaOnly.reports.map(r=>r.source),["conversation_beta"]);
+  // Newer closed cases cannot bury older reports that still need attention.
+  const oldPending={...beta,id:"55555555-5555-4555-8555-555555555555",
+    created_at:"2026-01-01T00:00:00Z",status:"pending"};
+  const newestResolved={...beta,id:"66666666-6666-4666-8666-666666666666",
+    created_at:"2026-10-24T00:00:00Z",status:"resolved"};
+  const newerReviewed={...beta,id:"77777777-7777-4777-8777-777777777777",
+    created_at:"2026-10-23T00:00:00Z",status:"reviewed"};
+  const prioritized=await loadReportQueue({rpc:async()=>({
+    data:[newerReviewed,newestResolved,oldPending],error:null
+  })},{includeLegacy:false});
+  assert.equal(prioritized.ok,true);
+  assert.deepEqual(prioritized.reports.map(r=>r.id),
+    [oldPending.id,newestResolved.id,newerReviewed.id],
+    "pending cases MUST precede newer resolved/reviewed reports");
   const oldOnly=await loadReportQueue({rpc:async name=>name==="get_xoxo_dm_reports"?{data:[legacy]}:{data:null,error:{code:"PGRST202"}}});
   assert.equal(oldOnly.ok,true);assert.equal(oldOnly.reports.length,1);assert.equal(oldOnly.warning,"conversation_reports_not_deployed");
   const damaged=await loadReportQueue({rpc:async name=>({data:name==="get_xoxo_dm_reports"?[legacy]:[{...beta,reported_user_id:"bad"}]})});
