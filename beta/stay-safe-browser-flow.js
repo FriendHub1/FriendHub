@@ -79,6 +79,7 @@
     }
 
     async function startEvidence(formData) {
+      if (!config.enabled) { inform({ ok: false, reason: "disabled" }); return; }
       if (!formData || formData.conversationId !== conversationId) {
         inform({ ok: false, reason: "invalid_conversation" }); return;
       }
@@ -166,6 +167,7 @@
     }
 
     function openReport() {
+      if (!config.enabled) { inform({ ok: false, reason: "disabled" }); return false; }
       if (sending || typeof root?.XOXOReportFormBeta?.open !== "function") {
         if (!sending) inform({ ok: false, reason: "missing_module" });
         return false;
@@ -180,7 +182,7 @@
       if (typeof root?.XOXOSafetyReminderBeta?.show !== "function") return false;
       return root.XOXOSafetyReminderBeta.show({
         conversationId, accountId, locale,
-        onReport: () => { openReport(); }
+        ...(config.enabled ? { onReport: () => { openReport(); } } : {})
       });
     }
 
