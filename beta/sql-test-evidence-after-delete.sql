@@ -28,17 +28,17 @@ begin
       where report_id=v_report) <> 1 then
     raise exception 'BUG: original selected evidence metadata missing';
   end if;
-  if (select count(*) from public.direct_messages
-      where id='77777777-7777-4777-8777-777777777771'::uuid) <> 1 then
-    raise exception 'BUG: test DM to be deleted is missing';
+  -- The preceding SQL integration suite already deleted this message.
+  -- Confirm the test is truly exercising a permanently missing DM.
+  if exists(select 1 from public.direct_messages
+      where id='77777777-7777-4777-8777-777777777771'::uuid) then
+    raise exception 'BUG: baseline test did not delete reported message';
   end if;
 end $before_delete$;
 
--- Simulate a physically deleted message. The draft evidence intentionally
--- has NO foreign key to direct_messages, so already-submitted report metadata
--- must not silently vanish from the admin queue.
-delete from public.direct_messages
-where id='77777777-7777-4777-8777-777777777771'::uuid;
+-- The baseline SQL suite ALREADY physically deleted the source DM.
+-- The additional regression below verifies old metadata and the immutable
+-- idempotent receipt without restoring or recreating message content.
 
 do $after_delete$
 declare v_report uuid:=current_setting('xoxo.safety_delete_report_id')::uuid;
@@ -82,7 +82,8 @@ begin
     raise exception 'BUG: retry after message deletion changed original receipt';
   end if;
 
-  -- The same key may never be used to tamper with an accepted report.
+  -- A replay cannot alter any of the original report's immutable
+  -- fields, even after the source message is physically deleted.
   begin
     perform public.xoxo_submit_conversation_report_beta(
       '22222222-2222-4222-8222-222222222222'::uuid,
@@ -90,7 +91,34 @@ begin
       array['77777777-7777-4777-8777-777777777771'::uuid],
       '88888888-8888-4888-8888-000000000001'::uuid
     );
-    raise exception 'BUG: accepted idempotency key mutated after DM deletion';
+    raise exception 'BUG: replay changed report details';
+  exception when sqlstate '22023' then null; end;
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '22222222-2222-4222-8222-222222222222'::uuid,
+      2,'Threats',
+      array['77777777-7777-4777-8777-777777777771'::uuid],
+      '88888888-8888-4888-8888-000000000001'::uuid
+    );
+    raise exception 'BUG: replay changed reported reason';
+  exception when sqlstate '22023' then null; end;
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '33333333-3333-4333-8333-333333333333'::uuid,
+      1,'Threats',
+      array['77777777-7777-4777-8777-777777777771'::uuid],
+      '88888888-8888-4888-8888-000000000001'::uuid
+    );
+    raise exception 'BUG: replay changed reported participant';
+  exception when sqlstate '22023' then null; end;
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '22222222-2222-4222-8222-222222222222'::uuid,
+      1,'Threats',
+      array['77777777-7777-4777-8777-777777777772'::uuid],
+      '88888888-8888-4888-8888-000000000001'::uuid
+    );
+    raise exception 'BUG: replay swapped selected evidence ID';
   exception when sqlstate '22023' then null; end;
 end $deleted_receipt$;
 
