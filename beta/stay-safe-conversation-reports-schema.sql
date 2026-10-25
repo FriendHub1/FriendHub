@@ -160,12 +160,16 @@ begin
 
   -- The owner of this definer RPC bypasses RLS. Replicate the existing
   -- direct_messages SELECT policy explicitly, including per-user clears.
+  -- Expiring whispers and non-normal/once-view media are deliberately NOT
+  -- valid evidence: a report must not preserve their metadata after expiry.
+  -- A distinct product/privacy decision is required before supporting them.
   -- FOR SHARE blocks deletes AND concurrent non-key UPDATEs to validated
   -- rows (sender/recipient/created_at/content) until the evidence snapshot
   -- has been persisted atomically. KEY SHARE locking is insufficient here:
   -- a concurrent content/timestamp UPDATE could otherwise slip through.
   for v_message in
-    select dm.id, dm.sender_id, dm.recipient_id, dm.created_at
+    select dm.id, dm.sender_id, dm.recipient_id, dm.created_at,
+           dm.whisper_id, dm.media_view_mode
       from public.direct_messages dm
       where dm.id = any(v_normalized_ids)
       for share
@@ -175,6 +179,12 @@ begin
       or (v_message.sender_id = p_other_user_id and v_message.recipient_id = v_reporter)
     ) then
       raise exception 'Evidence does not belong to this conversation'
+        using errcode = '42501';
+    end if;
+
+    if v_message.whisper_id is not null or
+       coalesce(v_message.media_view_mode, 'normal') <> 'normal' then
+      raise exception 'Disappearing or once-view messages cannot be report evidence'
         using errcode = '42501';
     end if;
 

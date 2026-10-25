@@ -75,6 +75,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f beta/stay-safe-conversation-reports-schema.sql
       - name: Execute authenticated report and moderation security tests
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-report-pipeline.sql
+      - name: Reject disappearing and once-view evidence in isolated Postgres
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-ephemeral-evidence.sql
       - name: Stress-test parallel rate limits and idempotency on disposable DB
         run: python3 beta/test-safety-postgres-concurrency.py
       - name: Seed isolated PostgREST HTTP session fixtures

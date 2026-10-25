@@ -43,6 +43,8 @@ create table public.direct_messages (
  sender_id uuid not null,
  recipient_id uuid not null,
  content text,
+ whisper_id uuid,
+ media_view_mode text default 'normal',
  created_at timestamptz not null default now()
 );
 create table public.dm_conversation_clears (

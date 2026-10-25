@@ -28,6 +28,8 @@ const required = [
   ["idempotency pair", /unique \(reporter_id, idempotency_key\)/i],
   ["RLS clear visibility", /public\.dm_conversation_clears/i],
   ["immutable evidence row lock", /from public\.direct_messages dm\s*where dm\.id = any\(v_normalized_ids\)\s*for share\s*loop/i],
+  ["reject disappearing whispers", /v_message\.whisper_id is not null/i],
+  ["reject once-view or other non-normal media", /coalesce\(v_message\.media_view_mode,\s*'normal'\)\s*<>\s*'normal'/i],
   ["PIN-gated report queue", /xoxo_admin_list_conversation_reports_beta/i],
   ["pending priority before the 100-card cap",
     /order by\s*\(r\.status\s*=\s*'pending'\)\s*desc,\s*r\.created_at\s*desc,\s*r\.id\s*desc\s*limit\s+100/i],

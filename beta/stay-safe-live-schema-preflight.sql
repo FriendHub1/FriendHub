@@ -12,6 +12,8 @@ with required_columns(schema_name,table_name,column_name,type_name) as (
     ('public','direct_messages','sender_id','uuid'),
     ('public','direct_messages','recipient_id','uuid'),
     ('public','direct_messages','created_at','timestamptz'),
+    ('public','direct_messages','whisper_id','uuid'),
+    ('public','direct_messages','media_view_mode','text'),
     ('public','dm_conversation_clears','user_id','uuid'),
     ('public','dm_conversation_clears','other_user_id','uuid'),
     ('public','dm_conversation_clears','cleared_at','timestamptz'),

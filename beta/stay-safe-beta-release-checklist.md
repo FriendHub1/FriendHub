@@ -43,7 +43,7 @@ Tests include:
 - [x] Verify 12 concurrent submissions respect 10-per-day limit, 8 identical retries create a single report, and retry after quota returns the original report ID.
 - [x] Verify unauthorized users, expired PINs and locked PINs cannot change report status or create an administrative status audit entry.
 - [ ] Audit SQL function privileges, behavior and RLS in an isolated non-production Supabase environment.
-- [ ] Approve evidence retention (the draft stores selected IDs + participant/timestamps, not copies of message text/media); confirm treatment of physical deletion.
+- [ ] Approve evidence retention (the draft stores selected IDs + participant/timestamps, not copies of message text/media); confirm treatment of physical deletion. The current server SQL explicitly **rejects** expiring whispers and non-normal/once-view media, including mixed selections; supporting these later requires a separate privacy decision.
 - [ ] Approve or modify the proposed rate limit of 10 reports per user per 24 hours.
 - [ ] Deploy and audit the four BETA RPC functions after explicit approval. Verify no broader table grants or admin access.
 - [ ] Test signed-in reporter, unrelated account, malformed evidence, repeated idempotency key, and rate limit in real Supabase.
