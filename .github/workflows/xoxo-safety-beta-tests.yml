@@ -104,6 +104,8 @@ jobs:
         run: python3 beta/test-safety-postgrest-http.py
       - name: Verify old pending reports survive a 120-case closed-report flood
         run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-admin-queue-priority.sql
+      - name: Verify pending-first 100-card queue over signed local HTTP API
+        run: python3 beta/test-safety-postgrest-queue-priority.py
       - name: Clean up disposable PostgREST container
         if: always()
         run: docker rm -f xoxo-safety-ci-postgrest 2>/dev/null || true
