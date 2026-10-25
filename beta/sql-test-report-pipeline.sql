@@ -218,11 +218,6 @@ begin
   if v_retry <> v_second then
     raise exception 'BUG: reordered evidence created a different receipt';
   end if;
-  if (select count(*) from xoxo_safety_private.conversation_report_evidence
-       where report_id=v_second) <> 2 then
-    raise exception 'BUG: reordered retry duplicated the stored evidence';
-  end if;
-
   for i in 3..10 loop
     v_key := ('88888888-8888-4888-8888-'||lpad(i::text,12,'0'))::uuid;
     perform public.xoxo_submit_conversation_report_beta(
@@ -241,7 +236,21 @@ begin
   exception when sqlstate 'P0001' then
     if sqlerrm <> 'Daily report limit reached' then raise; end if;
   end;
-end $$;
+end $;
+
+-- The authenticated reporter must never gain direct SELECT on private
+-- moderation evidence. Verify the unchanged two-row metadata count only
+-- after returning to the privileged disposable-CI test role.
+reset role;
+do $ordered_idempotency_audit$
+begin
+  if (select count(*) from xoxo_safety_private.conversation_report_evidence e
+      join xoxo_safety_private.conversation_reports r on r.id=e.report_id
+      where r.reporter_id='11111111-1111-4111-8111-111111111111'::uuid
+        and r.idempotency_key='88888888-8888-4888-8888-000000000002'::uuid) <> 2 then
+    raise exception 'BUG: reordered retry duplicated or lost evidence metadata';
+  end if;
+end $ordered_idempotency_audit$;
 
 -- User-cleared conversations must also be rejected SERVER-SIDE.
 reset role;
