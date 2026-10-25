@@ -20,6 +20,18 @@ const REPORT_RPC_WRITES_ENABLED=Boolean(
  previewSearch?.get("xoxo_safety_chat_beta")==="1" &&
  previewSearch?.get("xoxo_safety_report_write_beta")==="1"
 );
+// Explicit, local-only simulation. It never invokes the report RPC.
+const SIMULATE=Boolean(/(?:^|\\.)workers\\.dev$/i.test(String(location.hostname||"")) &&
+ previewSearch?.get("xoxo_safety_simulate_beta")==="1");
+const MOCK_IDS=[
+ "00000000-0000-4000-8000-000000000101",
+ "00000000-0000-4000-8000-000000000102",
+ "00000000-0000-4000-8000-000000000103"
+];
+const MOCK_TEXT={
+ es:["[SIMULACIÓN] Hola, ¿cómo estás?","[SIMULACIÓN] Por favor, envíame dinero.","[SIMULACIÓN] No compartas tus datos personales."],
+ en:["[SIMULATION] Hi, how are you?","[SIMULATION] Please send me money.","[SIMULATION] Do not share personal information."]
+};
 let flow=null,flowKey="",flowClient=null;
 // Fail closed until Supabase publishes the initial stored session. A stale
 // SPA currentUser is NOT proof of a current signed-in Auth user.
@@ -82,11 +94,23 @@ function visibleContext(){
      created_at:typeof m.created_at==="string"?m.created_at:null,
      text:String(m.content||m.attachment_name||("["+String(m.attachment_type||"Message")+"]")).slice(0,1000)});
  }
+ if(SIMULATE && messages.length===0){
+   const texts=MOCK_TEXT[String(locale()).split("-")[0]]||MOCK_TEXT.en;
+   for(let i=0;i<MOCK_IDS.length;i++){
+     messages.push({id:MOCK_IDS[i],sender_id:i%2?peer:self,
+       recipient_id:i%2?self:peer,media_view_mode:"normal",whisper_id:null,
+       created_at:new Date(Date.UTC(2026,9,25,12,i)).toISOString(),text:texts[i]});
+   }
+ }
  return {self,peer,conversationId,client,messages,locale:locale()};
 }
 function reportStatus(result){
  // In UI-preview mode, a failed RPC is expected. Never claim submission.
- window.alert(result?.ok?ui().success:ui().failure);
+ window.alert(SIMULATE ?
+   (String(locale()).startsWith("es") ?
+     "🧪 Simulación completada. No se envió ninguna denuncia ni mensaje." :
+     "🧪 Simulation complete. No report or message was sent.") :
+   (result?.ok?ui().success:ui().failure));
 }
 function getFlow(){
  const ctx=visibleContext();
@@ -102,7 +126,7 @@ function getFlow(){
  flow=window.XOXOSafetyFlowBeta.create({
    client:ctx.client, accountId:ctx.self, otherUserId:ctx.peer,
    conversationId:ctx.conversationId, locale:ctx.locale,
-   previewOnly:!REPORT_RPC_WRITES_ENABLED, enabled:REPORT_RPC_WRITES_ENABLED,
+   previewOnly:SIMULATE||!REPORT_RPC_WRITES_ENABLED, enabled:!SIMULATE&&REPORT_RPC_WRITES_ENABLED,
    isContextActive:()=>{
      const latest=visibleContext();
      return !!latest && latest.conversationId===ctx.conversationId &&
@@ -194,7 +218,7 @@ function install(){
 }
 window.XOXOSafetyChatPreviewBeta=Object.freeze({
  refresh,openReport,submit,visibleContext,
- reportWritesEnabled:()=>REPORT_RPC_WRITES_ENABLED,translations:UI
+ reportWritesEnabled:()=>!SIMULATE&&REPORT_RPC_WRITES_ENABLED,simulationEnabled:()=>SIMULATE,translations:UI
 });
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});
 else install();
