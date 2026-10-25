@@ -22,3 +22,10 @@ Only on first entry to each distinct chat; localStorage currently remembers ackn
 - Verify no message text is logged or sent by the reminder itself.
 - Test on iPhone Safari and desktop; ensure keyboard and scroll behavior.
 - Only after approval, include the script in the beta page and wire it to the chat lifecycle.
+
+## Verified from current index.html
+- Direct chat entry point: `async function openDirectChat(userId, username, profilePhoto = "")` (actual declaration includes `async`).
+- Authenticated user: `currentUser.id`; recipient: `currentDmUserId`.
+- Current locale getter: `getFriendHubLanguage()`.
+- Exact 10 locale values: `en`, `es`, `pt-BR`, `de`, `nb`, `pl`, `fr`, `cs`, `sv`, `it`.
+- The opt-in wrapper is in `beta/stay-safe-chat-hook.js`. Do not load it until translations, report flow, and BETA integration are reviewed.
