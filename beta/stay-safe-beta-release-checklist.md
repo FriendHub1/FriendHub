@@ -360,3 +360,9 @@ Tests include:
 - The disposable GoTrue job runs the native report and PIN/audit suite **before** downloading Playwright browsers, completing a four-report server-only pass. This prevents slow browser downloads from blocking verification of moderator authorization, expiry, status changes and revocation.
 - After browser installation, the same job performs the full six-report user flow (including mobile WebKit and desktop Chromium) against a new synthetic account. It validates six evidence rows belonging to that reporter and independently checks the now-larger combined admin queue through deterministic two-row pages. All counts are scoped to the correct fictional user or administrator.
 - Both passes require fresh valid signed native Auth sessions, and both can fail the job. This is test-harness isolation, **not** enabling hosted Supabase, report writes on the real site, or changing an administrator's PIN.
+
+#### Genuine GoTrue deletion and evidence-retention regression
+
+- Extend each native backend pass to **physically delete only its fictional DM after reports have been stored**. The evidence table must retain the original message IDs and participant/timestamp metadata, while the existing admin's PIN-authorized queue flags that the deleted message is no longer available. No private message body is snapshotted in the BETA report schema.
+- A retry using the original idempotency key must still return the original immutable receipt even after deletion; reusing the deleted message in a **new** report must fail authorization. The first pass's metadata survives into the second pass, so the later queue must correctly distinguish already-deleted evidence from still-present evidence before deletion.
+- This verifies the **current metadata-only design**, not a decision to retain full deleted messages. Any longer-term retention of private conversation content requires an explicit privacy and owner decision before live deployment.

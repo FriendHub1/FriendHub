@@ -77,7 +77,8 @@ def real_browser_report_flow(token,message,user):
 
 
 def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
-                                  admin_session_id,report_id,expected_reports):
+                                  admin_session_id,report_id,expected_reports,
+                                  reporter_user,message_id,reporter_count):
     """Prove PIN + admin role + active GoTrue session guard the real RPCs.
 
     This is the existing moderator's metadata queue, NOT a second DM viewer.
@@ -109,8 +110,15 @@ def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
     assert code==200 and isinstance(rows,list) and len(rows)==expected_reports,(
         "PIN-authorized report queue missing real stored reports",code,rows)
     assert any(r.get("id")==report_id for r in rows)
+    current_rows=[r for r in rows if r.get("reporter_id")==reporter_user]
+    assert len(current_rows)==reporter_count
     assert all(len(r.get("message_ids",[]))==1 and
-        r.get("unavailable_evidence_count")==0 for r in rows)
+        r.get("unavailable_evidence_count")==0 for r in current_rows)
+    # The earlier fast pass has physically deleted its DIFFERENT fictional
+    # source DM while retaining immutable evidence metadata.
+    assert all(len(r.get("message_ids",[]))==1 and
+        r.get("unavailable_evidence_count")==1 for r in rows
+        if r.get("reporter_id")!=reporter_user)
     assert all(not any(key in r for key in
         ("content","message_content","message_text","body","attachment_url"))
         for r in rows),"Report queue leaked private message content"
@@ -158,6 +166,27 @@ def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
       f"where id='{report_id}'::uuid") == "reviewed"
     assert db("select count(*) from public.xoxo_message_access_log "
       f"where action like 'conversation_report_status:reviewed: report={report_id}%'") == "1"
+
+    # A user may physically delete their DM after reporting it. Its original
+    # text is NOT copied to the report schema, but the selected evidence IDs,
+    # participants and timestamp must survive and the existing PIN-gated
+    # admin queue must tell moderators those message bodies are unavailable.
+    assert db("select count(*) from public.direct_messages "
+      f"where id='{message_id}'::uuid") == "1"
+    db(f"delete from public.direct_messages where id='{message_id}'::uuid")
+    assert db("select count(*) from public.direct_messages "
+      f"where id='{message_id}'::uuid") == "0"
+    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence e "
+      "join xoxo_safety_private.conversation_reports r on r.id=e.report_id "
+      f"where r.reporter_id='{reporter_user}'::uuid and "
+      f"e.message_id='{message_id}'::uuid") == str(reporter_count)
+    code,after_delete=http(REST,"POST",listing,list_body,admin_token)
+    assert code==200 and isinstance(after_delete,list) and len(after_delete)==expected_reports
+    assert all(r.get("unavailable_evidence_count")==1 for r in after_delete),(
+        "Deleted DM evidence was not marked unavailable in the PIN queue")
+    assert all(not any(key in r for key in
+        ("content","message_content","message_text","body","attachment_url"))
+        for r in after_delete),"Deleted evidence copied private DM content"
 
     db("update public.xoxo_moderation_pin_security "
        "set verified_until=now()-interval '1 minute' "
@@ -293,7 +322,21 @@ def run():
     # moderated report RPCs, not only on mocked frontend adapters.
     native_admin_moderation_queue(token,outsider_token,outsider_user,
         outsider_session_id,report_id,int(db(
-            "select count(*) from xoxo_safety_private.conversation_reports")))
+            "select count(*) from xoxo_safety_private.conversation_reports")),
+        user,message,expected_user_reports)
+
+    # A previously committed report keeps its immutable receipt after its
+    # source message is physically gone; a NEW report cannot steal deleted
+    # evidence. Both requests still use a live, server-validated GoTrue JWT.
+    code,old_receipt=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",
+        payload,token)
+    assert code==200 and old_receipt==report_id,(
+        "Deleted DM changed the already committed report receipt",code,old_receipt)
+    deleted_payload={**payload,"p_idempotency_key":str(uuid.uuid4())}
+    code,_=http(REST,"POST","/rpc/xoxo_submit_conversation_report_beta",
+        deleted_payload,token)
+    assert code in (400,401,403),(
+        "Deleted evidence was accepted as a new conversation report",code)
 
     # Simulate session revocation in the SAME native Auth DB, while the JWT
     # is still cryptographically valid; no real credentials are involved.
