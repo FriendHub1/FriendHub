@@ -139,6 +139,7 @@ jobs:
             -e API_EXTERNAL_URL=http://127.0.0.1:9999 \
             -e GOTRUE_DB_DRIVER=postgres \
             -e GOTRUE_DB_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5432/xoxo_gotrue_ci?sslmode=disable" \
+            -e GOTRUE_DB_DB_NAMESPACE=auth \
             -e GOTRUE_SITE_URL=http://127.0.0.1:9999 \
             -e GOTRUE_DISABLE_SIGNUP=false \
             -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true \
