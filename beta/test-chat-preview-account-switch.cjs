@@ -10,12 +10,14 @@ let loggedIn = { id: userA }, peer = userB;
 let client = { auth: { getUser: async () => ({ data: {user: loggedIn} }) },
   from: () => ({}), rpc: async () => ({}) };
 let visible = true;
-const captured = [];
+const captured = [], disposed = [];
 const window = {
   __xoxoCurrentDmMessages: [],
   XOXOSafetyFlowBeta: { create: input => {
     captured.push(input);
-    return {openReport: () => true, showReminder: () => true};
+    const flowIndex=captured.length-1;
+    return {openReport: () => true, showReminder: () => true,
+      dispose:()=>{disposed.push(flowIndex);return true;}};
   } }
 };
 const chat = {style:{display:"block"},get isConnected(){return visible;}};
@@ -62,6 +64,7 @@ loggedIn = {id:userB};peer=userA;
 assert.equal(captured[0].isContextActive(),false);
 assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),true);
 assert.equal(captured.length,2,"new user must receive a new safety flow");
+assert.deepEqual(disposed,[0],"Changing accounts must dismiss the OLD flow");
 assert.equal(captured[1].accountId,userB);
 assert.equal(captured[1].isContextActive(),true);
 
@@ -71,14 +74,23 @@ client=otherClient;
 assert.equal(captured[1].isContextActive(),false);
 assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),true);
 assert.equal(captured.length,3,"new client session must create a new safety flow");
+assert.deepEqual(disposed,[0,1],"Changing auth clients must dismiss old dialog ownership");
 
 // Closing the chat invalidates the account-bound context.
 visible=false;
 assert.equal(captured[2].isContextActive(),false);
 assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),false);
+assert.deepEqual(disposed,[0,1,2],"Closing DM chat must dismiss sensitive dialogs");
 visible=true;
 assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),true);
 assert.equal(captured.length,4,"reopened chat must not reuse a logged-out cached flow");
+
+// A peer switch without any account change also closes old report UI.
+peer="33333333-3333-4333-8333-333333333333";
+assert.equal(window.XOXOSafetyChatPreviewBeta.openReport(),true);
+assert.equal(captured.length,5);
+assert.deepEqual(disposed,[0,1,2,3],
+  "Chat changes must dispose previous report/picker UI without touching next flow");
 
 assert.equal(window.XOXOSafetyChatPreviewBeta.reportWritesEnabled(),false);
 console.log("PASS: account swap, session swap and closed-chat safety flow cache isolation");
