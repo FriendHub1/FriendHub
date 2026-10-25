@@ -120,6 +120,14 @@ jobs:
           test "${PGDATABASE}" = xoxo_safety_test
           psql -X -v ON_ERROR_STOP=1 -c "create database xoxo_gotrue_ci"
           psql -X -v ON_ERROR_STOP=1 -d xoxo_gotrue_ci -c "create schema if not exists auth"
+          # GoTrue's container CMD starts the API; unlike the complete
+          # Supabase stack, this standalone test must apply its official
+          # Auth migrations explicitly before issuing signed sessions.
+          docker run --rm --network host \
+            -e GOTRUE_DB_DRIVER=postgres \
+            -e GOTRUE_DB_DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5432/xoxo_gotrue_ci?sslmode=disable" \
+            -e GOTRUE_DB_DB_NAMESPACE=auth \
+            supabase/gotrue:v2.197.0 auth migrate
           docker run -d --name xoxo-safety-ci-gotrue --network host \
             -e GOTRUE_API_HOST=127.0.0.1 \
             -e GOTRUE_API_PORT=9999 \
