@@ -203,3 +203,14 @@ Tests include:
 - Native browser tests in `beta/test-safety-browser-visual.cjs` exercise the report form and picker in **WebKit (320/390px) and desktop Chromium**: cancelled old handlers do nothing, double submission invokes once, and no sensitive modal remains mounted.
 - [**GitHub Actions run 40211235284**](https://github.com/FriendHub1/FriendHub/actions/runs/40211235284) passed **all three** jobs: Node.js, disposable PostgreSQL 17/local PostgREST, and WebKit/Chromium.
 - No live Supabase schema, production Worker, admin panel, user conversations, or report-write flags were changed. The original non-production Auth, retention/erasure approval and physical-iPhone release gates remain in place.
+
+### Remove private evidence dialogs when leaving a DM (2026-10-25)
+
+- Fixed a privacy leak in the BETA preview: previous account/chat checks blocked old report **submissions**, but a report form or evidence picker could still **remain visible with old private DM text** after switching conversations or closing the chat.
+- Added owner-scoped `dismiss(owner)` in the standalone report form and evidence picker. Each browser flow receives a unique owner object and exposes idempotent `dispose()`. Disposal closes **only that flow's** dialogs, invalidates previous form attempts and discards its client-side retry key; it cannot remove an unrelated newer chat's form.
+- The preview bridge calls disposal on a changed peer, account, locale, Supabase client, unavailable/hidden DM, or pagehide. Native `MutationObserver` now watches DM message changes, chat visibility and **nested header edits** that can occur when changing peers.
+- Supabase `SIGNED_OUT` / `USER_DELETED` marks the preview as signed-out so late chat DOM redraws **cannot reconstruct a former user's report UI**. `SIGNED_IN` restores it only when the logged-in identity matches the current account shown by the SPA.
+- Added `beta/browser-safety-chat-navigation.cjs`: real **WebKit and Chromium** exercise peer/header changes, disappearing private evidence, hiding a chat, auth logout, stale post-logout re-renders, new sign-in with an old account still in the DOM, and normal recovery once the new account is installed.
+- Added ownership/disposal tests to the browser-flow and preview-bridge Node suites, plus mobile WebKit/Chromium tests for preventing old disposal from closing a new chat's dialogs.
+- [**GitHub Actions run 40212566379**](https://github.com/FriendHub1/FriendHub/actions/runs/40212566379) passed **all three jobs:** Node.js 22, disposable PostgreSQL 17/PostgREST, and WebKit/Chromium. All data are synthetic.
+- The BETA report RPC write flag stays off; no production changes were made. Physical iPhone integrated acceptance, real non-production Supabase Auth tokens, privacy retention policy and deployment permission remain open.
