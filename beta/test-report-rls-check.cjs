@@ -10,6 +10,8 @@ const msg={id:a,sender_id:peer,recipient_id:self};
 const mock=(data,error=null)=>({from:table=>{assert.equal(table,"direct_messages");return{select:fields=>{assert.equal(fields,"id,sender_id,recipient_id");return{in:async(column,ids)=>{assert.equal(column,"id");return{data,error};}};}};}});
 (async()=>{
  const cases=[
+ ["missing client",null,self,peer,[a],false],
+ ["invalid from method",{from:true},self,peer,[a],false],
  ["valid",mock([msg]),self,peer,[a],true],
  ["unknown returned id",mock([{...msg,id:b}]),self,peer,[a],false],
  ["uppercase request",mock([msg]),self.toUpperCase(),peer.toUpperCase(),[a.toUpperCase()],true],
