@@ -158,8 +158,12 @@
       if(typeof window.setTimeout!=="function")return;
       const deadline=pinExpiresAt;
       pinExpiryTimer=window.setTimeout(()=>{
-        if(unlocked && pinExpiresAt===deadline && Date.now()>=deadline)
-          isPinWindowActive();
+        // Browser timers are elapsed-time based; a user changing the device
+        // wall clock must not prolong access to already displayed reports.
+        if(unlocked && pinExpiresAt===deadline){
+          invalidate();
+          if(isActiveAdmin())paintUnlockControl();
+        }
       },PIN_DISPLAY_WINDOW_MS);
       pinExpiryTimer?.unref?.();
     }

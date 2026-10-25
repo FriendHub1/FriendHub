@@ -257,5 +257,50 @@ function tick(){return new Promise(done=>setImmediate(done))}
  browserEvents.focus();
  assert.equal(cards(),0,"refocusing after expiry must hide private reports");
  assert.ok(unlock(),"refocusing after expiry must require PIN again");
- console.log("PASS: auth/PIN lifecycle, delayed events, 14-minute PIN card expiry (timer + focus), and legacy viewer preservation");
+
+ // The server can complete a previously started queue read after the PIN
+ // deadline. That response belongs to the expired authorization epoch.
+ await authorize();
+ fetchDeferred=true;
+ context.window.renderXoxoDmReports();
+ await tick();
+ const lateQueue=resolveFetch;
+ assert.equal(typeof lateQueue,"function");
+ const queueCallsAtExpiry=counts.queue;
+ now+=14*60*1000;
+ browserEvents.focus();
+ fetchDeferred=false;
+ lateQueue({ok:true,reports:[report]});
+ await tick();await tick();
+ assert.equal(cards(),0,"late queue response repainted reports after PIN expiry");
+ assert.equal(counts.queue,queueCallsAtExpiry,"expired queue started an unexpected read");
+ assert.ok(unlock(),"late queue must not silently renew the moderator PIN");
+
+ // Likewise, a status-write response must not reopen the admin queue after
+ // its PIN expires; the already issued server request remains server-gated.
+ await authorize();
+ const expiringCard=sel("[data-xoxo-conversation-beta-report]")[0];
+ const expiringActions=expiringCard.children.find(x=>x.className==="xmm-report-actions");
+ statusDeferred=true;
+ const legacyBeforeExpiry=counts.legacy;
+ const statusAfterExpiry=expiringActions.children[1].listeners.click();
+ await tick();
+ const lateStatus=resolveStatus;
+ assert.equal(typeof lateStatus,"function");
+ now+=14*60*1000;
+ const expiryWithoutClockSkew=Array.from(timers.values())[0];
+ // A backwards wall-clock jump cannot extend the existing PIN grant:
+ // the elapsed-time browser timer itself must clear BETA metadata.
+ now-=20*60*1000;
+ expiryWithoutClockSkew();
+ assert.equal(cards(),0,"backwards clock change bypassed elapsed PIN timer");
+ assert.equal(timers.size,0);
+ statusDeferred=false;
+ lateStatus({ok:true});
+ await statusAfterExpiry;await tick();
+ assert.equal(counts.legacy,legacyBeforeExpiry,
+   "late status result reopened the legacy moderator queue after PIN expiry");
+ assert.equal(cards(),0,"late status result exposed report metadata");
+ assert.ok(unlock(),"PIN expiry during a write must require reauthorization");
+ console.log("PASS: auth/PIN lifecycle, 14-minute PIN expiry, wall-clock skew, late queue/status responses, and legacy viewer preservation");
 })().catch(error=>{console.error(error);process.exitCode=1});
