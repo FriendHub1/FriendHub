@@ -21,7 +21,7 @@ function element(tag){
 (async()=>{
  const list=element("section");const moderation={classList:{contains:()=>true}};
  const calls={legacy:0,queue:0,pin:0,unlock:0,updates:0};
- let betaAvailable=true,admin=true,legacyFails=false;
+ let betaAvailable=true,admin=true,legacyFails=false,updateFails=false;
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;if(legacyFails)throw Error("legacy loader failed");list.children=[element("legacy-card")];},
    renderXoxoDmReports:()=>{list.children=[element("legacy-card")];},
@@ -32,7 +32,7 @@ function element(tag){
     updateReportStatus:async(_client,_report,_status,reason)=>{
       assert.equal(reason,"Report queue moderation access",
         "status changes need the same PIN moderation reason");
-      calls.updates++;return {ok:true};}}},
+      calls.updates++;return updateFails?{ok:false}:{ok:true};}}},
   document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xoxoAdminModeration"?moderation:null},
   supabaseClient:{},
   get xoxoIsAdmin(){return admin;},
@@ -72,6 +72,18 @@ function element(tag){
  assert.equal(calls.pin,1,"the existing PIN-gated viewer must be reused");
  await actions.children[1].listeners.click();
  assert.equal(calls.updates,1);assert.ok(calls.queue>=4);
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
+ updateFails=true;
+ const oldCard=list.querySelectorAll("[data-xoxo-conversation-beta-report]")[0];
+ const oldActions=oldCard.children.find(x=>x.className==="xmm-report-actions");
+ await oldActions.children[1].listeners.click();
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,
+   "a status update failure must immediately purge sensitive BETA metadata");
+ assert.equal(list.querySelectorAll("[data-xoxo-safety-report-unlock]").length,1,
+   "after an update failure the existing PIN must be verified again");
+ updateFails=false;
+ const unlockAfterUpdateError=list.querySelectorAll("[data-xoxo-safety-report-unlock]")[0];
+ await unlockAfterUpdateError.listeners.click();
  assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
  betaAvailable=false;
  const beforeExpiry=calls.queue;
