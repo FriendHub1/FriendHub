@@ -9,16 +9,16 @@
   // Text used by the actual workers.dev admin preview (10 XOXO languages).
   // Reasons are indexed 0–5; statuses stay the existing backend enum.
   const COPY = {
-    en:{title:"Conversation report",by:"Reported by",target:"Reported user",reason:"Reason",details:"Additional details",empty:"None provided",evidence:"Selected evidence",units:"message(s)",view:"🔐 Open existing conversation viewer",unlock:"🔐 Verify PIN to review conversation reports",saving:"Saving…",saveFailed:"Could not update report.",unavailable:"Stay Safe BETA: conversation reports are not available in Supabase yet.",retryPin:"Could not load reports. Verify your PIN again.",confirm:"Change this report to ",statuses:{pending:"Pending",reviewed:"Reviewed",resolved:"Resolved",dismissed:"Dismissed"},actions:{pending:"↺ Reopen",reviewed:"✓ Mark reviewed",resolved:"✓ Resolve",dismissed:"× Dismiss"},reasons:["Scam or money requests","Threats or blackmail","Harassment or unwanted messages","Fake profile or identity","Intimate photo threats","Other"]},
-    es:{title:"Denuncia de conversación",by:"Denunciante",target:"Usuario denunciado",reason:"Motivo",details:"Detalles adicionales",empty:"Sin detalles",evidence:"Pruebas seleccionadas",units:"mensaje(s)",view:"🔐 Abrir en el visor de moderación existente",unlock:"🔐 Verificar PIN para revisar denuncias de conversaciones",saving:"Guardando…",saveFailed:"No se pudo actualizar la denuncia.",unavailable:"Stay Safe BETA: las denuncias aún no están disponibles en Supabase.",retryPin:"No se pudieron cargar las denuncias. Verifica el PIN nuevamente.",confirm:"¿Cambiar el estado de la denuncia a ",statuses:{pending:"Pendiente",reviewed:"Revisada",resolved:"Resuelta",dismissed:"Descartada"},actions:{pending:"↺ Reabrir",reviewed:"✓ Marcar revisada",resolved:"✓ Resolver",dismissed:"× Descartar"},reasons:["Estafa o solicitudes de dinero","Amenazas o chantaje","Acoso o mensajes no deseados","Perfil o identidad falsa","Amenazas con fotos íntimas","Otro"]},
-    "pt-BR":{title:"Denúncia de conversa",by:"Denunciado por",target:"Usuário denunciado",reason:"Motivo",details:"Detalhes adicionais",empty:"Sem detalhes",evidence:"Provas selecionadas",units:"mensagem(ns)",view:"🔐 Abrir no visualizador de moderação existente",unlock:"🔐 Verificar PIN para consultar denúncias",saving:"Salvando…",saveFailed:"Não foi possível atualizar a denúncia.",unavailable:"Stay Safe BETA: as denúncias ainda não estão disponíveis no Supabase.",retryPin:"Não foi possível carregar denúncias. Verifique o PIN novamente.",confirm:"Alterar o status da denúncia para ",statuses:{pending:"Pendente",reviewed:"Revisada",resolved:"Resolvida",dismissed:"Descartada"},actions:{pending:"↺ Reabrir",reviewed:"✓ Marcar como revisada",resolved:"✓ Resolver",dismissed:"× Descartar"},reasons:["Golpe ou pedidos de dinheiro","Ameaças ou chantagem","Assédio ou mensagens indesejadas","Perfil ou identidade falsa","Ameaças com fotos íntimas","Outro"]},
-    fr:{title:"Signalement de conversation",by:"Signalé par",target:"Utilisateur signalé",reason:"Motif",details:"Précisions",empty:"Aucun détail",evidence:"Preuves sélectionnées",units:"message(s)",view:"🔐 Ouvrir dans le lecteur de modération existant",unlock:"🔐 Vérifier le code PIN pour consulter les signalements",saving:"Enregistrement…",saveFailed:"Impossible de mettre à jour le signalement.",unavailable:"Stay Safe BÊTA : les signalements ne sont pas encore disponibles dans Supabase.",retryPin:"Impossible de charger les signalements. Vérifie à nouveau le code PIN.",confirm:"Changer le statut du signalement en ",statuses:{pending:"En attente",reviewed:"Examiné",resolved:"Résolu",dismissed:"Rejeté"},actions:{pending:"↺ Rouvrir",reviewed:"✓ Marquer examiné",resolved:"✓ Résoudre",dismissed:"× Rejeter"},reasons:["Arnaque ou demande d'argent","Menaces ou chantage","Harcèlement ou messages indésirables","Faux profil ou fausse identité","Menaces liées aux photos intimes","Autre"]},
-    pl:{title:"Zgłoszenie rozmowy",by:"Zgłaszający",target:"Zgłoszony użytkownik",reason:"Powód",details:"Dodatkowe informacje",empty:"Brak szczegółów",evidence:"Wybrane dowody",units:"wiadomość/wiadomości",view:"🔐 Otwórz w istniejącym podglądzie moderacji",unlock:"🔐 Zweryfikuj PIN, aby przejrzeć zgłoszenia",saving:"Zapisywanie…",saveFailed:"Nie udało się zaktualizować zgłoszenia.",unavailable:"Stay Safe BETA: zgłoszenia nie są jeszcze dostępne w Supabase.",retryPin:"Nie udało się pobrać zgłoszeń. Zweryfikuj PIN ponownie.",confirm:"Zmień status zgłoszenia na ",statuses:{pending:"Oczekujące",reviewed:"Sprawdzone",resolved:"Rozwiązane",dismissed:"Odrzucone"},actions:{pending:"↺ Otwórz ponownie",reviewed:"✓ Oznacz jako sprawdzone",resolved:"✓ Rozwiąż",dismissed:"× Odrzuć"},reasons:["Oszustwo lub prośba o pieniądze","Groźby lub szantaż","Nękanie lub niechciane wiadomości","Fałszywy profil lub tożsamość","Groźby dotyczące intymnych zdjęć","Inne"]},
-    de:{title:"Gesprächsmeldung",by:"Gemeldet von",target:"Gemeldeter Nutzer",reason:"Grund",details:"Weitere Angaben",empty:"Keine Angaben",evidence:"Ausgewählte Beweise",units:"Nachricht(en)",view:"🔐 Im vorhandenen Moderationsfenster öffnen",unlock:"🔐 PIN bestätigen, um Meldungen zu prüfen",saving:"Speichern…",saveFailed:"Meldung konnte nicht aktualisiert werden.",unavailable:"Stay Safe BETA: Meldungen sind in Supabase noch nicht verfügbar.",retryPin:"Meldungen konnten nicht geladen werden. Bitte PIN erneut bestätigen.",confirm:"Meldungsstatus ändern zu ",statuses:{pending:"Ausstehend",reviewed:"Geprüft",resolved:"Gelöst",dismissed:"Abgewiesen"},actions:{pending:"↺ Wieder öffnen",reviewed:"✓ Als geprüft markieren",resolved:"✓ Lösen",dismissed:"× Abweisen"},reasons:["Betrug oder Geldforderungen","Drohungen oder Erpressung","Belästigung oder unerwünschte Nachrichten","Gefälschtes Profil oder Identität","Drohungen mit intimen Fotos","Sonstiges"]},
-    cs:{title:"Nahlášená konverzace",by:"Nahlásil(a)",target:"Nahlášený uživatel",reason:"Důvod",details:"Další podrobnosti",empty:"Bez podrobností",evidence:"Vybrané důkazy",units:"zpráv(a)",view:"🔐 Otevřít ve stávajícím moderátorském prohlížeči",unlock:"🔐 Ověřit PIN pro zobrazení hlášení",saving:"Ukládání…",saveFailed:"Hlášení se nepodařilo aktualizovat.",unavailable:"Stay Safe BETA: hlášení zatím nejsou dostupná v Supabase.",retryPin:"Hlášení se nepodařilo načíst. Ověř PIN znovu.",confirm:"Změnit stav hlášení na ",statuses:{pending:"Čeká",reviewed:"Zkontrolováno",resolved:"Vyřešeno",dismissed:"Zamítnuto"},actions:{pending:"↺ Znovu otevřít",reviewed:"✓ Označit jako zkontrolované",resolved:"✓ Vyřešit",dismissed:"× Zamítnout"},reasons:["Podvod nebo žádosti o peníze","Výhrůžky nebo vydírání","Obtěžování nebo nevyžádané zprávy","Falešný profil nebo identita","Výhrůžky intimními fotografiemi","Jiné"]},
-    no:{title:"Samtalerapport",by:"Rapportert av",target:"Rapportert bruker",reason:"Årsak",details:"Flere detaljer",empty:"Ingen detaljer",evidence:"Valgte bevis",units:"melding(er)",view:"🔐 Åpne i eksisterende modereringsvisning",unlock:"🔐 Bekreft PIN for å se rapporter",saving:"Lagrer…",saveFailed:"Kunne ikke oppdatere rapporten.",unavailable:"Stay Safe BETA: rapporter er ennå ikke tilgjengelige i Supabase.",retryPin:"Kunne ikke laste rapporter. Bekreft PIN på nytt.",confirm:"Endre rapportstatus til ",statuses:{pending:"Venter",reviewed:"Gjennomgått",resolved:"Løst",dismissed:"Avvist"},actions:{pending:"↺ Åpne igjen",reviewed:"✓ Merk som gjennomgått",resolved:"✓ Løs",dismissed:"× Avvis"},reasons:["Svindel eller pengeforespørsler","Trusler eller utpressing","Trakassering eller uønskede meldinger","Falsk profil eller identitet","Trusler knyttet til intime bilder","Annet"]},
-    sv:{title:"Konversationsanmälan",by:"Anmält av",target:"Anmäld användare",reason:"Orsak",details:"Ytterligare information",empty:"Inga detaljer",evidence:"Valda bevis",units:"meddelande(n)",view:"🔐 Öppna i befintlig modereringsvy",unlock:"🔐 Verifiera PIN för att granska anmälningar",saving:"Sparar…",saveFailed:"Det gick inte att uppdatera anmälan.",unavailable:"Stay Safe BETA: anmälningar är ännu inte tillgängliga i Supabase.",retryPin:"Det gick inte att läsa in anmälningar. Verifiera PIN igen.",confirm:"Ändra anmälans status till ",statuses:{pending:"Väntar",reviewed:"Granskad",resolved:"Löst",dismissed:"Avvisad"},actions:{pending:"↺ Öppna igen",reviewed:"✓ Markera granskad",resolved:"✓ Lös",dismissed:"× Avvisa"},reasons:["Bedrägeri eller begäran om pengar","Hot eller utpressning","Trakasserier eller oönskade meddelanden","Falsk profil eller identitet","Hot med intima bilder","Annat"]},
-    it:{title:"Segnalazione conversazione",by:"Segnalato da",target:"Utente segnalato",reason:"Motivo",details:"Dettagli aggiuntivi",empty:"Nessun dettaglio",evidence:"Prove selezionate",units:"messaggio/i",view:"🔐 Apri nel visualizzatore di moderazione esistente",unlock:"🔐 Verifica il PIN per consultare le segnalazioni",saving:"Salvataggio…",saveFailed:"Impossibile aggiornare la segnalazione.",unavailable:"Stay Safe BETA: le segnalazioni non sono ancora disponibili su Supabase.",retryPin:"Impossibile caricare le segnalazioni. Verifica di nuovo il PIN.",confirm:"Cambiare lo stato della segnalazione in ",statuses:{pending:"In attesa",reviewed:"Esaminata",resolved:"Risolta",dismissed:"Respinta"},actions:{pending:"↺ Riapri",reviewed:"✓ Segna esaminata",resolved:"✓ Risolvi",dismissed:"× Respingi"},reasons:["Truffa o richieste di denaro","Minacce o ricatto","Molestie o messaggi indesiderati","Profilo o identità falsa","Minacce con foto intime","Altro"]}
+    en:{title:"Conversation report",by:"Reported by",target:"Reported user",reason:"Reason",details:"Additional details",empty:"None provided",evidence:"Selected evidence",units:"message(s)",view:"🔐 Open existing conversation viewer",unlock:"🔐 Verify PIN to review conversation reports",saving:"Saving…",saveFailed:"Could not update report.",unavailable:"Stay Safe BETA: conversation reports are not available in Supabase yet.",retryPin:"Could not load reports. Verify your PIN again.",more:"Load more reports",loadingMore:"Loading more reports…",confirm:"Change this report to ",statuses:{pending:"Pending",reviewed:"Reviewed",resolved:"Resolved",dismissed:"Dismissed"},actions:{pending:"↺ Reopen",reviewed:"✓ Mark reviewed",resolved:"✓ Resolve",dismissed:"× Dismiss"},reasons:["Scam or money requests","Threats or blackmail","Harassment or unwanted messages","Fake profile or identity","Intimate photo threats","Other"]},
+    es:{title:"Denuncia de conversación",by:"Denunciante",target:"Usuario denunciado",reason:"Motivo",details:"Detalles adicionales",empty:"Sin detalles",evidence:"Pruebas seleccionadas",units:"mensaje(s)",view:"🔐 Abrir en el visor de moderación existente",unlock:"🔐 Verificar PIN para revisar denuncias de conversaciones",saving:"Guardando…",saveFailed:"No se pudo actualizar la denuncia.",unavailable:"Stay Safe BETA: las denuncias aún no están disponibles en Supabase.",retryPin:"No se pudieron cargar las denuncias. Verifica el PIN nuevamente.",more:"Cargar más denuncias",loadingMore:"Cargando más denuncias…",confirm:"¿Cambiar el estado de la denuncia a ",statuses:{pending:"Pendiente",reviewed:"Revisada",resolved:"Resuelta",dismissed:"Descartada"},actions:{pending:"↺ Reabrir",reviewed:"✓ Marcar revisada",resolved:"✓ Resolver",dismissed:"× Descartar"},reasons:["Estafa o solicitudes de dinero","Amenazas o chantaje","Acoso o mensajes no deseados","Perfil o identidad falsa","Amenazas con fotos íntimas","Otro"]},
+    "pt-BR":{title:"Denúncia de conversa",by:"Denunciado por",target:"Usuário denunciado",reason:"Motivo",details:"Detalhes adicionais",empty:"Sem detalhes",evidence:"Provas selecionadas",units:"mensagem(ns)",view:"🔐 Abrir no visualizador de moderação existente",unlock:"🔐 Verificar PIN para consultar denúncias",saving:"Salvando…",saveFailed:"Não foi possível atualizar a denúncia.",unavailable:"Stay Safe BETA: as denúncias ainda não estão disponíveis no Supabase.",retryPin:"Não foi possível carregar denúncias. Verifique o PIN novamente.",more:"Carregar mais denúncias",loadingMore:"Carregando mais denúncias…",confirm:"Alterar o status da denúncia para ",statuses:{pending:"Pendente",reviewed:"Revisada",resolved:"Resolvida",dismissed:"Descartada"},actions:{pending:"↺ Reabrir",reviewed:"✓ Marcar como revisada",resolved:"✓ Resolver",dismissed:"× Descartar"},reasons:["Golpe ou pedidos de dinheiro","Ameaças ou chantagem","Assédio ou mensagens indesejadas","Perfil ou identidade falsa","Ameaças com fotos íntimas","Outro"]},
+    fr:{title:"Signalement de conversation",by:"Signalé par",target:"Utilisateur signalé",reason:"Motif",details:"Précisions",empty:"Aucun détail",evidence:"Preuves sélectionnées",units:"message(s)",view:"🔐 Ouvrir dans le lecteur de modération existant",unlock:"🔐 Vérifier le code PIN pour consulter les signalements",saving:"Enregistrement…",saveFailed:"Impossible de mettre à jour le signalement.",unavailable:"Stay Safe BÊTA : les signalements ne sont pas encore disponibles dans Supabase.",retryPin:"Impossible de charger les signalements. Vérifie à nouveau le code PIN.",more:"Charger plus de signalements",loadingMore:"Chargement des signalements…",confirm:"Changer le statut du signalement en ",statuses:{pending:"En attente",reviewed:"Examiné",resolved:"Résolu",dismissed:"Rejeté"},actions:{pending:"↺ Rouvrir",reviewed:"✓ Marquer examiné",resolved:"✓ Résoudre",dismissed:"× Rejeter"},reasons:["Arnaque ou demande d'argent","Menaces ou chantage","Harcèlement ou messages indésirables","Faux profil ou fausse identité","Menaces liées aux photos intimes","Autre"]},
+    pl:{title:"Zgłoszenie rozmowy",by:"Zgłaszający",target:"Zgłoszony użytkownik",reason:"Powód",details:"Dodatkowe informacje",empty:"Brak szczegółów",evidence:"Wybrane dowody",units:"wiadomość/wiadomości",view:"🔐 Otwórz w istniejącym podglądzie moderacji",unlock:"🔐 Zweryfikuj PIN, aby przejrzeć zgłoszenia",saving:"Zapisywanie…",saveFailed:"Nie udało się zaktualizować zgłoszenia.",unavailable:"Stay Safe BETA: zgłoszenia nie są jeszcze dostępne w Supabase.",retryPin:"Nie udało się pobrać zgłoszeń. Zweryfikuj PIN ponownie.",more:"Wczytaj więcej zgłoszeń",loadingMore:"Wczytywanie zgłoszeń…",confirm:"Zmień status zgłoszenia na ",statuses:{pending:"Oczekujące",reviewed:"Sprawdzone",resolved:"Rozwiązane",dismissed:"Odrzucone"},actions:{pending:"↺ Otwórz ponownie",reviewed:"✓ Oznacz jako sprawdzone",resolved:"✓ Rozwiąż",dismissed:"× Odrzuć"},reasons:["Oszustwo lub prośba o pieniądze","Groźby lub szantaż","Nękanie lub niechciane wiadomości","Fałszywy profil lub tożsamość","Groźby dotyczące intymnych zdjęć","Inne"]},
+    de:{title:"Gesprächsmeldung",by:"Gemeldet von",target:"Gemeldeter Nutzer",reason:"Grund",details:"Weitere Angaben",empty:"Keine Angaben",evidence:"Ausgewählte Beweise",units:"Nachricht(en)",view:"🔐 Im vorhandenen Moderationsfenster öffnen",unlock:"🔐 PIN bestätigen, um Meldungen zu prüfen",saving:"Speichern…",saveFailed:"Meldung konnte nicht aktualisiert werden.",unavailable:"Stay Safe BETA: Meldungen sind in Supabase noch nicht verfügbar.",retryPin:"Meldungen konnten nicht geladen werden. Bitte PIN erneut bestätigen.",more:"Weitere Meldungen laden",loadingMore:"Weitere Meldungen werden geladen…",confirm:"Meldungsstatus ändern zu ",statuses:{pending:"Ausstehend",reviewed:"Geprüft",resolved:"Gelöst",dismissed:"Abgewiesen"},actions:{pending:"↺ Wieder öffnen",reviewed:"✓ Als geprüft markieren",resolved:"✓ Lösen",dismissed:"× Abweisen"},reasons:["Betrug oder Geldforderungen","Drohungen oder Erpressung","Belästigung oder unerwünschte Nachrichten","Gefälschtes Profil oder Identität","Drohungen mit intimen Fotos","Sonstiges"]},
+    cs:{title:"Nahlášená konverzace",by:"Nahlásil(a)",target:"Nahlášený uživatel",reason:"Důvod",details:"Další podrobnosti",empty:"Bez podrobností",evidence:"Vybrané důkazy",units:"zpráv(a)",view:"🔐 Otevřít ve stávajícím moderátorském prohlížeči",unlock:"🔐 Ověřit PIN pro zobrazení hlášení",saving:"Ukládání…",saveFailed:"Hlášení se nepodařilo aktualizovat.",unavailable:"Stay Safe BETA: hlášení zatím nejsou dostupná v Supabase.",retryPin:"Hlášení se nepodařilo načíst. Ověř PIN znovu.",more:"Načíst další hlášení",loadingMore:"Načítání dalších hlášení…",confirm:"Změnit stav hlášení na ",statuses:{pending:"Čeká",reviewed:"Zkontrolováno",resolved:"Vyřešeno",dismissed:"Zamítnuto"},actions:{pending:"↺ Znovu otevřít",reviewed:"✓ Označit jako zkontrolované",resolved:"✓ Vyřešit",dismissed:"× Zamítnout"},reasons:["Podvod nebo žádosti o peníze","Výhrůžky nebo vydírání","Obtěžování nebo nevyžádané zprávy","Falešný profil nebo identita","Výhrůžky intimními fotografiemi","Jiné"]},
+    no:{title:"Samtalerapport",by:"Rapportert av",target:"Rapportert bruker",reason:"Årsak",details:"Flere detaljer",empty:"Ingen detaljer",evidence:"Valgte bevis",units:"melding(er)",view:"🔐 Åpne i eksisterende modereringsvisning",unlock:"🔐 Bekreft PIN for å se rapporter",saving:"Lagrer…",saveFailed:"Kunne ikke oppdatere rapporten.",unavailable:"Stay Safe BETA: rapporter er ennå ikke tilgjengelige i Supabase.",retryPin:"Kunne ikke laste rapporter. Bekreft PIN på nytt.",more:"Last inn flere rapporter",loadingMore:"Laster inn flere rapporter…",confirm:"Endre rapportstatus til ",statuses:{pending:"Venter",reviewed:"Gjennomgått",resolved:"Løst",dismissed:"Avvist"},actions:{pending:"↺ Åpne igjen",reviewed:"✓ Merk som gjennomgått",resolved:"✓ Løs",dismissed:"× Avvis"},reasons:["Svindel eller pengeforespørsler","Trusler eller utpressing","Trakassering eller uønskede meldinger","Falsk profil eller identitet","Trusler knyttet til intime bilder","Annet"]},
+    sv:{title:"Konversationsanmälan",by:"Anmält av",target:"Anmäld användare",reason:"Orsak",details:"Ytterligare information",empty:"Inga detaljer",evidence:"Valda bevis",units:"meddelande(n)",view:"🔐 Öppna i befintlig modereringsvy",unlock:"🔐 Verifiera PIN för att granska anmälningar",saving:"Sparar…",saveFailed:"Det gick inte att uppdatera anmälan.",unavailable:"Stay Safe BETA: anmälningar är ännu inte tillgängliga i Supabase.",retryPin:"Det gick inte att läsa in anmälningar. Verifiera PIN igen.",more:"Läs in fler anmälningar",loadingMore:"Läser in fler anmälningar…",confirm:"Ändra anmälans status till ",statuses:{pending:"Väntar",reviewed:"Granskad",resolved:"Löst",dismissed:"Avvisad"},actions:{pending:"↺ Öppna igen",reviewed:"✓ Markera granskad",resolved:"✓ Lös",dismissed:"× Avvisa"},reasons:["Bedrägeri eller begäran om pengar","Hot eller utpressning","Trakasserier eller oönskade meddelanden","Falsk profil eller identitet","Hot med intima bilder","Annat"]},
+    it:{title:"Segnalazione conversazione",by:"Segnalato da",target:"Utente segnalato",reason:"Motivo",details:"Dettagli aggiuntivi",empty:"Nessun dettaglio",evidence:"Prove selezionate",units:"messaggio/i",view:"🔐 Apri nel visualizzatore di moderazione esistente",unlock:"🔐 Verifica il PIN per consultare le segnalazioni",saving:"Salvataggio…",saveFailed:"Impossibile aggiornare la segnalazione.",unavailable:"Stay Safe BETA: le segnalazioni non sono ancora disponibili su Supabase.",retryPin:"Impossibile caricare le segnalazioni. Verifica di nuovo il PIN.",more:"Carica altre segnalazioni",loadingMore:"Caricamento segnalazioni…",confirm:"Cambiare lo stato della segnalazione in ",statuses:{pending:"In attesa",reviewed:"Esaminata",resolved:"Risolta",dismissed:"Respinta"},actions:{pending:"↺ Riapri",reviewed:"✓ Segna esaminata",resolved:"✓ Risolvi",dismissed:"× Respingi"},reasons:["Truffa o richieste di denaro","Minacce o ricatto","Molestie o messaggi indesiderati","Profilo o identità falsa","Minacce con foto intime","Altro"]}
   };
   function localized(){
     let code = typeof getFriendHubLanguage==="function" ? String(getFriendHubLanguage()) : "en";
@@ -101,6 +101,9 @@
     // by the PIN-protected Supabase RPC on EVERY retrieval.
     let unlocked=false;
     let moderationReason="";
+    let pageCursor=null;
+    let canLoadMore=false;
+    let loadingMore=false;
 
     function isActiveAdmin(){
       return typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
@@ -114,12 +117,16 @@
       if(!list)return;
       for(const item of list.querySelectorAll("[data-xoxo-conversation-beta-report]"))item.remove();
       for(const item of list.querySelectorAll("[data-xoxo-safety-report-notice]"))item.remove();
+      for(const item of list.querySelectorAll("[data-xoxo-safety-load-more]"))item.remove();
     }
     function invalidate(){
       ++generation;
       cached=[];
       unlocked=false;
       moderationReason="";
+      pageCursor=null;
+      canLoadMore=false;
+      loadingMore=false;
       clearBetaUI();
       // Never touch cards owned by the existing DM report renderer.
     }
@@ -164,6 +171,47 @@
         invalidate();
         if(isActiveAdmin()){paintUnlockControl();showWarning("reauthorize");}
       });
+      if(canLoadMore && pageCursor){
+        const button=node("button",localized().more,"xmm-reload");
+        button.type="button";
+        button.setAttribute("data-xoxo-safety-load-more","1");
+        button.addEventListener("click",()=>{void loadMoreReportPage();});
+        list.append(button);
+      }
+    }
+    async function loadMoreReportPage(){
+      if(loadingMore || !unlocked || !canLoadMore || !pageCursor ||
+         !isActiveAdmin())return;
+      const version=++generation;
+      const previous=cached.slice();
+      const cursor=pageCursor;
+      loadingMore=true;
+      // Always erase private cached cards before verifying the NEXT server
+      // request; each page checks the active session, admin role, PIN and reason.
+      cached=[];
+      clearBetaUI();
+      let page;
+      try {
+        page=await adapter.loadMoreReports(supabaseClient,{
+          moderationReason,cursor,limit:50
+        });
+      }catch{page={ok:false};}
+      loadingMore=false;
+      if(version!==generation || !isActiveAdmin())return;
+      if(!page?.ok || !Array.isArray(page.reports)){
+        invalidate();paintUnlockControl();showWarning("reauthorize");
+        return;
+      }
+      const known=new Set(previous.map(r=>r.id.toLowerCase()));
+      const unique=page.reports.filter(r=>{
+        const id=r.id.toLowerCase();
+        if(known.has(id))return false;
+        known.add(id);return true;
+      });
+      cached=previous.concat(unique);
+      canLoadMore=page.hasMore;
+      pageCursor=page.nextCursor;
+      paintCachedReports();
     }
     function showWarning(kind="unavailable"){
       const list=reportList();
@@ -180,6 +228,8 @@
       // CRITICAL: never replay sensitive cached report metadata while the
       // server's PIN authorization is unknown or a new request is pending.
       cached=[];
+      pageCursor=null;
+      canLoadMore=false;
       clearBetaUI();
       if(!isActiveAdmin()){invalidate();return;}
       if(!unlocked || moderationReason.length<10 || moderationReason.length>300){
@@ -204,11 +254,18 @@
         unlocked=false;
         moderationReason="";
         cached=[];
+        pageCursor=null;
+        canLoadMore=false;
         paintUnlockControl();
         showWarning("reauthorize");
         return;
       }
       cached=queue.reports.filter(x=>x.source==="conversation_beta");
+      // Initial compatibility RPC exposes 100; if full, offer a next page.
+      // Its last card supplies the same priority/timestamp/UUID cursor.
+      canLoadMore=cached.length===100;
+      pageCursor=canLoadMore ? adapter.cursorAfter(cached[cached.length-1]) : null;
+      canLoadMore=canLoadMore && !!pageCursor;
       paintCachedReports();
       if(error==="conversation_reports_not_deployed")showWarning();
     }
