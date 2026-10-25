@@ -114,6 +114,14 @@ async function runScenario(browser,engine,viewport,language,url){
     await page.screenshot({path:path.join(captures,label+"-evidence.png")});
     const checkboxes=picker.locator("input[type=checkbox]");
     assert.equal(await checkboxes.count(),30);
+    const fullPreviews=picker.locator("details");
+    assert.equal(await fullPreviews.count(),30,
+      "Long evidence must be compact but expandable, not silently truncated");
+    await fullPreviews.first().locator("summary").click();
+    assert.equal(await fullPreviews.first().evaluate(el=>el.open),true,
+      "Reporter must be able to expand and read full message before selecting");
+    await fullPreviews.first().locator("summary").click();
+    assert.equal(await fullPreviews.first().evaluate(el=>el.open),false);
     // Explicitly choose most recent as well as 19 older messages.
     await checkboxes.last().check();
     for(let i=0;i<19;i++)await checkboxes.nth(i).check();
