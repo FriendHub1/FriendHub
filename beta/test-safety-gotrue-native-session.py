@@ -146,8 +146,8 @@ def run():
     # second synthetic report is distinct from the direct-HTTP test above.
     js_report_pipeline("active",token,outsider_token,message,user,outsider_user)
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
-      f"where reporter_id='{user}'::uuid") == "3"
-    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence") == "3"
+      f"where reporter_id='{user}'::uuid") == "4"
+    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence") == "4"
 
     # Simulate session revocation in the SAME native Auth DB, while the JWT
     # is still cryptographically valid; no real credentials are involved.
@@ -158,7 +158,7 @@ def run():
     assert code in (400,401,403,404,406),(
       "A revoked native Auth session submitted a report",code,denied)
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
-      f"where reporter_id='{user}'::uuid") == "3"
+      f"where reporter_id='{user}'::uuid") == "4"
     print("PASS: genuine GoTrue session checked in SAME disposable DB; "
           "RLS, report/evidence, JS submission, outsider denial, idempotency "
           "and revoked-session denial")

@@ -44,6 +44,9 @@ assert.match(native,/js_report_pipeline\("active",token,outsider_token,message,u
 assert.match(native,/js_report_pipeline\("revoked",token,outsider_token,message,user,outsider_user\)/);
 assert.match(jsClient,/require\("\.\/submit-conversation-report-beta\.cjs"\)/);
 assert.match(jsClient,/require\("\.\/stay-safe-browser-report-adapter\.js"\)/);
+assert.match(jsClient,/require\("\.\/stay-safe-browser-flow\.js"\)/);
+assert.match(jsClient,/enabled:true,previewOnly:false/);
+assert.match(jsClient,/flow\.showReminder\(\)/);
 assert.match(jsClient,/http:\/\/127\.0\.0\.1:9999/);
 assert.match(jsClient,/http:\/\/127\.0\.0\.1:3002/);
 assert.doesNotMatch(jsClient,/cxosofpxfmjkrhfabrqc|xoxoavenue\.com|supabase\.co|https:\/\//i,

@@ -4,6 +4,7 @@
  * database, JWT signing key and message IDs. No live Supabase connections.
  */
 const assert=require("node:assert/strict");
+const {randomUUID}=require("node:crypto");
 const {submitConversationReportBeta}=require("./submit-conversation-report-beta.cjs");
 const browserAdapter=require("./stay-safe-browser-report-adapter.js");
 const AUTH="http://127.0.0.1:9999";
@@ -57,6 +58,89 @@ function realSessionClient(token){
         {data:null,error:{status:result.status}};
     }
   };
+}
+
+async function runActualBrowserFlow(context){
+  const client=realSessionClient(context.token);
+  const conversationId="isolated-go-true-dm-flow";
+  let reportFromReminder=null,continueForm=null,continueEvidence=null;
+  let finishStatus;
+  const statusResult=new Promise(resolve=>{finishStatus=resolve;});
+  // The visual dialogs are simulated here; their real flow callbacks,
+  // session-scoped RLS reads and report adapter are NOT mocked.
+  const browserRoot={
+    crypto:{randomUUID},
+    XOXOReportSubmitBrowserBeta:browserAdapter,
+    XOXOSafetyReminderBeta:{
+      show(options){
+        assert.equal(options.accountId,context.expectedUserId);
+        assert.equal(options.conversationId,conversationId);
+        reportFromReminder=options.onReport;
+        return true;
+      },
+      dismiss(){return true;}
+    },
+    XOXOReportFormBeta:{
+      open(options){
+        assert.equal(options.conversationId,conversationId);
+        continueForm=options.onContinue;
+        return true;
+      },
+      dismiss(){return true;}
+    },
+    XOXOEvidencePickerBeta:{
+      open(options){
+        assert.equal(options.conversationId,conversationId);
+        assert.deepEqual(options.messages.map(x=>x.id),[context.messageId]);
+        continueEvidence=options.onContinue;
+        return true;
+      },
+      dismiss(){return true;}
+    }
+  };
+  const oldWindow=global.window;
+  global.window=browserRoot;
+  try {
+    const {create}=require("./stay-safe-browser-flow.js");
+    const flow=create({client,accountId:context.expectedUserId,
+      otherUserId:context.otherUserId,conversationId,locale:"es",
+      enabled:true,previewOnly:false,
+      getMessages:async()=>{
+        const response=await client.from("direct_messages")
+          .select("id,sender_id,recipient_id").in("id",[context.messageId]);
+        assert.equal(response.error,null);
+        return response.data;
+      },
+      onStatus:finishStatus,
+      isContextActive:()=>true});
+    assert.equal(flow.showReminder(),true);
+    assert.equal(typeof reportFromReminder,"function");
+    reportFromReminder();
+    assert.equal(typeof continueForm,"function");
+    continueForm({conversationId,reasonCode:1,
+      details:"Synthetic report from full XOXO warning/form/evidence flow"});
+    for(let i=0;i<100 && !continueEvidence;i++)
+      await new Promise(resolve=>setTimeout(resolve,20));
+    assert.equal(typeof continueEvidence,"function",
+      "the real flow did not reach evidence selection after RLS read");
+    continueEvidence({conversationId,messageIds:[context.messageId]});
+    let timeoutId;
+    const deadline=new Promise((_,reject)=>{
+      timeoutId=setTimeout(()=>reject(
+        new Error("real browser flow did not finish the report RPC")),10000);
+    });
+    const outcome=await Promise.race([statusResult,deadline]).finally(
+      ()=>clearTimeout(timeoutId));
+    assert.equal(outcome.ok,true,"browser flow failed: "+outcome.reason);
+    assert.match(outcome.reportId,UUID);
+    assert.equal(client.rpcCalls,1,"full browser flow must send one atomic report RPC");
+    assert.equal(flow.dispose(),true);
+    console.log("PASS: actual XOXO safety warning -> form -> evidence picker " +
+      "-> real GoTrue/RLS -> browser adapter -> stored report, synthetic dialogs");
+  } finally {
+    if(oldWindow===undefined)delete global.window;
+    else global.window=oldWindow;
+  }
 }
 
 async function main(){
@@ -129,5 +213,6 @@ async function main(){
     "browser adapter must reject outsider RLS evidence before its RPC");
   console.log("PASS: genuine GoTrue -> actual browser report adapter -> " +
     "PostgREST RLS/RPC, stable retry, outsider denial and post-RPC Auth recheck");
+  await runActualBrowserFlow(context);
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
