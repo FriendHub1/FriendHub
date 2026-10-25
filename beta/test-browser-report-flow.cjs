@@ -80,7 +80,7 @@ async function testAdapter() {
   assert.deepEqual(test.calls, []);
 }
 
-function browserHarness({ enabled = true, rows, submit } = {}) {
+function browserHarness({ enabled = true, rows, submit, getMessages: overrideMessages, isContextActive } = {}) {
   const status = [];
   const ui = { form: null, picker: null, reminder: null, calls: 0 };
   const root = {
@@ -96,11 +96,12 @@ function browserHarness({ enabled = true, rows, submit } = {}) {
   const { client, calls } = clientWith({ rows: rows || [{ id: id1, sender_id: peer, recipient_id: user }] });
   const flow = root.XOXOSafetyFlowBeta.create({
     client, accountId: user, otherUserId: peer, conversationId: "conversation-1",
-    locale: "es", enabled, getMessages: () => [
+    locale: "es", enabled, isContextActive,
+    getMessages: overrideMessages || (() => [
       { id: id1, sender_id: peer, recipient_id: user, content: "Please review" },
       { id: id2, sender_id: user, recipient_id: peer, text: "A response" },
       { id: "99999999-9999-4999-8999-999999999999", sender_id: outsider, recipient_id: peer, text: "Different chat" }
-    ], onStatus: result => status.push(result)
+    ]), onStatus: result => status.push(result)
   });
   return { flow, ui, status, calls };
 }
@@ -139,6 +140,23 @@ async function testFlow() {
   await flush();
   assert.equal(rejected.status[0].reason, "invalid_evidence");
   assert.deepEqual(rejected.calls, []);
+
+  let active = true;
+  const stale = browserHarness({
+    getMessages: () => active ? [{ id: id1, sender_id: peer, recipient_id: user,
+      content: "Message in currently open chat" }] : [],
+    isContextActive: () => active
+  });
+  stale.flow.openReport();
+  stale.ui.form.onContinue({ conversationId: "conversation-1", reasonCode: 1, details: "Threats" });
+  await flush();
+  assert.equal(stale.ui.picker.messages.length, 1);
+  active = false; // user navigated away between picking and submission
+  stale.ui.picker.onContinue({ conversationId: "conversation-1", messageIds: [id1] });
+  await flush();
+  assert.equal(stale.status[0].reason, "conversation_changed",
+    "stale chat selection must fail before authenticated RPC");
+  assert.deepEqual(stale.calls, [], "no account or evidence access after chat changes");
 
   let attempts = 0;
   const keys = [];
