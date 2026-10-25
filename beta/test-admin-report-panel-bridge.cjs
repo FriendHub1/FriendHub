@@ -21,9 +21,9 @@ function element(tag){
 (async()=>{
  const list=element("section");const moderation={classList:{contains:()=>true}};
  const calls={legacy:0,queue:0,pin:0,unlock:0,updates:0};
- let betaAvailable=true,admin=true;
+ let betaAvailable=true,admin=true,legacyFails=false;
  const context={
-  window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;list.children=[element("legacy-card")];},
+  window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;if(legacyFails)throw Error("legacy loader failed");list.children=[element("legacy-card")];},
    renderXoxoDmReports:()=>{list.children=[element("legacy-card")];},
    XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");return betaAvailable?{ok:true,reports:[report]}:{ok:false};},
     updateReportStatus:async()=>{calls.updates++;return {ok:true};}}},
@@ -79,6 +79,20 @@ function element(tag){
  await context.window.loadXoxoDmReports();
  assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,"failed BETA refresh clears stale cards");
  betaAvailable=true;
+ const newUnlock=list.querySelectorAll("[data-xoxo-safety-report-unlock]")[0];
+ assert.ok(newUnlock,"unlock remains available after an invalidated PIN");
+ await newUnlock.listeners.click();
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
+ legacyFails=true;
+ let loaderThrown=false;
+ try { await context.window.loadXoxoDmReports(); }
+ catch (e) { loaderThrown=/legacy loader failed/.test(String(e)); }
+ assert.equal(loaderThrown,true,"original admin load failure should propagate");
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,
+   "legacy failure must purge prior private BETA metadata");
+ assert.equal(list.querySelectorAll("[data-xoxo-safety-report-unlock]").length,1,
+   "legacy failure should require PIN verification again");
+ legacyFails=false;
  admin=false;
  const beforeNonAdmin=calls.queue;
  await context.window.loadXoxoDmReports();
