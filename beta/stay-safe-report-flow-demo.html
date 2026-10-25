@@ -20,9 +20,9 @@ document.getElementById("start").addEventListener("click",()=>{
   otherUserId:"33333333-3333-4333-8333-333333333333",
   locale:"es",
   messages:[
-   {id:"22222222-2222-4222-8222-222222222221",text:"Hola, ¿cómo estás?"},
-   {id:"22222222-2222-4222-8222-222222222222",text:"Envíame dinero para poder visitarte."},
-   {id:"22222222-2222-4222-8222-222222222223",text:"No compartas esto con nadie."}
+   {id:"22222222-2222-4222-8222-222222222221",senderId:"33333333-3333-4333-8333-333333333333",recipientId:"44444444-4444-4444-8444-444444444444",text:"Hola, ¿cómo estás?"},
+   {id:"22222222-2222-4222-8222-222222222222",senderId:"33333333-3333-4333-8333-333333333333",recipientId:"44444444-4444-4444-8444-444444444444",text:"Envíame dinero para poder visitarte."},
+   {id:"22222222-2222-4222-8222-222222222223",senderId:"33333333-3333-4333-8333-333333333333",recipientId:"44444444-4444-4444-8444-444444444444",text:"No compartas esto con nadie."}
   ],
   onPrepared:payload=>{
    document.getElementById("status").textContent="Denuncia preparada para revisión de integración (NO enviada).";
