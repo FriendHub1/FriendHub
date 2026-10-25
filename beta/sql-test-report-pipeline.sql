@@ -39,6 +39,34 @@ end $$;
 -- exactly as PostgREST would supply them in a separate real Supabase test.
 set role authenticated;
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+select set_config('request.jwt.claim.session_id','aaaaaaaa-0000-4000-8000-000000000001',false);
+
+-- Verify sensitive reporting requires a CURRENT auth.sessions row.
+-- A JWT with a valid user subject but no session or somebody else's session
+-- must be refused by the SECURITY DEFINER submission RPC.
+select set_config('request.jwt.claim.session_id','',false);
+do $
+begin
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '22222222-2222-4222-8222-222222222222',1,'No signed session',
+      array['77777777-7777-4777-8777-777777777771'::uuid],
+      '88888888-8888-4888-8888-100000000001');
+    raise exception 'BUG: missing session_id was accepted';
+  exception when sqlstate '28000' then null; end;
+end $;
+select set_config('request.jwt.claim.session_id','bbbbbbbb-0000-4000-8000-000000000002',false);
+do $
+begin
+  begin
+    perform public.xoxo_submit_conversation_report_beta(
+      '22222222-2222-4222-8222-222222222222',1,'Session owned by another user',
+      array['77777777-7777-4777-8777-777777777771'::uuid],
+      '88888888-8888-4888-8888-100000000002');
+    raise exception 'BUG: session_id of another user was accepted';
+  exception when sqlstate '28000' then null; end;
+end $;
+select set_config('request.jwt.claim.session_id','aaaaaaaa-0000-4000-8000-000000000001',false);
 
 -- The disposable fixture enforces the same sender/recipient RLS as production.
 -- The user's direct SELECT must expose only the two messages of their own chat.
@@ -154,6 +182,7 @@ insert into public.dm_conversation_clears(user_id,other_user_id,cleared_at) valu
   '11111111-1111-4111-8111-111111111111',now());
 set role authenticated;
 select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);
+select set_config('request.jwt.claim.session_id','bbbbbbbb-0000-4000-8000-000000000002',false);
 do $$
 begin
   if (select count(*) from public.direct_messages) <> 1 then
@@ -175,6 +204,7 @@ end $$;
 -- Cleared conversation rows are private: other participants cannot
 -- inspect when a user personally clears their chat.
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+select set_config('request.jwt.claim.session_id','aaaaaaaa-0000-4000-8000-000000000001',false);
 do $$
 begin
   if exists(select 1 from public.dm_conversation_clears) then
@@ -184,6 +214,7 @@ end $$;
 
 -- Anonymous JWT must not be accepted by public authenticated submit RPC.
 select set_config('request.jwt.claim.sub','',false);
+select set_config('request.jwt.claim.session_id','',false);
 do $$
 begin
   begin
@@ -206,6 +237,7 @@ set role authenticated;
 
 -- Admin report queue MUST block a normal user.
 select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+select set_config('request.jwt.claim.session_id','aaaaaaaa-0000-4000-8000-000000000001',false);
 do $$
 begin
   begin
@@ -222,6 +254,7 @@ end $$;
 
 -- Even admin accounts without a valid PIN MUST be denied.
 select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
+select set_config('request.jwt.claim.session_id','cccccccc-0000-4000-8000-000000000003',false);
 do $$
 begin
   begin
@@ -278,6 +311,7 @@ update public.xoxo_moderation_pin_security set verified_until=now()+interval '5 
  where admin_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 set role authenticated;
 select set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
+select set_config('request.jwt.claim.session_id','cccccccc-0000-4000-8000-000000000003',false);
 do $$
 declare
   v_queue jsonb;
