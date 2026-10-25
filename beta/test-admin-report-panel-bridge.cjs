@@ -20,7 +20,7 @@ function element(tag){
  const calls={legacy:0,queue:0,pin:0,updates:0};
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;list.children=[element("legacy-card")];},
-   XOXOAdminReportQueueBeta:{loadReportQueue:async()=>{calls.queue++;return {ok:true,reports:[report]};},
+   XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");return {ok:true,reports:[report]};},
     updateReportStatus:async()=>{calls.updates++;return {ok:true};}}},
   document:{readyState:"complete",createElement:element,getElementById:id=>id==="xmmReportsList"?list:id==="xoxoAdminModeration"?moderation:null},
   xoxoIsAdmin:true,supabaseClient:{},
