@@ -15,9 +15,7 @@ const translations={
  cs:{title:"Vyber zprávy jako důkazy",help:"Označ jen zprávy, které chceš přiložit k nahlášení.",empty:"Žádné zprávy k výběru.",continue:"Odeslat nahlášení",cancel:"Zrušit",none:"Vyber alespoň jednu zprávu.",limit:"Můžeš vybrat nejvýše 20 zpráv."},
  no:{title:"Velg meldinger som bevis",help:"Velg bare meldingene du vil legge ved rapporten.",empty:"Ingen meldinger tilgjengelig.",continue:"Send rapport",cancel:"Avbryt",none:"Velg minst én melding.",limit:"Du kan velge opptil 20 meldinger."},
 sv:{"title":"Välj meddelanden som bevis","help":"Markera bara de meddelanden du vill bifoga din anmälan.","empty":"Det finns inga meddelanden att välja.","continue":"Skicka anmälan","cancel":"Avbryt","none":"Välj minst ett meddelande.","limit":"Du kan välja högst 20 meddelanden."},
-it:{"title":"Seleziona i messaggi come prova","help":"Seleziona solo i messaggi che vuoi allegare alla segnalazione.","empty":"Nessun messaggio disponibile.","continue":"Invia segnalazione","cancel":"Annulla","none":"Seleziona almeno un messaggio.","limit":"Puoi selezionare fino a 20 messaggi."},
-sv:{"title":"Välj meddelanden som bevis","help":"Markera bara de meddelanden du vill bifoga till anmälan.","empty":"Det finns inga meddelanden att välja.","continue":"Fortsätt med anmälan","cancel":"Avbryt","none":"Välj minst ett meddelande.","limit":"Du kan välja högst 20 meddelanden."},
-it:{"title":"Seleziona i messaggi come prove","help":"Scegli solo i messaggi che vuoi includere nella segnalazione.","empty":"Nessun messaggio disponibile da selezionare.","continue":"Continua la segnalazione","cancel":"Annulla","none":"Seleziona almeno un messaggio.","limit":"Puoi selezionare fino a 20 messaggi."}
+it:{"title":"Seleziona i messaggi come prova","help":"Seleziona solo i messaggi che vuoi allegare alla segnalazione.","empty":"Nessun messaggio disponibile.","continue":"Invia segnalazione","cancel":"Annulla","none":"Seleziona almeno un messaggio.","limit":"Puoi selezionare fino a 20 messaggi."}
 };
 function open({conversationId,messages=[],locale="es",onContinue}={}){
  if(typeof conversationId!=="string"||!conversationId||!Array.isArray(messages)||typeof onContinue!=="function")return false;
@@ -30,10 +28,14 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
  const help=document.createElement("p");help.textContent=t.help;panel.append(help);
  const items=document.createElement("div");const checkboxes=[];
  const seenIds=new Set();
+ // Keep the latest 100 authorized messages so recent abuse is selectable.
+ // Normalize UUID casing to prevent the same evidence appearing twice.
  const safeMessages=messages.filter(m=>{
-  if(!m||typeof m.id!=="string"||!m.id||typeof m.text!=="string"||seenIds.has(m.id))return false;
-  seenIds.add(m.id);return true;
- }).slice(0,100);
+  if(!m||typeof m.id!=="string"||!m.id||typeof m.text!=="string")return false;
+  const id=m.id.toLowerCase();
+  if(seenIds.has(id))return false;
+  seenIds.add(id);return true;
+ }).slice(-100);
  for(const m of safeMessages){
   const label=document.createElement("label");label.style.cssText="display:flex;gap:10px;padding:12px;margin:8px 0;border-radius:10px;background:#302043";
   const check=document.createElement("input");check.type="checkbox";check.value=m.id;
