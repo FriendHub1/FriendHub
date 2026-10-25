@@ -24,6 +24,7 @@
 `;
   function show({conversationId, locale="en", accountId, onReport}={}) {
     if (!conversationId || !accountId) return false;
+    if (typeof conversationId!=="string" || typeof accountId!=="string") return false;
     const key = "xoxo:safety:v1:"+encodeURIComponent(accountId)+":"+encodeURIComponent(conversationId);
     try { if (localStorage.getItem(key)==="seen") return false; } catch {}
     if (document.querySelector(".xoxo-safe-backdrop")) return false;
