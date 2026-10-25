@@ -4,8 +4,8 @@
  */
 (function(){
 "use strict";
-function start({conversationId,locale="es",messages=[],onPrepared}={}){
- if(typeof conversationId!=="string"||!conversationId||typeof onPrepared!=="function"||!Array.isArray(messages))return false;
+function start({conversationId,otherUserId,locale="es",messages=[],onPrepared}={}){
+ if(typeof conversationId!=="string"||!conversationId||typeof otherUserId!=="string"||!otherUserId||typeof onPrepared!=="function"||!Array.isArray(messages))return false;
  const form=window.XOXOReportFormBeta;
  const evidence=window.XOXOEvidencePickerBeta;
  const validator=window.XOXOReportValidationBeta;
@@ -19,7 +19,7 @@ function start({conversationId,locale="es",messages=[],onPrepared}={}){
      // A prepared report is not a submitted report.
      // The host must validate permissions and persist server-side.
      const prepared=Object.freeze({
-      conversationId,
+      otherUserId,
       reasonCode:report.reasonCode,
       details:report.details,
       messageIds:Object.freeze([...selection.messageIds])
