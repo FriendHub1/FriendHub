@@ -61,22 +61,14 @@ The BETA \`worker.js\` already has **separate workers.dev-only opt-in routes**.
 No change to the production \`index.html\` was applied (the 5.1 MB HTML file
 is too large for the current connector update channel).
 
-### DM safety UI
-- \`/?xoxo_safety_chat_beta=1\` injects:
-  \`stay-safe-sweetheart.js\`, \`stay-safe-report-form.js\`,
-  \`stay-safe-evidence-picker.js\`, and \`stay-safe-chat-preview-bridge.js\`.
-- This is an interface preview only. \`REPORT_RPC_WRITES_ENABLED=false\` in
-  \`stay-safe-chat-preview-bridge.js\` explicitly blocks RPC submission even
-  if the user completes the form and chooses messages. UI displays that the
-  report was not sent.
-- The warning and report interface now include all ten site languages:
-  \`en, es, pt-BR, fr, pl, de, cs, no, sv, it\`.
-- Automated regression checks:
-  \`test-chat-preview-safe-mode.cjs\`, \`test-safety-ten-languages.cjs\`.
-- Additional browser-flow preparation exists in \`stay-safe-browser-flow.js\`,
-  \`stay-safe-browser-report-adapter.js\`, and \`stay-safe-index-hooks.js\`;
-  these are not currently loaded by the opt-in Worker route. Avoid running two
-  competing chat bridges when the feature is enabled.
+### DM safety UI — canonical opt-in preview
+- The workers.dev-only query /?xoxo_safety_chat_beta=1 loads the warning, form and evidence picker, followed by stay-safe-browser-report-adapter.js, stay-safe-browser-flow.js and stay-safe-chat-preview-bridge.js.
+- The preview bridge delegates all form, evidence and submission state to the SAME canonical browser flow planned for final release. The previously duplicated submission logic in the preview bridge is gone.
+- The canonical flow uses previewOnly=true and enabled=false. Users can interact with the entire example, but every attempt to submit returns a visible NOT SENT message without auth, message reads or RPC calls.
+- No live Supabase data is written. No direct-message viewer or admin panel is duplicated.
+- All ten XOXO languages are supported: en, es, pt-BR, fr, pl, de, cs, no, sv, it.
+- Automated tests now include test-chat-canonical-preview.cjs, test-chat-preview-safe-mode.cjs and test-safety-ten-languages.cjs. The new canonical-preview test verifies zero reads, auth or RPC calls.
+- stay-safe-index-hooks.js remains an unused future integration prototype; it should not be loaded beside the canonical host.
 
 ### Existing admin panel
 - \`/?xoxo_safety_admin_beta=1\` injects
