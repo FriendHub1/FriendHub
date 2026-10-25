@@ -58,7 +58,16 @@
     let sending = false;
     let retry = null;
 
+    function contextActive() {
+      if (typeof config.isContextActive !== "function") return true;
+      try { return config.isContextActive() === true; }
+      catch { return false; }
+    }
+
     function inform(result) {
+      // Never show a receipt, alert or moderation status from a chat/account
+      // that is no longer open (including an old async response).
+      if (!contextActive()) return;
       if (typeof config.onStatus === "function") {
         config.onStatus(result);
         return;
@@ -87,6 +96,7 @@
       let visible;
       try { visible = await getMessages(); }
       catch { inform({ ok: false, reason: "no_messages" }); return; }
+      if (!contextActive()) return;
       if (!Array.isArray(visible)) { inform({ ok: false, reason: "no_messages" }); return; }
       const seen = new Set();
       const safe = [];
@@ -122,6 +132,7 @@
     }
 
     async function send(input) {
+      if (!contextActive()) return { ok: false, reason: "conversation_changed" };
       if (sending) return { ok: false, reason: "already_sending" };
       if (!config.enabled) {
         const result = { ok: false, reason: "disabled" };
@@ -161,7 +172,7 @@
         const result = { ok: false, reason: "conversation_changed" };
         inform(result); return result;
       }
-      if (typeof config.isContextActive === "function" && !config.isContextActive()) {
+      if (!contextActive()) {
         const result = { ok: false, reason: "conversation_changed" };
         inform(result); return result;
       }
@@ -185,12 +196,17 @@
       } finally {
         sending = false;
       }
+      // The RPC may have committed before account/chat changed. Never
+      // expose its receipt or notify the new user; keep the idempotency key
+      // so the original account can safely recover the committed receipt.
+      if (!contextActive()) return { ok: false, reason: "conversation_changed" };
       if (result?.ok) retry = null;
       inform(result);
       return result;
     }
 
     function openReport() {
+      if (!contextActive()) return false;
       if (!config.enabled && !config.previewOnly) { inform({ ok: false, reason: "disabled" }); return false; }
       if (sending || typeof root?.XOXOReportFormBeta?.open !== "function") {
         if (!sending) inform({ ok: false, reason: "missing_module" });
@@ -203,6 +219,7 @@
     }
 
     function showReminder() {
+      if (!contextActive()) return false;
       if (typeof root?.XOXOSafetyReminderBeta?.show !== "function") return false;
       return root.XOXOSafetyReminderBeta.show({
         conversationId, accountId, locale,
