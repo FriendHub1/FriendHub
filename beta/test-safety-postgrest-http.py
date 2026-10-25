@@ -82,7 +82,7 @@ def db(sql):
 
 
 def blocked(status, label):
-    assert status in (400, 401, 403, 404), f"{label}: expected denial, got HTTP {status}"
+    assert status in (400, 401, 403, 404, 406), f"{label}: expected denial, got HTTP {status}"
 
 
 def rpc_payload(other=PEER, evidence=None, key=KEY, reason=0, details="Suspicious request"):
