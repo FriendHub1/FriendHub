@@ -366,3 +366,9 @@ Tests include:
 - Extend each native backend pass to **physically delete only its fictional DM after reports have been stored**. The evidence table must retain the original message IDs and participant/timestamp metadata, while the existing admin's PIN-authorized queue flags that the deleted message is no longer available. No private message body is snapshotted in the BETA report schema.
 - A retry using the original idempotency key must still return the original immutable receipt even after deletion; reusing the deleted message in a **new** report must fail authorization. The first pass's metadata survives into the second pass, so the later queue must correctly distinguish already-deleted evidence from still-present evidence before deletion.
 - This verifies the **current metadata-only design**, not a decision to retain full deleted messages. Any longer-term retention of private conversation content requires an explicit privacy and owner decision before live deployment.
+
+### Read-only hosted Supabase schema preflight (2026-10-25)
+
+- Added `beta/stay-safe-live-schema-preflight.sql` plus a CI static guard. The SQL queries **only PostgreSQL catalogs**: 20 required column types, nine existing Auth/moderation function signatures and five RLS flags. It cannot read user or message rows, issue application RPCs or modify any data.
+- Ran the exact query through the Supabase connector against project `cxosofpxfmjkrhfabrqc` **without DDL or user-data access**. Result: `checks_run=34`, `live_schema_compatible=true`, `failed_checks=[]`, `beta_submission_rpc_installed=false`.
+- This confirms the BETA migration's prerequisite *structure* against the actual hosted schema as of the check. It is **not** a test deployment or proof that permissions, network deployment, storage, retention or the hosted RPC will function after installation. Owner authorization remains required to install anything.
