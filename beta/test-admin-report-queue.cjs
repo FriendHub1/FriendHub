@@ -13,6 +13,15 @@ const beta={id:betaId,reporter_id:reporter,other_user_id:peer,reason_code:1,deta
   assert.deepEqual(both.reports.map(x=>x.source),["conversation_beta","message"]);
   assert.equal(both.reports[0].reason,"Threats or blackmail");
   assert.equal(both.reports[0].evidence_count,3);
+  const betaOnlyCalls=[];
+  const betaOnly=await loadReportQueue({rpc:async name=>{
+    betaOnlyCalls.push(name);
+    return {data:[beta],error:null};
+  }},{includeLegacy:false});
+  assert.deepEqual(betaOnlyCalls,["xoxo_admin_list_conversation_reports_beta"],
+    "the panel already fetched legacy reports and must not fetch them twice");
+  assert.equal(betaOnly.ok,true);
+  assert.deepEqual(betaOnly.reports.map(r=>r.source),["conversation_beta"]);
   const oldOnly=await loadReportQueue({rpc:async name=>name==="get_xoxo_dm_reports"?{data:[legacy]}:{data:null,error:{code:"PGRST202"}}});
   assert.equal(oldOnly.ok,true);assert.equal(oldOnly.reports.length,1);assert.equal(oldOnly.warning,null);
   const damaged=await loadReportQueue({rpc:async name=>({data:name==="get_xoxo_dm_reports"?[legacy]:[{...beta,other_user_id:"bad"}]})});
@@ -27,5 +36,5 @@ const beta={id:betaId,reporter_id:reporter,other_user_id:peer,reason_code:1,deta
   assert.deepEqual(await updateReportStatus(writer,both.reports[0],"delete"),{ok:false,reason:"invalid_request"});
   assert.equal(invoked.length,2,"invalid updates must never invoke RPC");
   assert.deepEqual(await updateReportStatus({rpc:async()=>({data:false})},both.reports[0],"reviewed"),{ok:false,reason:"status_update_failed"});
-  console.log("PASS: 9 admin report queue integration scenarios");
+  console.log("PASS: 10 admin report queue integration scenarios");
 })().catch(error=>{console.error(error);process.exitCode=1;});
