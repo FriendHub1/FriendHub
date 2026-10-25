@@ -45,7 +45,7 @@ select set_config('request.jwt.claim.session_id','aaaaaaaa-0000-4000-8000-000000
 -- A JWT with a valid user subject but no session or somebody else's session
 -- must be refused by the SECURITY DEFINER submission RPC.
 select set_config('request.jwt.claim.session_id','',false);
-do $
+do $$
 begin
   begin
     perform public.xoxo_submit_conversation_report_beta(
@@ -54,9 +54,9 @@ begin
       '88888888-8888-4888-8888-100000000001');
     raise exception 'BUG: missing session_id was accepted';
   exception when sqlstate '28000' then null; end;
-end $;
+end $$;
 select set_config('request.jwt.claim.session_id','bbbbbbbb-0000-4000-8000-000000000002',false);
-do $
+do $$
 begin
   begin
     perform public.xoxo_submit_conversation_report_beta(
@@ -65,7 +65,7 @@ begin
       '88888888-8888-4888-8888-100000000002');
     raise exception 'BUG: session_id of another user was accepted';
   exception when sqlstate '28000' then null; end;
-end $;
+end $$;
 select set_config('request.jwt.claim.session_id','aaaaaaaa-0000-4000-8000-000000000001',false);
 
 -- The disposable fixture enforces the same sender/recipient RLS as production.
