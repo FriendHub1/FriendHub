@@ -134,3 +134,12 @@ Tests include:
 - The new tests are **`beta/test-admin-auth-lifecycle.cjs`**, extended `beta/test-admin-report-pagination-panel.cjs`, and **`beta/browser-safety-admin-auth.cjs`**. The browser regression uses native WebKit and Chromium with synthetic accounts, a simulated Supabase Auth callback and delayed RPCs.
 - [**GitHub Actions 40204647016**](https://github.com/FriendHub1/FriendHub/actions/runs/40204647016) passed all 3 jobs: Node.js 22, PostgreSQL 17 + local signed PostgREST, and browser emulation. The browser job explicitly logged both `PASS: webkit native auth events, tab exits, in-flight queue/status callbacks and pagehide purge sensitive admin rows` and the corresponding `chromium` pass.
 - These are **browser and fake-session lifecycle tests**, not physical iPhone tests or proof of real Supabase-issued login integration. They do not authorize live SQL or deployment. Draft PR #12 remains unmerged; owner approval of retention/erasure and final limit is still required.
+
+### PIN dialog auth-epoch hardening (2026-10-25)
+
+- Added an **authorization-generation and account-ID guard** to the EXISTING moderation PIN dialog callback. A PIN dialog started by account A that completes after logout, a new SIGNED_IN event, or an account change **cannot set the new session's local report-unlocked state or trigger its report fetch**.
+- An obsolete PIN-error callback also **cannot invalidate or erase a newly authenticated administrator's reports**. This prevents cross-login asynchronous callback interference without changing the existing six-digit server PIN or audit.
+- Fixed the continuation-load bookkeeping: when a late `Load more` response belongs to an invalidated auth generation, it is discarded **before** touching the newer generation's loading lock.
+- Added explicit adversarial regressions in `beta/test-admin-auth-lifecycle.cjs` for both stale PIN success and stale PIN failure. Added real WebKit/Chromium browser coverage in `beta/browser-safety-admin-auth.cjs` for PIN dialog completion after SIGNED_OUT.
+- Node.js 22 and disposable PostgreSQL 17 jobs passed on [GitHub Actions 40205418499](https://github.com/FriendHub1/FriendHub/actions/runs/40205418499). Browser job result must also be verified before declaring this whole run green.
+- No live SQL, production users, Cloudflare Workers or actual Supabase Auth sessions were changed or used. The non-production Auth, retention, report-limit and physical-device approvals remain open.
