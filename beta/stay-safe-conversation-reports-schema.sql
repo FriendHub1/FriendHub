@@ -196,7 +196,9 @@ comment on function public.xoxo_submit_conversation_report_beta(
 -- Read-only metadata for the EXISTING admin moderation panel.
 -- The frontend must keep its current PIN prompt and DM viewer; this is not
 -- a second conversation viewer and never returns message contents.
-create or replace function public.xoxo_admin_list_conversation_reports_beta()
+create or replace function public.xoxo_admin_list_conversation_reports_beta(
+  p_reason text
+)
 returns jsonb
 language plpgsql
 security definer
@@ -204,6 +206,7 @@ set search_path = ''
 as $xoxo_admin_list$
 declare
   v_rows jsonb;
+  v_reason text := pg_catalog.btrim(pg_catalog.coalesce(p_reason,''));
 begin
   if auth.uid() is null or not public.is_xoxo_admin() then
     raise exception 'Administrator access required' using errcode = '42501';
@@ -215,6 +218,12 @@ begin
        and (ps.locked_until is null or ps.locked_until <= now())
   ) then
     raise exception 'Moderation PIN verification required' using errcode = '42501';
+  end if;
+  -- Same mandatory 10–300 character moderation reason as the existing
+  -- PIN-gated full conversation viewer.
+  if pg_catalog.length(v_reason) not between 10 and 300 then
+    raise exception 'A moderation reason of 10 to 300 characters is required'
+      using errcode = '22023';
   end if;
 
   select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc), '[]'::jsonb)
@@ -230,16 +239,17 @@ begin
 end
 $xoxo_admin_list$;
 
-revoke all on function public.xoxo_admin_list_conversation_reports_beta()
+revoke all on function public.xoxo_admin_list_conversation_reports_beta(text)
   from public, anon, authenticated;
-grant execute on function public.xoxo_admin_list_conversation_reports_beta()
+grant execute on function public.xoxo_admin_list_conversation_reports_beta(text)
   to authenticated;
 
 -- Use this ONLY for status changes. It does not change any existing DM report.
 -- Reuses the current PIN authorization and DM moderation audit log.
 create or replace function public.xoxo_admin_update_conversation_report_beta(
   p_report_id uuid,
-  p_status text
+  p_status text,
+  p_reason text
 )
 returns boolean
 language plpgsql
@@ -249,6 +259,7 @@ as $xoxo_admin_status$
 declare
   v_reporter uuid;
   v_other_user uuid;
+  v_reason text := pg_catalog.btrim(pg_catalog.coalesce(p_reason,''));
 begin
   if auth.uid() is null or not public.is_xoxo_admin() then
     raise exception 'Administrator access required' using errcode = '42501';
@@ -260,6 +271,10 @@ begin
        and (ps.locked_until is null or ps.locked_until <= now())
   ) then
     raise exception 'Moderation PIN verification required' using errcode = '42501';
+  end if;
+  if pg_catalog.length(v_reason) not between 10 and 300 then
+    raise exception 'A moderation reason of 10 to 300 characters is required'
+      using errcode = '22023';
   end if;
   if p_report_id is null or p_status is null
      or p_status not in ('pending','reviewed','resolved','dismissed') then
@@ -280,14 +295,14 @@ begin
   values
     (auth.uid(), least(v_reporter, v_other_user),
      greatest(v_reporter, v_other_user),
-     'conversation_report_status:' || p_status);
+     'conversation_report_status:' || p_status || ': ' || v_reason);
   return true;
 end
 $xoxo_admin_status$;
 
-revoke all on function public.xoxo_admin_update_conversation_report_beta(uuid, text)
+revoke all on function public.xoxo_admin_update_conversation_report_beta(uuid, text, text)
   from public, anon, authenticated;
-grant execute on function public.xoxo_admin_update_conversation_report_beta(uuid, text)
+grant execute on function public.xoxo_admin_update_conversation_report_beta(uuid, text, text)
   to authenticated;
 
 commit;
