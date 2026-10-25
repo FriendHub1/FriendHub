@@ -51,6 +51,7 @@ function visibleContext(){
    if(seen.has(id)||!((sender===self&&recipient===peer)||(sender===peer&&recipient===self)))continue;
    seen.add(id);
    messages.push({id,sender_id:sender,recipient_id:recipient,
+     created_at:typeof m.created_at==="string"?m.created_at:null,
      text:String(m.content||m.attachment_name||("["+String(m.attachment_type||"Message")+"]")).slice(0,1000)});
  }
  return {self,peer,conversationId,client,messages,locale:locale()};
