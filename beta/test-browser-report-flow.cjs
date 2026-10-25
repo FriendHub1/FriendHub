@@ -204,6 +204,43 @@ async function testFlow() {
   assert.equal(dated.ui.picker.messages[1].created_at,"2026-10-24T13:00:00Z");
   assert.equal(dated.calls.length,0,
     "Showing dated evidence choices must not send a report");
+  // The UI must not offer short-lived content that the server deliberately
+  // refuses to retain as selected report evidence.
+  const protectedEvidence=browserHarness({getMessages:()=>[
+    {id:id1,sender_id:peer,recipient_id:user,content:"Normal message",
+      whisper_id:null,media_view_mode:"normal"},
+    {id:id2,sender_id:peer,recipient_id:user,content:"Expiring whisper",
+      whisper_id:key,media_view_mode:"normal"},
+    {id:reportId,sender_id:user,recipient_id:peer,content:"One-time image",
+      whisper_id:null,media_view_mode:"once"}
+  ]});
+  protectedEvidence.flow.openReport();
+  protectedEvidence.ui.form.onContinue({conversationId:"conversation-1",reasonCode:1,details:"Threats"});
+  await flush();
+  assert.deepEqual(Array.from(protectedEvidence.ui.picker.messages,m=>m.id),[id1],
+    "No expiring whisper or once-view media may appear as selectable evidence");
+  assert.deepEqual(protectedEvidence.calls,[],
+    "Merely opening the filtered picker cannot perform an evidence query or RPC");
+
+  // A regular message may become view-once while the picker is open. Recheck
+  // metadata during submission, before the authenticated adapter is called.
+  let currentViewMode="normal",protectedSubmissions=0;
+  const changedMode=browserHarness({
+    getMessages:()=>[{id:id1,sender_id:peer,recipient_id:user,
+      content:"Changing item",media_view_mode:currentViewMode}],
+    submit:async()=>{protectedSubmissions++;return {ok:true,reportId};}
+  });
+  changedMode.flow.openReport();
+  changedMode.ui.form.onContinue({conversationId:"conversation-1",reasonCode:1,details:"Threats"});
+  await flush();
+  assert.equal(changedMode.ui.picker.messages.length,1);
+  currentViewMode="once";
+  changedMode.ui.picker.onContinue({conversationId:"conversation-1",messageIds:[id1]});
+  await flush();
+  assert.equal(changedMode.status[0].reason,"conversation_changed");
+  assert.equal(protectedSubmissions,0,
+    "If a selected item becomes ephemeral, no report RPC may be attempted");
+
   h.ui.picker.onContinue({ conversationId: "conversation-1", messageIds: [id1] });
   await flush();
   assert.equal(h.status.length, 1);

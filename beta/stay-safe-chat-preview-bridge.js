@@ -58,10 +58,16 @@ function visibleContext(){
  const loaded=Array.isArray(window.__xoxoCurrentDmMessages)?window.__xoxoCurrentDmMessages:[];
  for(const m of loaded){
    if(!valid(m?.id)||!valid(m?.sender_id)||!valid(m?.recipient_id))continue;
+   // The real DM loader includes both fields. Disappearing/once-view items
+   // stay in the chat, but must not enter the report evidence picker.
+   if(m.whisper_id!=null ||
+      (m.media_view_mode!=null&&m.media_view_mode!=="normal"))continue;
    const id=m.id.toLowerCase(),sender=m.sender_id.toLowerCase(),recipient=m.recipient_id.toLowerCase();
    if(seen.has(id)||!((sender===self&&recipient===peer)||(sender===peer&&recipient===self)))continue;
    seen.add(id);
    messages.push({id,sender_id:sender,recipient_id:recipient,
+     whisper_id:m.whisper_id??null,
+     media_view_mode:m.media_view_mode??"normal",
      created_at:typeof m.created_at==="string"?m.created_at:null,
      text:String(m.content||m.attachment_name||("["+String(m.attachment_type||"Message")+"]")).slice(0,1000)});
  }

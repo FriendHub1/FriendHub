@@ -12,6 +12,8 @@ const peer = "33333333-3333-4333-8333-333333333333";
 const outsider = "55555555-5555-4555-8555-555555555555";
 const msg = "22222222-2222-4222-8222-222222222221";
 const otherMsg = "22222222-2222-4222-8222-222222222222";
+const whisperMsg = "22222222-2222-4222-8222-222222222223";
+const onceMsg = "22222222-2222-4222-8222-222222222224";
 const called = { auth: 0, reads: 0, rpc: 0, alerts: [] };
 let authChange=null;
 const client = {
@@ -29,6 +31,10 @@ const window = {
   crypto: { randomUUID: () => "11111111-1111-4111-8111-111111111111" },
   __xoxoCurrentDmMessages: [
     { id: msg, sender_id: peer, recipient_id: user, content: "suspicious request" },
+    { id: whisperMsg, sender_id: peer, recipient_id: user,
+      content: "temporary", whisper_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
+    { id: onceMsg, sender_id: peer, recipient_id: user,
+      content: "one-time", media_view_mode: "once" },
     { id: otherMsg, sender_id: outsider, recipient_id: peer, content: "unrelated" }
   ]
 };
@@ -71,7 +77,8 @@ for (const name of [
   assert.equal(api.openReport(),false);
   authChange("INITIAL_SESSION",{user:{id:user,is_anonymous:false}});
   const conversation = api.visibleContext();
-  assert.equal(conversation.messages.length, 1, "must exclude unrelated chat messages");
+  assert.equal(conversation.messages.length, 1,
+    "must exclude unrelated chats, whispers and once-view evidence");
   assert.equal(api.openReport(), true, "preview should demonstrate report UI");
   assert.equal(form.locale, "es");
   form.onContinue({

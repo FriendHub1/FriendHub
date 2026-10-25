@@ -92,6 +92,12 @@
       if (!row || !isId(row.id) || !isId(row.sender_id) || !isId(row.recipient_id)) return null;
       const from = row.sender_id.toLowerCase(), to = row.recipient_id.toLowerCase();
       if (!((from === account && to === peer) || (from === peer && to === account))) return null;
+      // Align the selectable evidence UI with the server's strict retention
+      // rule. Expiring whispers and once-view/non-normal media must never be
+      // offered as evidence, even if they are visible in the current chat.
+      // The server RPC independently repeats this check before persistence.
+      if (row.whisper_id != null ||
+          (row.media_view_mode != null && row.media_view_mode !== "normal")) return null;
       const content = typeof row.text === "string" ? row.text :
         typeof row.content === "string" ? row.content : "";
       return { id: row.id.toLowerCase(), text: content || messages.attachment,
