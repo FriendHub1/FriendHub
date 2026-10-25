@@ -395,13 +395,6 @@ begin
     raise exception 'BUG: expected 10 saved, PIN-authorized reports, got %',v_queue;
   end if;
   v_report := (v_queue->0->>'id')::uuid;
-  if (select count(*) from public.xoxo_message_access_log log
-      where log.admin_id = auth.uid()
-        and log.conversation_user_1 = auth.uid()
-        and log.conversation_user_2 = auth.uid()
-        and log.action like 'conversation_report_queue:view count=10:%') <> 1 then
-    raise exception 'BUG: PIN-authorized report queue read was not audited exactly once';
-  end if;
   -- A valid PIN does not eliminate the existing mandatory moderation reason.
   begin
     perform public.xoxo_admin_list_conversation_reports_beta('short');
@@ -428,6 +421,13 @@ begin
   end if;
   if (select count(*) from xoxo_safety_private.conversation_report_evidence) <> 11 then
     raise exception 'BUG: evidence rows not persisted atomically';
+  end if;
+  if (select count(*) from public.xoxo_message_access_log
+      where action like 'conversation_report_queue:view count=10:%'
+        and admin_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid
+        and conversation_user_1='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid
+        and conversation_user_2='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid) <> 1 then
+    raise exception 'BUG: authorized report queue read did not have one audit event';
   end if;
   if (select count(*) from public.xoxo_message_access_log
       where action like 'conversation_report_status:reviewed:%') <> 1 then
