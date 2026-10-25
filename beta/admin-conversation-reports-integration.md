@@ -1,28 +1,29 @@
-# Admin moderation integration contract — BETA only
+# Reuse existing DM moderation — BETA integration contract
 
-## Preserve existing admin panel
-- Keep the existing direct_message_reports moderation functionality and historical reports intact.
-- Add a separate "Conversation reports" view or filter in the existing PIN-gated moderation area, not a replacement for existing reports.
-- A newly submitted report becomes visible in the admin panel **only after** an authenticated, atomic server-side submission succeeds.
-- Report queue fields: report ID, creation time, reporter, reported peer, reason, optional details, status, evidence count.
-- Admin can open a report and see only the 1–20 explicitly selected messages, never the entire conversation by default.
-- Admin actions: pending, reviewed, resolved, dismissed; every action and evidence read must be audited.
+## Existing behavior confirmed by site owner
+- The current admin panel already provides access to full DM conversations for moderation.
+- **Do not build a duplicate full-conversation viewer or replace existing moderation.**
+- Preserve existing reports, admin controls, moderation PIN, message history and workflows.
+- New conversation reports should appear in the existing moderation/reporting workflow, with a clear report reason, reporter, reported participant and the selected evidence IDs.
 
-## Access controls
-- Reuse the site's actual server-verified admin identity and moderation PIN mechanism. UI-only PIN checks are insufficient.
-- Never expose the report queue, reporter identity, or evidence through a public SELECT policy.
-- Restrict evidence retrieval to the report's stored selected IDs, verify admin access on every request, and avoid using a user-scoped client with escalated permissions.
-- Preserve existing report records and statuses; do not modify direct_message_reports to support this feature.
+## Important distinction
+- The **report submission** includes only 1–20 explicitly selected messages as evidence.
+- The admin's **existing full-conversation moderation access** is a separate pre-existing feature; it must retain its current server authorization and audit protections.
+- Do not broaden access for ordinary users or expose full conversations through the new report endpoint.
+- Reuse the existing panel's verified admin authorization and PIN gate; do not implement UI-only privilege checks.
+- Whether the current panel already shows all *reports* (as opposed to full conversations) must be checked in index.html before deciding where to place the new report entry.
 
-## Deleted and expiring content
-- Retention policy is not decided. Do not promise deleted or expired messages will always be available.
-- Never silently preserve disappearing whispers or one-view media as evidence without an explicit privacy and retention design.
-- If evidence is no longer available, show an honest unavailable state rather than revealing unrelated messages.
+## Implementation plan
+1. Inspect current admin DM moderation/report UI and its database queries.
+2. Add a report record or adapter compatible with that UI without breaking direct_message_reports.
+3. Route the report notification into the existing admin workflow, linking to the relevant conversation.
+4. Verify status changes and audit logs using test accounts.
+5. Preserve deleted/expiring evidence only under an explicitly reviewed retention policy.
 
-## Release acceptance
-- Verify both old and new report queues in admin with test accounts.
-- Confirm that non-admin accounts and admins without valid moderation authorization cannot access evidence.
-- Confirm that admin evidence access creates an audit event.
-- Do not enable production without approval and verified tests.
+## Release gate
+- Confirm no duplicate moderation page and no regression to existing full DM viewer.
+- Confirm new report only becomes visible after successful atomic server persistence.
+- Confirm non-admins cannot access the moderation viewer or report metadata.
+- Do not deploy or change live Supabase without explicit authorization.
 
-Status: specification only. No production admin UI, database, or server changes.
+Status: design contract updated to match owner feedback; no live implementation or deployment.
