@@ -46,23 +46,42 @@ function element(tag){
  assert.equal(calls.queue,1);
  assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
  assert.equal(list.children.length,2,"existing legacy card must remain alongside BETA report");
+ const beforeFirstRender=calls.queue;
  context.window.renderXoxoDmReports();
- assert.equal(list.children.length,2,"dashboard re-render must preserve BETA card");
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,
+   "re-render must remove cached sensitive metadata until server reauthorizes");
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.queue,beforeFirstRender+1,"direct render must recheck PIN server-side");
+ assert.equal(list.children.length,2,"successful reauthorization should restore BETA card beside legacy");
+ const beforeSecondRender=calls.queue;
  context.window.renderXoxoDmReports();
- assert.equal(list.children.length,2,"repeated renders must never duplicate BETA reports");
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,
+   "second render must not immediately expose previously cached reports");
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.queue,beforeSecondRender+1);
+ assert.equal(list.children.length,2,"repeated renders must not duplicate BETA reports");
  const card=list.querySelectorAll("[data-xoxo-conversation-beta-report]")[0];
  const actions=card.children.find(x=>x.className==="xmm-report-actions");
  actions.children[0].listeners.click();
  assert.equal(calls.pin,1,"the existing PIN-gated viewer must be reused");
  await actions.children[1].listeners.click();
- assert.equal(calls.updates,1);assert.equal(calls.queue,2);
+ assert.equal(calls.updates,1);assert.ok(calls.queue>=4);
  assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
  betaAvailable=false;
+ const beforeExpiry=calls.queue;
+ context.window.renderXoxoDmReports();
+ assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,
+   "PIN expiry: do not replay cached reports while auth request is pending");
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls.queue,beforeExpiry+1);
+ assert.equal(list.querySelectorAll("[data-xoxo-safety-report-unlock]").length,1,
+   "PIN expiry must offer verification again");
  await context.window.loadXoxoDmReports();
  assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,0,"failed BETA refresh clears stale cards");
  betaAvailable=true;
  admin=false;
+ const beforeNonAdmin=calls.queue;
  await context.window.loadXoxoDmReports();
- assert.equal(calls.queue,3,"non-admin reload must not request report metadata");
+ assert.equal(calls.queue,beforeNonAdmin,"non-admin reload must not request report metadata");
  console.log("PASS: existing admin bridge requires PIN, keeps legacy cards, reuses audited viewer and clears stale reports");
 })().catch(e=>{console.error(e);process.exitCode=1;});
