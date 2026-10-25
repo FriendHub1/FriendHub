@@ -9,7 +9,7 @@
 if(typeof window==="undefined")return;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REPORT_RPC_WRITES_ENABLED=false;
-let flow=null,flowKey="";
+let flow=null,flowKey="",flowClient=null;
 function valid(id){return typeof id==="string"&&UUID.test(id);}
 function locale(){
  return typeof getFriendHubLanguage==="function"?getFriendHubLanguage():"en";
@@ -61,10 +61,14 @@ function reportStatus(result){
 }
 function getFlow(){
  const ctx=visibleContext();
- if(!ctx||typeof window.XOXOSafetyFlowBeta?.create!=="function")return null;
- const key=ctx.conversationId+"|"+String(ctx.locale);
- if(flow && flowKey===key)return flow;
- flowKey=key;
+ if(!ctx||typeof window.XOXOSafetyFlowBeta?.create!=="function"){
+   flow=null;flowKey="";flowClient=null;return null;
+ }
+ // A->B account switches can reuse the same participant pair but MUST NOT
+ // reuse a safety reminder or report flow belonging to the old account.
+ const key=ctx.self+"|"+ctx.conversationId+"|"+String(ctx.locale);
+ if(flow && flowKey===key && flowClient===ctx.client)return flow;
+ flowKey=key;flowClient=ctx.client;
  flow=window.XOXOSafetyFlowBeta.create({
    client:ctx.client, accountId:ctx.self, otherUserId:ctx.peer,
    conversationId:ctx.conversationId, locale:ctx.locale,
