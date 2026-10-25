@@ -8,6 +8,7 @@ const user = "44444444-4444-4444-8444-444444444444";
 const peer = "33333333-3333-4333-8333-333333333333";
 const reportId = "11111111-1111-4111-8111-111111111111";
 const messageId = "22222222-2222-4222-8222-222222222221";
+const MODERATION_REASON = "Review of safety report";
 
 function loadBridge() {
   const root = {
@@ -93,16 +94,19 @@ function fakeDocument() {
   const bridge = api.create({
     client, locale: "en",
     onOpenConversation: users => opened.push(users),
-    onUnlock: async () => { allow = true; return true; },
+    onUnlock: async () => { allow = true; return {reason: MODERATION_REASON}; },
     onError: reason => errors.push(reason)
   });
 
   assert.equal((await bridge.listReports()).ok, false, "must fail closed before PIN");
+  assert.equal(calls.length, 0, "an unverified PIN/reason must never issue a privileged RPC");
   assert.equal(await bridge.attach(container), false);
   assert.equal(container.children[0], existing, "must preserve existing report cards");
   const unlock = container.querySelectorAll("button")[0];
   assert.ok(unlock, "offer existing PIN unlock");
   await unlock.events.click();
+  assert.ok(calls.some(([name,args]) => name === "xoxo_admin_list_conversation_reports_beta" &&
+    args?.p_reason === MODERATION_REASON), "the existing PIN reason is mandatory on queue reads");
   assert.equal(container.children[0], existing, "must not delete existing report cards");
 
   const headings = container.querySelectorAll(".xmm-report-card");
@@ -118,12 +122,23 @@ function fakeDocument() {
   await buttons[1].events.click();
   assert.ok(calls.some(([name,args]) =>
     name === "xoxo_admin_update_conversation_report_beta" &&
-    args.p_report_id === reportId && args.p_status === "reviewed"
+    args.p_report_id === reportId && args.p_status === "reviewed" &&
+    args.p_reason === MODERATION_REASON
   ), "update must use only the new beta status RPC");
   assert.equal(errors.length, 0);
 
   assert.equal((await bridge.setStatus(reportId, "not-a-status")).reason, "invalid_input");
   assert.equal((await bridge.setStatus("invalid", "reviewed")).reason, "invalid_input");
+  const priorCalls = calls.length;
+  const unsafeBridge = api.create({
+    client, locale: "en", onOpenConversation: () => {},
+    onUnlock: async () => true // A PIN boolean without an audit reason is not enough.
+  });
+  const unsafeContainer = doc.createElement("div");
+  assert.equal(await unsafeBridge.attach(unsafeContainer), false);
+  await unsafeContainer.querySelectorAll("button")[0].events.click();
+  assert.equal(calls.length, priorCalls,
+    "a boolean-only unlock must not query the privileged report RPC");
   assert.ok(!calls.some(([name]) => name === "xoxo_admin_read_dm_page_pin"),
     "bridge must never directly read private messages");
   console.log("PASS: PIN-gated BETA admin reports, existing list preserved, viewer reused, status RPC");

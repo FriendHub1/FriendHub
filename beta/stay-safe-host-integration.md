@@ -66,9 +66,10 @@ render or create a new DM viewer.
     const bridge = window.XOXOAdminConversationReportsBeta?.create({
       client: supabaseClient,
       locale: getFriendHubLanguage(),
-      onUnlock: async () => Boolean(
-        await xoxoModerationPinAuthorize(getFriendHubLanguage() === "es")
-      ),
+      // Return the existing PIN dialog's {reason}, not just true/false.
+      // Every BETA admin RPC requires this auditable moderation reason.
+      onUnlock: async () =>
+        await xoxoModerationPinAuthorize(getFriendHubLanguage() === "es"),
       onOpenConversation: async ({user_1,user_2}) => {
         const matches = c =>
           (String(c.user_1) === user_1 && String(c.user_2) === user_2) ||
@@ -95,8 +96,10 @@ verified PIN, moderation reason and access-log insert.
   explicit feature disable flag, safe same-key retries, and 10 languages.
 - New admin bridge reuses #xmmReportsList, never queries DM content itself,
   and uses a separate status RPC without modifying individual-message reports.
-- Supabase SQL is review-only: beta/stay-safe-conversation-reports-schema.sql.
-  The BETA schema and RPCs are not installed; never report success before they are.
+- Supabase BETA SQL was installed with owner approval on 2026-10-25;
+  beta/stay-safe-conversation-reports-schema.sql is the reviewed source.
+  The live allowlist is empty and reporting remains disabled for the public.
+  Run beta/sql-postinstall-safety-gate-readonly.sql before adding any testers.
 - Confirm rate limit (draft: 10 reports/24h), retention policy and evidence
   survival if a direct_messages row is physically deleted.
 - Validate on an isolated Supabase test project as reporter, unrelated user,

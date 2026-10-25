@@ -14,6 +14,7 @@ const REPORT_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const REPORT_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const MSG_A = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const MSG_B = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+const MODERATION_REASON = "Review of safety report";
 const legacy = {
   id: REPORT_A, message_id: MSG_A, reporter_id: SELF,
   reported_user_id: OTHER, reason: "threats", details: "Old report",
@@ -49,23 +50,37 @@ const conversation = {
     }
     throw new Error("Unexpected RPC " + name);
   } };
-  const loaded = await load({ client });
+  const noReasonCalls = called.length;
+  assert.equal((await load({ client })).reason, "moderation_reason_required");
+  assert.equal((await load({ client, moderationReason: "Spam\nReview" })).reason,
+    "moderation_reason_required");
+  assert.equal(called.length, noReasonCalls, "missing or multiline reason must not invoke any RPC");
+  const loaded = await load({ client, moderationReason: MODERATION_REASON });
   assert.equal(loaded.ok, true);
   assert.deepEqual(loaded.rows.map(x => x.kind), ["conversation", "single_message"]);
   assert.deepEqual(called.slice(0, 2).map(x => x.name),
     ["get_xoxo_dm_reports", "xoxo_admin_list_conversation_reports_beta"]);
+  assert.deepEqual(called[1].args, { p_reason: MODERATION_REASON },
+    "new queue RPC requires the PIN dialog's auditable reason");
 
   const legacyOnly = await load({ client: { rpc: async name =>
     name === "get_xoxo_dm_reports" ? { data: [legacy], error: null }
       : { data: null, error: { message: "BETA not deployed or PIN expired" } }
-  } });
+  }, moderationReason: MODERATION_REASON });
   assert.equal(legacyOnly.ok, false);
   assert.equal(legacyOnly.reason, "beta_reports_unavailable");
   assert.equal(legacyOnly.legacyRows.length, 1, "Existing reports must survive BETA RPC failure");
 
-  assert.deepEqual(await updateStatus({ client, report: merged[0], status: "reviewed" }),
+  const beforeMissing = called.length;
+  assert.equal((await updateStatus({ client, report: merged[0], status: "reviewed" })).reason,
+    "moderation_reason_required");
+  assert.equal(called.length, beforeMissing, "status updates must never omit a moderation reason");
+  assert.deepEqual(await updateStatus({ client, report: merged[0], status: "reviewed", moderationReason: MODERATION_REASON }),
     { ok: true, status: "reviewed" });
   assert.equal(called.at(-1).name, "xoxo_admin_update_conversation_report_beta");
+  assert.deepEqual(called.at(-1).args, {
+    p_report_id: REPORT_B, p_status: "reviewed", p_reason: MODERATION_REASON
+  });
   assert.deepEqual(await updateStatus({ client, report: merged[1], status: "resolved" }),
     { ok: true, status: "resolved" });
   assert.equal(called.at(-1).name, "update_xoxo_dm_report_status");

@@ -21,6 +21,11 @@
   function isUuid(value) {
     return typeof value === "string" && UUID.test(value);
   }
+  function validReason(value) {
+    return typeof value === "string" && value.trim().length >= 10 &&
+      value.trim().length <= 300 &&
+      !/[\u0000-\u001f\u007f-\u009f]/u.test(value);
+  }
   function normalizeLegacy(report) {
     if (!isUuid(report?.id) || !isUuid(report?.message_id) ||
         !isUuid(report?.reporter_id) || !isUuid(report?.reported_user_id)) return null;
@@ -69,8 +74,10 @@
     return items.sort((a, b) =>
       (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0));
   }
-  async function load({ client } = {}) {
+  async function load({ client, moderationReason } = {}) {
     if (typeof client?.rpc !== "function") return { ok: false, reason: "invalid_client" };
+    if (!validReason(moderationReason))
+      return { ok: false, reason: "moderation_reason_required" };
     // Deliberately keep legacy report data if BETA RPC fails: no regression
     // to currently working individual-message reports.
     let old;
@@ -84,7 +91,9 @@
       return { ok: false, reason: "legacy_reports_unavailable" };
     }
     try {
-      const { data, error } = await client.rpc("xoxo_admin_list_conversation_reports_beta");
+      const { data, error } = await client.rpc("xoxo_admin_list_conversation_reports_beta", {
+        p_reason: moderationReason.trim()
+      });
       if (error || !Array.isArray(data)) {
         return {
           ok: false, reason: "beta_reports_unavailable",
@@ -99,7 +108,7 @@
       };
     }
   }
-  async function updateStatus({ client, report, status } = {}) {
+  async function updateStatus({ client, report, status, moderationReason } = {}) {
     if (typeof client?.rpc !== "function" || !isUuid(report?.id) ||
         !STATUS.has(status)) return { ok: false, reason: "invalid_input" };
     const rpc = report.kind === "conversation"
@@ -108,10 +117,12 @@
         ? "update_xoxo_dm_report_status"
         : null;
     if (!rpc) return { ok: false, reason: "invalid_input" };
+    if (report.kind === "conversation" && !validReason(moderationReason))
+      return { ok: false, reason: "moderation_reason_required" };
     try {
-      const { data, error } = await client.rpc(rpc, {
-        p_report_id: report.id, p_status: status
-      });
+      const args = { p_report_id: report.id, p_status: status };
+      if (report.kind === "conversation") args.p_reason = moderationReason.trim();
+      const { data, error } = await client.rpc(rpc, args);
       return error || data !== true
         ? { ok: false, reason: "update_failed" }
         : { ok: true, status };

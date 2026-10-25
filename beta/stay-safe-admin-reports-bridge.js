@@ -33,6 +33,12 @@
     return copy[locale] ? locale : copy[locale.split("-")[0]] ? locale.split("-")[0] : "en";
   }
   const validId = value => typeof value === "string" && UUID.test(value);
+  // All three admin BETA RPCs require the SAME 10–300 character reason used
+  // by the site's existing moderation PIN dialog. An unlocked PIN alone is
+  // not sufficient authorization for an unaudited queue read or update.
+  const validReason = value => typeof value === "string" &&
+    value.trim().length >= 10 && value.trim().length <= 300 &&
+    !/[\u0000-\u001f\u007f-\u009f]/u.test(value);
   const validReport = r => r && validId(r.id) && validId(r.reporter_id) &&
     validId(r.reported_user_id) && r.reporter_id !== r.reported_user_id &&
     Number.isInteger(r.reason_code) && r.reason_code >= 0 && r.reason_code <= 5 &&
@@ -46,19 +52,26 @@
     }
     const lng = language(locale), t = copy[lng];
     let loading = false;
+    let moderationReason = null;
 
     async function listReports() {
+      if (!validReason(moderationReason))
+        return { ok: false, reason: "moderation_reason_required" };
       try {
-        const { data, error } = await client.rpc("xoxo_admin_list_conversation_reports_beta");
+        const { data, error } = await client.rpc("xoxo_admin_list_conversation_reports_beta", {
+          p_reason: moderationReason.trim()
+        });
         if (error || !Array.isArray(data)) return { ok: false, reason: "access_denied_or_unavailable" };
         return { ok: true, reports: data.filter(validReport) };
       } catch { return { ok: false, reason: "access_denied_or_unavailable" }; }
     }
     async function setStatus(reportId, status) {
       if (!validId(reportId) || !STATUSES.includes(status)) return { ok: false, reason: "invalid_input" };
+      if (!validReason(moderationReason))
+        return { ok: false, reason: "moderation_reason_required" };
       try {
         const { data, error } = await client.rpc("xoxo_admin_update_conversation_report_beta", {
-          p_report_id: reportId, p_status: status
+          p_report_id: reportId, p_status: status, p_reason: moderationReason.trim()
         });
         return data === true && !error ? { ok: true } : { ok: false, reason: "update_failed" };
       } catch { return { ok: false, reason: "update_failed" }; }
@@ -95,9 +108,18 @@
           unlock.addEventListener("click", async () => {
             unlock.disabled = true;
             try {
-              if (await onUnlock()) await attach(container);
-              else unlock.disabled = false;
+              // The existing PIN dialog returns {reason} when verified.
+              // A plain boolean must NOT unlock a reasonless privileged RPC.
+              const authorized = await onUnlock();
+              if (validReason(authorized?.reason)) {
+                moderationReason = authorized.reason.trim();
+                await attach(container);
+              } else {
+                moderationReason = null;
+                unlock.disabled = false;
+              }
             } catch {
+              moderationReason = null;
               unlock.disabled = false;
               if (typeof onError === "function") onError("pin_failed");
             }
