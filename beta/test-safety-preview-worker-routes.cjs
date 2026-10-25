@@ -47,8 +47,12 @@ assert.ok(route.indexOf("/beta/stay-safe-chat-preview-bridge.js")<
   route.indexOf("/beta/admin-report-queue.js"),"chat dependencies must precede admin dependencies");
 assert.doesNotMatch(route,/stay-safe-admin-reports-bridge\.js/,
   "do not inject the retired/draft alternative admin report adapter");
-assert.match(preview,/const REPORT_RPC_WRITES_ENABLED=false;/,
-  "preview must never send live database writes");
+assert.match(preview,/workers\\\.dev\$\/i\.test\(String\(window\.location\?\.hostname/,
+  "report writes must be unavailable outside workers.dev");
+assert.match(preview,/previewSearch\?\.get\("xoxo_safety_chat_beta"\)===\"1\"/,
+  "report writes require the original BETA chat opt-in");
+assert.match(preview,/previewSearch\?\.get\("xoxo_safety_report_write_beta"\)===\"1\"/,
+  "report writes require a separate explicit opt-in");
 assert.match(indexHooks,/const REPORT_WRITES_ENABLED = false;/);
 assert.match(indexHooks,/const ADMIN_QUEUE_ENABLED = false;/);
 console.log("PASS: workers.dev-only BETA routes, script order, no-cache and writes disabled");

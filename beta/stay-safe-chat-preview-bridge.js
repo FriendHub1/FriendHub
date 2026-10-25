@@ -1,14 +1,25 @@
 /* XOXO Avenue — Stay Safe, Sweetheart! canonical BETA chat preview host.
  * Loaded only on workers.dev with ?xoxo_safety_chat_beta=1.
  * Reuses stay-safe-browser-flow.js rather than duplicating its submission logic.
- * This preview displays form/evidence but NEVER writes to Supabase.
+ * The default preview displays form/evidence without writes. A separate
+ * explicit workers.dev-only query flag permits end-to-end BETA testing for
+ * an account already approved in the server-side expiring allowlist.
  * No production script, SQL schema or existing DM controls are changed.
  */
 (function(){
 "use strict";
 if(typeof window==="undefined")return;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const REPORT_RPC_WRITES_ENABLED=false;
+// A URL flag is only an opt-in UX switch, NEVER authorization. The private
+// Supabase tester allowlist plus active Auth session enforce permission.
+// Never activate this path on xoxoavenue.com or a generic non-preview URL.
+const previewSearch=typeof URLSearchParams==="function" ?
+ new URLSearchParams(window.location?.search||"") : null;
+const REPORT_RPC_WRITES_ENABLED=Boolean(
+ /(?:^|\.)workers\.dev$/i.test(String(window.location?.hostname||"")) &&
+ previewSearch?.get("xoxo_safety_chat_beta")==="1" &&
+ previewSearch?.get("xoxo_safety_report_write_beta")==="1"
+);
 let flow=null,flowKey="",flowClient=null;
 // Fail closed until Supabase publishes the initial stored session. A stale
 // SPA currentUser is NOT proof of a current signed-in Auth user.
@@ -91,7 +102,7 @@ function getFlow(){
  flow=window.XOXOSafetyFlowBeta.create({
    client:ctx.client, accountId:ctx.self, otherUserId:ctx.peer,
    conversationId:ctx.conversationId, locale:ctx.locale,
-   previewOnly:true, enabled:REPORT_RPC_WRITES_ENABLED,
+   previewOnly:!REPORT_RPC_WRITES_ENABLED, enabled:REPORT_RPC_WRITES_ENABLED,
    isContextActive:()=>{
      const latest=visibleContext();
      return !!latest && latest.conversationId===ctx.conversationId &&
@@ -136,7 +147,8 @@ function refresh(){
  return current?current.showReminder():false;
 }
 async function submit(){
- // Backward-compatible test API. Never call Supabase from a preview host.
+ // Legacy test API intentionally never writes; the real user action goes
+ // through the validated form/evidence flow and server-verified allowlist.
  return {ok:false,reason:"beta_backend_disabled"};
 }
 function install(){
