@@ -32,6 +32,7 @@ const required = [
   ["PIN expiration enforced", /ps\.verified_until > now\(\)/i],
   ["PIN lockout enforced", /ps\.locked_until is null or ps\.locked_until <= now\(\)/i],
   ["existing moderation audit", /insert into public\.xoxo_message_access_log/i],
+  ["report queue read audited", /conversation_report_queue:view count=/i],
   ["no partial evidence commit", /Evidence could not be saved atomically/i],
   ["explicit anon revocation", /from public, anon, authenticated/i],
   ["authenticated RPC grant", /to authenticated;/i],
@@ -49,6 +50,8 @@ assert.match(source,/revoke all on function xoxo_safety_private\.active_session_
   "Private session guard must not be executable by public roles");
 assert.equal((source.match(/security definer/g)||[]).length,3,
   "Only the three reviewed public BETA RPCs may use SECURITY DEFINER");
+assert.equal((source.match(/conversation_report_queue:view count=/g)||[]).length,1,
+  "Every successful admin queue read must be audited exactly once");
 assert.equal((source.match(/pg_catalog\.length\(v_reason\) not between 10 and 300/g)||[]).length,2,
   "Both admin RPCs must reject missing, short or oversized moderation reasons");
 assert.match(source,/revoke all on function public\.xoxo_admin_list_conversation_reports_beta\(text\)/i);
