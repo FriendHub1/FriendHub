@@ -192,8 +192,106 @@ comment on function public.xoxo_submit_conversation_report_beta(
   uuid, integer, text, uuid[], uuid
 ) is 'BETA conversation-report submission. Authenticated JWT required; server validates 1-20 visible messages and stores metadata atomically.';
 
+
+-- Read-only metadata for the EXISTING admin moderation panel.
+-- The frontend must keep its current PIN prompt and DM viewer; this is not
+-- a second conversation viewer and never returns message contents.
+create or replace function public.xoxo_admin_list_conversation_reports_beta()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $xoxo_admin_list$
+declare
+  v_rows jsonb;
+begin
+  if auth.uid() is null or not public.is_xoxo_admin() then
+    raise exception 'Administrator access required' using errcode = '42501';
+  end if;
+  if not exists (
+    select 1 from public.xoxo_moderation_pin_security ps
+     where ps.admin_id = auth.uid()
+       and ps.verified_until > now()
+       and (ps.locked_until is null or ps.locked_until <= now())
+  ) then
+    raise exception 'Moderation PIN verification required' using errcode = '42501';
+  end if;
+
+  select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc), '[]'::jsonb)
+    into v_rows
+  from (
+    select r.id, r.reporter_id, r.other_user_id as reported_user_id,
+           r.reason_code, r.details, r.message_ids, r.status, r.created_at
+      from xoxo_safety_private.conversation_reports r
+      order by r.created_at desc
+      limit 100
+  ) x;
+  return v_rows;
+end
+$xoxo_admin_list$;
+
+revoke all on function public.xoxo_admin_list_conversation_reports_beta()
+  from public, anon, authenticated;
+grant execute on function public.xoxo_admin_list_conversation_reports_beta()
+  to authenticated;
+
+-- Use this ONLY for status changes. It does not change any existing DM report.
+-- Reuses the current PIN authorization and DM moderation audit log.
+create or replace function public.xoxo_admin_update_conversation_report_beta(
+  p_report_id uuid,
+  p_status text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $xoxo_admin_status$
+declare
+  v_reporter uuid;
+  v_other_user uuid;
+begin
+  if auth.uid() is null or not public.is_xoxo_admin() then
+    raise exception 'Administrator access required' using errcode = '42501';
+  end if;
+  if not exists (
+    select 1 from public.xoxo_moderation_pin_security ps
+     where ps.admin_id = auth.uid()
+       and ps.verified_until > now()
+       and (ps.locked_until is null or ps.locked_until <= now())
+  ) then
+    raise exception 'Moderation PIN verification required' using errcode = '42501';
+  end if;
+  if p_report_id is null or p_status is null
+     or p_status not in ('pending','reviewed','resolved','dismissed') then
+    raise exception 'Invalid report status' using errcode = '22023';
+  end if;
+
+  update xoxo_safety_private.conversation_reports r
+     set status = p_status
+   where r.id = p_report_id
+   returning r.reporter_id, r.other_user_id
+     into v_reporter, v_other_user;
+  if not found then
+    return false;
+  end if;
+
+  insert into public.xoxo_message_access_log
+    (admin_id, conversation_user_1, conversation_user_2, action)
+  values
+    (auth.uid(), least(v_reporter, v_other_user),
+     greatest(v_reporter, v_other_user),
+     'conversation_report_status:' || p_status);
+  return true;
+end
+$xoxo_admin_status$;
+
+revoke all on function public.xoxo_admin_update_conversation_report_beta(uuid, text)
+  from public, anon, authenticated;
+grant execute on function public.xoxo_admin_update_conversation_report_beta(uuid, text)
+  to authenticated;
+
 commit;
 
--- NOT INCLUDED: admin read/status RPC and UI integration, pending review of
--- existing PIN-gated moderation functions and evidence-retention policy.
+-- NOT INCLUDED: frontend admin UI wiring or real-environment integration tests.
+-- The draft admin RPCs return metadata only and preserve the PIN-gated viewer.
 -- This file is NOT part of a deployed migration or production workflow.
