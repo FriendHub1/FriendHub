@@ -64,7 +64,12 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
   const span=document.createElement("span");
   span.style.cssText="min-width:0;overflow-wrap:anywhere;white-space:pre-wrap";
   span.textContent=m.text.length>240 ? m.text.slice(0,240).trimEnd()+"…" : m.text;
-  check.addEventListener("change",()=>{const count=checkboxes.filter(x=>x.checked).length;if(count>20){check.checked=false;notice.textContent=t.limit;}else{notice.textContent="";}});
+  check.addEventListener("change",()=>{
+   if(closed)return;
+   const count=checkboxes.filter(x=>x.checked).length;
+   if(count>20){check.checked=false;notice.textContent=t.limit;}
+   else{notice.textContent="";}
+  });
   label.append(check,span);row.append(label);
   if(m.text.length>240){
    const words=previewLabels[language]||previewLabels.en;
@@ -89,7 +94,14 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
  next.style.background="#ffda60";next.style.color="#231432";cancel.style.background="#34234b";cancel.style.color="white";
  panel.append(next,cancel);backdrop.append(panel);
  const previous=document.activeElement,oldOverflow=document.body.style.overflow;document.body.style.overflow="hidden";
- function close(){backdrop.remove();document.body.style.overflow=oldOverflow;document.removeEventListener("keydown",keyHandler);if(previous?.isConnected)previous.focus();}
+ let closed=false;
+ function close(){
+  if(closed)return;
+  closed=true;
+  backdrop.remove();document.body.style.overflow=oldOverflow;
+  document.removeEventListener("keydown",keyHandler);
+  if(previous?.isConnected)previous.focus();
+ }
  function keyHandler(e){
   if(e.key==="Escape"){e.preventDefault();close();return;}
   if(e.key==="Tab"){
@@ -104,6 +116,9 @@ function open({conversationId,messages=[],locale="es",onContinue}={}){
  }
  cancel.onclick=close;
  next.onclick=()=>{
+  // Prevent stale/cancelled picker actions from sending selected evidence.
+  // A rapid double click must deliver exactly one callback.
+  if(closed)return;
   const selected=checkboxes.filter(x=>x.checked).map(x=>x.value);
   if(!selected.length){notice.textContent=t.none;return}
   if(selected.length>20){notice.textContent=t.limit;return}
