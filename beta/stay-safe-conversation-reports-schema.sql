@@ -1,4 +1,5 @@
 -- XOXO Avenue / Stay Safe, Sweetheart! — BETA ONLY
+-- DO NOT APPLY TO THE LIVE DATABASE WITHOUT OWNER APPROVAL.
 -- Owner-approved installation on cxosofpxfmjkrhfabrqc: 2026-10-25.
 -- Do not install elsewhere or broaden tester access without owner approval.
 -- Purpose: atomic conversation reports with 1–20 explicitly selected DM IDs.
