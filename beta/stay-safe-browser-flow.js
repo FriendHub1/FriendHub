@@ -153,6 +153,10 @@
         const result = { ok: false, reason: "invalid_input" };
         inform(result); return result;
       }
+      // Lock BEFORE awaiting getMessages(). Two fast submit clicks must not
+      // start concurrent evidence reads or duplicate status notifications.
+      sending = true;
+      try {
       // A user may switch chats or accounts while the evidence picker is
       // open. Reject stale selections before any authenticated RPC call.
       // The host getMessages() must describe the CURRENT open conversation.
@@ -184,7 +188,6 @@
       if (!retry || retry.fingerprint !== fingerprint) {
         retry = { fingerprint, key: root.crypto.randomUUID() };
       }
-      sending = true;
       let result;
       try {
         result = await adapter.submit(client, {
@@ -193,8 +196,6 @@
         });
       } catch {
         result = { ok: false, reason: "submission_failed" };
-      } finally {
-        sending = false;
       }
       // The RPC may have committed before account/chat changed. Never
       // expose its receipt or notify the new user; keep the idempotency key
@@ -203,6 +204,11 @@
       if (result?.ok) retry = null;
       inform(result);
       return result;
+      } finally {
+        // Covers success, stale context, rejection, and errors in the
+        // evidence lookup or status callback.
+        sending = false;
+      }
     }
 
     function openReport() {
