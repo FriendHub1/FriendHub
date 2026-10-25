@@ -13,6 +13,8 @@ const native=fs.readFileSync(path.join(__dirname,
   "test-safety-gotrue-native-session.py"),"utf8");
 const jsClient=fs.readFileSync(path.join(__dirname,
   "test-safety-native-js-client.cjs"),"utf8");
+const browser=fs.readFileSync(path.join(__dirname,
+  "test-safety-native-browser-e2e.cjs"),"utf8");
 const nativeFixture=fs.readFileSync(path.join(__dirname,
   "sql-test-gotrue-native-session-fixture.sql"),"utf8");
 for(const value of ["cxosofpxfmjkrhfabrqc","xoxoavenue.com",
@@ -39,9 +41,13 @@ assert.match(workflow,/PGRST_SERVER_PORT=3002/);
 assert.match(workflow,/Verify native GoTrue session and actual JavaScript submission pipeline in same disposable database/);
 assert.match(workflow,/node-version:\s*"22"/);
 assert.match(workflow,/beta\/test-safety-native-js-client\.cjs/);
+assert.match(workflow,/beta\/test-safety-native-browser-e2e\.cjs/);
+assert.match(workflow,/Install pinned WebKit and Chromium for isolated real-browser reports/);
+assert.match(workflow,/NODE_PATH:\s*\$\{\{ runner\.temp \}\}\/xoxo-safety-playwright\/node_modules/);
 assert.match(native,/http:\/\/127\.0\.0\.1:3002/);
 assert.match(native,/js_report_pipeline\("active",token,outsider_token,message,user,outsider_user\)/);
 assert.match(native,/js_report_pipeline\("revoked",token,outsider_token,message,user,outsider_user\)/);
+assert.match(native,/real_browser_report_flow\(token,message,user\)/);
 assert.match(jsClient,/require\("\.\/submit-conversation-report-beta\.cjs"\)/);
 assert.match(jsClient,/require\("\.\/stay-safe-browser-report-adapter\.js"\)/);
 assert.match(jsClient,/require\("\.\/stay-safe-browser-flow\.js"\)/);
@@ -51,6 +57,12 @@ assert.match(jsClient,/http:\/\/127\.0\.0\.1:9999/);
 assert.match(jsClient,/http:\/\/127\.0\.0\.1:3002/);
 assert.doesNotMatch(jsClient,/cxosofpxfmjkrhfabrqc|xoxoavenue\.com|supabase\.co|https:\/\//i,
   "real-JS Auth/RLS harness may contact only isolated loopback services");
+for(const route of ["http://127.0.0.1:9999/user","http://127.0.0.1:3002"])
+  assert.ok(browser.includes(route),"live browser proxy must target "+route);
+assert.match(browser,/require\("playwright"\)/);
+assert.match(browser,/\.addScriptTag\(/);
+assert.doesNotMatch(browser,/cxosofpxfmjkrhfabrqc|xoxoavenue\.com|supabase\.co|https:\/\//i,
+  "browser integration must never address production or external servers");
 assert.match(native,/from auth\.sessions where/);
 assert.doesNotMatch(native,/(insert into|update) auth\.sessions/i,
   "native session test must read real GoTrue records rather than mirror them");

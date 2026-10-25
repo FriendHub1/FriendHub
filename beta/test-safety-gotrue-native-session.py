@@ -59,6 +59,22 @@ def js_report_pipeline(phase,token,outsider_token,message,user,outsider_user):
     print(result.stdout.strip())
 
 
+def real_browser_report_flow(token,message,user):
+    """Run actual XOXO form and evidence DOM with real local Auth/RLS.
+
+    Only the synthetic JWT is supplied via stdin; Node's loopback-only HTTP
+    proxy keeps both browsers on one origin without external CORS requests.
+    """
+    result=subprocess.run(["node","beta/test-safety-native-browser-e2e.cjs"],
+        input=json.dumps({"token":token,"user":user,"peer":PEER,
+            "messageId":message}),text=True,capture_output=True,timeout=240)
+    if result.returncode:
+        raise AssertionError("Native browser-to-RPC integration failed: "+result.stderr[:1000])
+    assert "PASS: webkit real DOM" in result.stdout
+    assert "PASS: chromium real DOM" in result.stdout
+    print(result.stdout.strip())
+
+
 def run():
     assert db("select current_database()") == "xoxo_gotrue_ci"
     assert db("select to_regclass('auth.sessions') is not null") == "t"
@@ -145,9 +161,10 @@ def run():
     # modules, with a real RLS read and a real atomic PostgREST write. This
     # second synthetic report is distinct from the direct-HTTP test above.
     js_report_pipeline("active",token,outsider_token,message,user,outsider_user)
+    real_browser_report_flow(token,message,user)
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
-      f"where reporter_id='{user}'::uuid") == "4"
-    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence") == "4"
+      f"where reporter_id='{user}'::uuid") == "6"
+    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence") == "6"
 
     # Simulate session revocation in the SAME native Auth DB, while the JWT
     # is still cryptographically valid; no real credentials are involved.
@@ -158,7 +175,7 @@ def run():
     assert code in (400,401,403,404,406),(
       "A revoked native Auth session submitted a report",code,denied)
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
-      f"where reporter_id='{user}'::uuid") == "4"
+      f"where reporter_id='{user}'::uuid") == "6"
     print("PASS: genuine GoTrue session checked in SAME disposable DB; "
           "RLS, report/evidence, JS submission, outsider denial, idempotency "
           "and revoked-session denial")

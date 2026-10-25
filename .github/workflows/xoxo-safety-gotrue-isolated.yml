@@ -12,6 +12,7 @@ on:
       - "beta/test-safety-gotrue-auth-http.py"
       - "beta/test-safety-gotrue-native-session.py"
       - "beta/test-safety-native-js-client.cjs"
+      - "beta/test-safety-native-browser-e2e.cjs"
       - "beta/sql-test-gotrue-native-session-fixture.sql"
       - "beta/test-safety-gotrue-ci-isolation.cjs"
   workflow_dispatch:
@@ -22,7 +23,7 @@ permissions:
 jobs:
   isolated-auth-issuer:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17
@@ -160,7 +161,17 @@ jobs:
             sleep 1
           done
           test "$ready" = 1
+      - name: Install pinned WebKit and Chromium for isolated real-browser reports
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/xoxo-safety-playwright"
+          npm --prefix "$RUNNER_TEMP/xoxo-safety-playwright" install \
+            --no-save --no-package-lock --ignore-scripts playwright@1.64.1
+          "$RUNNER_TEMP/xoxo-safety-playwright/node_modules/.bin/playwright" \
+            install --with-deps chromium webkit
       - name: Verify native GoTrue session and actual JavaScript submission pipeline in same disposable database
+        env:
+          NODE_PATH: ${{ runner.temp }}/xoxo-safety-playwright/node_modules
         run: python3 beta/test-safety-gotrue-native-session.py
       - name: Clean up disposable services even after failure
         if: always()

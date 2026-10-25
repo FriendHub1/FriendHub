@@ -34,7 +34,8 @@ jobs:
             # Native Auth/JS integration requires the isolated GoTrue runner
             # with real temporary JWTs supplied over stdin.
             if [ "$test_file" = "beta/test-safety-browser-visual.cjs" ] ||
-               [ "$test_file" = "beta/test-safety-native-js-client.cjs" ]; then continue; fi
+               [ "$test_file" = "beta/test-safety-native-js-client.cjs" ] ||
+               [ "$test_file" = "beta/test-safety-native-browser-e2e.cjs" ]; then continue; fi
             echo "Running $test_file"
             node "$test_file"
           done
