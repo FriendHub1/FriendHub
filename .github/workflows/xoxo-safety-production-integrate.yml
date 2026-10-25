@@ -1,0 +1,65 @@
+name: XOXO Safety — Production Integration
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "beta/stay-safe-*.js"
+      - "beta/admin-report-*.js"
+      - ".github/workflows/xoxo-safety-production-integrate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  integrate-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Promote the isolated safety bridge to production
+        shell: python
+        run: |
+          from pathlib import Path
+
+          worker = Path("worker.js")
+          bridge = Path("beta/stay-safe-chat-preview-bridge.js")
+
+          text = worker.read_text()
+          old = '''    // Stay Safe, Sweetheart! — opt-in BETA only on workers.dev.\n    // Chat and existing admin moderation can now be inspected TOGETHER in one\n    // browser session. Either flag still works by itself. No report writes,\n    // production-domain injection, duplicate DM viewer, or new admin access.\n    const xoxoSafetyChatBeta = url.searchParams.get("xoxo_safety_chat_beta") === "1";\n    const xoxoSafetyAdminBeta = url.searchParams.get("xoxo_safety_admin_beta") === "1";\n    if (url.pathname === "/" && url.hostname.endsWith(".workers.dev") &&\n        request.method === "GET" && (xoxoSafetyChatBeta || xoxoSafetyAdminBeta)) {\n      const preview = await env.ASSETS.fetch(request);\n      if (preview.ok && String(preview.headers.get("content-type") || "").includes("text/html")) {\n        const chatScripts = xoxoSafetyChatBeta ?\n          '<script src="/beta/stay-safe-sweetheart.js" defer></script>' +\n          '<script src="/beta/stay-safe-report-form.js" defer></script>' +\n          '<script src="/beta/stay-safe-evidence-picker.js" defer></script>' +\n          '<script src="/beta/stay-safe-browser-report-adapter.js" defer></script>' +\n          '<script src="/beta/stay-safe-browser-flow.js" defer></script>' +\n          '<script src="/beta/stay-safe-chat-preview-bridge.js" defer></script>' : "";\n        const adminScripts = xoxoSafetyAdminBeta ?\n          '<script src="/beta/admin-report-queue.js" defer></script>' +\n          '<script src="/beta/admin-report-panel-bridge.js" defer></script>' : "";\n        const updated = new HTMLRewriter()\n          .on("head", {\n            element(element) {\n              element.append(chatScripts + adminScripts, { html: true });\n            }\n          })\n          .transform(preview);\n        const headers = new Headers(updated.headers);\n        headers.set("Cache-Control", "no-store");\n        headers.set("X-XOXO-Worker", xoxoSafetyChatBeta && xoxoSafetyAdminBeta\n          ? "safety-combined-beta-opt-in" : xoxoSafetyChatBeta\n          ? "safety-chat-beta-opt-in" : "admin-report-beta-opt-in");\n        return new Response(updated.body, {\n          status: updated.status, statusText: updated.statusText, headers\n        });\n      }\n    }\n'''
+          new = '''    // Stay Safe, Sweetheart! — production integration.\n    // Keep the old workers.dev query flags working for isolated BETA review,\n    // while the real XOXO Avenue domain loads the same tested safety surface.\n    const xoxoSafetyChatBeta = url.searchParams.get("xoxo_safety_chat_beta") === "1";\n    const xoxoSafetyAdminBeta = url.searchParams.get("xoxo_safety_admin_beta") === "1";\n    const isSafetyBetaHost = url.hostname.endsWith(".workers.dev");\n    const isXoxoProductionHost =\n      url.hostname === "xoxoavenue.com" ||\n      url.hostname === "www.xoxoavenue.com";\n    const enableSafetyChat =\n      request.method === "GET" &&\n      (isXoxoProductionHost || (isSafetyBetaHost && xoxoSafetyChatBeta));\n    const enableSafetyAdmin =\n      request.method === "GET" &&\n      (isXoxoProductionHost || (isSafetyBetaHost && xoxoSafetyAdminBeta));\n    if (url.pathname === "/" && (enableSafetyChat || enableSafetyAdmin)) {\n      const preview = await env.ASSETS.fetch(request);\n      if (preview.ok && String(preview.headers.get("content-type") || "").includes("text/html")) {\n        const chatScripts = enableSafetyChat ?\n          '<script src="/beta/stay-safe-sweetheart.js" defer></script>' +\n          '<script src="/beta/stay-safe-report-form.js" defer></script>' +\n          '<script src="/beta/stay-safe-evidence-picker.js" defer></script>' +\n          '<script src="/beta/stay-safe-browser-report-adapter.js" defer></script>' +\n          '<script src="/beta/stay-safe-browser-flow.js" defer></script>' +\n          '<script src="/beta/stay-safe-chat-preview-bridge.js" defer></script>' : "";\n        const adminScripts = enableSafetyAdmin ?\n          '<script src="/beta/admin-report-queue.js" defer></script>' +\n          '<script src="/beta/admin-report-panel-bridge.js" defer></script>' : "";\n        const updated = new HTMLRewriter()\n          .on("head", {\n            element(element) {\n              element.append(chatScripts + adminScripts, { html: true });\n            }\n          })\n          .transform(preview);\n        const headers = new Headers(updated.headers);\n        headers.set("Cache-Control", "no-store");\n        headers.set("X-XOXO-Worker", isXoxoProductionHost\n          ? "safety-production"\n          : enableSafetyChat && enableSafetyAdmin\n          ? "safety-combined-beta-opt-in"\n          : enableSafetyChat\n          ? "safety-chat-beta-opt-in"\n          : "admin-report-beta-opt-in");\n        return new Response(updated.body, {\n          status: updated.status, statusText: updated.statusText, headers\n        });\n      }\n    }\n'''
+          if old not in text:
+              raise SystemExit("Expected BETA worker integration block was not found; refusing to modify production Worker.")
+          worker.write_text(text.replace(old, new, 1))
+
+          b = bridge.read_text()
+          old_gate = '''const REPORT_RPC_WRITES_ENABLED=Boolean(\n    /(?:^|\\.)workers\\.dev$/i.test(String(window.location?.hostname||"")) &&\n    previewSearch?.get("xoxo_safety_chat_beta")==="1" &&\n    previewSearch?.get("xoxo_safety_report_write_beta")==="1"\n  );'''
+          new_gate = '''const isProductionHost=/^(?:www\\.)?xoxoavenue\\.com$/i.test(String(window.location?.hostname||""));\n  const REPORT_RPC_WRITES_ENABLED=Boolean(\n    isProductionHost || (\n      /(?:^|\\.)workers\\.dev$/i.test(String(window.location?.hostname||"")) &&\n      previewSearch?.get("xoxo_safety_chat_beta")==="1" &&\n      previewSearch?.get("xoxo_safety_report_write_beta")==="1"\n    )\n  );'''
+          if old_gate not in b:
+              raise SystemExit("Expected BETA report-write gate was not found; refusing to modify safety bridge.")
+          bridge.write_text(b.replace(old_gate, new_gate, 1))
+
+      - name: Verify the production integration diff
+        run: |
+          grep -n "safety-production" worker.js
+          grep -n "isProductionHost" beta/stay-safe-chat-preview-bridge.js
+          git diff --check
+
+      - name: Commit production integration
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- worker.js beta/stay-safe-chat-preview-bridge.js; then
+            echo "Production integration already applied."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker.js beta/stay-safe-chat-preview-bridge.js
+          git commit -m "Enable Stay Safe, Sweetheart in production"
+          git push
