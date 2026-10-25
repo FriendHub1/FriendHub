@@ -1,16 +1,16 @@
-/* XOXO Avenue — Stay Safe, Sweetheart! BETA chat bridge
- * Loaded ONLY from the opt-in Cloudflare preview route, never from production.
- * Uses the existing direct-message UI and authenticated Supabase client.
- * A report can succeed ONLY after the server RPC is deployed and audited.
+/* XOXO Avenue — Stay Safe, Sweetheart! canonical BETA chat preview host.
+ * Loaded only on workers.dev with ?xoxo_safety_chat_beta=1.
+ * Reuses stay-safe-browser-flow.js rather than duplicating its submission logic.
+ * This preview displays form/evidence but NEVER writes to Supabase.
+ * No production script, SQL schema or existing DM controls are changed.
  */
 (function(){
 "use strict";
 if(typeof window==="undefined")return;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-let submitting=false;
-// Explicitly OFF: opt-in UI preview must never write to the live Supabase project.
 const REPORT_RPC_WRITES_ENABLED=false;
-function valid(id){return typeof id==="string" && UUID.test(id);}
+let flow=null,flowKey="";
+function valid(id){return typeof id==="string"&&UUID.test(id);}
 function locale(){
  return typeof getFriendHubLanguage==="function"?getFriendHubLanguage():"en";
 }
@@ -26,141 +26,102 @@ const UI={
  sv:{button:"Anmäl konversation",success:"🚩 Anmälan skickades. Tack för att du hjälper till att hålla XOXO Avenue tryggt. 💜",failure:"Ingen anmälan skickades. BETA-systemet är inte aktiverat eller bevisen är inte längre tillgängliga."},
  it:{button:"Segnala conversazione",success:"🚩 Segnalazione inviata. Grazie per contribuire alla sicurezza di XOXO Avenue. 💜",failure:"Nessuna segnalazione inviata. Il sistema BETA non è ancora attivo o le prove non sono più disponibili."}
 };
-function ui(){const code=locale();return UI[code==="nb"||code==="nb-NO"?"no":code]||UI.en;}
+function ui(){
+ const lang=String(locale());
+ if(/^pt(-|$)/i.test(lang))return UI["pt-BR"];
+ if(/^(nb|nn|no)(-|$)/i.test(lang))return UI.no;
+ return UI[lang]||UI[lang.split("-")[0]]||UI.en;
+}
 function visibleContext(){
  const chat=document.getElementById("dmChat");
- if(!chat || chat.style.display==="none" || !chat.isConnected)return null;
+ if(!chat||chat.style.display==="none"||!chat.isConnected)return null;
  const user=typeof currentUser==="undefined"?null:currentUser;
  const other=typeof currentDmUserId==="undefined"?null:currentDmUserId;
  const client=typeof supabaseClient==="undefined"?null:supabaseClient;
  if(!valid(user?.id)||!valid(other)||user.id.toLowerCase()===other.toLowerCase()||
-    typeof client?.auth?.getUser!=="function"||typeof client?.from!=="function"||
-    typeof client?.rpc!=="function")return null;
+   typeof client?.auth?.getUser!=="function"||typeof client?.from!=="function"||
+   typeof client?.rpc!=="function")return null;
  const self=user.id.toLowerCase(),peer=other.toLowerCase();
  const conversationId=[self,peer].sort().join(":");
- const shown=Array.isArray(window.__xoxoCurrentDmMessages)?window.__xoxoCurrentDmMessages:[];
  const seen=new Set(),messages=[];
- for(const m of shown){
-   if(!valid(m?.id)||seen.has(m.id.toLowerCase())||!valid(m?.sender_id)||!valid(m?.recipient_id))continue;
-   const sender=m.sender_id.toLowerCase(),recipient=m.recipient_id.toLowerCase();
-   if(!((sender===self&&recipient===peer)||(sender===peer&&recipient===self)))continue;
-   seen.add(m.id.toLowerCase());
-   messages.push({
-     id:m.id.toLowerCase(),sender_id:sender,recipient_id:recipient,
-     text:String(m.content||m.attachment_name||("["+String(m.attachment_type||"Message")+"]")).slice(0,1000)
-   });
+ const loaded=Array.isArray(window.__xoxoCurrentDmMessages)?window.__xoxoCurrentDmMessages:[];
+ for(const m of loaded){
+   if(!valid(m?.id)||!valid(m?.sender_id)||!valid(m?.recipient_id))continue;
+   const id=m.id.toLowerCase(),sender=m.sender_id.toLowerCase(),recipient=m.recipient_id.toLowerCase();
+   if(seen.has(id)||!((sender===self&&recipient===peer)||(sender===peer&&recipient===self)))continue;
+   seen.add(id);
+   messages.push({id,sender_id:sender,recipient_id:recipient,
+     text:String(m.content||m.attachment_name||("["+String(m.attachment_type||"Message")+"]")).slice(0,1000)});
  }
  return {self,peer,conversationId,client,messages,locale:locale()};
+}
+function reportStatus(result){
+ // In UI-preview mode, a failed RPC is expected. Never claim submission.
+ window.alert(result?.ok?ui().success:ui().failure);
+}
+function getFlow(){
+ const ctx=visibleContext();
+ if(!ctx||typeof window.XOXOSafetyFlowBeta?.create!=="function")return null;
+ const key=ctx.conversationId+"|"+String(ctx.locale);
+ if(flow && flowKey===key)return flow;
+ flowKey=key;
+ flow=window.XOXOSafetyFlowBeta.create({
+   client:ctx.client, accountId:ctx.self, otherUserId:ctx.peer,
+   conversationId:ctx.conversationId, locale:ctx.locale,
+   previewOnly:true, enabled:REPORT_RPC_WRITES_ENABLED,
+   getMessages:()=>{
+     const latest=visibleContext();
+     if(!latest||latest.conversationId!==ctx.conversationId||
+        latest.self!==ctx.self||latest.peer!==ctx.peer)throw Error("Conversation changed");
+     return latest.messages;
+   },
+   onStatus:reportStatus
+ });
+ return flow;
+}
+function openReport(){
+ const current=getFlow();
+ return !!current && current.openReport();
 }
 function ensureButton(){
  const header=document.querySelector("#dmChat .dm-chat-header");
  if(!header)return;
- let btn=document.getElementById("xoxoSafetyConversationReportBeta");
- if(!btn){
-   btn=document.createElement("button");
-   btn.type="button";btn.id="xoxoSafetyConversationReportBeta";
-   btn.textContent="🚩";
-   btn.style.cssText="width:38px;height:38px;flex:0 0 38px;border-radius:50%;border:1px solid #ba7df4;background:#392354;color:white;cursor:pointer";
-   btn.addEventListener("click",openReport);
-   // Insert before the existing delete button, but do not alter its behavior.
+ let button=document.getElementById("xoxoSafetyConversationReportBeta");
+ if(!button){
+   button=document.createElement("button");button.type="button";
+   button.id="xoxoSafetyConversationReportBeta";
+   button.textContent="🚩";
+   button.style.cssText="width:38px;height:38px;flex:0 0 38px;border-radius:50%;border:1px solid #ba7df4;background:#392354;color:white;cursor:pointer";
+   button.addEventListener("click",openReport);
    const deleteButton=header.querySelector(".dm-chat-delete-button");
-   if(deleteButton)header.insertBefore(btn,deleteButton);
-   else header.append(btn);
+   if(deleteButton)header.insertBefore(button,deleteButton);
+   else header.append(button);
  }
- const active=!!visibleContext();
- btn.hidden=!active;
- btn.title=ui().button;
- btn.setAttribute("aria-label",btn.title);
+ button.hidden=!visibleContext();
+ button.title=ui().button;
+ button.setAttribute("aria-label",button.title);
 }
 function refresh(){
- const ctx=visibleContext();
  ensureButton();
- if(!ctx)return false;
- const reminder=window.XOXOSafetyReminderBeta;
- if(!reminder?.show)return false;
- return reminder.show({
-   conversationId:ctx.conversationId,accountId:ctx.self,locale:ctx.locale,
-   onReport:()=>openReport()
- });
+ const current=getFlow();
+ return current?current.showReminder():false;
 }
-function sameContext(ctx){
- const live=visibleContext();
- return !!live && live.self===ctx.self && live.peer===ctx.peer &&
-        live.conversationId===ctx.conversationId && live.client===ctx.client;
-}
-async function submit(ctx,draft,selectedIds){
- if(!REPORT_RPC_WRITES_ENABLED)return {ok:false,reason:"beta_backend_disabled"};
- if(submitting)return {ok:false,reason:"already_submitting"};
- if(!sameContext(ctx)||!draft||!Number.isInteger(draft.reasonCode)||
-    draft.reasonCode<0||draft.reasonCode>5||
-    typeof draft.details!=="string"||draft.details.length>2000||
-    !Array.isArray(selectedIds)||selectedIds.length<1||selectedIds.length>20||
-    selectedIds.some(id=>!valid(id))||
-    new Set(selectedIds.map(id=>id.toLowerCase())).size!==selectedIds.length)
-   return {ok:false,reason:"invalid_input"};
- const selected=new Set(selectedIds.map(id=>id.toLowerCase()));
- const allowed=new Set(ctx.messages.map(x=>x.id));
- if([...selected].some(id=>!allowed.has(id)))return {ok:false,reason:"not_visible"};
- submitting=true;
- try{
-   const auth=await ctx.client.auth.getUser();
-   if(auth?.error || auth?.data?.user?.id?.toLowerCase()!==ctx.self || !sameContext(ctx))
-     return {ok:false,reason:"authentication_failed"};
-   // Client-side RLS preflight. Server RPC repeats all checks authoritatively.
-   const {data:rows,error}=await ctx.client.from("direct_messages")
-      .select("id,sender_id,recipient_id").in("id",selectedIds);
-   if(error||!Array.isArray(rows)||rows.length!==selectedIds.length||!sameContext(ctx))
-     return {ok:false,reason:"evidence_unavailable"};
-   const returned=new Set();
-   for(const row of rows){
-     if(!valid(row?.id)||!valid(row?.sender_id)||!valid(row?.recipient_id))
-       return {ok:false,reason:"invalid_evidence"};
-     const id=row.id.toLowerCase(),sender=row.sender_id.toLowerCase(),recipient=row.recipient_id.toLowerCase();
-     if(!selected.has(id)||returned.has(id)||
-        !((sender===ctx.self&&recipient===ctx.peer)||(sender===ctx.peer&&recipient===ctx.self)))
-       return {ok:false,reason:"wrong_conversation"};
-     returned.add(id);
-   }
-   if(returned.size!==selected.size)return {ok:false,reason:"evidence_unavailable"};
-   if(typeof window.crypto?.randomUUID!=="function")return {ok:false,reason:"unsupported_browser"};
-   const idempotencyKey=window.crypto.randomUUID();
-   const rpc=await ctx.client.rpc("xoxo_submit_conversation_report_beta",{
-     p_other_user_id:ctx.peer,p_reason_code:draft.reasonCode,
-     p_details:draft.details,p_message_ids:[...selected],
-     p_idempotency_key:idempotencyKey
-   });
-   if(rpc?.error || !valid(rpc?.data))return {ok:false,reason:"server_unavailable"};
-   return {ok:true,reportId:rpc.data};
- }catch{return {ok:false,reason:"submission_failed"};}
- finally{submitting=false;}
-}
-function openReport(){
- const ctx=visibleContext();
- if(!ctx||!window.XOXOReportFormBeta?.open||!window.XOXOEvidencePickerBeta?.open)return false;
- const translated=ctx.locale;
- return window.XOXOReportFormBeta.open({
-   conversationId:ctx.conversationId,locale:translated,
-   onContinue:draft=>{
-     if(!sameContext(ctx))return;
-     window.XOXOEvidencePickerBeta.open({
-       conversationId:ctx.conversationId,locale:translated,
-       messages:ctx.messages.slice(-100),
-       onContinue:async evidence=>{
-         const result=await submit(ctx,draft,evidence.messageIds);
-         window.alert(result.ok?ui().success:ui().failure);
-       }
-     });
-   }
- });
+async function submit(){
+ // Backward-compatible test API. Never call Supabase from a preview host.
+ return {ok:false,reason:"beta_backend_disabled"};
 }
 function install(){
  const messages=document.getElementById("dmMessages");
- if(!messages || typeof MutationObserver!=="function")return;
- const observer=new MutationObserver(()=>refresh());
- observer.observe(messages,{childList:true,subtree:false});
+ if(messages&&typeof MutationObserver==="function"){
+   const observer=new MutationObserver(()=>{refresh()});
+   observer.observe(messages,{childList:true,subtree:false});
+ }
  refresh();
 }
-window.XOXOSafetyChatPreviewBeta=Object.freeze({refresh,openReport,submit,visibleContext,reportWritesEnabled:()=>REPORT_RPC_WRITES_ENABLED,translations:UI});
+window.XOXOSafetyChatPreviewBeta=Object.freeze({
+ refresh,openReport,submit,visibleContext,
+ reportWritesEnabled:()=>REPORT_RPC_WRITES_ENABLED,translations:UI
+});
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});
 else install();
 })();
