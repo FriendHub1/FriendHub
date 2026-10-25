@@ -10,6 +10,7 @@ if(typeof window==="undefined")return;
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const REPORT_RPC_WRITES_ENABLED=false;
 let flow=null,flowKey="",flowClient=null;
+let authSignedOut=false;
 function disposeFlow(){
  if(typeof flow?.dispose==="function")flow.dispose();
  flow=null;flowKey="";flowClient=null;
@@ -37,6 +38,9 @@ function ui(){
  return UI[lang]||UI[lang.split("-")[0]]||UI.en;
 }
 function visibleContext(){
+ // A delayed DOM mutation after SIGNED_OUT must NOT re-create the previous
+ // user\'s report form while the global currentUser object is still stale.
+ if(authSignedOut)return null;
  const chat=document.getElementById("dmChat");
  if(!chat||chat.style.display==="none"||!chat.isConnected)return null;
  const user=typeof currentUser==="undefined"?null:currentUser;
@@ -144,9 +148,14 @@ function install(){
  // a user signs out while a chat DOM remains visible during transition.
  const client=typeof supabaseClient==="undefined"?null:supabaseClient;
  if(typeof client?.auth?.onAuthStateChange==="function")
-   client.auth.onAuthStateChange((event)=>{
-     if(event==="SIGNED_OUT" || event==="SIGNED_IN" ||
-        event==="USER_DELETED")disposeFlow();
+   client.auth.onAuthStateChange((event,session)=>{
+     if(event==="SIGNED_OUT" || event==="USER_DELETED"){
+       authSignedOut=true;
+       disposeFlow();
+     }else if(event==="SIGNED_IN"){
+       authSignedOut=!valid(session?.user?.id);
+       disposeFlow();
+     }
    });
  refresh();
 }
