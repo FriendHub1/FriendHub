@@ -1,0 +1,1 @@
+/* Production integration trigger. The workflow patches the canonical Worker and safety bridge atomically. */
