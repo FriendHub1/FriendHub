@@ -27,8 +27,8 @@ jobs:
           for f in beta/*.cjs; do node --check "$f"; done
       - name: Run report evidence regression suites
         run: |
-          node beta/test-report-server-authorization.cjs
-          node beta/test-report-rls-check.cjs
-          node beta/test-report-authenticated-preflight.cjs
-          node beta/test-report-preflight-auth-failures.cjs
-          node beta/test-report-query-exception.cjs
+          set -eu
+          for test_file in beta/test-*.cjs; do
+            echo "Running $test_file"
+            node "$test_file"
+          done
