@@ -68,7 +68,7 @@
     let report=null;
     if(typeof onReport==="function"){
       report=document.createElement("button");report.type="button";report.className="xoxo-safe-secondary";report.textContent=a.report;
-      report.addEventListener("click",()=>{dismiss(false);onReport({conversationId})});
+      report.addEventListener("click",()=>{dismiss(true);onReport({conversationId})});
       dialog.append(report);
     }
     const close=document.createElement("button");close.type="button";close.textContent=t.ack;
