@@ -102,3 +102,22 @@ is too large for the current connector update channel).
 - Test with real authenticated users and admin/non-admin accounts, including
   cleared conversations, invalid evidence, PIN expiry, status changes and
   all ten locales.
+
+## PIN cache hardening + ten-language active preview (2026-10-25)
+
+- The active opt-in admin preview uses beta/admin-report-panel-bridge.js and beta/admin-report-queue.js, not the separate unused prototype stay-safe-admin-reports-bridge.js.
+- Direct admin re-renders no longer replay cached conversation report metadata before a fresh PIN-protected server RPC check. The BETA cards are hidden until authorization succeeds.
+- Server authorization errors, PIN expiry, invalid responses or an exception in the existing legacy admin loader purge BETA metadata and restore the existing PIN verification action.
+- Report queue normalization now rejects invalid status values, timestamps, duplicate report IDs and responses above 100 rows; invalid backend metadata is no longer shown as a partial result.
+- The real workers.dev admin preview supports en, es, pt-BR, fr, pl, de, cs, no, sv, it, including six reasons, statuses, actions and PIN text.
+- Regression suites cover PIN renewal, invalid/duplicate data and all ten active locales. Seven selected BETA test suites passed using an isolated JavaScript compatibility harness; this does not verify GitHub Actions or execute Postgres SQL.
+- Existing individual-message reports and the current full-DM moderator viewer are unchanged. No new report viewer was created.
+- The SQL is REVIEW ONLY. It has not been executed against live Supabase; no production Cloudflare deployment was performed.
+
+### Release requirements still open
+
+1. Execute and audit the SQL in an isolated non-production database, with real authenticated and unauthenticated actors, cleared chats, deleted messages, PIN expiry and duplicate evidence.
+2. Review incident data retention/deletion and privacy disclosures before storing reports.
+3. Consolidate on one chat integration and one admin integration, rather than loading competing prototypes.
+4. Add an always-available report action to live chat, independent of the one-time warning, only after backend readiness.
+5. Verify the existing PIN, moderation reason and access audit protections still work in the real admin panel.
