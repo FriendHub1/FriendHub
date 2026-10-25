@@ -145,6 +145,32 @@ async function runScenario(browser,engine,viewport,language,url){
     assert.equal(result.evidence.messageIds.length,20);
     assert.ok(result.evidence.messageIds.includes(messageId(30)));
     assert.equal(result.repeat,false,"one-time warning must remain seen per conversation");
+
+    // Real WebKit/Chromium regression: a host may return newest messages FIRST.
+    // Always offer the most recent 100 (21..120), not the oldest 100.
+    await page.evaluate(({language})=>{
+      window.__timestampSelected=null;
+      const ordered=Array.from({length:120},(_,i)=>{
+        const number=120-i;
+        return {
+          id:"dddddddd-dddd-4ddd-8ddd-"+number.toString(16).padStart(12,"0"),
+          text:"Dated synthetic message "+number,
+          created_at:new Date(Date.UTC(2026,9,25,0,0,0)+number*60000).toISOString()
+        };
+      });
+      window.XOXOEvidencePickerBeta.open({
+        conversationId:"reverse-dated",locale:language,messages:ordered,
+        onContinue:choice=>{window.__timestampSelected=choice;}
+      });
+    },{language});
+    const recent=page.locator("[data-xoxo-evidence-beta] input[type=checkbox]");
+    assert.equal(await recent.count(),100);
+    assert.equal(await recent.first().getAttribute("value"),messageId(21));
+    assert.equal(await recent.last().getAttribute("value"),messageId(120));
+    await recent.last().check();
+    await page.locator("[data-xoxo-evidence-beta] button").first().click();
+    assert.deepEqual(await page.evaluate(()=>window.__timestampSelected.messageIds),
+      [messageId(120)],"Must be able to select newest evidence when host is reversed");
     assert.deepEqual(errors,[],"browser page errors");
     console.log("PASS: "+label+" responsive notice, form, selected evidence, focus trap");
   }finally{await context.close();}
