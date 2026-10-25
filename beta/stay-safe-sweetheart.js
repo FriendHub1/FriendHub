@@ -39,7 +39,7 @@
     const list=document.createElement("ul");
     [t.money,t.privacy,t.images,t.links].forEach(s=>{const li=document.createElement("li");li.textContent=s;list.append(li)});
     dialog.append(list);
-    const support=document.createElement("p");support.textContent=t.support;dialog.append(support);
+    const support=document.createElement("p");support.textContent=t.support;support.setAttribute("aria-live","polite");dialog.append(support);
     const close=document.createElement("button");close.type="button";close.textContent=t.ack;
     const previousFocus=document.activeElement;
     function onKeyDown(event){
