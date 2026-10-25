@@ -130,6 +130,36 @@
       clearBetaUI();
       // Never touch cards owned by the existing DM report renderer.
     }
+    // Supabase Auth events are synchronous notifications. Drop sensitive BETA
+    // cards immediately when a session is signed out/switched; incrementing
+    // generation means an older, in-flight RPC can NEVER repaint them.
+    let accountId=null;
+    if(typeof supabaseClient!=="undefined" &&
+       typeof supabaseClient?.auth?.onAuthStateChange==="function"){
+      supabaseClient.auth.onAuthStateChange((event,session)=>{
+        const nextId=typeof session?.user?.id==="string"?session.user.id:null;
+        const changed=nextId!==accountId;
+        accountId=nextId;
+        if(event==="SIGNED_OUT" || event==="SIGNED_IN" ||
+           event==="USER_DELETED" || changed){
+          invalidate();
+          if(isActiveAdmin())paintUnlockControl();
+        }
+      });
+    }
+
+    // Navigating away from the moderator section must not leave a readable
+    // snapshot of the previously PIN-authorized report cards in a hidden DOM.
+    const moderationArea=document.getElementById("xoxoAdminModeration");
+    if(moderationArea && typeof MutationObserver==="function"){
+      const guard=new MutationObserver(()=>{
+        if(!isActiveAdmin())invalidate();
+      });
+      guard.observe(moderationArea,{attributes:true,attributeFilter:["class"]});
+    }
+    if(typeof window.addEventListener==="function")
+      window.addEventListener("pagehide",invalidate);
+
     function paintUnlockControl(){
       if(!isActiveAdmin())return;
       const list=reportList();
