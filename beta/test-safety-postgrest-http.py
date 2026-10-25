@@ -168,6 +168,30 @@ def check():
                         reporter, rpc_payload(details="Different content"))
     blocked(status, "reused idempotency key with different body")
 
+    # A previously issued idempotency key identifies ONE immutable report.
+    # Replays must not swap the reason, participant, or selected evidence.
+    for label, altered in [
+        ("changed report reason", rpc_payload(reason=3)),
+        ("changed report participant", rpc_payload(other=OUT)),
+        ("changed evidence ID", rpc_payload(evidence=[OTHER_MSG])),
+        ("expanded evidence list", rpc_payload(evidence=[MSG, OTHER_MSG])),
+    ]:
+        status, _ = request("POST", "/rpc/xoxo_submit_conversation_report_beta",
+                            reporter, altered)
+        blocked(status, "reused idempotency key with " + label)
+    assert db(
+        "select count(*) from xoxo_safety_private.conversation_reports "
+        f"where reporter_id='{U}'::uuid") == "1", (
+            "Tampered idempotency request unexpectedly persisted another report")
+    assert db(
+        "select array_length(message_ids,1) from xoxo_safety_private.conversation_reports "
+        f"where id='{report}'::uuid") == "1", (
+            "Tampered idempotency request modified original evidence IDs")
+    assert db(
+        "select count(*) from xoxo_safety_private.conversation_report_evidence "
+        f"where report_id='{report}'::uuid") == "1", (
+            "Tampered idempotency request modified original evidence metadata")
+
     # PIN alone does not authorize users who are not the administrator.
     status, _ = request("POST", "/rpc/xoxo_admin_list_conversation_reports_beta",
                         reporter, {"p_reason": REASON})
@@ -222,6 +246,19 @@ def check():
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
               f"where reporter_id='{U}'::uuid") == "1", (
                   "Cleared evidence unexpectedly created another report")
+
+    # The retry of an ALREADY accepted report is a receipt lookup, not a NEW
+    # evidence submission: it must return the original ID after chat clearing.
+    status, old_receipt = request(
+        "POST", "/rpc/xoxo_submit_conversation_report_beta",
+        reporter, rpc_payload())
+    assert status == 200 and old_receipt == report, (
+        "An identical retry should recover the original accepted report "
+        "without recreating evidence after the user clears the chat")
+    assert db(
+        "select count(*) from xoxo_safety_private.conversation_report_evidence "
+        f"where report_id='{report}'::uuid") == "1", (
+            "Retry after clearing a chat duplicated existing evidence metadata")
 
     # Remove this synthetic session to test revocation with an otherwise valid JWT.
     db(f"delete from auth.sessions where id='{SES_U}'::uuid")
