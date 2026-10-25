@@ -45,7 +45,7 @@ Tests include:
 - [ ] Audit SQL function privileges, behavior and RLS in an isolated non-production Supabase environment.
 - [ ] Approve evidence retention (the draft stores selected IDs + participant/timestamps, not copies of message text/media); confirm treatment of physical deletion.
 - [ ] Approve or modify the proposed rate limit of 10 reports per user per 24 hours.
-- [ ] Deploy and audit the three RPC functions after explicit approval. Verify no broader table grants or admin access.
+- [ ] Deploy and audit the four BETA RPC functions after explicit approval. Verify no broader table grants or admin access.
 - [ ] Test signed-in reporter, unrelated account, malformed evidence, repeated idempotency key, and rate limit in real Supabase.
 - [x] Browser smoke-test the standalone warning → report form → evidence picker using WebKit at 320×568 and 390×844 mobile viewports and Chromium at 1280×800; verify 20-message cap, modal geometry, keyboard focus, translations and one-time warning. Green in GitHub Actions 40172896880.
 - [ ] Complete device testing on a physical iPhone/Safari and the integrated authenticated XOXO Avenue BETA chat; standalone WebKit emulation does not replace this.
@@ -111,5 +111,16 @@ Tests include:
 - `beta/test-safety-postgrest-queue-priority.py` repeats these assertions using the **real loopback PostgREST HTTP API and a signed synthetic admin JWT**, and verifies one additional read-audit event.
 - The Node report queue regression exercises an older pending case versus newer reviewed and resolved cards. SQL source-contract checks prevent accidental removal of pending-first priority before the limit.
 - [GitHub Actions run 40201828217](https://github.com/FriendHub1/FriendHub/actions/runs/40201828217) passed all three jobs: Node.js 22, PostgreSQL 17 with signed PostgREST HTTP, and WebKit/Chromium browser tests. No live data was accessed or changed.
-- **Limit remains:** if there are MORE than 100 pending reports simultaneously, the first 100 (newest pending) will appear. Full pending-history pagination and explicit retention/erasure policy are not yet implemented or approved. Do not describe this as a complete admin-history solution.
+- **Historical limitation (now resolved by the following cursor-paging section):** This checkpoint had a 100-report first-page limit; the paginated BETA can now request additional pages. The separate evidence retention/erasure policy is still unapproved.
 - The source remains on the unmerged safety BETA branch and PR #12. No production SQL installation, Worker deployment or real Supabase Auth testing was performed.
+
+### Full PIN-protected admin pagination — verified (2026-10-25)
+
+- Added **fourth** BETA RPC `public.xoxo_admin_page_conversation_reports_beta(p_reason,p_after_pending,p_after_created_at,p_after_id,p_limit)` with a maximum of 50 reports per continuation request. The initial 100-result RPC remains backward compatible.
+- The continuation key is the entire `(status='pending', created_at, report_uuid)` tuple, not just a timestamp or offset; pending cases are first, and timestamps shared across multiple reports do not cause duplicates or omissions.
+- Every continuation request independently verifies a valid Supabase server-side Auth session, admin status, active/unlocked PIN, and 10–300-character moderation reason, and records its own **read audit event** in the existing moderation access table. It neither grants browser SELECT on private tables nor returns message text/attachments.
+- Added **«Cargar más denuncias» / Load more reports** directly beneath conversation-report cards in the EXISTING admin panel, translated in all 10 locales. The additional page is fetched only on click. Existing individual-message cards and the PIN-gated conversation viewer are unchanged.
+- The client hides existing BETA report cards during server reauthorization and purges them/requests the PIN again if loading another page fails. It de-duplicates IDs and removes the Load more button after the final page.
+- [**GitHub Actions run 40203260705**](https://github.com/FriendHub1/FriendHub/actions/runs/40203260705) passed all three CI jobs (**Node.js 22, disposable PostgreSQL 17 with signed loopback PostgREST, and WebKit/Chromium visual tests**). PostgreSQL inserted 132 extra open cases and tested **277 cases total** with identical timestamps; the signed HTTP test traversed all **277 unique report IDs in five pages**, preserving pending-first order, correct response caps and one read-audit record per page.
+- Node tests verify 50-report cursor page validation, malformed/unauthorized responses, 10-language button labels and the real existing admin bridge's loading/expiry behavior, including mock 100→150→175 progression.
+- Remaining prerequisites are **real non-production Supabase Auth sessions**, owner-approved evidence-retention/deletion rules and final daily report limit, physical iPhone/integrated chat verification, and explicit permission before any production migration or rollout. This is still a **draft**, not a deployed feature. Full-history retrieval is now implemented through a manual Load more process, not automatic unbounded loading.
