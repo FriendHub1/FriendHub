@@ -39,7 +39,7 @@
   function adminName(id){
     return typeof xoxoDmAdminName==="function"?xoxoDmAdminName(id):String(id||"Unknown");
   }
-  function addReportCard(report,list,adapter,moderationReason){
+  function addReportCard(report,list,adapter,moderationReason,onAuthorizationLost){
     const t=localized();
     const card=node("article","","xmm-report-card");
     card.setAttribute("data-xoxo-conversation-beta-report",report.id);
@@ -77,8 +77,10 @@
         feedback.textContent=t.saving;
         const result=await adapter.updateReportStatus(supabaseClient,report,status,moderationReason);
         if(result?.ok){await window.loadXoxoDmReports();return;}
+        // A PIN may expire while the status request is in flight.
+        // Remove private metadata immediately rather than leaving stale rows.
+        if(typeof onAuthorizationLost==="function")onAuthorizationLost();
         feedback.textContent=t.saveFailed;
-        for(const item of actions.querySelectorAll("button"))item.disabled=false;
       });
       actions.append(button);
     }
@@ -158,7 +160,10 @@
       const empty=Array.from(list.querySelectorAll(".xmm-report-feedback"))
         .find(x=>x.textContent.includes("No private-message reports yet"));
       if(empty)empty.remove();
-      for(const report of cached)addReportCard(report,list,adapter,moderationReason);
+      for(const report of cached)addReportCard(report,list,adapter,moderationReason,()=>{
+        invalidate();
+        if(isActiveAdmin()){paintUnlockControl();showWarning("reauthorize");}
+      });
     }
     function showWarning(kind="unavailable"){
       const list=reportList();
