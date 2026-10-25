@@ -354,6 +354,121 @@ revoke all on function public.xoxo_admin_update_conversation_report_beta(uuid, t
 grant execute on function public.xoxo_admin_update_conversation_report_beta(uuid, text, text)
   to authenticated;
 
+-- Cursor-based follow-up pages for the SAME existing PIN-gated admin queue.
+-- The initial 100-card RPC above remains backward-compatible. This follow-up
+-- RPC fetches older reports without OFFSET scans or unbounded client responses.
+-- The cursor is a full (pending_priority, created_at, UUID) tuple; ties are
+-- deterministic. A change to report status can reorder a result during review,
+-- so the admin client must de-duplicate IDs and refresh after status changes.
+create index if not exists xoxo_conversation_reports_paged_priority_beta
+  on xoxo_safety_private.conversation_reports
+  ((status = 'pending') desc, created_at desc, id desc);
+
+create or replace function public.xoxo_admin_page_conversation_reports_beta(
+  p_reason text,
+  p_after_pending boolean,
+  p_after_created_at timestamptz,
+  p_after_id uuid,
+  p_limit integer
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $xoxo_admin_page$
+declare
+  v_reason text := pg_catalog.btrim(coalesce(p_reason,''));
+  v_rows jsonb := '[]'::jsonb;
+  v_has_more boolean := false;
+  v_cursor jsonb := null;
+  v_last jsonb;
+begin
+  if auth.uid() is null or not public.is_xoxo_admin()
+     or not xoxo_safety_private.active_session_for(auth.uid()) then
+    raise exception 'Administrator access required' using errcode = '42501';
+  end if;
+  if not exists (
+    select 1 from public.xoxo_moderation_pin_security ps
+    where ps.admin_id = auth.uid()
+      and ps.verified_until > now()
+      and (ps.locked_until is null or ps.locked_until <= now())
+  ) then
+    raise exception 'Moderation PIN verification required' using errcode = '42501';
+  end if;
+  if pg_catalog.length(v_reason) not between 10 and 300 then
+    raise exception 'A moderation reason of 10 to 300 characters is required'
+      using errcode = '22023';
+  end if;
+  if p_limit is null or p_limit not between 1 and 50 then
+    raise exception 'Report page size must be 1 to 50' using errcode = '22023';
+  end if;
+  if (p_after_pending is null and
+        (p_after_created_at is not null or p_after_id is not null))
+     or (p_after_pending is not null and
+        (p_after_created_at is null or p_after_id is null)) then
+    raise exception 'Invalid report page cursor' using errcode = '22023';
+  end if;
+
+  with batch as materialized (
+    select r.id, r.reporter_id, r.other_user_id as reported_user_id,
+      r.reason_code, r.details, r.message_ids, r.status, r.created_at,
+      (r.status = 'pending') as sort_pending
+    from xoxo_safety_private.conversation_reports r
+    where p_after_id is null
+       or ((r.status = 'pending'), r.created_at, r.id)
+          < (p_after_pending, p_after_created_at, p_after_id)
+    order by (r.status = 'pending') desc, r.created_at desc, r.id desc
+    limit (p_limit + 1)
+  )
+  select (
+    select coalesce(jsonb_agg(
+      to_jsonb(page) - 'sort_pending'
+      order by page.sort_pending desc, page.created_at desc, page.id desc
+    ),'[]'::jsonb)
+    from (
+      select b.* from batch b
+      order by b.sort_pending desc, b.created_at desc, b.id desc
+      limit p_limit
+    ) page
+  ), (select count(*) > p_limit from batch)
+  into v_rows, v_has_more;
+
+  if v_has_more and pg_catalog.jsonb_array_length(v_rows)>0 then
+    v_last := v_rows -> (pg_catalog.jsonb_array_length(v_rows)-1);
+    v_cursor := jsonb_build_object(
+      'pending',(v_last->>'status' = 'pending'),
+      'created_at',v_last->>'created_at',
+      'id',v_last->>'id'
+    );
+  end if;
+
+  -- Every extra page independently requires a valid server-side PIN and
+  -- moderation reason, and creates its own entry in the EXISTING access log.
+  insert into public.xoxo_message_access_log
+    (admin_id,conversation_user_1,conversation_user_2,action)
+  values (
+    auth.uid(),auth.uid(),auth.uid(),
+    'conversation_report_page:view count=' ||
+      pg_catalog.jsonb_array_length(v_rows)::text || ': ' || v_reason
+  );
+
+  return jsonb_build_object(
+    'reports',v_rows,
+    'has_more',v_has_more,
+    'next_cursor',v_cursor
+  );
+end
+$xoxo_admin_page$;
+
+revoke all on function
+  public.xoxo_admin_page_conversation_reports_beta(
+    text,boolean,timestamptz,uuid,integer)
+from public, anon, authenticated;
+grant execute on function
+  public.xoxo_admin_page_conversation_reports_beta(
+    text,boolean,timestamptz,uuid,integer)
+to authenticated;
+
 commit;
 
 -- NOT INCLUDED: frontend admin UI wiring or real-environment integration tests.
