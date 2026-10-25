@@ -2931,6 +2931,29 @@ export default {
 
     // Localized homepage social previews for WhatsApp and other link unfurlers.
     // Preserve profile/post previews, all other routes, and the default English metadata.
+    // Stay Safe, Sweetheart! — opt-in preview on workers.dev only.
+    if (url.pathname === "/" && url.hostname.endsWith(".workers.dev") &&
+        url.searchParams.get("xoxo_safety_chat_beta") === "1" &&
+        request.method === "GET") {
+      const preview = await env.ASSETS.fetch(request);
+      if (preview.ok && String(preview.headers.get("content-type") || "").includes("text/html")) {
+        const updated = new HTMLRewriter().on("head", {
+          element(element) {
+            element.append(
+              '<script src="/beta/stay-safe-sweetheart.js" defer></script>' +
+              '<script src="/beta/stay-safe-report-form.js" defer></script>' +
+              '<script src="/beta/stay-safe-evidence-picker.js" defer></script>' +
+              '<script src="/beta/stay-safe-chat-preview-bridge.js" defer></script>',
+              {html:true});
+          }
+        }).transform(preview);
+        const headers = new Headers(updated.headers);
+        headers.set("Cache-Control","no-store");
+        headers.set("X-XOXO-Worker","safety-chat-beta-opt-in");
+        return new Response(updated.body,{status:updated.status,statusText:updated.statusText,headers});
+      }
+    }
+
     // Opt-in, branch-only preview of conversation reports inside the existing
     // administrator moderation panel. No database writes or permission changes.
     if (url.pathname === "/" &&
