@@ -1,0 +1,19 @@
+"use strict";
+const assert=require("node:assert/strict");
+const {submitPreparedConversationReport}=require("./report-submission-orchestrator.cjs");
+const self="44444444-4444-4444-8444-444444444444",peer="33333333-3333-4333-8333-333333333333";
+const id="22222222-2222-4222-8222-222222222221",reportId="11111111-1111-4111-8111-111111111111";
+const input={otherUserId:peer,reasonCode:1,messageIds:[id],idempotencyKey:reportId};
+const client={auth:{getUser:async()=>({data:{user:{id:self}},error:null})},from:()=>({select:()=>({in:async()=>({data:[{id,sender_id:self,recipient_id:peer}],error:null})})})};
+(async()=>{
+ let writes=0;
+ const write=async report=>{writes++;assert.equal(report.reasonCode,1);return {ok:true,reportId};};
+ assert.deepEqual(await submitPreparedConversationReport(client,input,write),{ok:true,reportId});
+ assert.equal(writes,1);
+ assert.deepEqual(await submitPreparedConversationReport(client,{...input,messageIds:[]},write),{ok:false,reason:"invalid_input"});
+ assert.equal(writes,1);
+ assert.deepEqual(await submitPreparedConversationReport(client,input,null),{ok:false,reason:"writer_unavailable"});
+ assert.deepEqual(await submitPreparedConversationReport(client,input,async()=>({ok:true,reportId:"bad"})),{ok:false,reason:"submission_failed"});
+ assert.deepEqual(await submitPreparedConversationReport(client,input,async()=>{throw Error("database down")}),{ok:false,reason:"submission_failed"});
+ console.log("PASS: 5 report submission orchestration cases");
+})().catch(e=>{console.error(e);process.exitCode=1;});
