@@ -31,6 +31,7 @@ const events = [];
 const document = {
   readyState: "loading",
   getElementById: id => id === "dmChat" ? chat : null,
+  querySelector: () => null, // DOM stub: testing canonical flow, not toolbar layout
   addEventListener: (name, callback) => events.push([name, callback])
 };
 let form, picker, reminder;
