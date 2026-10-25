@@ -176,3 +176,13 @@ Tests include:
 - Regression tests invoke the form callback twice while a promise is suspended. They verify **one** message fetch, **one** evidence picker, no premature report RPC, and no duplicate alerts. They also verify failed evidence loads unlock correctly so the reporter can retry.
 - [GitHub Actions 40208534428](https://github.com/FriendHub1/FriendHub/actions/runs/40208534428): **all three jobs passed** — Node.js 22, disposable PostgreSQL 17/PostgREST, and WebKit/Chromium browser checks.
 - Live report writes remain disabled; no production deployment, migration, or merge was performed.
+
+### Recent-message ordering independent of chat API array direction (2026-10-25)
+
+- Fixed a real evidence-selection edge case: the picker previously took the **last 100 rows** from whatever message order the chat client returned. When a provider returned messages **newest first**, this could omit the newest potential abuse evidence and show older messages instead.
+- The BETA preview bridge and report flow now forward the **already-loaded DM's `created_at`** to the evidence picker. When all supplied messages have valid timestamps, the picker sorts them chronologically before displaying the latest 100. It does not fetch additional messages or forward text to the report RPC; only explicitly selected message IDs are submitted.
+- With incomplete or invalid timestamps, the picker deliberately retains existing input-order behavior, rather than guessing unknown chronology. Server-side authorization and deleted-message filtering are still authoritative.
+- Added Node DOM tests for **120 chronological, reversed and shuffled messages**, case-insensitive duplicate IDs, max 20 selections and missing-date backwards compatibility. Added a browser-flow test for timestamp forwarding and a preview-bridge test that confirms the original signed-in chat dates survive the adapter.
+- Real WebKit at 320×568/390×844 and Chromium desktop each now exercise a **120-message newest-first synthetic chat**, require exactly IDs 21–120 to be presented in the 100-choice picker, and confirm message 120 remains selectable.
+- [GitHub Actions run 40209397348](https://github.com/FriendHub1/FriendHub/actions/runs/40209397348) passed all three jobs (Node.js 22, disposable PostgreSQL 17/PostgREST, WebKit/Chromium).
+- This is BETA only. Production DM order, real user content, Supabase schema, moderator PIN and Cloudflare Worker were not modified.
