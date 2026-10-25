@@ -161,6 +161,11 @@
     async function send(input) {
       if (!contextActive()) return { ok: false, reason: "conversation_changed" };
       if (sending) return { ok: false, reason: "already_sending" };
+      if (config.simulate === true) {
+        const result = { ok: true, simulated: true };
+        inform(result);
+        return result;
+      }
       if (!config.enabled) {
         const result = { ok: false, reason: "disabled" };
         inform(result); return result;
