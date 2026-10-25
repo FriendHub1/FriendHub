@@ -39,7 +39,7 @@
   function adminName(id){
     return typeof xoxoDmAdminName==="function"?xoxoDmAdminName(id):String(id||"Unknown");
   }
-  function addReportCard(report,list,adapter,moderationReason,onAuthorizationLost,isStillAuthorized){
+  function addReportCard(report,list,adapter,moderationReason,onAuthorizationLost,isStillAuthorized,onOpenEvidence){
     const t=localized();
     const card=node("article","","xmm-report-card");
     card.setAttribute("data-xoxo-conversation-beta-report",report.id);
@@ -63,6 +63,7 @@
       if(typeof isStillAuthorized==="function"&&!isStillAuthorized())return;
       if(typeof xoxoIsAdmin==="undefined"||!xoxoIsAdmin||
          typeof openXoxoDmConversation!=="function")return;
+      if(typeof onOpenEvidence==="function")onOpenEvidence(report);
       // Only reuses the PIN-gated, reason-audited existing viewer.
       openXoxoDmConversation({user_1:report.reporter_id,user_2:report.reported_user_id,message_count:0});
     });
@@ -114,6 +115,24 @@
     const PIN_DISPLAY_WINDOW_MS=14*60*1000;
     let pinExpiresAt=0;
     let pinExpiryTimer=null;
+    // IDs from the PIN-protected report queue, never message contents.
+    // The original site viewer remains the sole source of full DM history.
+    let selectedEvidence=null;
+    const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const pairKey=(a,b)=>[String(a).toLowerCase(),String(b).toLowerCase()].sort().join(":");
+    const evidenceStyle=node("style",`
+      #xmmMessages [data-xoxo-safety-report-evidence="1"]{outline:2px solid #f9cb5b;outline-offset:3px}
+      #xmmMessages [data-xoxo-safety-evidence-label]{color:#f9d97e;font-weight:700;margin-top:6px}
+    `);
+    document.head?.append(evidenceStyle);
+    function clearEvidenceMarkers(){
+      // Only remove the BETA decoration, never an original viewer message.
+      const viewer=document.getElementById("xmmMessages");
+      for(const bubble of viewer?.querySelectorAll?.('[data-xoxo-safety-report-evidence="1"]')||[]){
+        bubble.removeAttribute("data-xoxo-safety-report-evidence");
+        for(const badge of bubble.querySelectorAll('[data-xoxo-safety-evidence-label]'))badge.remove();
+      }
+    }
 
     function isActiveAdmin(){
       return typeof xoxoIsAdmin!=="undefined" && !!xoxoIsAdmin &&
@@ -134,6 +153,8 @@
         window.clearTimeout(pinExpiryTimer);
       pinExpiryTimer=null;
       pinExpiresAt=0;
+      clearEvidenceMarkers();
+      selectedEvidence=null;
       ++generation;
       cached=[];
       unlocked=false;
@@ -166,6 +187,39 @@
         }
       },PIN_DISPLAY_WINDOW_MS);
       pinExpiryTimer?.unref?.();
+    }
+    function selectEvidenceForViewer(report){
+      clearEvidenceMarkers();
+      const ids=report?.evidence_message_ids;
+      if(!Array.isArray(ids)||ids.length<1||ids.length>20 ||
+         !ids.every(id=>typeof id==="string"&&uuid.test(id)) ||
+         new Set(ids.map(id=>id.toLowerCase())).size!==ids.length ||
+         !uuid.test(report.reporter_id)||!uuid.test(report.reported_user_id)){
+        selectedEvidence=null;
+        return;
+      }
+      selectedEvidence={
+        pair:pairKey(report.reporter_id,report.reported_user_id),
+        ids:new Set(ids.map(id=>id.toLowerCase()))
+      };
+    }
+    const originalMessageRenderer=window.xoxoDmMakeMessage;
+    if(typeof originalMessageRenderer==="function"){
+      // Decorate messages rendered by the EXISTING paginated/PIN-audited
+      // viewer, including older pages; never create a separate DM viewer.
+      window.xoxoDmMakeMessage=function(message,conversation){
+        const bubble=originalMessageRenderer.apply(this,arguments);
+        if(!selectedEvidence || !isPinWindowActive() ||
+           !message || !conversation ||
+           pairKey(conversation.user_1,conversation.user_2)!==selectedEvidence.pair ||
+           !selectedEvidence.ids.has(String(message.id).toLowerCase()) ||
+           !bubble || typeof bubble.append!=="function")return bubble;
+        bubble.setAttribute("data-xoxo-safety-report-evidence","1");
+        const badge=node("div","🚩 "+localized().evidence,"xmm-report-meta");
+        badge.setAttribute("data-xoxo-safety-evidence-label","1");
+        bubble.append(badge);
+        return bubble;
+      };
     }
     // Supabase Auth events are synchronous notifications. Drop sensitive BETA
     // cards immediately when a session is signed out/switched; incrementing
@@ -257,7 +311,8 @@
       for(const report of cached)addReportCard(report,list,adapter,moderationReason,()=>{
         invalidate();
         if(isActiveAdmin()){paintUnlockControl();showWarning("reauthorize");}
-      },()=>isPinWindowActive() && isActiveAdmin() && cardGeneration===generation);
+      },()=>isPinWindowActive() && isActiveAdmin() && cardGeneration===generation,
+      selectEvidenceForViewer);
       if(canLoadMore && pageCursor){
         const button=node("button",localized().more,"xmm-reload");
         button.type="button";

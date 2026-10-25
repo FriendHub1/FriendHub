@@ -56,6 +56,10 @@ const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,d
   assert.deepEqual(both.reports.map(x=>x.source),["conversation_beta","message"]);
   assert.equal(both.reports[0].reason,"Threats or blackmail");
   assert.equal(both.reports[0].evidence_count,3);
+  assert.deepEqual(both.reports[0].evidence_message_ids,beta.message_ids,
+    "selected evidence IDs must reach the existing admin viewer");
+  assert.equal(both.reports[0].message_ids,undefined,
+    "the normalized admin payload should expose only validated evidence IDs");
   const duplicateEvidence=await loadReportQueue({rpc:async name=>({data:name==="get_xoxo_dm_reports"?[legacy]:[{...beta,message_ids:[beta.message_ids[0],beta.message_ids[0]]}],error:null})});
   assert.equal(duplicateEvidence.reports.length,1,"duplicate evidence must be rejected");
   const betaOnlyCalls=[];

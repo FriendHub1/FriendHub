@@ -60,8 +60,17 @@ async function scenario(engine,browserType){
       const el=document.createElement("button");el.textContent=id.slice(0,8);return el;
     };
     window.renderXoxoDmConversations=()=>{};
+    window.xoxoDmMakeMessage=(message)=>{
+      const bubble=document.createElement("article");
+      bubble.className="xmm-admin-message";
+      bubble.textContent=message.content;
+      return bubble;
+    };
     window.xoxoDmRenderHistory=(viewer,state)=>{
-      viewer.textContent="Original audited viewer: "+state.messages.length+" synthetic message";
+      const intro=document.createElement("div");
+      intro.textContent="Original audited viewer: "+state.messages.length+" synthetic messages";
+      viewer.replaceChildren(intro,...state.messages.map(message=>
+        window.xoxoDmMakeMessage(message,state.conversation)));
     };
     window.__calls=[];
     window.__authListeners=[];
@@ -89,6 +98,9 @@ async function scenario(engine,browserType){
         if(name==="xoxo_admin_read_dm_page_pin")return {data:[{
           id:messageId,sender_id:peer,recipient_id:admin,
           content:"Fictional message",created_at:"2026-10-25T12:00:00Z"
+        },{
+          id:"ffffffff-ffff-4fff-8fff-ffffffffffff",sender_id:admin,recipient_id:peer,
+          content:"Unselected synthetic message",created_at:"2026-10-25T12:01:00Z"
         }],error:null};
         if(name==="xoxo_admin_update_conversation_report_beta")
           return {data:true,error:null};
@@ -163,6 +175,26 @@ async function scenario(engine,browserType){
   assert.equal(read.args.p_user_1,admin);
   assert.equal(read.args.p_user_2,peer);
   assert.ok(read.args.p_reason.length>=10,"an auditable reason is required");
+  const marked=page.locator('#xmmMessages [data-xoxo-safety-report-evidence="1"]');
+  assert.equal(await marked.count(),1,
+    engine+" did not highlight exactly the reported evidence in the original viewer");
+  assert.match(await marked.textContent(),/Fictional message/);
+  assert.equal(await page.locator('#xmmMessages .xmm-admin-message').count(),2,
+    "the original viewer must still show all messages, not a duplicate filtered list");
+
+  // Expiring the BETA PIN must remove evidence decorations already mounted
+  // inside the existing viewer, without clearing its own original messages.
+  await page.evaluate(()=>{
+    const realNow=Date.now;
+    try{
+      Date.now=()=>realNow()+14*60*1000+1;
+      window.dispatchEvent(new Event("focus"));
+    }finally{Date.now=realNow}
+  });
+  assert.equal(await marked.count(),0,
+    engine+" left private BETA evidence markers in the original viewer after PIN expiry");
+  assert.equal(await page.locator('#xmmMessages .xmm-admin-message').count(),2,
+    engine+" removed the original viewer history while clearing BETA markers");
 
   // Login loss must erase both private evidence and report cards, even when
   // the original admin moderation section is still visible.

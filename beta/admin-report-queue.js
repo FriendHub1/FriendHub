@@ -36,12 +36,16 @@
     // The new private-schema RPC returns the selected message IDs, whereas
     // earlier mock adapters returned only evidence_count.
     let count=null;
+    let evidenceMessageIds=[];
     if(Array.isArray(report.message_ids)){
       if(report.message_ids.length<1 || report.message_ids.length>20 ||
          report.message_ids.some(id=>!uuid(id)) ||
          new Set(report.message_ids.map(id=>id.toLowerCase())).size!==report.message_ids.length)
         return null;
       count=report.message_ids.length;
+      // The original PIN-audited DM viewer can mark exactly these messages;
+      // no message text or private attachment URL is copied into the queue.
+      evidenceMessageIds=report.message_ids.map(id=>id.toLowerCase());
     }else if(Number.isInteger(report.evidence_count) &&
              report.evidence_count>=1 && report.evidence_count<=20){
       count=report.evidence_count;
@@ -50,7 +54,8 @@
     return {id:report.id,reporter_id:report.reporter_id,reported_user_id:reportedId,
       reason:reasons[report.reason_code],reason_code:report.reason_code,details:report.details,
       created_at:report.created_at,status:report.status,
-      evidence_count:count,source:"conversation_beta"};
+      evidence_count:count,evidence_message_ids:evidenceMessageIds,
+      source:"conversation_beta"};
   }
   async function loadReportQueue(client,{includeLegacy=true,moderationReason}={}){
     if(typeof client?.rpc!=="function" || typeof includeLegacy!=="boolean")

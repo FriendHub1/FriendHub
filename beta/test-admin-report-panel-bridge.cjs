@@ -6,9 +6,10 @@ const source=fs.readFileSync(require("node:path").join(__dirname,"admin-report-p
 const reporter="33333333-3333-4333-8333-333333333333",peer="44444444-4444-4444-8444-444444444444";
 const report={id:"22222222-2222-4222-8222-222222222222",reporter_id:reporter,reported_user_id:peer,
  reason:"Scam or money requests",details:"Reported",status:"pending",evidence_count:2,
+ evidence_message_ids:["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1","aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2"],
  created_at:"2026-10-24T12:00:00Z",source:"conversation_beta"};
 function element(tag){
- return {tag,children:[],textContent:"",listeners:{},attributes:{},className:"",disabled:false,
+ return {tag,children:[],textContent:"",listeners:{},attributes:{},style:{},className:"",disabled:false,
   append(...items){for(const item of items){item.parent=this;this.children.push(item)}},
   setAttribute(name,value){this.attributes[name]=value},
   addEventListener(name,fn){this.listeners[name]=fn},
@@ -24,6 +25,7 @@ function element(tag){
  let betaAvailable=true,admin=true,legacyFails=false,updateFails=false;
  const context={
   window:{confirm:()=>true,loadXoxoDmReports:async()=>{calls.legacy++;if(legacyFails)throw Error("legacy loader failed");list.children=[element("legacy-card")];},
+   xoxoDmMakeMessage:(message)=>{const bubble=element("article");bubble.textContent=message.content;return bubble;},
    renderXoxoDmReports:()=>{list.children=[element("legacy-card")];},
    XOXOAdminReportQueueBeta:{loadReportQueue:async(_client,options)=>{calls.queue++;assert.equal(options?.includeLegacy,false,"legacy RPC already ran");
       assert.equal(options?.moderationReason,"Report queue moderation access",
@@ -70,6 +72,19 @@ function element(tag){
  const actions=card.children.find(x=>x.className==="xmm-report-actions");
  actions.children[0].listeners.click();
  assert.equal(calls.pin,1,"the existing PIN-gated viewer must be reused");
+ const selected=context.window.xoxoDmMakeMessage({id:report.evidence_message_ids[0],content:"Synthetic evidence"},
+   {user_1:reporter,user_2:peer});
+ assert.equal(selected.attributes["data-xoxo-safety-report-evidence"],"1",
+   "only selected evidence must be marked in the existing viewer");
+ assert.equal(selected.children.length,1,"a visible localized evidence marker is required");
+ assert.match(selected.children[0].textContent,/Pruebas seleccionadas/);
+ const unselected=context.window.xoxoDmMakeMessage({id:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",content:"Unselected"},
+   {user_1:reporter,user_2:peer});
+ assert.equal(unselected.attributes["data-xoxo-safety-report-evidence"],undefined);
+ const otherChat=context.window.xoxoDmMakeMessage({id:report.evidence_message_ids[0]},
+   {user_1:reporter,user_2:"cccccccc-cccc-4ccc-8ccc-cccccccccccc"});
+ assert.equal(otherChat.attributes["data-xoxo-safety-report-evidence"],undefined,
+   "evidence cannot be marked in a different conversation");
  await actions.children[1].listeners.click();
  assert.equal(calls.updates,1);assert.ok(calls.queue>=4);
  assert.equal(list.querySelectorAll("[data-xoxo-conversation-beta-report]").length,1);
@@ -81,6 +96,10 @@ function element(tag){
    "a status update failure must immediately purge sensitive BETA metadata");
  assert.equal(list.querySelectorAll("[data-xoxo-safety-report-unlock]").length,1,
    "after an update failure the existing PIN must be verified again");
+ const revokedEvidence=context.window.xoxoDmMakeMessage({id:report.evidence_message_ids[0]},
+   {user_1:reporter,user_2:peer});
+ assert.equal(revokedEvidence.attributes["data-xoxo-safety-report-evidence"],undefined,
+   "losing PIN access must also clear selected-evidence highlighting");
  updateFails=false;
  const unlockAfterUpdateError=list.querySelectorAll("[data-xoxo-safety-report-unlock]")[0];
  await unlockAfterUpdateError.listeners.click();

@@ -11,6 +11,7 @@ const reason="Investigating safety reports with audited moderator access";
 const uuid=n=>"dddddddd-dddd-4ddd-8ddd-"+n.toString(16).padStart(12,"0");
 const report={id:uuid(1),reporter_id:uuid(2),reported_user_id:uuid(3),
  reason_code:1,details:"Fictional safety report",evidence_count:2,
+ evidence_message_ids:[uuid(4),uuid(5)],
  source:"conversation_beta",created_at:"2026-10-25T14:00:00Z",status:"pending"};
 
 function element(tag){
@@ -71,6 +72,7 @@ function tick(){return new Promise(done=>setImmediate(done))}
     renderXoxoDmReports:()=>{
       list.children=[element("legacy-report")];list.children[0].parent=list;
     },
+    xoxoDmMakeMessage:()=>element("article"),
     XOXOAdminReportQueueBeta:{
       loadReportQueue:async()=>{
         counts.queue++;
@@ -236,6 +238,15 @@ function tick(){return new Promise(done=>setImmediate(done))}
  assert.equal(counts.queue,beforeRejectedPin,
    "Old PIN error must not trigger new account report queries");
 
+ // Selecting a report highlights only its saved evidence in the existing
+ // message renderer; losing PIN authorization must remove that link too.
+ const evidenceCard=sel("[data-xoxo-conversation-beta-report]")[0];
+ evidenceCard.children.find(x=>x.className==="xmm-report-actions")
+   .children[0].listeners.click();
+ const evidencePair={user_1:report.reporter_id,user_2:report.reported_user_id};
+ assert.equal(context.window.xoxoDmMakeMessage({id:uuid(4)},evidencePair)
+   .attributes["data-xoxo-safety-report-evidence"],"1");
+
  // The backend PIN grant lasts 15 minutes. The BETA-only report cards must
  // disappear after 14 minutes, even if the admin never changes tabs.
  assert.equal(timers.size,1,"PIN verification must arm a single expiry timer");
@@ -244,6 +255,9 @@ function tick(){return new Promise(done=>setImmediate(done))}
  now+=14*60*1000;
  expiry();
  assert.equal(cards(),0,"expired PIN timer left BETA report cards visible");
+ assert.equal(context.window.xoxoDmMakeMessage({id:uuid(4)},evidencePair)
+   .attributes["data-xoxo-safety-report-evidence"],undefined,
+   "expired PIN left the selected-evidence marker active");
  assert.ok(unlock(),"expired PIN must offer reauthorization");
  assert.equal(list.children[0].tag,"legacy-report",
    "PIN expiry must not remove the existing moderation report renderer");
