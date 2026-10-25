@@ -22,6 +22,29 @@ const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,d
     "new BETA report metadata requires the existing moderation reason");
   assert.deepEqual(await loadQueueUnwrapped({rpc:async()=>({data:[]})},
     {moderationReason:"short"}),{ok:false,reason:"moderation_reason_required"});
+  // Server rejects control characters in the PIN moderation reason.
+  // Client must reject them BEFORE any privileged RPC is attempted.
+  let badReasonCalls=0;
+  const rejectControlClient={rpc:async()=>{
+    badReasonCalls++;
+    return {data:[beta],error:null};
+  }};
+  for(const badReason of [
+    "Review suspicious evidence\nwithout authorization",
+    "Review suspicious evidence\u0000bad",
+    "Review suspicious evidence\u007fhidden",
+    "Review suspicious evidence\u0085hidden"
+  ]){
+    assert.deepEqual(await loadQueueUnwrapped(rejectControlClient,{
+      includeLegacy:false,moderationReason:badReason
+    }),{ok:false,reason:"moderation_reason_required"});
+    assert.deepEqual(await updateUnwrapped(rejectControlClient,{
+      id:beta.id,source:"conversation_beta"
+    },"reviewed",badReason),{ok:false,reason:"invalid_request"});
+  }
+  assert.equal(badReasonCalls,0,
+    "Control-character moderation reasons must never reach an admin RPC");
+
   const scopedCalls=[];
   const scoped=await loadReportQueue({rpc:async(name,args)=>{
     scopedCalls.push({name,args});return {data:[beta],error:null};
