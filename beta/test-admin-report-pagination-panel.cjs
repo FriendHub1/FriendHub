@@ -56,8 +56,8 @@ function pause(){return new Promise(r=>setImmediate(r))}
      assert.equal(opts.limit,50);
      assert.ok(opts.cursor?.id);
      if(failed)return {ok:false,reason:"permission_lost"};
-     if(resolver)return new Promise(resolve=>{resolver=resolve});
      const rows=nextPage++===1?more1:more2;
+     if(resolver)return new Promise(resolve=>{resolver=resolve});
      return {ok:true,reports:rows,hasMore:rows===more1,
        nextCursor:rows===more1?adapter.cursorAfter(rows.at(-1)):null};
    }
