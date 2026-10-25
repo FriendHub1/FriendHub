@@ -43,6 +43,8 @@ assert.match(workflow,/node-version:\s*"22"/);
 assert.match(workflow,/beta\/test-safety-native-js-client\.cjs/);
 assert.match(workflow,/beta\/test-safety-native-browser-e2e\.cjs/);
 assert.match(workflow,/Install pinned WebKit and Chromium for isolated real-browser reports/);
+assert.match(workflow,/Verify native GoTrue, moderator role, PIN and audited RPCs without browser downloads/);
+assert.match(workflow,/XOXO_SAFETY_NATIVE_QUICK_ADMIN:\s*"1"/);
 assert.match(workflow,/NODE_PATH:\s*\$\{\{ runner\.temp \}\}\/xoxo-safety-playwright\/node_modules/);
 assert.match(native,/http:\/\/127\.0\.0\.1:3002/);
 assert.match(native,/js_report_pipeline\("active",token,outsider_token,message,user,outsider_user\)/);

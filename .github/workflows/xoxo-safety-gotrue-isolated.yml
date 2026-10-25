@@ -161,6 +161,10 @@ jobs:
             sleep 1
           done
           test "$ready" = 1
+      - name: Verify native GoTrue, moderator role, PIN and audited RPCs without browser downloads
+        env:
+          XOXO_SAFETY_NATIVE_QUICK_ADMIN: "1"
+        run: python3 beta/test-safety-gotrue-native-session.py
       - name: Install pinned WebKit and Chromium for isolated real-browser reports
         run: |
           set -euo pipefail

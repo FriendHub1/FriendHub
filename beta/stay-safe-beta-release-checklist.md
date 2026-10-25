@@ -354,3 +354,9 @@ Tests include:
 - With no verified PIN, all report metadata stays blocked. With an unexpired verified PIN and a 10–300-character moderation reason, the actual `xoxo_admin_list_conversation_reports_beta` RPC must return six metadata-only reports. No DM content is returned, and the preexisting `xoxo_message_access_log` must audit the read.
 - The actual paginated `xoxo_admin_page_conversation_reports_beta` RPC must traverse all six reports in 2-row pages without duplicates and audit each page. A status transition through `xoxo_admin_update_conversation_report_beta` must persist and create an existing-log audit entry.
 - After the PIN expires, list/page/update must all deny access. A subsequent revoked real GoTrue admin session must also be denied even if the PIN window is restored. This is a server-side contract test; a separate real-device interactive test of the existing admin panel remains necessary before launch.
+
+#### CI isolation from browser-download delays
+
+- The disposable GoTrue job runs the native report and PIN/audit suite **before** downloading Playwright browsers, completing a four-report server-only pass. This prevents slow browser downloads from blocking verification of moderator authorization, expiry, status changes and revocation.
+- After browser installation, the same job performs the full six-report user flow (including mobile WebKit and desktop Chromium) against a new synthetic account. It validates six evidence rows belonging to that reporter and independently checks the now-larger combined admin queue through deterministic two-row pages. All counts are scoped to the correct fictional user or administrator.
+- Both passes require fresh valid signed native Auth sessions, and both can fail the job. This is test-harness isolation, **not** enabling hosted Supabase, report writes on the real site, or changing an administrator's PIN.

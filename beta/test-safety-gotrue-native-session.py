@@ -5,6 +5,7 @@ This test has no session mirroring: GoTrue and PostgREST use the SAME
 DISPOSABLE xoxo_gotrue_ci database. Synthetic messages and local JWT key only.
 """
 import json
+import os
 import subprocess
 import time
 import uuid
@@ -76,7 +77,7 @@ def real_browser_report_flow(token,message,user):
 
 
 def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
-                                  admin_session_id,report_id):
+                                  admin_session_id,report_id,expected_reports):
     """Prove PIN + admin role + active GoTrue session guard the real RPCs.
 
     This is the existing moderator's metadata queue, NOT a second DM viewer.
@@ -105,7 +106,7 @@ def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
     assert code in (400,401,403),("Admin skipped moderation reason",code)
 
     code,rows=http(REST,"POST",listing,list_body,admin_token)
-    assert code==200 and isinstance(rows,list) and len(rows)==6,(
+    assert code==200 and isinstance(rows,list) and len(rows)==expected_reports,(
         "PIN-authorized report queue missing real stored reports",code,rows)
     assert any(r.get("id")==report_id for r in rows)
     assert all(len(r.get("message_ids",[]))==1 and
@@ -114,14 +115,15 @@ def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
         ("content","message_content","message_text","body","attachment_url"))
         for r in rows),"Report queue leaked private message content"
     assert db("select count(*) from public.xoxo_message_access_log "
-      "where action like 'conversation_report_queue:view count=6:%'") == "1",(
+      f"where admin_id='{admin_user}'::uuid and "
+      f"action like 'conversation_report_queue:view count={expected_reports}:%'") == "1",(
       "Existing moderator audit did not log queue access")
 
     # Verify server-side cursor paging; every page must itself be PIN-checked
     # and audited, with no cross-page duplicate or unbounded result.
     cursor=None
     seen=set()
-    for index in range(4):
+    for index in range((expected_reports+1)//2+1):
         page_body={"p_reason":reason,"p_after_pending":None,
             "p_after_created_at":None,"p_after_id":None,"p_limit":2}
         if cursor:
@@ -143,7 +145,9 @@ def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
         assert isinstance(cursor,dict)
     assert seen=={r["id"] for r in rows},("Incomplete admin pagination",seen)
     assert db("select count(*) from public.xoxo_message_access_log "
-      "where action like 'conversation_report_page:view count=%'") == "3"
+      f"where admin_id='{admin_user}'::uuid and "
+      "action like 'conversation_report_page:view count=%'") == str(
+        (expected_reports+1)//2)
 
     update_body={"p_report_id":report_id,"p_status":"reviewed",
         "p_reason":reason}
@@ -178,10 +182,11 @@ def native_admin_moderation_queue(reporter_token,admin_token,admin_user,
         "Revoked genuine admin session read PIN-protected reports",code)
     print("PASS: real GoTrue admin/moderator session -> PIN-gated queue, "
           "existing audit, cursor pages, status changes, expired PIN and "
-          "revoked-session denial; six fictional reports")
+          f"revoked-session denial; {expected_reports} fictional reports")
 
 
 def run():
+    quick_admin=os.environ.get("XOXO_SAFETY_NATIVE_QUICK_ADMIN")=="1"
     assert db("select current_database()") == "xoxo_gotrue_ci"
     assert db("select to_regclass('auth.sessions') is not null") == "t"
     email="xoxo-native-"+uuid.uuid4().hex[:14]+"@example.invalid"
@@ -268,16 +273,21 @@ def run():
     # modules, with a real RLS read and a real atomic PostgREST write. This
     # second synthetic report is distinct from the direct-HTTP test above.
     js_report_pipeline("active",token,outsider_token,message,user,outsider_user)
-    real_browser_report_flow(token,message,user)
+    if not quick_admin:
+        real_browser_report_flow(token,message,user)
+    expected_user_reports=4 if quick_admin else 6
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
-      f"where reporter_id='{user}'::uuid") == "6"
-    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence") == "6"
+      f"where reporter_id='{user}'::uuid") == str(expected_user_reports)
+    assert db("select count(*) from xoxo_safety_private.conversation_report_evidence e "
+      "join xoxo_safety_private.conversation_reports r on r.id=e.report_id "
+      f"where r.reporter_id='{user}'::uuid") == str(expected_user_reports)
 
     # Reuse the authenticated outsider after its denial as a disposable
     # administrator. This proves role and fixed-PIN checks on the actual
     # moderated report RPCs, not only on mocked frontend adapters.
     native_admin_moderation_queue(token,outsider_token,outsider_user,
-        outsider_session_id,report_id)
+        outsider_session_id,report_id,int(db(
+            "select count(*) from xoxo_safety_private.conversation_reports")))
 
     # Simulate session revocation in the SAME native Auth DB, while the JWT
     # is still cryptographically valid; no real credentials are involved.
@@ -288,7 +298,7 @@ def run():
     assert code in (400,401,403,404,406),(
       "A revoked native Auth session submitted a report",code,denied)
     assert db("select count(*) from xoxo_safety_private.conversation_reports "
-      f"where reporter_id='{user}'::uuid") == "6"
+      f"where reporter_id='{user}'::uuid") == str(expected_user_reports)
     print("PASS: genuine GoTrue session checked in SAME disposable DB; "
           "RLS, report/evidence, JS submission, outsider denial, idempotency "
           "and revoked-session denial")
