@@ -1,6 +1,14 @@
 "use strict";
 const assert=require("node:assert/strict");
-const {loadReportQueue,updateReportStatus}=require("./admin-report-queue.js");
+const {loadReportQueue:loadQueueUnwrapped,
+  updateReportStatus:updateUnwrapped}=require("./admin-report-queue.js");
+const moderationReason="Reviewing evidence of suspicious direct messages";
+const loadReportQueue=(client,options={})=>loadQueueUnwrapped(client,{
+  moderationReason,...options
+});
+const updateReportStatus=(client,report,status)=>updateUnwrapped(
+  client,report,status,moderationReason
+);
 const legacyId="11111111-1111-4111-8111-111111111111",betaId="22222222-2222-4222-8222-222222222222";
 const reporter="33333333-3333-4333-8333-333333333333",peer="44444444-4444-4444-8444-444444444444";
 const legacy={id:legacyId,reporter_id:reporter,reported_user_id:peer,reason:"spam",created_at:"2026-10-20T00:00:00Z",status:"pending"};
@@ -9,6 +17,18 @@ const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,d
   const names=[];
   const both=await loadReportQueue({rpc:async(name)=>{names.push(name);return {data:name==="get_xoxo_dm_reports"?[legacy]:[beta],error:null};}});
   assert.equal(both.ok,true);
+  assert.deepEqual(await loadQueueUnwrapped({rpc:async()=>({data:[]})}),
+    {ok:false,reason:"moderation_reason_required"},
+    "new BETA report metadata requires the existing moderation reason");
+  assert.deepEqual(await loadQueueUnwrapped({rpc:async()=>({data:[]})},
+    {moderationReason:"short"}),{ok:false,reason:"moderation_reason_required"});
+  const scopedCalls=[];
+  const scoped=await loadReportQueue({rpc:async(name,args)=>{
+    scopedCalls.push({name,args});return {data:[beta],error:null};
+  }},{includeLegacy:false});
+  assert.equal(scoped.ok,true);
+  assert.deepEqual(scopedCalls[0].args,{p_reason:moderationReason},
+    "reuse the reason entered by the existing PIN dialog");
   assert.deepEqual(names,["get_xoxo_dm_reports","xoxo_admin_list_conversation_reports_beta"]);
   assert.deepEqual(both.reports.map(x=>x.source),["conversation_beta","message"]);
   assert.equal(both.reports[0].reason,"Threats or blackmail");
@@ -55,6 +75,11 @@ const beta={id:betaId,reporter_id:reporter,reported_user_id:peer,reason_code:1,d
   assert.deepEqual(await updateReportStatus(writer,both.reports[0],"reviewed"),{ok:true});
   assert.deepEqual(await updateReportStatus(writer,both.reports[1],"resolved"),{ok:true});
   assert.deepEqual(invoked.map(x=>x.name),["xoxo_admin_update_conversation_report_beta","update_xoxo_dm_report_status"]);
+  assert.equal(invoked[0].args.p_reason,moderationReason,
+    "status changes must include the PIN-dialog moderation reason");
+  assert.deepEqual(await updateUnwrapped(writer,both.reports[0],"reviewed","short"),
+    {ok:false,reason:"invalid_request"},
+    "a short moderation reason cannot update a conversation report");
   assert.deepEqual(await updateReportStatus(writer,both.reports[0],"delete"),{ok:false,reason:"invalid_request"});
   assert.equal(invoked.length,2,"invalid updates must never invoke RPC");
   assert.deepEqual(await updateReportStatus({rpc:async()=>({data:false})},both.reports[0],"reviewed"),{ok:false,reason:"status_update_failed"});
