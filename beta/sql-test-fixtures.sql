@@ -16,9 +16,9 @@ grant execute on function auth.uid() to anon, authenticated;
 -- It is NOT a real Supabase access token; production auth.jwt() is untouched.
 create function auth.jwt() returns jsonb
   language sql stable set search_path=''
-  as $ select jsonb_build_object(
-    'session_id', nullif(current_setting('request.jwt.claim.session_id',true),'')
-  ) $;
+  as 'select jsonb_build_object(
+    ''session_id'', nullif(current_setting(''request.jwt.claim.session_id'',true),'''')
+  )';
 grant execute on function auth.jwt() to anon, authenticated;
 
 create table auth.sessions (
