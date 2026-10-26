@@ -2719,6 +2719,10 @@ async function handleAdminEmailSend(request, env) {
   if (body?.service_notice_confirmed !== true) {
     return jsonResponse({ok:false,error:"Confirm this is an official account or service notice"},400);
   }
+  const idempotencyKey = String(request.headers.get("X-Xoxo-Idempotency-Key") || "").trim();
+  if (!/^[A-Za-z0-9._/-]{1,200}$/.test(idempotencyKey)) {
+    return jsonResponse({ok:false,error:"A valid send request ID is required"},400);
+  }
 
   // Resolve recipients through the existing admin-only RPC using the admin's JWT.
   // Client-supplied email addresses are never trusted.
@@ -2768,9 +2772,10 @@ async function handleAdminEmailSend(request, env) {
       method:"POST",
       headers:{
         Authorization:"Bearer " + env.RESEND_API_KEY,
-        "Content-Type":"application/json"
+        "Content-Type":"application/json",
+        "Idempotency-Key":request.headers.get("X-Xoxo-Idempotency-Key")
       },
-      body:JSON.stringify({emails})
+      body:JSON.stringify(emails)
     });
     const responseText = await sendResponse.text();
     let result = {};
