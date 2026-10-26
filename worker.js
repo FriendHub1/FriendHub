@@ -2831,6 +2831,40 @@ async function xoxoServePublicSeoRoute(request, env, url) {
       '<meta name="twitter:title" content="' + escapeHtml(meta[0]) + '">' +
       '<meta name="twitter:description" content="' + escapeHtml(meta[1]) + '">',
       {html:true});}})
+    .on('head', {element(el) {el.append(`<script id="xoxo-localized-share-hotfix">
+(function(){
+  try {
+    var key = "friendhub_language";
+    var messages = {
+      it: "Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!",
+      sv: "Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",
+      de: "Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!"
+    };
+    var original = "Join me on XOXO Avenue — meet people, discover communities and make new friends!";
+    function fix(value) {
+      if (typeof value !== "string" || value.indexOf(original) === -1) return value;
+      var lang = localStorage.getItem(key);
+      if (!Object.prototype.hasOwnProperty.call(messages, lang)) return value;
+      return value.replace(original, messages[lang]).replace(/https:\\/\\/xoxoavenue\\.com\\/\\?lang=[a-zA-Z-]+/g, "https://xoxoavenue.com/?lang=" + lang);
+    }
+    if (typeof navigator.share === "function") {
+      var nativeShare = navigator.share.bind(navigator);
+      navigator.share = function(data) {
+        if (data && typeof data === "object" && typeof data.text === "string") {
+          var copy = Object.assign({}, data);
+          copy.text = fix(copy.text);
+          return nativeShare(copy);
+        }
+        return nativeShare(data);
+      };
+    }
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      var nativeWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
+      navigator.clipboard.writeText = function(value) { return nativeWriteText(fix(value)); };
+    }
+  } catch (_) {}
+})();
+</script>`, {html:true});}})
     .transform(response);
   const headers = new Headers(transformed.headers);
   headers.set('X-XOXO-Worker','public-seo-route');
