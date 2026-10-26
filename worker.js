@@ -2684,6 +2684,118 @@ async function handleAdminEmailRecipients(request, env) {
   });
 }
 
+
+/*
+ * ==========================================
+ * ADMIN EMAIL CENTER - SEND OFFICIAL NOTICES
+ * ==========================================
+ */
+async function handleAdminEmailSend(request, env) {
+  if (request.method !== "POST") return jsonResponse({ok:false,error:"Method not allowed"},405);
+  if (!env.RESEND_API_KEY) return jsonResponse({ok:false,error:"Email sending is not configured"},500);
+  const adminId = "d9ea1914-fdba-465c-9700-5e640ff48763";
+  const user = await getAuthenticatedUser(request);
+  if (!user?.id) return jsonResponse({ok:false,error:"Unauthorized"},401);
+  if (user.id !== adminId) return jsonResponse({ok:false,error:"Forbidden"},403);
+
+  let body;
+  try { body = await request.json(); }
+  catch (_) { return jsonResponse({ok:false,error:"Invalid JSON body"},400); }
+  const ids = Array.isArray(body?.recipient_ids)
+    ? [...new Set(body.recipient_ids.map(value => String(value || "").trim()))]
+    : [];
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!ids.length || ids.length > 50 || ids.some(id => !uuidPattern.test(id))) {
+    return jsonResponse({ok:false,error:"Choose between 1 and 50 valid recipients per batch"},400);
+  }
+  const subject = String(body?.subject || "").trim();
+  const message = String(body?.message || "").trim();
+  if (!subject || subject.length > 160 || /[\r\n]/.test(subject)) {
+    return jsonResponse({ok:false,error:"Subject is required and must be 160 characters or fewer"},400);
+  }
+  if (!message || message.length > 8000) {
+    return jsonResponse({ok:false,error:"Message is required and must be 8,000 characters or fewer"},400);
+  }
+  if (body?.service_notice_confirmed !== true) {
+    return jsonResponse({ok:false,error:"Confirm this is an official account or service notice"},400);
+  }
+  const idempotencyKey = String(request.headers.get("X-Xoxo-Idempotency-Key") || "").trim();
+  if (!/^[A-Za-z0-9._/-]{1,200}$/.test(idempotencyKey)) {
+    return jsonResponse({ok:false,error:"A valid send request ID is required"},400);
+  }
+
+  // Resolve recipients through the existing admin-only RPC using the admin's JWT.
+  // Client-supplied email addresses are never trusted.
+  const authorization = request.headers.get("Authorization") || "";
+  const recipientResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/xoxo_admin_email_recipients", {
+    method:"POST",
+    headers:{
+      apikey:SUPABASE_KEY,
+      Authorization:authorization,
+      "Content-Type":"application/json",
+      "Accept-Profile":"public",
+      "Content-Profile":"public"
+    },
+    body:"{}"
+  });
+  if (!recipientResponse.ok) {
+    console.error("XOXO Mail Center recipient verification failed",recipientResponse.status);
+    return jsonResponse({ok:false,error:"Could not verify recipients"},502);
+  }
+  const rows = await recipientResponse.json();
+  if (!Array.isArray(rows)) return jsonResponse({ok:false,error:"Invalid recipient list"},502);
+  const wanted = new Set(ids);
+  const verified = rows.filter(row =>
+    wanted.has(String(row.user_id)) &&
+    row.email_verified === true &&
+    typeof row.email === "string" &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)
+  );
+  if (verified.length !== ids.length) {
+    return jsonResponse({ok:false,error:"One or more recipients are not verified or are no longer eligible. Refresh the recipient list."},400);
+  }
+
+  const safeHtml = escapeHtml(message).replace(/\r\n/g,"\n").replace(/\n/g,"<br>");
+  const footerText = "\n\nXOXO Avenue 💜\nYou are receiving this official account/service notice because you have a verified XOXO Avenue account.\nEste aviso oficial se envía porque tienes una cuenta verificada de XOXO Avenue.\nhttps://xoxoavenue.com · support@xoxoavenue.com";
+  const footerHtml = '<hr style="border:0;border-top:1px solid #eadcf8;margin:24px 0"><p style="font-size:12px;color:#6b6475;line-height:1.6">You are receiving this official account/service notice because you have a verified XOXO Avenue account.<br>Este aviso oficial se envía porque tienes una cuenta verificada de XOXO Avenue.</p><p style="font-size:12px;color:#6b6475"><a href="https://xoxoavenue.com" style="color:#9333ea">xoxoavenue.com</a> · <a href="mailto:support@xoxoavenue.com" style="color:#9333ea">support@xoxoavenue.com</a></p>';
+  const emails = verified.map(row => ({
+    from:"XOXO Avenue <support@xoxoavenue.com>",
+    to:[row.email],
+    subject,
+    text:message + footerText,
+    html:'<div style="font-family:Arial,Helvetica,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#2b2238;line-height:1.7"><div style="font-size:20px;font-weight:800;color:#9333ea;margin-bottom:18px">XOXO Avenue 💜</div><div style="white-space:normal;overflow-wrap:anywhere">' + safeHtml + '</div>' + footerHtml + '</div>'
+  }));
+
+  try {
+    // Resend batch sends each message separately, so recipients never see one another.
+    const sendResponse = await fetch("https://api.resend.com/emails/batch", {
+      method:"POST",
+      headers:{
+        Authorization:"Bearer " + env.RESEND_API_KEY,
+        "Content-Type":"application/json",
+        "Idempotency-Key":request.headers.get("X-Xoxo-Idempotency-Key")
+      },
+      body:JSON.stringify(emails)
+    });
+    const responseText = await sendResponse.text();
+    let result = {};
+    try { result = responseText ? JSON.parse(responseText) : {}; }
+    catch (_) { result = {}; }
+    if (!sendResponse.ok) {
+      console.error("XOXO Mail Center Resend batch failed",sendResponse.status);
+      return jsonResponse({ok:false,error:"Resend could not accept this batch. Check the sender configuration and confirm delivery status before retrying."},502);
+    }
+    const sentCount = Array.isArray(result?.data) ? result.data.length : emails.length;
+    if (sentCount !== emails.length) {
+      return jsonResponse({ok:false,error:"Resend returned an unexpected batch result. Check delivery status before retrying.",sent:sentCount,expected:emails.length},502);
+    }
+    return jsonResponse({ok:true,sent:sentCount});
+  } catch (error) {
+    console.error("XOXO Mail Center send exception",String(error));
+    return jsonResponse({ok:false,error:"Email service is temporarily unavailable. Check delivery status before retrying."},502);
+  }
+}
+
 /*
  * ==========================================
  * MAIN WORKER
@@ -2754,6 +2866,10 @@ export default {
 
     if (url.pathname === "/api/admin-email-recipients") {
       return handleAdminEmailRecipients(request, env);
+    }
+
+    if (url.pathname === "/api/admin-email-send") {
+      return handleAdminEmailSend(request, env);
     }
 
     if (url.pathname === "/api/activity-presence-heartbeat") {
@@ -2951,7 +3067,8 @@ export default {
           '<style id="xoxo-single-message-report-flag-hide">.xoxo-dm-report-flag{display:none!important}</style>' : "";
         const adminScripts = enableSafetyAdmin ?
           '<script src="/beta/admin-report-queue.js" defer></script>' +
-          '<script src="/beta/admin-report-panel-bridge.js" defer></script>' : "";
+          '<script src="/beta/admin-report-panel-bridge.js" defer></script>' +
+          '<script src="/beta/admin-email-center.js" defer></script>' : "";
         const updated = new HTMLRewriter().on("head", { element(element) { element.append(chatScripts + adminScripts, { html: true }); } }).transform(preview);
         const headers = new Headers(updated.headers);
         headers.set("Cache-Control", "no-store");
