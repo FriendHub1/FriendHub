@@ -190,6 +190,34 @@ begin
 end
 $function$;
 
+create or replace function public.xoxo_admin_list_deleted_account_messages(p_reason text, p_limit integer default 100)
+returns jsonb
+language plpgsql
+security definer
+set search_path to ''
+as $function$
+declare v_reason text := pg_catalog.btrim(coalesce(p_reason, '')); v_rows jsonb; v_count integer;
+begin
+  if auth.uid() is null or not public.is_xoxo_admin() then raise exception 'Administrator access required' using errcode='42501'; end if;
+  if not exists(select 1 from public.xoxo_moderation_pin_security ps where ps.admin_id=auth.uid() and ps.verified_until>now() and (ps.locked_until is null or ps.locked_until<=now())) then raise exception 'Moderation PIN verification required' using errcode='42501'; end if;
+  if pg_catalog.length(v_reason) not between 10 and 300 or v_reason ~ '[[:cntrl:]]' then raise exception 'A 10–300 character moderation reason is required' using errcode='22023'; end if;
+  if p_limit is null or p_limit not between 1 and 200 then raise exception 'Limit must be between 1 and 200' using errcode='22023'; end if;
+  select coalesce(jsonb_agg(to_jsonb(q) order by q.archived_at desc, q.archive_id desc), '[]'::jsonb) into v_rows
+  from (
+    select archive_id, original_message_id, sender_id, recipient_id, message_content, message_created_at, archived_at,
+           deleted_account_id, sender_username_snapshot, recipient_username_snapshot,
+           sender_profile_photo_snapshot, recipient_profile_photo_snapshot, attachment_metadata
+    from xoxo_admin_private.deleted_account_messages
+    order by archived_at desc, archive_id desc limit p_limit
+  ) q;
+  v_count := jsonb_array_length(v_rows);
+  insert into xoxo_admin_private.deleted_dm_archive_access_log(admin_id, reason, result_count) values (auth.uid(), v_reason, v_count);
+  return v_rows;
+end;
+$function$;
+revoke all on function public.xoxo_admin_list_deleted_account_messages(text, integer) from public, anon, authenticated;
+grant execute on function public.xoxo_admin_list_deleted_account_messages(text, integer) to authenticated;
+
 create or replace function public.xoxo_admin_dm_profile_photos(p_user_ids uuid[])
 returns table(user_id uuid, username text, profile_photo text)
 language sql
@@ -222,22 +250,8 @@ set search_path to ''
 as $function$
 begin
   if not public.is_xoxo_admin() then raise exception 'Access denied: administrator required'; end if;
-  return (
-    with combined as (
-      select sender_id, recipient_id, is_read from public.direct_messages
-      union all
-      select sender_id, recipient_id, false as is_read from xoxo_admin_private.deleted_account_messages
-    )
-    select jsonb_build_object(
-      'total_messages', count(*),
-      'conversations', count(distinct (least(sender_id, recipient_id), greatest(sender_id, recipient_id))),
-      'unread_messages', count(*) filter (where is_read=false)
-    ) from combined
-  );
+  return (with combined as (select sender_id, recipient_id, is_read from public.direct_messages union all select sender_id, recipient_id, false as is_read from xoxo_admin_private.deleted_account_messages) select jsonb_build_object('total_messages', count(*), 'conversations', count(distinct (least(sender_id, recipient_id), greatest(sender_id, recipient_id))), 'unread_messages', count(*) filter (where is_read=false)) from combined);
 end;
 $function$;
-
-revoke all on function public.xoxo_admin_list_deleted_account_messages(text, integer) from public, anon, authenticated;
-grant execute on function public.xoxo_admin_list_deleted_account_messages(text, integer) to authenticated;
 
 commit;
