@@ -88,13 +88,11 @@
         p_idempotency_key: idempotencyKey.toLowerCase()
       });
       if (error || !validId(data)) return { ok: false, reason: "submission_failed" };
-      // A successful remote write may finish after logout. Suppress the old
-      // account's receipt in a new signed-in user's UI; the immutable key
-      // allows the original member to recover that receipt when logged in.
-      const afterRpcAccount = await currentAccount(client);
-      if (!afterRpcAccount || afterRpcAccount !== userId) {
-        return { ok: false, reason: "wrong_account" };
-      }
+      // The RPC has returned a valid report ID, so the server committed
+      // the report. Do not turn that confirmed write into a false failure
+      // because a second getUser() call races with token refresh/session
+      // propagation. The calling flow re-checks its chat/account context
+      // before showing the receipt, so an old account's receipt is suppressed.
       return { ok: true, reportId: data.toLowerCase() };
     } catch {
       return { ok: false, reason: "submission_failed" };
