@@ -23,4 +23,8 @@ assert.match(host, /currentDmUserId/);
 assert.match(host, /supabaseClient/);
 assert.match(host, /xoxoIsAdmin === true/);
 assert.match(host, /activitySignature/);
+assert.match(host, /function conversationAllowed\(me, other\)/);
+assert.match(host, /root\.xoxoIsConversationVisible\(me, other\) === true/);
+assert.match(host, /!conversationAllowed\(me, other\)/,
+  "host must fail closed until canonical chat permission is explicitly confirmed");
 console.log("PASS: isolated Streaks BETA packaging, preview opt-in and deploy guard");
