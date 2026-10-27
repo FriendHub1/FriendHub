@@ -83,10 +83,18 @@ begin
     return;
   end if;
 
-  -- SECURITY GATE: this RPC runs as SECURITY DEFINER and reads private
-  -- aggregates. Do not grant it to authenticated users until the canonical
-  -- server-side DM/block permission predicate is identified and enforced here.
-  -- Client-side hiding is not an authorization boundary.
+  -- SECURITY GATE: SECURITY DEFINER bypasses the caller's RLS. Reject
+  -- either-direction blocks server-side before reading private aggregates.
+  -- The production DM INSERT policy uses this same public.user_blocks pair
+  -- predicate; client-side hiding is not an authorization boundary.
+  if exists (
+    select 1
+    from public.user_blocks b
+    where (b.blocker_id = v_me and b.blocked_id = p_other_user)
+       or (b.blocker_id = p_other_user and b.blocked_id = v_me)
+  ) then
+    return;
+  end if;
 
   v_low := least(v_me, p_other_user);
   v_high := greatest(v_me, p_other_user);
