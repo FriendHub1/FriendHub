@@ -368,11 +368,21 @@ function injectPreview(
 <script id="xoxo-localized-share-hotfix-v2">
 (function(){
   try {
-    var lang=String(localStorage.getItem("friendhub_language")||"").toLowerCase();
+    var rawLang=String(localStorage.getItem("friendhub_language")||"").trim().toLowerCase().replace(/_/g,"-");
+    var lang=rawLang.split("-")[0];
+    if(rawLang==="pt"||rawLang.indexOf("pt-")===0) lang="pt-br";
+    if(rawLang==="no"||rawLang==="nb"||rawLang.indexOf("nb-")===0) lang="nb";
     var messages={
-      it:"Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!",
+      es:"¡Únete a mí en XOXO Avenue! Conoce personas, descubre comunidades y haz nuevos amigos.",
+      en:"Join me on XOXO Avenue — meet people, discover communities and make new friends!",
+      "pt-br":"Junte-se a mim no XOXO Avenue! Conheça pessoas, descubra comunidades e faça novas amizades.",
+      fr:"Rejoins-moi sur XOXO Avenue ! Rencontre de nouvelles personnes, découvre des communautés et fais de nouveaux amis.",
+      pl:"Dołącz do mnie na XOXO Avenue! Poznawaj ludzi, odkrywaj społeczności i nawiązuj nowe znajomości.",
+      de:"Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!",
+      nb:"Bli med meg på XOXO Avenue! Møt nye mennesker, oppdag fellesskap og få nye venner.",
+      cs:"Přidej se ke mně na XOXO Avenue! Poznávej nové lidi, objevuj komunity a navazuj přátelství.",
       sv:"Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",
-      de:"Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!"
+      it:"Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!"
     };
     var localized=messages[lang];
     if(!localized) return;
