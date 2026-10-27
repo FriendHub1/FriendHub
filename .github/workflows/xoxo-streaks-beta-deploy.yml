@@ -16,6 +16,19 @@ on:
       - "profile-frames/**"
       - "*.png"
       - "*.webp"
+  pull_request:
+    paths:
+      - ".github/workflows/xoxo-streaks-beta-deploy.yml"
+      - ".github/workflows/xoxo-streaks-beta-tests.yml"
+      - "wrangler.streaks-beta.jsonc"
+      - "beta/build-streaks-beta-assets.sh"
+      - "beta/test-streaks-beta-deploy-contract.cjs"
+      - "beta/xoxo-streaks*.js"
+      - "worker.js"
+      - "index.html"
+      - "profile-frames/**"
+      - "*.png"
+      - "*.webp"
   workflow_dispatch:
 
 permissions:
