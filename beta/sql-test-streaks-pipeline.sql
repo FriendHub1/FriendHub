@@ -1,6 +1,16 @@
 -- ONLY for the fresh disposable PostgreSQL 17 CI database.
 \set ON_ERROR_STOP on
 
+-- Mirror the production block relation needed by the SECURITY DEFINER reader.
+-- This table exists only in the disposable test database.
+create table if not exists public.user_blocks (
+  id uuid primary key default gen_random_uuid(),
+  blocker_id uuid not null,
+  blocked_id uuid not null,
+  created_at timestamptz not null default now(),
+  unique (blocker_id, blocked_id)
+);
+
 -- Three consecutive UTC days of ordinary persistent messages from both people.
 insert into public.direct_messages
   (id,sender_id,recipient_id,content,whisper_id,media_view_mode,created_at)
@@ -56,6 +66,45 @@ begin
 end
 $test$;
 reset role;
+
+-- A block in either direction must suppress the SECURITY DEFINER reader.
+insert into public.user_blocks(blocker_id,blocked_id)
+values ('11111111-1111-4111-8111-111111111111',
+        '22222222-2222-4222-8222-222222222222');
+set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+set role authenticated;
+do $blocked_low$
+begin
+  if exists (
+    select 1 from public.xoxo_get_dm_streak('22222222-2222-4222-8222-222222222222')
+  ) then
+    raise exception 'A block by the caller must suppress the streak RPC';
+  end if;
+end
+$blocked_low$;
+reset role;
+delete from public.user_blocks
+where blocker_id='11111111-1111-4111-8111-111111111111'
+  and blocked_id='22222222-2222-4222-8222-222222222222';
+
+insert into public.user_blocks(blocker_id,blocked_id)
+values ('22222222-2222-4222-8222-222222222222',
+        '11111111-1111-4111-8111-111111111111');
+set request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
+set role authenticated;
+do $blocked_high$
+begin
+  if exists (
+    select 1 from public.xoxo_get_dm_streak('11111111-1111-4111-8111-111111111111')
+  ) then
+    raise exception 'A block by the peer must suppress the streak RPC';
+  end if;
+end
+$blocked_high$;
+reset role;
+delete from public.user_blocks
+where blocker_id='22222222-2222-4222-8222-222222222222'
+  and blocked_id='11111111-1111-4111-8111-111111111111';
 
 -- Clearing is per user. The user's own view excludes the cleared UTC day and older activity.
 insert into public.dm_conversation_clears(user_id,other_user_id,cleared_at)
