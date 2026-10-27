@@ -83,9 +83,10 @@ begin
     return;
   end if;
 
-  -- This migration deliberately does not assume a block-table name.
-  -- The chat UI must hide/disable this card whenever the existing block rules
-  -- say the participants cannot interact. Recheck that policy before release.
+  -- SECURITY GATE: this RPC runs as SECURITY DEFINER and reads private
+  -- aggregates. Do not grant it to authenticated users until the canonical
+  -- server-side DM/block permission predicate is identified and enforced here.
+  -- Client-side hiding is not an authorization boundary.
 
   v_low := least(v_me, p_other_user);
   v_high := greatest(v_me, p_other_user);
@@ -172,7 +173,8 @@ end;
 $$;
 
 revoke all on function public.xoxo_record_dm_streak_activity() from public, anon, authenticated;
-revoke all on function public.xoxo_get_dm_streak(uuid) from public, anon;
-grant execute on function public.xoxo_get_dm_streak(uuid) to authenticated;
+-- Keep the SECURITY DEFINER reader unavailable to every client role until
+-- its canonical server-side conversation/block authorization check is implemented.
+revoke all on function public.xoxo_get_dm_streak(uuid) from public, anon, authenticated;
 
 commit;
