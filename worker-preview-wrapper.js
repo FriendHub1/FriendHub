@@ -53,7 +53,7 @@ const SHARE_SCRIPT = `(function(){try{
       var page=new URL(location.href);
       if(page.pathname!=="/"||page.searchParams.has("profile")||page.searchParams.has("post")) return;
       if(["code","token_hash","access_token","refresh_token","error","type"].some(function(k){return page.searchParams.has(k);})) return;
-      var raw=localStorage.getItem("friendhub_language")||page.searchParams.get("lang")||document.documentElement.lang||"en";
+      var raw=page.searchParams.get("lang")||localStorage.getItem("friendhub_language")||document.documentElement.lang||"en";
       var lang=normalize(raw);
       if(!messages[lang]) return;
       if(page.searchParams.get("lang")!==lang){
@@ -86,11 +86,11 @@ const SHARE_SCRIPT = `(function(){try{
       while(rawShare.length && "),.!?]".indexOf(rawShare.charAt(rawShare.length-1))!==-1) rawShare=rawShare.slice(0,-1);
       var share=new URL(rawShare);
       if(share.hostname.toLowerCase()!=="xoxoavenue.com") return value;
-      var lang=normalize(localStorage.getItem("friendhub_language")||new URL(location.href).searchParams.get("lang")||share.searchParams.get("lang")||document.documentElement.lang||"en");
+      var lang=normalize(new URL(location.href).searchParams.get("lang")||localStorage.getItem("friendhub_language")||share.searchParams.get("lang")||document.documentElement.lang||"en");
       if(!messages[lang]) lang="en";
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027i");
+      share.searchParams.set("xoxo_v","20261027z9");
       var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
       var localized=messages[lang];
       if(text.indexOf(english)!==-1) text=text.replace(english,localized);
@@ -110,7 +110,7 @@ const SHARE_SCRIPT = `(function(){try{
   }
   function currentShareLanguage(){
     var rawLang="";
-    try{rawLang=localStorage.getItem("friendhub_language")||"";}catch(_){}
+    try{rawLang=new URL(location.href).searchParams.get("lang")||""; if(!rawLang) rawLang=localStorage.getItem("friendhub_language")||"";}catch(_){}
     rawLang=rawLang||new URL(location.href).searchParams.get("lang")||document.documentElement.lang||"en";
     var lang=normalize(rawLang);
     return messages[lang]?lang:"en";
@@ -123,7 +123,7 @@ const SHARE_SCRIPT = `(function(){try{
       var lang=currentShareLanguage();
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027i");
+      share.searchParams.set("xoxo_v","20261027z9");
       return share.toString();
     }catch(_){return value;}
   }
@@ -177,8 +177,7 @@ const SHARE_SCRIPT = `(function(){try{
   },true);
 }catch(_){} })();`;
 
-async function localizedResponse(request, env, ctx) {
-  const baseResponse = await baseWorker.fetch(request, env, ctx);
+async function localizedResponse(request, env, ctx) {  const baseResponse = await baseWorker.fetch(request, env, ctx);
   const url = new URL(request.url);
 
   if (url.pathname !== "/") return baseResponse;
