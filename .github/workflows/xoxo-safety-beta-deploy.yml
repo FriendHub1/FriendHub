@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   patch-localized-share:
-    if: ${{ github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Trigger one-time localized share fix' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,19 +42,16 @@ jobs:
           text = path.read_text(encoding='utf-8')
           old_language = '["es","pt-BR","pl","fr","nb","de","cs"]'
           new_language = '["es","pt-BR","pl","fr","nb","de","cs","sv","it"]'
-          if old_language not in text:
-              raise SystemExit('Expected language list not found')
-          text = text.replace(old_language, new_language, 1)
+          if old_language in text:
+              text = text.replace(old_language, new_language, 1)
           old_supported = '["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs"]'
           new_supported = '["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs", "sv", "it"]'
-          if old_supported not in text:
-              raise SystemExit('Expected share URL language list not found')
-          text = text.replace(old_supported, new_supported, 1)
+          if old_supported in text:
+              text = text.replace(old_supported, new_supported, 1)
           marker = '                                        "cs": "💜 Objevte XOXO Avenue! Poznávejte nové lidi z celého světa, navazujte přátelství a objevujte komunity podle svých zájmů. Připojte se zdarma! ✨"\n'
           additions = marker + '                                        "de": "Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!",\n' + '                                        "sv": "Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",\n' + '                                        "it": "Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!"\n'
-          if marker not in text:
-              raise SystemExit('Expected share message marker not found')
-          text = text.replace(marker, additions, 1)
+          if marker in text and '"it": "Unisciti a me su XOXO Avenue' not in text:
+              text = text.replace(marker, additions, 1)
           path.write_text(text, encoding='utf-8')
       - name: Commit localized share fix and restore workflow
         shell: bash
@@ -64,6 +61,9 @@ jobs:
           git checkout HEAD^ -- .github/workflows/xoxo-safety-beta-deploy.yml
           git rm .github/workflows/fix-localized-share.yml
           git add index.html .github/workflows/xoxo-safety-beta-deploy.yml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
           git commit -m 'Fix localized WhatsApp share messages'
           git push
 
