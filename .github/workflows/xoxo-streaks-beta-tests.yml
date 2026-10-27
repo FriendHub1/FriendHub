@@ -26,8 +26,9 @@ on:
       - "beta/build-streaks-beta-assets.sh"
       - "wrangler.streaks-beta.jsonc"
       - ".github/workflows/xoxo-streaks-beta-deploy.yml"
-      - "beta/xoxo-streaks-chat-bridge.js"
       - "beta/xoxo-streaks-schema.sql"
+      - "beta/sql-test-streaks-users.sql"
+      - "beta/sql-test-streaks-pipeline.sql"
       - "beta/test-xoxo-streaks.cjs"
       - ".github/workflows/xoxo-streaks-beta-tests.yml"
 
