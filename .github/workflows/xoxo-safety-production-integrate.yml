@@ -1,37 +1,35 @@
-name: XOXO Safety — Production Integration
+name: XOXO WhatsApp Preview Fix
 
 on:
   push:
     branches:
       - main
     paths:
-      - "beta/stay-safe-*.js"
-      - "beta/admin-report-*.js"
       - ".github/workflows/xoxo-safety-production-integrate.yml"
+      - "worker.js"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  integrate-production:
+  fix-preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
-      - name: Checkout main
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Apply localized WhatsApp preview metadata
+      - name: Patch server-side WhatsApp preview
         shell: python
         run: |
           from pathlib import Path
 
-          worker = Path("worker.js")
-          text = worker.read_text()
+          p = Path("worker.js")
+          s = p.read_text()
 
-          old_fn = '''function makeDescription(profile) {
+          old = '''function makeDescription(profile) {
   const bio = String(profile?.bio || "").trim();
 
   if (bio) {
@@ -49,22 +47,15 @@ jobs:
   return "Meet people, make friends, and discover communities on XOXO Avenue.";
 }'''
 
-          new_fn = '''function makeDescription(profile, language = "") {
+          new = '''function makeDescription(profile, language = "") {
   const bio = String(profile?.bio || "").trim();
 
-  if (bio) {
-    return bio.slice(0, 180);
-  }
+  if (bio) return bio.slice(0, 180);
 
-  const lookingFor = String(
-    profile?.looking_for || ""
-  ).trim();
+  const lookingFor = String(profile?.looking_for || "").trim();
+  if (lookingFor) return `Looking for ${lookingFor} on XOXO Avenue.`;
 
-  if (lookingFor) {
-    return `Looking for ${lookingFor} on XOXO Avenue.`;
-  }
-
-  const localized = {
+  const descriptions = {
     es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
     en: "Meet people, make friends, and discover communities on XOXO Avenue.",
     "pt-br": "Conheça pessoas, faça novos amigos e descubra comunidades no XOXO Avenue.",
@@ -77,74 +68,44 @@ jobs:
     it: "Conosci nuove persone, fai nuove amicizie e scopri community su XOXO Avenue."
   };
 
-  return localized[String(language || "").toLowerCase()] || localized.en;
+  return descriptions[String(language || "").toLowerCase()] || descriptions.en;
 }'''
 
-          if old_fn in text:
-              text = text.replace(old_fn, new_fn, 1)
-          elif "function makeDescription(profile, language = \"\")" not in text:
-              raise SystemExit("Expected makeDescription block not found; refusing to modify Worker.")
+          if old in s:
+              s = s.replace(old, new, 1)
 
-          old_call = 'makeDescription(profile)'
-          new_call = 'makeDescription(profile, String(url.searchParams.get("lang") || "").toLowerCase())'
-          if old_call in text:
-              text = text.replace(old_call, new_call, 1)
+          s = s.replace(
+              'makeDescription(profile)',
+              'makeDescription(profile, String(url.searchParams.get("lang") || "").toLowerCase())',
+              1,
+          )
 
           old_link = 'https://xoxoavenue.com/?lang="+encodeURIComponent(lang)'
           new_link = 'https://xoxoavenue.com/?lang="+encodeURIComponent(lang)+"&xoxo_share=1'
-          if old_link in text:
-              text = text.replace(old_link, new_link, 1)
+          s = s.replace(old_link, new_link, 1)
 
-          worker.write_text(text)
+          if 'function makeDescription(profile, language = "")' not in s:
+              raise SystemExit("WhatsApp preview patch did not apply")
+          if 'xoxo_share=1' not in s:
+              raise SystemExit("WhatsApp cache-busting URL patch did not apply")
 
-      - name: Promote the isolated safety bridge to production
-        shell: python
-        run: |
-          from pathlib import Path
+          p.write_text(s)
 
-          worker = Path("worker.js")
-          bridge = Path("beta/stay-safe-chat-preview-bridge.js")
-
-          text = worker.read_text()
-          old_start = '    // Stay Safe, Sweetheart! — opt-in BETA only on workers.dev.'
-          old_end = '    const xoxoShareLanguage = String(url.searchParams.get("lang") || "").toLowerCase();'
-          start = text.find(old_start)
-          end = text.find(old_end, start)
-          if start >= 0 and end >= 0:
-              new = '''    // Stay Safe, Sweetheart! — production integration.\n    // Keep workers.dev query flags available for isolated BETA review,\n    // while the real XOXO Avenue domain loads the same tested safety surface.\n    const xoxoSafetyChatBeta = url.searchParams.get("xoxo_safety_chat_beta") === "1";\n    const xoxoSafetyAdminBeta = url.searchParams.get("xoxo_safety_admin_beta") === "1";\n    const isSafetyBetaHost = url.hostname.endsWith(".workers.dev");\n    const isXoxoProductionHost = url.hostname === "xoxoavenue.com" || url.hostname === "www.xoxoavenue.com";\n    const enableSafetyChat = request.method === "GET" && (isXoxoProductionHost || (isSafetyBetaHost && xoxoSafetyChatBeta));\n    const enableSafetyAdmin = request.method === "GET" && (isXoxoProductionHost || (isSafetyBetaHost && xoxoSafetyAdminBeta));\n    if (url.pathname === "/" && (enableSafetyChat || enableSafetyAdmin)) {\n      const preview = await env.ASSETS.fetch(request);\n      if (preview.ok && String(preview.headers.get("content-type") || "").includes("text/html")) {\n        const chatScripts = enableSafetyChat ?\n          '<script src="/beta/stay-safe-sweetheart.js" defer></script>' +\n          '<script src="/beta/stay-safe-report-form.js" defer></script>' +\n          '<script src="/beta/stay-safe-evidence-picker.js" defer></script>' +\n          '<script src="/beta/stay-safe-browser-report-adapter.js" defer></script>' +\n          '<script src="/beta/stay-safe-browser-flow.js" defer></script>' +\n          '<script src="/beta/stay-safe-chat-preview-bridge.js" defer></script>' : "";\n        const adminScripts = enableSafetyAdmin ?\n          '<script src="/beta/admin-report-queue.js" defer></script>' +\n          '<script src="/beta/admin-report-panel-bridge.js" defer></script>' : "";\n        const updated = new HTMLRewriter().on("head", { element(element) { element.append(chatScripts + adminScripts, { html: true }); } }).transform(preview);\n        const headers = new Headers(updated.headers);\n        headers.set("Cache-Control", "no-store");\n        headers.set("X-XOXO-Worker", isXoxoProductionHost ? "safety-production" : enableSafetyChat && enableSafetyAdmin ? "safety-combined-beta-opt-in" : enableSafetyChat ? "safety-chat-beta-opt-in" : "admin-report-beta-opt-in");\n        return new Response(updated.body, { status: updated.status, statusText: updated.statusText, headers });\n      }\n    }\n\n'''
-              worker.write_text(text[:start] + new + text[end:])
-          else:
-              print("Safety production integration already present; leaving it unchanged.")
-
-          b = bridge.read_text()
-          start = b.find('const REPORT_RPC_WRITES_ENABLED=Boolean(')
-          if start >= 0:
-              end = b.find(');', start)
-              if end < 0:
-                  raise SystemExit("Could not locate end of safety report-write gate.")
-              end += 2
-              production_gate = '''const isProductionHost=/^(?:www\\.)?xoxoavenue\\.com$/i.test(String(window.location?.hostname||""));\nconst REPORT_RPC_WRITES_ENABLED=Boolean(\n isProductionHost || (\n   /(?:^|\\.)workers\\.dev$/i.test(String(window.location?.hostname||"")) &&\n   previewSearch?.get("xoxo_safety_chat_beta")==="1" &&\n   previewSearch?.get("xoxo_safety_report_write_beta")==="1"\n )\n);'''
-              bridge.write_text(b[:start] + production_gate + b[end:])
-
-      - name: Verify the production integration diff
+      - name: Verify
         run: |
           grep -n "function makeDescription(profile, language" worker.js
           grep -n "xoxo_share=1" worker.js
-          grep -n "safety-production" worker.js
-          grep -n "isProductionHost" beta/stay-safe-chat-preview-bridge.js
           git diff --check
 
-      - name: Commit production integration
+      - name: Commit Worker fix
         run: |
           set -euo pipefail
-          if git diff --quiet -- worker.js beta/stay-safe-chat-preview-bridge.js; then
-            echo "No production changes needed."
+          if git diff --quiet -- worker.js; then
+            echo "Worker already contains the WhatsApp preview fix."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add worker.js beta/stay-safe-chat-preview-bridge.js
-          git commit -m "Enable Stay Safe, Sweetheart in production"
+          git add worker.js
+          git commit -m "Fix localized WhatsApp preview"
           git push
-
-# Triggered intentionally after merge to apply the server-side preview fix.
