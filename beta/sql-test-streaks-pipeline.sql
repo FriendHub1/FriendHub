@@ -17,6 +17,20 @@ values
  ('88888888-8888-4888-8888-888888888808','22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111','fixture','99999999-9999-4999-8999-999999999999','normal',((date_trunc('day',now() at time zone 'UTC')) + interval '13 hours') at time zone 'UTC'),
  ('88888888-8888-4888-8888-888888888809','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','fixture',null,'once',((date_trunc('day',now() at time zone 'UTC')) + interval '14 hours') at time zone 'UTC');
 
+-- Verify the migration keeps the SECURITY DEFINER reader closed to client roles.
+do $security$
+begin
+  if has_function_privilege('authenticated',
+       'public.xoxo_get_dm_streak(uuid)', 'EXECUTE') then
+    raise exception 'Streak RPC must remain revoked until server-side DM/block authorization is implemented';
+  end if;
+end
+$security$;
+
+-- Test-only override in this disposable CI database so the calculation contract
+-- can still be exercised. Never copy this grant into a deployed migration.
+grant execute on function public.xoxo_get_dm_streak(uuid) to authenticated;
+
 set request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
 set role authenticated;
 do $test$
