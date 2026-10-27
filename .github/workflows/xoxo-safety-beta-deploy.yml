@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   patch-localized-share:
-    if: ${{ github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'Fix localized WhatsApp share messages') }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Trigger one-time localized share fix' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
