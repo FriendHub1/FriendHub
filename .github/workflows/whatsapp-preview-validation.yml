@@ -40,7 +40,7 @@ jobs:
           const bodyStart = source.indexOf(marker) + marker.length;
           const bodyEnd = source.indexOf('`;\n\nasync function localizedResponse', bodyStart);
           if (bodyStart < marker.length || bodyEnd < 0) throw new Error('Could not extract WhatsApp share script');
-          new Function(source.slice(bodyStart, bodyEnd));
+          new Function(source.slice(bodyStart, bodyEnd).replaceAll(String.fromCharCode(92) + '"', '"'));
           if (!source.includes('marker="https://xoxoavenue.com"')) throw new Error('Share URL marker missing');
           console.log('Validated ten localized descriptions, cache-busting metadata, and share-script syntax.');
           NODE
