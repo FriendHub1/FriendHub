@@ -15,20 +15,20 @@ function escapeHtml(value) {
  * ==========================================
  */
 
-async function getPublicProfileIdByUsername(username, env) {
+async function getPublicProfileIdByUsername(username) {
   const normalized = String(username || "").trim();
-  if (!normalized || !env.SUPABASE_SECRET_KEY) return null;
+  if (!normalized) return null;
 
   try {
-    const lookupUrl = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
+    const lookupUrl = new URL(`${SUPABASE_URL}/rest/v1/friendhub_public_profiles`);
     lookupUrl.searchParams.set("select", "user_id");
     lookupUrl.searchParams.set("username", `eq.${normalized}`);
     lookupUrl.searchParams.set("limit", "2");
 
     const response = await fetch(lookupUrl.toString(), {
       headers: {
-        apikey: env.SUPABASE_SECRET_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
         Accept: "application/json",
         "Accept-Profile": "public",
       },
@@ -3182,7 +3182,7 @@ export default {
         : url.searchParams.get("profile");
 
     if (!profileId && friendlyUsernameMatch && (request.method === "GET" || request.method === "HEAD")) {
-      profileId = await getPublicProfileIdByUsername(friendlyUsernameMatch, env);
+      profileId = await getPublicProfileIdByUsername(friendlyUsernameMatch);
     }
 
     const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
