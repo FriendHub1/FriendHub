@@ -3450,16 +3450,21 @@ export default {
         metadata
       );
 
-    // The existing client app understands ?profile=ID. Keep the shared URL
-    // username-based, while passing the resolved ID to the app on first load.
+    // The existing client app reads ?profile=ID during startup. Supply it
+    // temporarily, then restore the clean username URL after page load so the
+    // address bar and any later share action use /username.
     if (friendlyUsernameMatch) {
       const bootstrap = `<script id="xoxo-username-profile-bootstrap">
 (function(){
   try {
+    var originalUrl = location.pathname + location.search + location.hash;
     var url = new URL(location.href);
     if (!url.searchParams.has("profile")) {
       url.searchParams.set("profile", ${JSON.stringify(String(profileId))});
       history.replaceState(history.state, "", url.pathname + "?" + url.searchParams.toString() + url.hash);
+      window.addEventListener("load", function(){
+        try { history.replaceState(history.state, "", originalUrl); } catch (_) {}
+      }, {once:true});
     }
   } catch (_) {}
 })();
