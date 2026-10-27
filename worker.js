@@ -2865,6 +2865,8 @@ async function xoxoServePublicSeoRoute(request, env, url) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return null;
   const route = url.pathname.replace(/\/+$/, '') || '/';
   const meta = XOXO_PUBLIC_SEO[route];
+  // Localized homepage share links must bypass the generic SEO route, which emits the default English canonical/OG metadata before the language-specific preview handler can run.
+  if (route === '/' && (url.searchParams.has('lang') || url.searchParams.get('xoxo_share') === '1')) return null;
   if (!meta || url.searchParams.has('profile') || url.searchParams.has('post')) return null;
   const response = await env.ASSETS.fetch(new Request(url.origin + '/', request));
   if (!response.ok || !String(response.headers.get('content-type') || '').includes('text/html')) return response;
