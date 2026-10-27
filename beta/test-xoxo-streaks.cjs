@@ -36,7 +36,7 @@ assert.match(sql, /public\.direct_messages/);
 assert.match(sql, /new\.sender_id/);
 assert.match(sql, /new\.recipient_id/);
 assert.match(sql, /xoxo_get_dm_streak/);
-assert.doesNotMatch(sql, /public\.user_blocks/, "migration must not assume unverified block table");
+assert.match(sql, /public\\.user_blocks/, "reader must check the verified production block relation");
 assert.match(sql, /media_view_mode/);
 assert.match(sql, /whisper_id/);
 assert.match(sql, /public\.dm_conversation_clears/);
