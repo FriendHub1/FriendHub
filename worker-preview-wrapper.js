@@ -15,74 +15,89 @@ const DESCRIPTIONS = {
 };
 
 function languageFrom(url) {
-  const raw = String(url.searchParams.get("lang") || "").toLowerCase();
-  return raw || "en";
+  return String(url.searchParams.get("lang") || "en").toLowerCase();
 }
 
 function localizedDescription(url) {
   return DESCRIPTIONS[languageFrom(url)] || DESCRIPTIONS.en;
 }
 
-function rewriteShareUrl(value) {
-  try {
-    const u = new URL(value, "https://xoxoavenue.com/");
-    if (!/whatsapp\\.com|wa\\.me/i.test(u.hostname)) return value;
-    const text = u.searchParams.get("text") || "";
-    const match = text.match(/https:\/\/xoxoavenue\.com\/\?[^\\s]+/i);
-    if (!match) return value;
-    const share = new URL(match[0]);
-    if (!share.searchParams.get("lang")) share.searchParams.set("lang", "en");
-    share.searchParams.set("xoxo_share", "1");
-    u.searchParams.set("text", text.replace(match[0], share.toString()));
-    return u.toString();
-  } catch (_) {
-    return value;
+const SHARE_SCRIPT = `(function(){try{
+  function rewrite(value){
+    try{
+      if(typeof value!=="string"||!/whatsapp\\.com|wa\\.me/i.test(value)) return value;
+      var u=new URL(value,location.href);
+      var text=u.searchParams.get("text")||"";
+      var match=text.match(/https:\\/\\/xoxoavenue\\.com\\/\\?[^\\s]+/i);
+      if(!match) return value;
+      var share=new URL(match[0]);
+      var lang=String(share.searchParams.get("lang")||document.documentElement.lang||localStorage.getItem("friendhub_language")||"en").toLowerCase();
+      share.searchParams.set("lang",lang);
+      share.searchParams.set("xoxo_share","1");
+      u.searchParams.set("text",text.replace(match[0],share.toString()));
+      return u.toString();
+    }catch(_){return value;}
   }
-}
+  var originalOpen=window.open;
+  window.open=function(value){
+    var args=[].slice.call(arguments);
+    if(typeof args[0]==="string") args[0]=rewrite(args[0]);
+    return originalOpen.apply(window,args);
+  };
+  document.addEventListener("click",function(event){
+    var anchor=event.target&&event.target.closest?event.target.closest("a"):null;
+    if(!anchor) return;
+    var href=anchor.href||"";
+    var rewritten=rewrite(href);
+    if(rewritten!==href){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      window.open(rewritten,"_blank","noopener,noreferrer");
+    }
+  },true);
+}catch(_){} })();`;
 
 async function localizedResponse(request, env, ctx) {
   const baseResponse = await baseWorker.fetch(request, env, ctx);
   const url = new URL(request.url);
 
-  if (url.pathname !== "/" || url.searchParams.get("xoxo_share") !== "1") {
-    return baseResponse;
-  }
+  if (url.pathname !== "/") return baseResponse;
 
   const type = String(baseResponse.headers.get("content-type") || "").toLowerCase();
   if (!type.includes("text/html")) return baseResponse;
 
+  const isSharePreview = url.searchParams.get("xoxo_share") === "1";
   const description = localizedDescription(url);
-  let foundDescription = false;
 
   const response = new HTMLRewriter()
     .on('meta[property="og:description"]', {
       element(element) {
-        element.setAttribute("content", description);
-        foundDescription = true;
+        if (isSharePreview) element.setAttribute("content", description);
       }
     })
     .on('meta[name="twitter:description"]', {
       element(element) {
-        element.setAttribute("content", description);
+        if (isSharePreview) element.setAttribute("content", description);
       }
     })
     .on('meta[name="description"]', {
       element(element) {
-        element.setAttribute("content", description);
+        if (isSharePreview) element.setAttribute("content", description);
       }
     })
     .on("head", {
       element(element) {
-        if (!foundDescription) {
-          element.append(`<meta property="og:description" content="${description.replace(/"/g, "&quot;")}"><meta name="twitter:description" content="${description.replace(/"/g, "&quot;")}">`, {html: true});
+        if (isSharePreview) {
+          const escaped = description.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+          element.append(`<meta property="og:description" content="${escaped}"><meta name="twitter:description" content="${escaped}">`, {html: true});
         }
-        element.append(`<script id="xoxo-share-cache-buster">(function(){try{function r(v){try{if(typeof v!=="string"||!/whatsapp\\.com|wa\\.me/i.test(v))return v;var u=new URL(v,location.href),t=u.searchParams.get("text")||"",m=t.match(/https:\\/\\/xoxoavenue\\.com\\/\\?[^\\s]+/i);if(!m)return v;var s=new URL(m[0]);if(!s.searchParams.get("lang"))s.searchParams.set("lang",String(localStorage.getItem("friendhub_language")||"en").toLowerCase());s.searchParams.set("xoxo_share","1");u.searchParams.set("text",t.replace(m[0],s.toString()));return u.toString()}catch(_){return v}}var o=window.open;window.open=function(v){var a=[].slice.call(arguments);if(typeof a[0]==="string")a[0]=r(a[0]);return o.apply(window,a)};document.addEventListener("click",function(e){var a=e.target&&e.target.closest?e.target.closest("a"):null;if(!a)return;var h=a.href||"";var f=r(h);if(f!==h){e.preventDefault();e.stopImmediatePropagation();window.open(f,"_blank","noopener,noreferrer")}},true)}catch(_){}})();</script>`, {html: true});
+        element.append(`<script id="xoxo-share-localizer">${SHARE_SCRIPT}</script>`, {html: true});
       }
     })
     .transform(baseResponse);
 
   const headers = new Headers(response.headers);
-  headers.set("Cache-Control", "no-store");
+  if (isSharePreview) headers.set("Cache-Control", "no-store");
   return new Response(response.body, {status: response.status, statusText: response.statusText, headers});
 }
 
