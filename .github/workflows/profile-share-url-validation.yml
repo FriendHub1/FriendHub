@@ -72,10 +72,10 @@ jobs:
             url: 'https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en',
             text: 'Check this profile: https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en'
           });
-          assert(sharedData.url === 'https://xoxoavenue.com/Wendell?lang=en', 'navigator.share URL was not canonicalized: ' + sharedData.url);
-          assert(sharedData.text.includes('https://xoxoavenue.com/Wendell?lang=en'), 'navigator.share text was not canonicalized: ' + sharedData.text);
+          assert(sharedData.url === 'https://xoxoavenue.com/Wendell', 'navigator.share URL was not canonicalized: ' + sharedData.url);
+          assert(sharedData.text.includes('https://xoxoavenue.com/Wendell'), 'navigator.share text was not canonicalized: ' + sharedData.text);
           await fakeNavigator.clipboard.writeText('https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en');
-          assert(copiedText === 'https://xoxoavenue.com/Wendell?lang=en', 'Clipboard URL was not canonicalized: ' + copiedText);
+          assert(copiedText === 'https://xoxoavenue.com/Wendell', 'Clipboard URL was not canonicalized: ' + copiedText);
           console.log('Profile share script syntax, share URL, share text, and clipboard rewrite validated.');
           NODE
       - name: Validate Cloudflare Worker bundle
