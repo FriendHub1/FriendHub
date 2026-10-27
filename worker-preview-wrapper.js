@@ -1,3 +1,4 @@
+// XOXO Avenue server-side wrapper for localized WhatsApp link previews.
 import baseWorker from "./worker.js";
 
 const DESCRIPTIONS = {
