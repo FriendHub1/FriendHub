@@ -3512,11 +3512,11 @@ export default {
         if (installProfileUrlHook()) clearInterval(hookTimer);
       }, 50);
       window.addEventListener("load", function(){
-        setTimeout(function(){
-          if (!installProfileUrlHook()) finishProfileBootstrap();
-        }, 8000);
+        // If the app's profile opener was already called before the hook
+        // attached, release the cover after a short safety window.
+        setTimeout(finishProfileBootstrap, 2500);
       }, {once:true});
-      setTimeout(finishProfileBootstrap, 12000);
+      setTimeout(finishProfileBootstrap, 8000);
     }
   } catch (_) {}
 })();
