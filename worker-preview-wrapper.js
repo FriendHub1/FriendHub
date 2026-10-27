@@ -231,7 +231,7 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
         }
       }catch(_){}})();`;
       const response = new HTMLRewriter()
-        .on("head", { element(element) { element.append(`<script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } })
+        .on("head", { element(element) { element.prepend(`<script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } })
         .transform(baseResponse);
       return new Response(response.body, {status:response.status,statusText:response.statusText,headers:response.headers});
     }
