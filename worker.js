@@ -368,7 +368,7 @@ function injectPreview(
 <script id="xoxo-localized-share-hotfix-v2">
 (function(){
   try {
-    var rawLang=String(localStorage.getItem("friendhub_language")||"").trim().toLowerCase().replace(/_/g,"-");
+    var rawLang=String(new URL(location.href).searchParams.get("lang")||localStorage.getItem("friendhub_language")||document.documentElement.lang||"en").trim().toLowerCase().replace(/_/g,"-");
     var lang=rawLang.split("-")[0];
     if(rawLang==="pt"||rawLang.indexOf("pt-")===0) lang="pt-br";
     if(rawLang==="no"||rawLang==="nb"||rawLang.indexOf("nb-")===0) lang="nb";
@@ -391,7 +391,7 @@ function injectPreview(
         if(typeof value!=="string" || !/whatsapp\.com|wa\.me/i.test(value)) return value;
         var u=new URL(value,location.href);
         if(!/whatsapp\.com|wa\.me/i.test(u.hostname)) return value;
-        u.searchParams.set("text",localized+"\n\nhttps://xoxoavenue.com/?lang="+encodeURIComponent(lang)+"&xoxo_share=1&xoxo_v=20261027c");
+        u.searchParams.set("text",localized+"\n\nhttps://xoxoavenue.com/?lang="+encodeURIComponent(lang)+"&xoxo_share=1&xoxo_v=20261027z10");
         return u.href;
       }catch(_){ return value; }
     }
@@ -2903,7 +2903,7 @@ async function xoxoServePublicSeoRoute(request, env, url) {
       if (typeof value !== "string" || value.indexOf(original) === -1) return value;
       var lang = localStorage.getItem(key);
       if (!Object.prototype.hasOwnProperty.call(messages, lang)) return value;
-      return value.replace(original, messages[lang]).replace(/https:\\/\\/xoxoavenue\\.com\\/\\?lang=[a-zA-Z-]+(?:&xoxo_share=1&xoxo_v=[a-zA-Z0-9]+)?/g, "https://xoxoavenue.com/?lang=" + lang + "&xoxo_share=1&xoxo_v=20261027c");
+      return value.replace(original, messages[lang]).replace(/https:\\/\\/xoxoavenue\\.com\\/\\?lang=[a-zA-Z-]+(?:&xoxo_share=1&xoxo_v=[a-zA-Z0-9]+)?/g, "https://xoxoavenue.com/?lang=" + lang + "&xoxo_share=1&xoxo_v=20261027z10");
     }
     if (typeof navigator.share === "function") {
       var nativeShare = navigator.share.bind(navigator);
