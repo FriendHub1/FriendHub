@@ -3186,8 +3186,12 @@ export default {
       profileId = await getPublicProfileIdByUsername(friendlyUsernameMatch);
     }
 
-    const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
-    if (publicSeoResponse) return publicSeoResponse;
+    // A resolved public profile must take priority over generic SEO/SPA routes.
+    // Otherwise the custom domain can return Home before username-profile rendering.
+    if (!profileId) {
+      const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
+      if (publicSeoResponse) return publicSeoResponse;
+    }
 
     // Stay Safe, Sweetheart! — production integration.
     // Keep workers.dev query flags available for isolated BETA review,
