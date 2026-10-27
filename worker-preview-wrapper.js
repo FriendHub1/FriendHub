@@ -185,7 +185,7 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
   // On public username profile pages, normalize legacy profile URLs generated
   // by the existing Share Profile action before handing them to share/clipboard.
   if (url.pathname !== "/") {
-    const routeName = url.pathname.replace(/^\\//, "").replace(/\\/$/, "");
+    const routeName = url.pathname.replace(/^\//, "").replace(/\\/$/, "");
     const reserved = new Set(["about","discover","privacy","terms","guidelines","api","u","post","profile-preview-image","post-preview-image","assets","beta","favicon.ico","robots.txt","sitemap.xml"]);
     const isUsernameProfile = /^\\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\\/?$/.test(url.pathname) &&
       !reserved.has(routeName.toLowerCase());
