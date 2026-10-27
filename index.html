@@ -16038,7 +16038,10 @@ async function sharePublicProfile(userId, username = "@User") {
                                         "fr": "Rejoins-moi sur XOXO Avenue ! Rencontre de nouvelles personnes, découvre des communautés et fais-toi de nouveaux amis ! 💜",
                                         "pl": "Dołącz do mnie na XOXO Avenue! Poznawaj nowych ludzi, odkrywaj społeczności i zawieraj nowe przyjaźnie! 💜",
                                         "nb": "💜 Bli med på XOXO Avenue! Møt nye mennesker, få nye venner og oppdag fellesskap fra hele verden. ✨",
-                                        "cs": "💜 Objevte XOXO Avenue! Poznávejte nové lidi z celého světa, navazujte přátelství a objevujte komunity podle svých zájmů. Připojte se zdarma! ✨"
+                                        "cs": "💜 Objevte XOXO Avenue! Poznávejte nové lidi z celého světa, navazujte přátelství a objevujte komunity podle svých zájmů. Připojte se zdarma! ✨",
+                                        "de": "Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!",
+                                        "sv": "Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",
+                                        "it": "Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!"
                                       };
                                       const text = messages[language] || messages.en;
                                       const fullMessage = `${text}\n${url}`;
@@ -16076,11 +16079,11 @@ async function sharePublicProfile(userId, username = "@User") {
 
                                     function getFriendHubLanguage() {
                                       const language = localStorage.getItem("friendhub_language");
-                                      return ["es","pt-BR","pl","fr","nb","de","cs"].includes(language) ? language : "en";
+                                      return ["es","pt-BR","pl","fr","nb","de","cs","sv","it"].includes(language) ? language : "en";
                                     }
 
                                     function xoxoLocalizedShareUrl(value, language) {
-  const supported = ["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs"];
+  const supported = ["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs", "sv", "it"];
   const selected = supported.includes(language) ? language : getFriendHubLanguage();
   const url = new URL(value, window.location.origin);
   url.searchParams.set("lang", selected);
