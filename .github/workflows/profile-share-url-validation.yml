@@ -78,5 +78,9 @@ jobs:
           assert(copiedText === 'https://xoxoavenue.com/Wendell', 'Clipboard URL was not canonicalized: ' + copiedText);
           console.log('Profile share script syntax, share URL, share text, and clipboard rewrite validated.');
           NODE
+      - name: Verify username profile bootstrap runs before app scripts
+        run: |
+          grep -F "element.prepend(bootstrap, { html: true })" worker.js
+          grep -F "xoxo-username-profile-bootstrap" worker.js
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@4.153.0 deploy --dry-run --config ./wrangler.jsonc
