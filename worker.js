@@ -3456,8 +3456,34 @@ export default {
     if (!url.searchParams.has("profile")) {
       url.searchParams.set("profile", ${JSON.stringify(String(profileId))});
       history.replaceState(history.state, "", url.pathname + "?" + url.searchParams.toString() + url.hash);
-      window.addEventListener("load", function(){
+
+      // The app reads ?profile after its asynchronous session check. Restore
+      // the clean URL only after the app has consumed the parameter.
+      var restoreCleanUrl = function(){
         try { history.replaceState(history.state, "", originalUrl); } catch (_) {}
+      };
+      var installProfileUrlHook = function(){
+        var original = window.openSharedProfileFromUrl;
+        if (typeof original !== "function") return false;
+        if (original.__xoxoUsernameProfileHook) return true;
+        var wrapped = async function(){
+          var result = original.apply(this, arguments);
+          restoreCleanUrl();
+          return await result;
+        };
+        wrapped.__xoxoUsernameProfileHook = true;
+        window.openSharedProfileFromUrl = wrapped;
+        return true;
+      };
+      var attempts = 0;
+      var hookTimer = setInterval(function(){
+        attempts += 1;
+        if (installProfileUrlHook() || attempts >= 200) clearInterval(hookTimer);
+      }, 50);
+      window.addEventListener("load", function(){
+        setTimeout(function(){
+          if (!installProfileUrlHook()) restoreCleanUrl();
+        }, 10000);
       }, {once:true});
     }
   } catch (_) {}
