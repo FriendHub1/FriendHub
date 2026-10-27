@@ -89,7 +89,7 @@ const SHARE_SCRIPT = `(function(){try{
       if(!messages[lang]) lang="en";
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027g");
+      share.searchParams.set("xoxo_v","20261027h");
       var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
       var localized=messages[lang];
       if(text.indexOf(english)!==-1) text=text.replace(english,localized);
@@ -122,7 +122,7 @@ const SHARE_SCRIPT = `(function(){try{
       var lang=currentShareLanguage();
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027g");
+      share.searchParams.set("xoxo_v","20261027h");
       return share.toString();
     }catch(_){return value;}
   }
@@ -197,17 +197,16 @@ async function localizedResponse(request, env, ctx) {
     sv: "sv_SE", it: "it_IT"
   })[languageFrom(url)] || "en_US";
   const shareUrl = url.origin + url.pathname + "?lang=" +
-    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261027g";
+    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261027h";
   const escapedShareUrl = shareUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   const response = new HTMLRewriter()
-    // Remove existing preview tags first. Some base HTML variants contain duplicate
-    // English metadata, and social crawlers may prefer the first matching tag.
-    .on('meta[property="og:url"]', { element(element) { if (isSharePreview) element.remove(); } })
-    .on('meta[property="og:locale"]', { element(element) { if (isSharePreview) element.remove(); } })
-    .on('meta[property="og:description"]', { element(element) { if (isSharePreview) element.remove(); } })
+    // Rebuild the full social preview as one consistent localized set. This
+    // guarantees a title and image remain available when old metadata is absent
+    // or duplicated, while avoiding stale English descriptions.
+    .on('meta[property^="og:"]', { element(element) { if (isSharePreview) element.remove(); } })
+    .on('meta[name^="twitter:"]', { element(element) { if (isSharePreview) element.remove(); } })
     .on('meta[name="description"]', { element(element) { if (isSharePreview) element.remove(); } })
-    .on('meta[name="twitter:description"]', { element(element) { if (isSharePreview) element.remove(); } })
     .on('link[rel="canonical"]', {
       element(element) {
         if (isSharePreview) element.setAttribute("href", shareUrl);
@@ -217,8 +216,10 @@ async function localizedResponse(request, env, ctx) {
       element(element) {
         if (isSharePreview) {
           const escaped = description.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+          const title = "XOXO Avenue";
+          const image = "https://xoxoavenue.com/xoxoavenue-social.png";
           element.append(
-            `<meta property="og:url" content="${escapedShareUrl}"><meta property="og:locale" content="${locale}"><meta property="og:description" content="${escaped}"><meta name="description" content="${escaped}"><meta name="twitter:description" content="${escaped}">`,
+            `<meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:site_name" content="XOXO Avenue"><meta property="og:url" content="${escapedShareUrl}"><meta property="og:locale" content="${locale}"><meta property="og:description" content="${escaped}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="description" content="${escaped}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${escaped}"><meta name="twitter:image" content="${image}">`,
             {html: true}
           );
         }
