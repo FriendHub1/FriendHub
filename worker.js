@@ -362,6 +362,52 @@ function injectPreview(
       },
     })
 
+    .on("head", {
+      element(element) {
+        element.append(`
+<script id="xoxo-localized-share-hotfix-v2">
+(function(){
+  try {
+    var lang=String(localStorage.getItem("friendhub_language")||"").toLowerCase();
+    var messages={
+      it:"Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!",
+      sv:"Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",
+      de:"Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!"
+    };
+    var localized=messages[lang];
+    if(!localized) return;
+    function rewrite(value){
+      try{
+        if(typeof value!=="string" || !/whatsapp\.com|wa\.me/i.test(value)) return value;
+        var u=new URL(value,location.href);
+        if(!/whatsapp\.com|wa\.me/i.test(u.hostname)) return value;
+        u.searchParams.set("text",localized+"\n\nhttps://xoxoavenue.com/?lang="+encodeURIComponent(lang));
+        return u.href;
+      }catch(_){ return value; }
+    }
+    var oldOpen=window.open;
+    window.open=function(url){
+      var args=Array.prototype.slice.call(arguments);
+      if(typeof args[0]==="string") args[0]=rewrite(args[0]);
+      return oldOpen.apply(window,args);
+    };
+    document.addEventListener("click",function(e){
+      var a=e.target&&e.target.closest?e.target.closest("a"):null;
+      if(!a) return;
+      var href=a.href||a.getAttribute("href")||"";
+      var fixed=rewrite(href);
+      if(fixed!==href){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        window.open(fixed,"_blank","noopener,noreferrer");
+      }
+    },true);
+  }catch(_){}
+})();
+</script>`, {html:true});
+      }
+    })
+
     .transform(response);
 }
 
