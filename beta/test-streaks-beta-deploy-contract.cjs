@@ -17,7 +17,7 @@ assert.match(workflow, /XOXO_STREAKS_BETA_CF_API_TOKEN/);
 assert.match(workflow, /--dry-run/);
 assert.match(config, /"name": "xoxo-streaks-beta"/);
 assert.match(host, /xoxo_streaks_beta/);
-assert.match(host, /workers\\\.dev/);
+assert.ok(host.includes(String.raw`workers\\.dev`), "host must restrict itself to workers.dev");
 assert.match(host, /XOXOStreaksChatBridgeBeta/);
 assert.match(host, /currentDmUserId/);
 assert.match(host, /supabaseClient/);
