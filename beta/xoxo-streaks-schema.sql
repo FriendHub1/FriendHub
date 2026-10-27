@@ -96,6 +96,20 @@ begin
     return;
   end if;
 
+  -- Require an extant ordinary persistent DM between these exact participants.
+  -- This prevents stale daily aggregates from acting as authorization after
+  -- the underlying conversation has been physically removed.
+  if not exists (
+    select 1
+    from public.direct_messages dm
+    where ((dm.sender_id = v_me and dm.recipient_id = p_other_user)
+        or (dm.sender_id = p_other_user and dm.recipient_id = v_me))
+      and dm.whisper_id is null
+      and coalesce(dm.media_view_mode, 'normal') = 'normal'
+  ) then
+    return;
+  end if;
+
   v_low := least(v_me, p_other_user);
   v_high := greatest(v_me, p_other_user);
 
