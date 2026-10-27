@@ -12,6 +12,15 @@ A streak may only be displayed when the canonical chat host has already determin
 
 The host must receive a canonical `isConversationVisible` / equivalent decision from the existing chat flow, or an equivalent server-authoritative permission result. If that decision is false, the streak mount is cleared and no streak RPC is requested.
 
+The current fail-closed adapter expects `window.xoxoIsConversationVisible(me, other) === true`. This is a temporary contract boundary, not a claim that the production chat currently implements that function. Repository code search did not locate this symbol or an authoritative canonical block-check function. The host therefore remains hidden unless the hook is explicitly supplied; do not add a permissive fallback.
+
+## Audit result (2026-10-27)
+
+- Confirmed the Streaks host checks the current account, selected DM peer, visible chat container, Supabase client, and admin exclusion.
+- Confirmed it fails closed if the canonical permission hook is absent or does not return literal `true`.
+- Repository searches for the proposed hook and common block-policy names did not identify a reliable existing block API/table. Search results are not proof that no policy exists, so no table or RPC is inferred.
+- No production code or Supabase schema was changed during this audit.
+
 ## Forbidden shortcuts
 
 - Do not query an assumed `blocks`, `blocked_users`, or `user_blocks` table.
@@ -30,4 +39,4 @@ The host must receive a canonical `isConversationVisible` / equivalent decision 
 
 ## Current status
 
-This contract is documentation/test guidance only. It does not change production behavior or Supabase.
+This contract is documentation/test guidance only. It does not change production behavior or Supabase. The feature is not release-ready until the canonical permission decision is wired into the real chat flow and verified with authenticated accounts.
