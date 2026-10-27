@@ -15,6 +15,41 @@ function escapeHtml(value) {
  * ==========================================
  */
 
+async function getPublicProfileIdByUsername(username) {
+  const normalized = String(username || "").trim().replace(/^@+/, "");
+  if (!normalized) return null;
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/rpc/get_public_profile_id_by_username`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "Accept-Profile": "public",
+          "Content-Profile": "public",
+        },
+        body: JSON.stringify({ target_username: normalized }),
+      }
+    );
+
+    if (!response.ok) {
+      console.error("XOXO username profile lookup failed:", response.status, await response.text());
+      return null;
+    }
+
+    const rows = await response.json();
+    // Ambiguous matches are rejected instead of selecting an arbitrary account.
+    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0]?.user_id) return null;
+    return String(rows[0].user_id);
+  } catch (error) {
+    console.error("XOXO username profile lookup error:", error);
+    return null;
+  }
+}
 async function getPublicProfile(userId) {
   try {
     const response = await fetch(
@@ -3126,13 +3161,30 @@ export default {
      * NORMAL PAGE
      */
 
-    // Friendly UUID profile links preserve legacy ?profile=ID behavior.
+    // Friendly UUID links and username-based public profile links.
+    // Reserved site routes must never be interpreted as usernames.
     const friendlyProfileMatch =
       url.pathname.match(/^\/u\/([0-9a-fA-F-]{36})\/?$/);
-    const profileId =
+    const reservedProfilePaths = new Set([
+      "about", "discover", "privacy", "terms", "guidelines",
+      "api", "u", "post", "profile-preview-image", "post-preview-image",
+      "assets", "beta", "favicon.ico", "robots.txt", "sitemap.xml",
+    ]);
+    const friendlyUsernameMatch =
+      !friendlyProfileMatch &&
+      !url.searchParams.has("profile") &&
+      url.pathname.match(/^\/([A-Za-z0-9][A-Za-z0-9._-]{0,29})\/?$/) &&
+      !reservedProfilePaths.has(url.pathname.replace(/^\//, "").replace(/\/$/, "").toLowerCase())
+        ? url.pathname.replace(/^\//, "").replace(/\/$/, "")
+        : null;
+    let profileId =
       friendlyProfileMatch
         ? friendlyProfileMatch[1]
         : url.searchParams.get("profile");
+
+    if (!profileId && friendlyUsernameMatch && (request.method === "GET" || request.method === "HEAD")) {
+      profileId = await getPublicProfileIdByUsername(friendlyUsernameMatch);
+    }
 
     const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
     if (publicSeoResponse) return publicSeoResponse;
@@ -3278,6 +3330,20 @@ export default {
       );
     }
 
+    // Canonicalize legacy UUID profile links to the public username URL.
+    // Keep unrelated query parameters (for example language), but remove the
+    // legacy profile selector so shared links converge on /username.
+    if (friendlyProfileMatch && (request.method === "GET" || request.method === "HEAD")) {
+      const canonicalUsername = String(profile.username || "").trim().replace(/^@+/, "");
+      if (/^[A-Za-z0-9][A-Za-z0-9._-]{0,29}$/.test(canonicalUsername)) {
+        const canonicalUrl = new URL(url.origin + "/" + encodeURIComponent(canonicalUsername));
+        for (const [key, value] of url.searchParams.entries()) {
+          if (key !== "profile") canonicalUrl.searchParams.append(key, value);
+        }
+        return Response.redirect(canonicalUrl.toString(), 302);
+      }
+    }
+
     /*
      * LOAD XOXO INDEX
      */
@@ -3357,20 +3423,47 @@ export default {
           : "image/jpeg",
 
       url:
-        friendlyProfileMatch
-          ? `${url.origin}/u/${encodeURIComponent(profileId)}`
-          : `${url.origin}/?profile=${encodeURIComponent(profileId)}`,
+        friendlyUsernameMatch
+          ? `${url.origin}/${encodeURIComponent(friendlyUsernameMatch)}`
+          : friendlyProfileMatch
+            ? `${url.origin}/u/${encodeURIComponent(profileId)}`
+            : `${url.origin}/?profile=${encodeURIComponent(profileId)}`,
     };
 
     /*
      * OPEN GRAPH / SOCIAL PREVIEW
      */
 
-    const transformed =
+    let transformed =
       injectPreview(
         assetResponse,
         metadata
       );
+
+    // The existing client app reads ?profile=ID during startup. Supply it
+    // temporarily, then restore the clean username URL after page load so the
+    // address bar and any later share action use /username.
+    if (friendlyUsernameMatch) {
+      const bootstrap = `<script id="xoxo-username-profile-bootstrap">
+(function(){
+  try {
+    var originalUrl = location.pathname + location.search + location.hash;
+    var url = new URL(location.href);
+    if (!url.searchParams.has("profile")) {
+      url.searchParams.set("profile", ${JSON.stringify(String(profileId))});
+      history.replaceState(history.state, "", url.pathname + "?" + url.searchParams.toString() + url.hash);
+      window.addEventListener("load", function(){
+        try { history.replaceState(history.state, "", originalUrl); } catch (_) {}
+      }, {once:true});
+    }
+  } catch (_) {}
+})();
+</script>`;
+      // Run before the site app scripts so the client reads ?profile=ID during initialization.
+      transformed = new HTMLRewriter()
+        .on("head", { element(element) { element.prepend(bootstrap, { html: true }); } })
+        .transform(transformed);
+    }
 
     const headers =
       new Headers(

@@ -1,0 +1,86 @@
+name: XOXO Profile Share URL Validation
+
+on:
+  push:
+    branches: ["feature/shareable-username-profiles"]
+    paths:
+      - "worker-preview-wrapper.js"
+      - "worker.js"
+      - "wrangler.jsonc"
+      - ".github/workflows/profile-share-url-validation.yml"
+  pull_request:
+    paths:
+      - "worker-preview-wrapper.js"
+      - "worker.js"
+      - "wrangler.jsonc"
+      - ".github/workflows/profile-share-url-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-profile-share-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Worker wrapper syntax
+        run: node --check worker-preview-wrapper.js
+      - name: Check injected profile-share script syntax and URL rewrite rules
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { runInNewContext } from 'node:vm';
+          const assert = (condition, message) => { if (!condition) throw new Error(message); };
+          const source = readFileSync('worker-preview-wrapper.js', 'utf8');
+          const startMarker = 'const profileShareScript = `';
+          const start = source.indexOf(startMarker);
+          if (start < 0) throw new Error('Profile share URL fix script not found');
+          const bodyStart = start + startMarker.length;
+          const bodyEnd = source.indexOf('`;\n      const response = new HTMLRewriter()', bodyStart);
+          if (bodyEnd < 0) throw new Error('Could not extract profile share URL fix script');
+          const templateBody = source.slice(bodyStart, bodyEnd);
+          const script = Function('return `'+templateBody+'`')();
+          new Function(script);
+          for (const required of [
+            'navigator.share',
+            'navigator.clipboard.writeText',
+            'u.searchParams.has("profile")',
+            'new URL("https://xoxoavenue.com"+location.pathname)'
+          ]) {
+            assert(script.includes(required), 'Missing expected profile share behavior: ' + required);
+          }
+          let sharedData, copiedText;
+          const fakeNavigator = {
+            share: async data => { sharedData = data; },
+            clipboard: { writeText: async value => { copiedText = value; } }
+          };
+          runInNewContext(script, {
+            navigator: fakeNavigator,
+            location: {
+              href: 'https://preview.example/Wendell?lang=en',
+              pathname: '/Wendell',
+              hostname: 'preview.example',
+              origin: 'https://preview.example'
+            },
+            URL
+          });
+          await fakeNavigator.share({
+            title: 'Wendell',
+            url: 'https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en',
+            text: 'Check this profile: https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en'
+          });
+          assert(sharedData.url === 'https://xoxoavenue.com/Wendell', 'navigator.share URL was not canonicalized: ' + sharedData.url);
+          assert(sharedData.text.includes('https://xoxoavenue.com/Wendell'), 'navigator.share text was not canonicalized: ' + sharedData.text);
+          await fakeNavigator.clipboard.writeText('https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en');
+          assert(copiedText === 'https://xoxoavenue.com/Wendell', 'Clipboard URL was not canonicalized: ' + copiedText);
+          console.log('Profile share script syntax, share URL, share text, and clipboard rewrite validated.');
+          NODE
+      - name: Verify username profile bootstrap runs before app scripts
+        run: |
+          grep -F "element.prepend(bootstrap, { html: true })" worker.js
+          grep -F "xoxo-username-profile-bootstrap" worker.js
+      - name: Validate Cloudflare Worker bundle
+        run: npx --yes wrangler@4.153.0 deploy --dry-run --config ./wrangler.jsonc
