@@ -3158,13 +3158,19 @@ export default {
     }
 
     const xoxoShareLanguage = String(url.searchParams.get("lang") || "").toLowerCase();
+    const xoxoShareLanguageRaw = String(url.searchParams.get("lang") || "").toLowerCase();
+    const xoxoShareLanguage = xoxoShareLanguageRaw === "pt" ? "pt-br" : xoxoShareLanguageRaw === "no" ? "nb" : xoxoShareLanguageRaw;
     const xoxoShareDescriptions = {
       es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
-      "pt-br": "Conheça pessoas, faça novas amizades e descubra comunidades no XOXO Avenue.",
-      fr: "Rencontrez de nouvelles personnes, faites-vous des amis et découvrez des communautés sur XOXO Avenue.",
-      pl: "Poznawaj nowych ludzi, nawiązuj przyjaźnie i odkrywaj społeczności na XOXO Avenue.",
-      nb: "Møt nye mennesker, få nye venner og oppdag fellesskap på XOXO Avenue. 🌍✨",
-      cs: "Poznávejte nové lidi, navazujte přátelství a objevujte komunity na XOXO Avenue. 💜"
+      en: "Meet people, make friends, and discover communities on XOXO Avenue.",
+      "pt-br": "Conheça pessoas, faça novos amigos e descubra comunidades no XOXO Avenue.",
+      fr: "Rencontrez de nouvelles personnes, faites-vous de nouveaux amis et découvrez des communautés sur XOXO Avenue.",
+      pl: "Poznawaj ludzi, nawiązuj nowe znajomości i odkrywaj społeczności na XOXO Avenue.",
+      de: "Lerne neue Menschen kennen, finde neue Freunde und entdecke Communities auf XOXO Avenue.",
+      nb: "Møt nye mennesker, få nye venner og oppdag fellesskap på XOXO Avenue.",
+      cs: "Poznávejte nové lidi, najděte nové přátele a objevujte komunity na XOXO Avenue.",
+      sv: "Träffa nya människor, få nya vänner och upptäck gemenskaper på XOXO Avenue.",
+      it: "Conosci nuove persone, fai nuove amicizie e scopri community su XOXO Avenue."
     };
     const xoxoShareDescription = xoxoShareDescriptions[xoxoShareLanguage];
     if (!profileId && url.pathname === "/" && xoxoShareDescription &&
