@@ -33,7 +33,7 @@ jobs:
           const descriptionMap = source.slice(source.indexOf('const DESCRIPTIONS = {'), source.indexOf('};', source.indexOf('const DESCRIPTIONS = {')));
           const missing = expected.filter(key => !descriptionMap.includes(key));
           if (missing.length) throw new Error('Missing localized preview descriptions: ' + missing.join(', '));
-          if (!source.includes('xoxo_v=20261027e')) throw new Error('Share preview cache version missing');
+          if (!source.includes('xoxo_v=20261027f')) throw new Error('Share preview cache version missing');
           if (!source.includes('meta[property="og:description"]')) throw new Error('Open Graph description handler missing');
           if (!source.includes('meta[name="description"]')) throw new Error('HTML description handler missing');
           const marker = 'const SHARE_SCRIPT = `';
