@@ -11,7 +11,7 @@ assert.match(build, /OUT.*index\.html/);
 assert.match(build, /xoxo-streaks\.js/);
 assert.match(build, /xoxo-streaks-chat-bridge\.js/);
 assert.match(build, /xoxo-streaks-beta-host\.js/);
-assert.match(workflow, /name: xoxo-streaks-beta/);
+assert.match(workflow, /deploy-streaks-beta/);
 assert.match(workflow, /vars\.XOXO_STREAKS_BETA_DEPLOY_ENABLED == 'true'/);
 assert.match(workflow, /XOXO_STREAKS_BETA_CF_API_TOKEN/);
 assert.match(workflow, /--dry-run/);
