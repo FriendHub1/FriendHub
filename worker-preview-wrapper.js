@@ -180,9 +180,65 @@ const SHARE_SCRIPT = `(function(){try{
 async function localizedResponse(request, env, ctx) {  const baseResponse = await baseWorker.fetch(request, env, ctx);
   const url = new URL(request.url);
 
-  if (url.pathname !== "/") return baseResponse;
-
   const type = String(baseResponse.headers.get("content-type") || "").toLowerCase();
+
+  // On public username profile pages, normalize legacy profile URLs generated
+  // by the existing Share Profile action before handing them to share/clipboard.
+  if (url.pathname !== "/") {
+    const routeName = url.pathname.replace(/^\\//, "").replace(/\\/$/, "");
+    const reserved = new Set(["about","discover","privacy","terms","guidelines","api","u","post","profile-preview-image","post-preview-image","assets","beta","favicon.ico","robots.txt","sitemap.xml"]);
+    const isUsernameProfile = /^\\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\\/?$/.test(url.pathname) &&
+      !reserved.has(routeName.toLowerCase());
+    if (isUsernameProfile && type.includes("text/html") && request.method === "GET") {
+      const profileShareScript = `(function(){try{
+        function rewriteUrl(raw){
+          try{
+            var u=new URL(raw,location.href);
+            var host=u.hostname.toLowerCase();
+            if(host!=="xoxoavenue.com"&&host!=="www.xoxoavenue.com")return raw;
+            var legacy=/^\\/u\\/[0-9a-f-]{36}\\/?$/i.test(u.pathname)||u.searchParams.has("profile");
+            if(!legacy)return raw;
+            var current=new URL("https://xoxoavenue.com"+location.pathname);
+            var lang=u.searchParams.get("lang")||new URL(location.href).searchParams.get("lang");
+            if(lang)current.searchParams.set("lang",lang);
+            u.searchParams.forEach(function(v,k){if(k!=="profile"&&k!=="lang")current.searchParams.append(k,v);});
+            return current.toString();
+          }catch(_){return raw;}
+        }
+        function rewriteText(value){
+          if(typeof value!=="string")return value;
+          return value.replace(/https?:\\/\\/[^\\s]+/gi,function(raw){
+            var suffix="",candidate=raw;
+            while(candidate.length&&/[),.!?\\]]/.test(candidate.charAt(candidate.length-1))){suffix=candidate.slice(-1)+suffix;candidate=candidate.slice(0,-1);}
+            return rewriteUrl(candidate)+suffix;
+          });
+        }
+        if(typeof navigator!=="undefined"&&typeof navigator.share==="function"){
+          var share=navigator.share.bind(navigator);
+          navigator.share=function(data){
+            if(data&&typeof data==="object"){
+              var copy=Object.assign({},data);
+              if(typeof copy.url==="string")copy.url=rewriteUrl(copy.url);
+              if(typeof copy.text==="string")copy.text=rewriteText(copy.text);
+              return share(copy);
+            }
+            return share(data);
+          };
+        }
+        if(typeof navigator!=="undefined"&&navigator.clipboard&&typeof navigator.clipboard.writeText==="function"){
+          var write=navigator.clipboard.writeText.bind(navigator.clipboard);
+          navigator.clipboard.writeText=function(value){return write(rewriteText(value));};
+        }
+      }catch(_){}})();`;
+      const response = new HTMLRewriter()
+        .on("head", { element(element) { element.append(`<script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } })
+        .transform(baseResponse);
+      return new Response(response.body, {status:response.status,statusText:response.statusText,headers:response.headers});
+    }
+    return baseResponse;
+  }
+
+  if (!type.includes("text/html")) return baseResponse;
   if (!type.includes("text/html")) return baseResponse;
 
   const isHomeSharePreview =
