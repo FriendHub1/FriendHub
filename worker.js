@@ -15,6 +15,40 @@ function escapeHtml(value) {
  * ==========================================
  */
 
+async function getPublicProfileIdByUsername(username, env) {
+  const normalized = String(username || "").trim();
+  if (!normalized || !env.SUPABASE_SECRET_KEY) return null;
+
+  try {
+    const lookupUrl = new URL(`${SUPABASE_URL}/rest/v1/profiles`);
+    lookupUrl.searchParams.set("select", "user_id");
+    lookupUrl.searchParams.set("username", `eq.${normalized}`);
+    lookupUrl.searchParams.set("limit", "2");
+
+    const response = await fetch(lookupUrl.toString(), {
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        Accept: "application/json",
+        "Accept-Profile": "public",
+      },
+    });
+
+    if (!response.ok) {
+      console.error("XOXO username profile lookup failed:", response.status);
+      return null;
+    }
+
+    const rows = await response.json();
+    // Do not route an ambiguous username to an arbitrary account.
+    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0]?.user_id) return null;
+    return String(rows[0].user_id);
+  } catch (error) {
+    console.error("XOXO username profile lookup error:", error);
+    return null;
+  }
+}
+
 async function getPublicProfile(userId) {
   try {
     const response = await fetch(
@@ -3126,13 +3160,30 @@ export default {
      * NORMAL PAGE
      */
 
-    // Friendly UUID profile links preserve legacy ?profile=ID behavior.
+    // Friendly UUID links and username-based public profile links.
+    // Reserved site routes must never be interpreted as usernames.
     const friendlyProfileMatch =
       url.pathname.match(/^\/u\/([0-9a-fA-F-]{36})\/?$/);
-    const profileId =
+    const reservedProfilePaths = new Set([
+      "about", "discover", "privacy", "terms", "guidelines",
+      "api", "u", "post", "profile-preview-image", "post-preview-image",
+      "assets", "beta", "favicon.ico", "robots.txt", "sitemap.xml",
+    ]);
+    const friendlyUsernameMatch =
+      !friendlyProfileMatch &&
+      !url.searchParams.has("profile") &&
+      url.pathname.match(/^\/([A-Za-z0-9][A-Za-z0-9._-]{0,29})\/?$/) &&
+      !reservedProfilePaths.has(url.pathname.replace(/^\//, "").replace(/\/$/, "").toLowerCase())
+        ? url.pathname.replace(/^\//, "").replace(/\/$/, "")
+        : null;
+    let profileId =
       friendlyProfileMatch
         ? friendlyProfileMatch[1]
         : url.searchParams.get("profile");
+
+    if (!profileId && friendlyUsernameMatch && (request.method === "GET" || request.method === "HEAD")) {
+      profileId = await getPublicProfileIdByUsername(friendlyUsernameMatch, env);
+    }
 
     const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
     if (publicSeoResponse) return publicSeoResponse;
@@ -3357,20 +3408,41 @@ export default {
           : "image/jpeg",
 
       url:
-        friendlyProfileMatch
-          ? `${url.origin}/u/${encodeURIComponent(profileId)}`
-          : `${url.origin}/?profile=${encodeURIComponent(profileId)}`,
+        friendlyUsernameMatch
+          ? `${url.origin}/${encodeURIComponent(friendlyUsernameMatch)}`
+          : friendlyProfileMatch
+            ? `${url.origin}/u/${encodeURIComponent(profileId)}`
+            : `${url.origin}/?profile=${encodeURIComponent(profileId)}`,
     };
 
     /*
      * OPEN GRAPH / SOCIAL PREVIEW
      */
 
-    const transformed =
+    let transformed =
       injectPreview(
         assetResponse,
         metadata
       );
+
+    // The existing client app understands ?profile=ID. Keep the shared URL
+    // username-based, while passing the resolved ID to the app on first load.
+    if (friendlyUsernameMatch) {
+      const bootstrap = `<script id="xoxo-username-profile-bootstrap">
+(function(){
+  try {
+    var url = new URL(location.href);
+    if (!url.searchParams.has("profile")) {
+      url.searchParams.set("profile", ${JSON.stringify(String(profileId))});
+      history.replaceState(history.state, "", url.pathname + "?" + url.searchParams.toString() + url.hash);
+    }
+  } catch (_) {}
+})();
+</script>`;
+      transformed = new HTMLRewriter()
+        .on("head", { element(element) { element.append(bootstrap, { html: true }); } })
+        .transform(transformed);
+    }
 
     const headers =
       new Headers(
