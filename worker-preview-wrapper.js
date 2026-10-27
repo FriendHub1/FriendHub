@@ -201,41 +201,26 @@ async function localizedResponse(request, env, ctx) {
   const escapedShareUrl = shareUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   const response = new HTMLRewriter()
-    .on('meta[property="og:url"]', {
-      element(element) {
-        if (isSharePreview) element.remove();
-      }
-    })
+    // Remove existing preview tags first. Some base HTML variants contain duplicate
+    // English metadata, and social crawlers may prefer the first matching tag.
+    .on('meta[property="og:url"]', { element(element) { if (isSharePreview) element.remove(); } })
+    .on('meta[property="og:locale"]', { element(element) { if (isSharePreview) element.remove(); } })
+    .on('meta[property="og:description"]', { element(element) { if (isSharePreview) element.remove(); } })
+    .on('meta[name="description"]', { element(element) { if (isSharePreview) element.remove(); } })
+    .on('meta[name="twitter:description"]', { element(element) { if (isSharePreview) element.remove(); } })
     .on('link[rel="canonical"]', {
       element(element) {
         if (isSharePreview) element.setAttribute("href", shareUrl);
-      }
-    })
-    .on('meta[property="og:locale"]', {
-      element(element) {
-        if (isSharePreview) element.setAttribute("content", locale);
-      }
-    })
-    .on('meta[property="og:description"]', {
-      element(element) {
-        if (isSharePreview) element.setAttribute("content", description);
-      }
-    })
-    .on('meta[name="twitter:description"]', {
-      element(element) {
-        if (isSharePreview) element.setAttribute("content", description);
-      }
-    })
-    .on('meta[name="description"]', {
-      element(element) {
-        if (isSharePreview) element.setAttribute("content", description);
       }
     })
     .on("head", {
       element(element) {
         if (isSharePreview) {
           const escaped = description.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-          element.append(`<meta property="og:url" content="${escapedShareUrl}"><meta property="og:locale" content="${locale}"><meta property="og:description" content="${escaped}"><meta name="twitter:description" content="${escaped}">`, {html: true});
+          element.append(
+            `<meta property="og:url" content="${escapedShareUrl}"><meta property="og:locale" content="${locale}"><meta property="og:description" content="${escaped}"><meta name="description" content="${escaped}"><meta name="twitter:description" content="${escaped}">`,
+            {html: true}
+          );
         }
         element.append(`<script id="xoxo-share-localizer">${SHARE_SCRIPT}</script>`, {html: true});
       }
