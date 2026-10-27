@@ -1,0 +1,54 @@
+name: XOXO localized WhatsApp share fix
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-share:
+    if: ${{ !contains(github.event.head_commit.message, 'Fix localized WhatsApp share messages') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch localized share code
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_messages = '''"cs": "💜 Objevte XOXO Avenue! Poznávejte nové lidi z celého světa, navazujte přátelství a objevujte komunity podle svých zájmů. Připojte se zdarma! ✨"\r\n                                      };'''
+          new_messages = '''"cs": "💜 Objevte XOXO Avenue! Poznávejte nové lidi z celého světa, navazujte přátelství a objevujte komunity podle svých zájmů. Připojte se zdarma! ✨",\r\n                                        "de": "Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!",\r\n                                        "sv": "Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",\r\n                                        "it": "Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!"\r\n                                      };'''
+          if old_messages not in s:
+              old_messages = old_messages.replace('\r\n', '\n')
+              new_messages = new_messages.replace('\r\n', '\n')
+          if old_messages not in s:
+              raise SystemExit('Expected WhatsApp share message block not found')
+          s = s.replace(old_messages, new_messages, 1)
+
+          old_lang = 'return ["es","pt-BR","pl","fr","nb","de","cs"].includes(language) ? language : "en";'
+          new_lang = 'return ["es","pt-BR","pl","fr","nb","de","cs","sv","it"].includes(language) ? language : "en";'
+          if old_lang not in s:
+              raise SystemExit('Expected language selector not found')
+          s = s.replace(old_lang, new_lang, 1)
+
+          old_supported = 'const supported = ["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs"];'
+          new_supported = 'const supported = ["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs", "sv", "it"];'
+          if old_supported not in s:
+              raise SystemExit('Expected share URL language list not found')
+          s = s.replace(old_supported, new_supported, 1)
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit fix and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/xoxo-fix-whatsapp-share.yml
+          git add index.html .github/workflows/xoxo-fix-whatsapp-share.yml
+          git commit -m "Fix localized WhatsApp share messages"
+          git push
