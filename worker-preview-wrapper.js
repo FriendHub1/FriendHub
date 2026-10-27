@@ -96,7 +96,11 @@ async function localizedResponse(request, env, ctx) {
   const type = String(baseResponse.headers.get("content-type") || "").toLowerCase();
   if (!type.includes("text/html")) return baseResponse;
 
-  const isSharePreview = url.searchParams.get("xoxo_share") === "1" || url.searchParams.has("lang");
+  const isHomeSharePreview =
+    !url.searchParams.has("profile") &&
+    !url.searchParams.has("post") &&
+    (url.searchParams.get("xoxo_share") === "1" || url.searchParams.has("lang"));
+  const isSharePreview = isHomeSharePreview;
   const description = localizedDescription(url);
   const locale = ({
     es: "es_ES", en: "en_US", "pt-br": "pt_BR", fr: "fr_FR",
