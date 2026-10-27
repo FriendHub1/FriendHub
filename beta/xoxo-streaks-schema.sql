@@ -77,6 +77,7 @@ declare
   v_current integer := 0;
   v_longest integer := 0;
   v_previous date;
+  v_clear_cutoff date;
 begin
   if v_me is null or p_other_user is null or v_me = p_other_user then
     return;
@@ -89,9 +90,19 @@ begin
   v_low := least(v_me, p_other_user);
   v_high := greatest(v_me, p_other_user);
 
+  -- Conservatively exclude the cleared UTC day and all earlier activity if
+  -- either participant cleared this conversation. Daily aggregates cannot
+  -- distinguish messages sent before vs. after a clear within the same day.
+  select max((dc.cleared_at at time zone 'UTC')::date)
+    into v_clear_cutoff
+  from public.dm_conversation_clears dc
+  where (dc.user_id = v_me and dc.other_user_id = p_other_user)
+     or (dc.user_id = p_other_user and dc.other_user_id = v_me);
+
   if not exists (
     select 1 from public.xoxo_dm_streak_days d
     where d.user_low = v_low and d.user_high = v_high
+      and (v_clear_cutoff is null or d.activity_date > v_clear_cutoff)
   ) then
     return query select 0, 0, null::date, 3;
     return;
@@ -100,7 +111,8 @@ begin
   select max(d.activity_date) into v_latest
   from public.xoxo_dm_streak_days d
   where d.user_low = v_low and d.user_high = v_high
-    and d.low_sent and d.high_sent;
+    and d.low_sent and d.high_sent
+    and (v_clear_cutoff is null or d.activity_date > v_clear_cutoff);
 
   if v_latest is not null and v_latest >= v_today - 1 then
     for v_day in
@@ -108,6 +120,7 @@ begin
       from public.xoxo_dm_streak_days d
       where d.user_low = v_low and d.user_high = v_high
         and d.low_sent and d.high_sent
+        and (v_clear_cutoff is null or d.activity_date > v_clear_cutoff)
         and d.activity_date <= v_latest
       order by d.activity_date desc
     loop
@@ -130,6 +143,7 @@ begin
     from public.xoxo_dm_streak_days d
     where d.user_low = v_low and d.user_high = v_high
       and d.low_sent and d.high_sent
+      and (v_clear_cutoff is null or d.activity_date > v_clear_cutoff)
     order by d.activity_date
   loop
     if v_previous is null or v_day <> v_previous + 1 then
