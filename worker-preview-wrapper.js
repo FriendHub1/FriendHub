@@ -15,7 +15,8 @@ const DESCRIPTIONS = {
 };
 
 function languageFrom(url) {
-  return String(url.searchParams.get("lang") || "en").toLowerCase();
+  const raw = String(url.searchParams.get("lang") || "en").toLowerCase();
+  return raw === "pt" || raw === "pt-br" ? "pt-br" : raw === "no" ? "nb" : raw;
 }
 
 function localizedDescription(url) {
@@ -23,17 +24,41 @@ function localizedDescription(url) {
 }
 
 const SHARE_SCRIPT = `(function(){try{
+  var messages={
+    es:"¡Únete a mí en XOXO Avenue! Conoce personas, descubre comunidades y haz nuevos amigos.",
+    en:"Join me on XOXO Avenue — meet people, discover communities and make new friends!",
+    "pt-br":"Junte-se a mim no XOXO Avenue! Conheça pessoas, descubra comunidades e faça novas amizades.",
+    fr:"Rejoins-moi sur XOXO Avenue ! Rencontre de nouvelles personnes, découvre des communautés et fais de nouveaux amis.",
+    pl:"Dołącz do mnie na XOXO Avenue! Poznawaj ludzi, odkrywaj społeczności i nawiązuj nowe znajomości.",
+    de:"Komm zu XOXO Avenue! Lerne neue Menschen kennen, entdecke Communities und finde neue Freunde.",
+    nb:"Bli med meg på XOXO Avenue! Møt nye mennesker, oppdag fellesskap og få nye venner.",
+    cs:"Přidej se ke mně na XOXO Avenue! Poznávej nové lidi, objevuj komunity a navazuj přátelství.",
+    sv:"Häng med mig på XOXO Avenue! Träffa nya människor, upptäck gemenskaper och få nya vänner.",
+    it:"Unisciti a me su XOXO Avenue! Conosci nuove persone, scopri community e fai nuove amicizie."
+  };
+  function normalize(raw){
+    raw=String(raw||"").toLowerCase();
+    if(raw==="pt"||raw==="pt-br") return "pt-br";
+    if(raw==="no") return "nb";
+    return raw;
+  }
   function rewrite(value){
     try{
       if(typeof value!=="string"||!/whatsapp\\.com|wa\\.me/i.test(value)) return value;
       var u=new URL(value,location.href);
+      if(!/whatsapp\\.com|wa\\.me/i.test(u.hostname)) return value;
       var text=u.searchParams.get("text")||"";
       var match=text.match(/https:\\/\\/xoxoavenue\\.com(?:\\/[^\\s]*)?/i);
       if(!match) return value;
       var share=new URL(match[0]);
-      var lang=String(localStorage.getItem("friendhub_language")||share.searchParams.get("lang")||document.documentElement.lang||"en").toLowerCase();
+      var lang=normalize(localStorage.getItem("friendhub_language")||share.searchParams.get("lang")||document.documentElement.lang||"en");
+      if(!messages[lang]) lang="en";
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
+      var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
+      var localized=messages[lang];
+      if(text.indexOf(english)!==-1) text=text.replace(english,localized);
+      else if(lang!=="en" && text.trim()) text=text.replace(/^[^\\n]*(?=\\n|$)/,localized);
       u.searchParams.set("text",text.replace(match[0],share.toString()));
       return u.toString();
     }catch(_){return value;}
