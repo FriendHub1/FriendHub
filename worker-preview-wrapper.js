@@ -147,7 +147,7 @@ async function localizedResponse(request, env, ctx) {
     sv: "sv_SE", it: "it_IT"
   })[languageFrom(url)] || "en_US";
   const shareUrl = url.origin + url.pathname + "?lang=" +
-    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261026b";
+    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261027c";
   const escapedShareUrl = shareUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   const response = new HTMLRewriter()
