@@ -5,6 +5,7 @@ Branch: `feature/xoxo-streaks-beta` · Draft PR #17.
 ## Implemented in this branch
 - Localized streak card module: `beta/xoxo-streaks.js`.
 - Opt-in host bridge: `beta/xoxo-streaks-chat-bridge.js`. It rechecks the current account/chat after async refresh and clears stale UI on context changes.
+- Added explicit stale-response guards to prevent a previous chat's RPC response from painting the card after the user switches conversations.
 - Proposed server-side migration: `beta/xoxo-streaks-schema.sql`.
 - Contract tests and GitHub Actions workflow.
 
@@ -21,9 +22,10 @@ Branch: `feature/xoxo-streaks-beta` · Draft PR #17.
 1. In the isolated BETA build only, add a mount element in the existing DM header and load `xoxo-streaks.js` followed by `xoxo-streaks-chat-bridge.js`.
 2. Create the bridge with `enabled: true` only in the opt-in BETA path, supplying live getters for the authenticated client, current account ID, peer ID, locale and mount element.
 3. Call `refresh()` when a conversation opens and after successful send/receive; call `clear()` when the chat changes; call `destroy()` on sign-out.
-4. Verify exact `direct_messages` column types, trigger interactions and RPC behavior on a disposable Supabase project before applying the SQL there.
-5. Test UTC midnight boundaries, a missing mutual day, 3/7/14/30/100-day milestones, account switching, blocked/cleared conversations, and disappearing content.
-6. Confirm the GitHub Actions run passes and conduct browser E2E tests in the isolated BETA Worker.
+4. Add and review server-side behavior for `dm_conversation_clears`; current RPC does not yet filter activity against the verified clear-history table, so the streak could reflect activity from a conversation the user cleared. Treat this as a release blocker.
+5. Verify exact `direct_messages` column types, trigger interactions and RPC behavior on a disposable Supabase project before applying the SQL there.
+6. Test UTC midnight boundaries, a missing mutual day, 3/7/14/30/100-day milestones, account switching, blocked/cleared conversations, and disappearing content.
+7. Confirm the latest GitHub Actions run passes and conduct browser E2E tests in the isolated BETA Worker.
 
 ## Safety status
 - No change has been made to `index.html` or `main`.
