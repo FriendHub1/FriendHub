@@ -36,7 +36,13 @@ jobs:
           if (!source.includes('xoxo_v=20261027c')) throw new Error('Share preview cache version missing');
           if (!source.includes('meta[property="og:description"]')) throw new Error('Open Graph description handler missing');
           if (!source.includes('meta[name="description"]')) throw new Error('HTML description handler missing');
-          console.log('Validated ten localized descriptions and cache-busting metadata.');
+          const marker = 'const SHARE_SCRIPT = `';
+          const bodyStart = source.indexOf(marker) + marker.length;
+          const bodyEnd = source.indexOf('`;\n\nasync function localizedResponse', bodyStart);
+          if (bodyStart < marker.length || bodyEnd < 0) throw new Error('Could not extract WhatsApp share script');
+          new Function(source.slice(bodyStart, bodyEnd));
+          if (!source.includes('marker="https://xoxoavenue.com"')) throw new Error('Share URL marker missing');
+          console.log('Validated ten localized descriptions, cache-busting metadata, and share-script syntax.');
           NODE
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@4.102.0 deploy --dry-run --config ./wrangler.jsonc
