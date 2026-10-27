@@ -17,11 +17,10 @@ const previewSearch=typeof URLSearchParams==="function" ?
  new URLSearchParams(window.location?.search||"") : null;
 const isProductionHost=/^(?:www\.)?xoxoavenue\.com$/i.test(String(window.location?.hostname||""));
 const REPORT_RPC_WRITES_ENABLED=Boolean(
- isProductionHost || (
-   /(?:^|\.)workers\.dev$/i.test(String(window.location?.hostname||"")) &&
-   previewSearch?.get("xoxo_safety_chat_beta")==="1" &&
-   previewSearch?.get("xoxo_safety_report_write_beta")==="1"
- )
+ !isProductionHost &&
+ /(?:^|\.)workers\.dev$/i.test(String(window.location?.hostname||"")) &&
+ previewSearch?.get("xoxo_safety_chat_beta")==="1" &&
+ previewSearch?.get("xoxo_safety_report_write_beta")==="1"
 );
 // Explicit, local-only simulation. It never invokes the report RPC.
 const SIMULATE=Boolean(/(?:^|\.)workers\.dev$/i.test(String(location.hostname||"")) &&
