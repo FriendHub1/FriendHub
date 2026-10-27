@@ -24,7 +24,7 @@ for(const flag of ["xoxo_safety_chat_beta","xoxo_safety_admin_beta"]){
   assert.ok(route.includes('url.searchParams.get("'+flag+'") === "1"'),
     flag+" must remain an explicit opt-in");
 }
-assert.match(route,/xoxoSafetyChatBeta \|\| xoxoSafetyAdminBeta/);
+assert.match(route,/enableSafetyChat \|\| enableSafetyAdmin/);
 assert.match(route,/headers\.set\("Cache-Control",\s*"no-store"\)/,
   "private preview pages must never be cached");
 const scripts=[
