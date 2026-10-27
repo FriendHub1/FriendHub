@@ -3461,7 +3461,7 @@ export default {
       document.documentElement.classList.add("xoxo-profile-bootstrap-pending");
       var loadingStyle = document.createElement("style");
       loadingStyle.id = "xoxo-profile-bootstrap-loading-style";
-      loadingStyle.textContent = "html.xoxo-profile-bootstrap-pending body>*:not(#xoxo-username-profile-loading){visibility:hidden!important}#xoxo-username-profile-loading{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#fff7ff;color:#8b3dc7;font:600 16px system-ui,sans-serif}#xoxo-username-profile-loading .heart{font-size:42px;animation:xoxoProfilePulse .9s ease-in-out infinite alternate}@keyframes xoxoProfilePulse{from{transform:scale(.88);opacity:.72}to{transform:scale(1.08);opacity:1}}";
+      loadingStyle.textContent = "html.xoxo-profile-bootstrap-pending body>*:not(#xoxo-username-profile-loading){visibility:hidden!important}#xoxo-username-profile-loading{position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#f6e6ff 0%,#ead0ff 48%,#d9b2ff 100%);color:#7028a5;font:600 15px system-ui,sans-serif;letter-spacing:.2px}#xoxo-username-profile-loading .heart{font-size:48px;filter:drop-shadow(0 5px 14px #9d4edd55);animation:xoxoProfilePulse .9s ease-in-out infinite alternate}#xoxo-username-profile-loading .label{opacity:.9}@keyframes xoxoProfilePulse{from{transform:scale(.88);opacity:.72}to{transform:scale(1.08);opacity:1}}";
       (document.head || document.documentElement).appendChild(loadingStyle);
       var restoreCleanUrl = function(){
         try { history.replaceState(history.state, "", originalUrl); } catch (_) {}
@@ -3497,7 +3497,7 @@ export default {
           var overlay = document.createElement("div");
           overlay.id = "xoxo-username-profile-loading";
           overlay.setAttribute("aria-label", "Cargando perfil");
-          overlay.innerHTML = '<span class="heart" aria-hidden="true">💜</span>';
+          overlay.innerHTML = '<span class="heart" aria-hidden="true">💜</span><span class="label">XOXO Avenue</span>';
           document.body.prepend(overlay);
           return true;
         }
