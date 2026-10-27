@@ -82,14 +82,9 @@ begin
     return;
   end if;
 
-  -- Respect either user's block; don't reveal streak metadata for blocked pairs.
-  if exists (
-    select 1 from public.user_blocks b
-    where (b.blocker_id = v_me and b.blocked_id = p_other_user)
-       or (b.blocker_id = p_other_user and b.blocked_id = v_me)
-  ) then
-    return;
-  end if;
+  -- This migration deliberately does not assume a block-table name.
+  -- The chat UI must hide/disable this card whenever the existing block rules
+  -- say the participants cannot interact. Recheck that policy before release.
 
   v_low := least(v_me, p_other_user);
   v_high := greatest(v_me, p_other_user);
