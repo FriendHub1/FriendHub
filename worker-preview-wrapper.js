@@ -47,6 +47,28 @@ const SHARE_SCRIPT = `(function(){try{
     var base=raw.split("-")[0];
     return messages[base] ? base : "en";
   }
+  function syncHomeLanguageToUrl(){
+    try{
+      var page=new URL(location.href);
+      if(page.pathname!=="/"||page.searchParams.has("profile")||page.searchParams.has("post")) return;
+      if(["code","token_hash","access_token","refresh_token","error","type"].some(function(k){return page.searchParams.has(k);})) return;
+      var raw=localStorage.getItem("friendhub_language")||page.searchParams.get("lang")||document.documentElement.lang||"en";
+      var lang=normalize(raw);
+      if(!messages[lang]) return;
+      if(page.searchParams.get("lang")!==lang){
+        page.searchParams.set("lang",lang);
+        history.replaceState(history.state,"",page.pathname+"?"+page.searchParams.toString()+page.hash);
+      }
+    }catch(_){}
+  }
+  syncHomeLanguageToUrl();
+  try{
+    var originalSetItem=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(key,value){
+      originalSetItem.apply(this,arguments);
+      if(key==="friendhub_language") syncHomeLanguageToUrl();
+    };
+  }catch(_){}
   function rewrite(value){
     try{
       if(typeof value!=="string"||!/whatsapp\\.com|wa\\.me/i.test(value)) return value;
