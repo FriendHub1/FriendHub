@@ -33,8 +33,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Verify isolated deployment contract
-        run: node beta/test-streaks-beta-deploy-contract.cjs
+      - name: Verify streak logic and isolated deployment contract
+        run: |
+          node beta/test-xoxo-streaks.cjs
+          node beta/test-streaks-beta-deploy-contract.cjs
       - name: Build restricted BETA assets
         run: bash beta/build-streaks-beta-assets.sh
       - name: Validate Cloudflare bundle without deployment
