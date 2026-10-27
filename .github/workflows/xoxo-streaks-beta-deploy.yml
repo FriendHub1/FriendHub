@@ -1,0 +1,81 @@
+name: XOXO Streaks BETA — isolated Worker
+
+on:
+  push:
+    branches:
+      - feature/xoxo-streaks-beta
+    paths:
+      - ".github/workflows/xoxo-streaks-beta-deploy.yml"
+      - ".github/workflows/xoxo-streaks-beta-tests.yml"
+      - "wrangler.streaks-beta.jsonc"
+      - "beta/build-streaks-beta-assets.sh"
+      - "beta/test-streaks-beta-deploy-contract.cjs"
+      - "beta/xoxo-streaks*.js"
+      - "worker.js"
+      - "index.html"
+      - "profile-frames/**"
+      - "*.png"
+      - "*.webp"
+  pull_request:
+    paths:
+      - ".github/workflows/xoxo-streaks-beta-deploy.yml"
+      - ".github/workflows/xoxo-streaks-beta-tests.yml"
+      - "wrangler.streaks-beta.jsonc"
+      - "beta/build-streaks-beta-assets.sh"
+      - "beta/test-streaks-beta-deploy-contract.cjs"
+      - "beta/xoxo-streaks*.js"
+      - "worker.js"
+      - "index.html"
+      - "profile-frames/**"
+      - "*.png"
+      - "*.webp"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xoxo-streaks-beta-worker
+  cancel-in-progress: false
+
+jobs:
+  verify-beta-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify streak logic and isolated deployment contract
+        run: |
+          node beta/test-xoxo-streaks.cjs
+          node beta/test-streaks-beta-deploy-contract.cjs
+      - name: Build restricted BETA assets
+        run: bash beta/build-streaks-beta-assets.sh
+      - name: Validate Cloudflare bundle without deployment
+        run: npx --yes wrangler@4.102.0 deploy --dry-run --config ./wrangler.streaks-beta.jsonc
+
+  deploy-streaks-beta:
+    needs: verify-beta-package
+    if: ${{ github.ref == 'refs/heads/feature/xoxo-streaks-beta' && vars.XOXO_STREAKS_BETA_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: xoxo-streaks-beta
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.XOXO_STREAKS_BETA_CF_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.XOXO_STREAKS_BETA_CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Require dedicated BETA credentials
+        run: |
+          set -euo pipefail
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing XOXO_STREAKS_BETA_CF_API_TOKEN'; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo 'Missing XOXO_STREAKS_BETA_CF_ACCOUNT_ID'; exit 1; }
+      - name: Build restricted BETA assets
+        run: bash beta/build-streaks-beta-assets.sh
+      - name: Deploy ONLY xoxo-streaks-beta on workers.dev
+        run: npx --yes wrangler@4.102.0 deploy --config ./wrangler.streaks-beta.jsonc

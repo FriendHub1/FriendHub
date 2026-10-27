@@ -12,7 +12,7 @@ const source = fs.readFileSync(path.join(__dirname,
 function enabled(hostname, search) {
   const root = { location: { hostname, search } };
   const document = { readyState: "loading", addEventListener() {} };
-  vm.runInNewContext(source, { window: root, document, URLSearchParams },
+  vm.runInNewContext(source, { window: root, document, location: root.location, URLSearchParams },
     { filename: "stay-safe-chat-preview-bridge.js" });
   return root.XOXOSafetyChatPreviewBeta.reportWritesEnabled();
 }
@@ -32,7 +32,7 @@ for (const query of ["", "?xoxo_safety_chat_beta=1",
   assert.equal(enabled("friendhub.paredesarixon.workers.dev", query), false,
     "Both explicit test opt-in flags are necessary");
 }
-assert.match(source, /enabled:REPORT_RPC_WRITES_ENABLED/);
-assert.match(source, /previewOnly:!REPORT_RPC_WRITES_ENABLED/);
+assert.match(source, /enabled:!SIMULATE&&REPORT_RPC_WRITES_ENABLED/);
+assert.match(source, /previewOnly:SIMULATE\|\|!REPORT_RPC_WRITES_ENABLED/);
 assert.match(source, /authSignedOut=true/);
 console.log("PASS: restricted BETA report write opt-in rejects public domains and is off by default");

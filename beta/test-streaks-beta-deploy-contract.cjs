@@ -1,0 +1,32 @@
+"use strict";
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const build = fs.readFileSync("beta/build-streaks-beta-assets.sh", "utf8");
+const workflow = fs.readFileSync(".github/workflows/xoxo-streaks-beta-deploy.yml", "utf8");
+const config = fs.readFileSync("wrangler.streaks-beta.jsonc", "utf8");
+const host = fs.readFileSync("beta/xoxo-streaks-beta-host.js", "utf8");
+assert.match(build, /\.xoxo-streaks-beta-dist/);
+assert.match(build, /xoxo-streaks-beta-asset-loader/);
+assert.match(build, /OUT.*index\.html/);
+assert.match(build, /xoxo-streaks\.js/);
+assert.match(build, /xoxo-streaks-chat-bridge\.js/);
+assert.match(build, /xoxo-streaks-beta-host\.js/);
+assert.match(workflow, /deploy-streaks-beta/);
+assert.match(workflow, /vars\.XOXO_STREAKS_BETA_DEPLOY_ENABLED == 'true'/);
+assert.match(workflow, /XOXO_STREAKS_BETA_CF_API_TOKEN/);
+assert.match(workflow, /--dry-run/);
+assert.match(config, /"name": "xoxo-streaks-beta"/);
+assert.match(host, /xoxo_streaks_beta/);
+assert.ok(host.includes(String.raw`workers\.dev`), "host must restrict itself to workers.dev");
+assert.match(host, /XOXOStreaksChatBridgeBeta/);
+assert.match(host, /currentDmUserId/);
+assert.match(host, /supabaseClient/);
+assert.match(host, /xoxoIsAdmin === true/);
+assert.match(host, /activitySignature/);
+assert.match(host, /function conversationAllowed\(me, other\)/);
+assert.match(host, /root\.xoxoIsConversationVisible\(me, other\) === true/);
+assert.match(host, /catch \(_\) \{\s*return false;\s*\}/,
+  "permission hook exceptions must fail closed");
+assert.match(host, /!conversationAllowed\(me, other\)/,
+  "host must fail closed until canonical chat permission is explicitly confirmed");
+console.log("PASS: isolated Streaks BETA packaging, preview opt-in and deploy guard");

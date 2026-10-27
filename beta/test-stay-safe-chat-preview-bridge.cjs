@@ -53,7 +53,7 @@ const window={
  XOXOEvidencePickerBeta:{open:()=>true},
  XOXOSafetyFlowBeta:{create:()=>({showReminder:()=>true,openReport:()=>true})}
 };
-const context={window,document,currentUser:{id:self},supabaseClient:client,
+const context={window,document,location:{hostname:"example.com",search:""},currentUser:{id:self},supabaseClient:client,
  get currentDmUserId(){return selectedPeer;},
  getFriendHubLanguage:()=>"es"};
 vm.runInNewContext(source,context);

@@ -52,7 +52,8 @@ window.XOXOReportFormBeta = { open: args => { form = args; return true; } };
 window.XOXOEvidencePickerBeta = { open: args => { picker = args; return true; } };
 window.XOXOSafetyReminderBeta = { show: args => { reminder = args; return true; } };
 const context = vm.createContext({
-  window, document, currentUser: { id: user }, currentDmUserId: peer,
+  window, document, location: { hostname: "feature-xoxo-streaks-beta.workers.dev" },
+  currentUser: { id: user }, currentDmUserId: peer,
   supabaseClient: client, getFriendHubLanguage: () => "es"
 });
 for (const name of [
