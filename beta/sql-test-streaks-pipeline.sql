@@ -17,13 +17,23 @@ values
  ('88888888-8888-4888-8888-888888888808','22222222-2222-4222-8222-222222222222','11111111-1111-4111-8111-111111111111','fixture','99999999-9999-4999-8999-999999999999','normal',((date_trunc('day',now() at time zone 'UTC')) + interval '13 hours') at time zone 'UTC'),
  ('88888888-8888-4888-8888-888888888809','11111111-1111-4111-8111-111111111111','22222222-2222-4222-8222-222222222222','fixture',null,'once',((date_trunc('day',now() at time zone 'UTC')) + interval '14 hours') at time zone 'UTC');
 
--- Verify the migration keeps the SECURITY DEFINER reader closed to client roles.
+-- Verify neither SECURITY DEFINER function is directly executable by client roles.
+-- The trigger can invoke its trigger function without granting direct EXECUTE.
 do $security$
+declare
+  v_role text;
+  v_function text;
 begin
-  if has_function_privilege('authenticated',
-       'public.xoxo_get_dm_streak(uuid)', 'EXECUTE') then
-    raise exception 'Streak RPC must remain revoked until server-side DM/block authorization is implemented';
-  end if;
+  foreach v_function in array array[
+    'public.xoxo_get_dm_streak(uuid)',
+    'public.xoxo_record_dm_streak_activity()'
+  ] loop
+    foreach v_role in array array['anon','authenticated'] loop
+      if has_function_privilege(v_role, v_function, 'EXECUTE') then
+        raise exception 'Client role % must not execute % directly', v_role, v_function;
+      end if;
+    end loop;
+  end loop;
 end
 $security$;
 
