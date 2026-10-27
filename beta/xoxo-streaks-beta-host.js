@@ -45,8 +45,14 @@
   // Fail closed until the canonical chat flow provides its authoritative decision.
   // This is intentionally not inferred from CSS, DOM visibility, or a guessed DB table.
   function conversationAllowed(me, other) {
-    return typeof root.xoxoIsConversationVisible === "function" &&
-      root.xoxoIsConversationVisible(me, other) === true;
+    // Permission checks are untrusted at this boundary: exceptions must fail closed
+    // so a stale streak card cannot remain visible if the canonical check fails.
+    try {
+      return typeof root.xoxoIsConversationVisible === "function" &&
+        root.xoxoIsConversationVisible(me, other) === true;
+    } catch (_) {
+      return false;
+    }
   }
   function activitySignature() {
     const rows = Array.isArray(root.__xoxoCurrentDmMessages)
