@@ -12,7 +12,7 @@ const source = fs.readFileSync(path.join(__dirname,
 function enabled(hostname, search) {
   const root = { location: { hostname, search } };
   const document = { readyState: "loading", addEventListener() {} };
-  vm.runInNewContext(source, { window: root, document, URLSearchParams },
+  vm.runInNewContext(source, { window: root, document, location: root.location, URLSearchParams },
     { filename: "stay-safe-chat-preview-bridge.js" });
   return root.XOXOSafetyChatPreviewBeta.reportWritesEnabled();
 }
