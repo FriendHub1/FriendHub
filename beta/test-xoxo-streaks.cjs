@@ -41,7 +41,7 @@ assert.match(sql, /media_view_mode/);
 assert.match(sql, /whisper_id/);
 assert.match(sql, /public\.dm_conversation_clears/);
 assert.match(sql, /dc\.cleared_at at time zone 'UTC'/);
-assert.match(sql, /where dc\.user_id = v_me\\s+and dc\.other_user_id = p_other_user/);
+assert.match(sql, /where dc\.user_id = v_me\s+and dc\.other_user_id = p_other_user/);
 assert.doesNotMatch(sql, /dc\.user_id = p_other_user and dc\.other_user_id = v_me/,
   "a user's local clear must not reset the other participant's streak view");
 assert.match(sql, /v_clear_cutoff/);
