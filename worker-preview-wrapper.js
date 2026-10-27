@@ -93,8 +93,31 @@ async function localizedResponse(request, env, ctx) {
 
   const isSharePreview = url.searchParams.get("xoxo_share") === "1";
   const description = localizedDescription(url);
+  const locale = ({
+    es: "es_ES", en: "en_US", "pt-br": "pt_BR", fr: "fr_FR",
+    pl: "pl_PL", de: "de_DE", nb: "nb_NO", cs: "cs_CZ",
+    sv: "sv_SE", it: "it_IT"
+  })[languageFrom(url)] || "en_US";
+  const shareUrl = url.origin + url.pathname + "?lang=" +
+    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1";
+  const escapedShareUrl = shareUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   const response = new HTMLRewriter()
+    .on('meta[property="og:url"]', {
+      element(element) {
+        if (isSharePreview) element.remove();
+      }
+    })
+    .on('link[rel="canonical"]', {
+      element(element) {
+        if (isSharePreview) element.setAttribute("href", shareUrl);
+      }
+    })
+    .on('meta[property="og:locale"]', {
+      element(element) {
+        if (isSharePreview) element.setAttribute("content", locale);
+      }
+    })
     .on('meta[property="og:description"]', {
       element(element) {
         if (isSharePreview) element.setAttribute("content", description);
@@ -114,7 +137,7 @@ async function localizedResponse(request, env, ctx) {
       element(element) {
         if (isSharePreview) {
           const escaped = description.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-          element.append(`<meta property="og:description" content="${escaped}"><meta name="twitter:description" content="${escaped}">`, {html: true});
+          element.append(`<meta property="og:url" content="${escapedShareUrl}"><meta property="og:locale" content="${locale}"><meta property="og:description" content="${escaped}"><meta name="twitter:description" content="${escaped}">`, {html: true});
         }
         element.append(`<script id="xoxo-share-localizer">${SHARE_SCRIPT}</script>`, {html: true});
       }
