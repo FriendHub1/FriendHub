@@ -101,6 +101,14 @@
         getOtherUserId: peer,
         getLocale: locale,
         getMount: () => mount,
+        isConversationAllowed: () => {
+          const latestMe = account();
+          const latestOther = peer();
+          const panelNow = chat();
+          return !!panelNow && visible(panelNow) &&
+            latestMe === me && latestOther === other &&
+            conversationAllowed(me, other);
+        },
         onError: () => {}
       });
       lastActivity = activitySignature();
