@@ -24320,5 +24320,55 @@ function start(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+<script id="xoxo-whatsapp-localized-share-fix">
+(function(){
+  try {
+    var original="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
+    var messages={
+      it:"Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!",
+      sv:"Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",
+      de:"Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!"
+    };
+    function lang(){
+      var q=new URLSearchParams(location.search).get("lang");
+      if(q) return String(q).toLowerCase();
+      try { var s=localStorage.getItem("friendhub_language"); if(s) return String(s).toLowerCase(); } catch(e){}
+      return String(document.documentElement.lang||"").toLowerCase();
+    }
+    function rewrite(value){
+      if(typeof value!=="string" || !/^(?:https?:)?\\/\\/(?:wa\\.me|api\\.whatsapp\\.com)\\//i.test(value)) return value;
+      var l=lang(), message=messages[l];
+      if(!message) return value;
+      try{
+        var u=new URL(value,location.href);
+        var current=u.searchParams.get("text")||"";
+        if(current===original || decodeURIComponent(current).indexOf(original)!==-1){
+          u.searchParams.set("text",message);
+          return u.toString();
+        }
+      }catch(e){}
+      return value;
+    }
+    var nativeOpen=window.open;
+    window.open=function(url,target,features){
+      return nativeOpen.call(window,rewrite(url),target,features);
+    };
+    if(navigator.share){
+      var nativeShare=navigator.share.bind(navigator);
+      navigator.share=function(data){
+        if(data && typeof data.text==="string"){
+          var l=lang();
+          if(messages[l] && data.text.indexOf(original)!==-1) data=Object.assign({},data,{text:data.text.replace(original,messages[l])});
+        }
+        return nativeShare(data);
+      };
+    }
+    document.addEventListener("click",function(event){
+      var a=event.target&&event.target.closest?event.target.closest("a[href]"):null;
+      if(a) a.href=rewrite(a.href);
+    },true);
+  }catch(e){}
+})();
+</script>
 </body>
                                     </html>
