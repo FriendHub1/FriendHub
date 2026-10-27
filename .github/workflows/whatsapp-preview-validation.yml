@@ -33,7 +33,7 @@ jobs:
           const descriptionMap = source.slice(source.indexOf('const DESCRIPTIONS = {'), source.indexOf('};', source.indexOf('const DESCRIPTIONS = {')));
           const missing = expected.filter(key => !descriptionMap.includes(key));
           if (missing.length) throw new Error('Missing localized preview descriptions: ' + missing.join(', '));
-          if (!source.includes('xoxo_v=20261027i')) throw new Error('Share preview cache version missing');
+          if (!source.includes('xoxo_v=20261027z10')) throw new Error('Share preview cache version missing');
           if (!source.includes('meta[property^="og:"]')) throw new Error('Open Graph description handler missing');
           if (!source.includes('meta[name="description"]')) throw new Error('HTML description handler missing');
           const marker = 'const SHARE_SCRIPT = `';
@@ -56,7 +56,7 @@ jobs:
           import http from 'node:http';
 
           const PORT = Number(process.env.PREVIEW_PORT || 8787);
-          const VERSION = process.env.PREVIEW_VERSION || '20261027i';
+          const VERSION = process.env.PREVIEW_VERSION || '20261027z10';
           const MAX_OG_OFFSET = 32768;
           const EN_DEFAULT = 'Meet people, make friends, and discover communities on XOXO Avenue.';
           const expected = {
