@@ -15,8 +15,11 @@ const DESCRIPTIONS = {
 };
 
 function languageFrom(url) {
-  const raw = String(url.searchParams.get("lang") || "en").toLowerCase();
-  return raw === "pt" || raw === "pt-br" ? "pt-br" : raw === "no" ? "nb" : raw;
+  const raw = String(url.searchParams.get("lang") || "en").trim().toLowerCase().replace(/_/g, "-");
+  if (raw === "pt" || raw.startsWith("pt-")) return "pt-br";
+  if (raw === "no" || raw === "nb" || raw.startsWith("nb-")) return "nb";
+  const base = raw.split("-")[0];
+  return DESCRIPTIONS[base] ? base : "en";
 }
 
 function localizedDescription(url) {
@@ -38,9 +41,11 @@ const SHARE_SCRIPT = `(function(){try{
   };
   function normalize(raw){
     raw=String(raw||"").toLowerCase();
-    if(raw==="pt"||raw==="pt-br") return "pt-br";
-    if(raw==="no") return "nb";
-    return raw;
+    raw=raw.replace(/_/g,"-");
+    if(raw==="pt"||raw.indexOf("pt-")===0) return "pt-br";
+    if(raw==="no"||raw==="nb"||raw.indexOf("nb-")===0) return "nb";
+    var base=raw.split("-")[0];
+    return messages[base] ? base : "en";
   }
   function rewrite(value){
     try{
@@ -91,7 +96,7 @@ async function localizedResponse(request, env, ctx) {
   const type = String(baseResponse.headers.get("content-type") || "").toLowerCase();
   if (!type.includes("text/html")) return baseResponse;
 
-  const isSharePreview = url.searchParams.get("xoxo_share") === "1";
+  const isSharePreview = url.searchParams.get("xoxo_share") === "1" || url.searchParams.has("lang");
   const description = localizedDescription(url);
   const locale = ({
     es: "es_ES", en: "en_US", "pt-br": "pt_BR", fr: "fr_FR",
