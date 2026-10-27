@@ -42,6 +42,12 @@
     return style.display !== "none" && style.visibility !== "hidden" &&
       el.getClientRects().length > 0;
   }
+  // Fail closed until the canonical chat flow provides its authoritative decision.
+  // This is intentionally not inferred from CSS, DOM visibility, or a guessed DB table.
+  function conversationAllowed(me, other) {
+    return typeof root.xoxoIsConversationVisible === "function" &&
+      root.xoxoIsConversationVisible(me, other) === true;
+  }
   function activitySignature() {
     const rows = Array.isArray(root.__xoxoCurrentDmMessages)
       ? root.__xoxoCurrentDmMessages : [];
@@ -68,7 +74,7 @@
     const other = peer();
     const db = client();
     if (!panel || !visible(panel) || !me || !other || me === other || !db ||
-        root.xoxoIsAdmin === true) {
+        root.xoxoIsAdmin === true || !conversationAllowed(me, other)) {
       clear();
       return;
     }
