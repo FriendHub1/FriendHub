@@ -25,7 +25,12 @@ assert.equal(api.create(null), null);
 assert.equal(bridgeApi.create({enabled:false}), null);
 assert.equal(bridgeApi.create({enabled:true}), null);
 const bridgeSource = fs.readFileSync("beta/xoxo-streaks-chat-bridge.js", "utf8");
+const hostSource = fs.readFileSync("beta/xoxo-streaks-beta-host.js", "utf8");
+assert.match(hostSource, /isConversationAllowed:\s*\(\)\s*=>/);
+assert.match(hostSource, /conversationAllowed\(me, other\)/);
 assert.match(bridgeSource, /isCurrent:\s*function/);
+assert.match(bridgeSource, /options\.isConversationAllowed\(\) === true/,
+  "late RPC responses must re-check live chat permission before rendering");
 assert.match(bridgeSource, /latest\.account === ctx\.account/);
 assert.match(bridgeSource, /latest\.other === ctx\.other/);
 const uiSource = fs.readFileSync("beta/xoxo-streaks.js", "utf8");
