@@ -90,7 +90,7 @@ const SHARE_SCRIPT = `(function(){try{
       if(!messages[lang]) lang="en";
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027z9");
+      share.searchParams.set("xoxo_v","20261027z10");
       var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
       var localized=messages[lang];
       if(text.indexOf(english)!==-1) text=text.replace(english,localized);
@@ -123,7 +123,7 @@ const SHARE_SCRIPT = `(function(){try{
       var lang=currentShareLanguage();
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027z9");
+      share.searchParams.set("xoxo_v","20261027z10");
       return share.toString();
     }catch(_){return value;}
   }
