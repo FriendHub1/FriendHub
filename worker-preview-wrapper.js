@@ -1,4 +1,5 @@
-// XOXO Avenue server-side wrapper for localized WhatsApp link previews.
+
+ // XOXO Avenue server-side wrapper for localized WhatsApp link previews.
 import baseWorker from "./worker.js";
 
 const DESCRIPTIONS = {
@@ -196,8 +197,10 @@ async function localizedResponse(request, env, ctx) {
     pl: "pl_PL", de: "de_DE", nb: "nb_NO", cs: "cs_CZ",
     sv: "sv_SE", it: "it_IT"
   })[languageFrom(url)] || "en_US";
-  const shareUrl = url.origin + url.pathname + "?lang=" +
-    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261027i";
+
+  // Preserve the exact incoming query string so og:url keeps the requested
+  // language and xoxo_v instead of forcing every preview to 20261027i.
+  const shareUrl = url.origin + url.pathname + url.search;
   const escapedShareUrl = shareUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   const response = new HTMLRewriter()
