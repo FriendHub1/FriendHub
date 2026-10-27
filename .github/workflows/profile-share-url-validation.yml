@@ -32,6 +32,8 @@ jobs:
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync } from 'node:fs';
+          import { runInNewContext } from 'node:vm';
+          const assert = (condition, message) => { if (!condition) throw new Error(message); };
           const source = readFileSync('worker-preview-wrapper.js', 'utf8');
           const startMarker = 'const profileShareScript = `';
           const start = source.indexOf(startMarker);
@@ -46,11 +48,35 @@ jobs:
             'navigator.share',
             'navigator.clipboard.writeText',
             'u.searchParams.has("profile")',
-            'new URL(location.origin+location.pathname)'
+            'new URL("https://xoxoavenue.com"+location.pathname)'
           ]) {
-            if (!script.includes(required)) throw new Error('Missing expected profile share behavior: ' + required);
+            assert(script.includes(required), 'Missing expected profile share behavior: ' + required);
           }
-          console.log('Profile share script syntax and required URL rewrite behavior validated.');
+          let sharedData, copiedText;
+          const fakeNavigator = {
+            share: async data => { sharedData = data; },
+            clipboard: { writeText: async value => { copiedText = value; } }
+          };
+          runInNewContext(script, {
+            navigator: fakeNavigator,
+            location: {
+              href: 'https://preview.example/Wendell?lang=en',
+              pathname: '/Wendell',
+              hostname: 'preview.example',
+              origin: 'https://preview.example'
+            },
+            URL
+          });
+          await fakeNavigator.share({
+            title: 'Wendell',
+            url: 'https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en',
+            text: 'Check this profile: https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en'
+          });
+          assert(sharedData.url === 'https://xoxoavenue.com/Wendell?lang=en', 'navigator.share URL was not canonicalized: ' + sharedData.url);
+          assert(sharedData.text.includes('https://xoxoavenue.com/Wendell?lang=en'), 'navigator.share text was not canonicalized: ' + sharedData.text);
+          await fakeNavigator.clipboard.writeText('https://xoxoavenue.com/u/352e566e-7644-4bf4-86d1-883706aa1bac?lang=en');
+          assert(copiedText === 'https://xoxoavenue.com/Wendell?lang=en', 'Clipboard URL was not canonicalized: ' + copiedText);
+          console.log('Profile share script syntax, share URL, share text, and clipboard rewrite validated.');
           NODE
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@4.153.0 deploy --dry-run --config ./wrangler.jsonc
