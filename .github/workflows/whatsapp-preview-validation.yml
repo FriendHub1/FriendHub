@@ -1,0 +1,42 @@
+name: XOXO WhatsApp Preview Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "worker-preview-wrapper.js"
+      - "worker.js"
+      - "wrangler.jsonc"
+      - ".github/workflows/whatsapp-preview-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify all ten preview translations and cache-busting URL
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const source = readFileSync('worker-preview-wrapper.js', 'utf8');
+          const expected = [
+            'es:', 'en:', '"pt-br":', 'fr:', 'pl:', 'de:', 'nb:', 'cs:', 'sv:', 'it:'
+          ];
+          const descriptionMap = source.slice(source.indexOf('const DESCRIPTIONS = {'), source.indexOf('};', source.indexOf('const DESCRIPTIONS = {')));
+          const missing = expected.filter(key => !descriptionMap.includes(key));
+          if (missing.length) throw new Error('Missing localized preview descriptions: ' + missing.join(', '));
+          if (!source.includes('xoxo_v=20261026b')) throw new Error('Share preview cache version missing');
+          if (!source.includes('meta[property="og:description"]')) throw new Error('Open Graph description handler missing');
+          if (!source.includes('meta[name="description"]')) throw new Error('HTML description handler missing');
+          console.log('Validated ten localized descriptions and cache-busting metadata.');
+          NODE
+      - name: Validate Cloudflare Worker bundle
+        run: npx --yes wrangler@4.102.0 deploy --dry-run --config ./wrangler.jsonc
