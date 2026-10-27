@@ -46,7 +46,7 @@ declare r record;
 begin
   select * into r from public.xoxo_get_dm_streak('22222222-2222-4222-8222-222222222222');
   if r.current_streak <> 0 or r.longest_streak <> 0 or r.last_mutual_day is not null then
-    raise exception 'Cleared user's streak must reset; got current %, longest %, last %',
+    raise exception 'Cleared user''s streak must reset; got current %, longest %, last %',
       r.current_streak,r.longest_streak,r.last_mutual_day;
   end if;
 end
