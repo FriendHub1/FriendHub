@@ -3459,8 +3459,9 @@ export default {
   } catch (_) {}
 })();
 </script>`;
+      // Run before the site app scripts so the client reads ?profile=ID during initialization.
       transformed = new HTMLRewriter()
-        .on("head", { element(element) { element.append(bootstrap, { html: true }); } })
+        .on("head", { element(element) { element.prepend(bootstrap, { html: true }); } })
         .transform(transformed);
     }
 
