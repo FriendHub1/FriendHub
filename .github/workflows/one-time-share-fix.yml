@@ -1,0 +1,45 @@
+name: One-time localized WhatsApp share fix
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/one-time-share-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch share localization
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          old_language = '["es","pt-BR","pl","fr","nb","de","cs"]'
+          new_language = '["es","pt-BR","pl","fr","nb","de","cs","sv","it"]'
+          if old_language in text:
+              text = text.replace(old_language, new_language, 1)
+          old_supported = '["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs"]'
+          new_supported = '["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs", "sv", "it"]'
+          if old_supported in text:
+              text = text.replace(old_supported, new_supported, 1)
+          marker = '                                        "cs": "💜 Objevte XOXO Avenue! Poznávejte nové lidi z celého světa, navazujte přátelství a objevujte komunity podle svých zájmů. Připojte se zdarma! ✨"\n'
+          additions = marker + '                                        "de": "Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!",\n' + '                                        "sv": "Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",\n' + '                                        "it": "Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!"\n'
+          if marker in text and '"it": "Unisciti a me su XOXO Avenue' not in text:
+              text = text.replace(marker, additions, 1)
+          path.write_text(text, encoding='utf-8')
+      - name: Commit fix and remove temporary workflows
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git rm .github/workflows/one-time-share-fix.yml .github/workflows/fix-localized-share.yml beta/stay-safe-share-trigger.js beta/stay-safe-share-trigger-2.js
+          git commit -m 'Fix localized WhatsApp share messages'
+          git push
