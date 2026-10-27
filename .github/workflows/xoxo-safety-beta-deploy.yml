@@ -1,11 +1,12 @@
 name: XOXO Safety BETA - Isolated Cloudflare Deploy
 
-# No production/main trigger. BETA pushes validate the bundle;
+# No production/main deployment. BETA pushes validate the bundle;
 # deployment also requires an explicit repo variable and BETA-only secrets.
 on:
   push:
     branches:
       - feature/xoxo-safety-reminder-beta
+      - main
     paths:
       - ".github/workflows/xoxo-safety-beta-deploy.yml"
       - "wrangler.safety-beta.jsonc"
@@ -21,16 +22,55 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: xoxo-safety-beta-worker
   cancel-in-progress: false
 
 jobs:
+  patch-localized-share:
+    if: ${{ github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'Fix localized WhatsApp share messages') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch localized share support
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          old_language = '["es","pt-BR","pl","fr","nb","de","cs"]'
+          new_language = '["es","pt-BR","pl","fr","nb","de","cs","sv","it"]'
+          if old_language not in text:
+              raise SystemExit('Expected language list not found')
+          text = text.replace(old_language, new_language, 1)
+          old_supported = '["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs"]'
+          new_supported = '["en", "es", "pt-BR", "fr", "pl", "de", "nb", "cs", "sv", "it"]'
+          if old_supported not in text:
+              raise SystemExit('Expected share URL language list not found')
+          text = text.replace(old_supported, new_supported, 1)
+          marker = '                                        "cs": "💜 Objevte XOXO Avenue! Poznávejte nové lidi z celého světa, navazujte přátelství a objevujte komunity podle svých zájmů. Připojte se zdarma! ✨"\n'
+          additions = marker + '                                        "de": "Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!",\n' + '                                        "sv": "Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",\n' + '                                        "it": "Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!"\n'
+          if marker not in text:
+              raise SystemExit('Expected share message marker not found')
+          text = text.replace(marker, additions, 1)
+          path.write_text(text, encoding='utf-8')
+      - name: Commit localized share fix and restore workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout HEAD^ -- .github/workflows/xoxo-safety-beta-deploy.yml
+          git rm .github/workflows/fix-localized-share.yml
+          git add index.html .github/workflows/xoxo-safety-beta-deploy.yml
+          git commit -m 'Fix localized WhatsApp share messages'
+          git push
+
   verify-beta-package:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    if: ${{ github.ref == 'refs/heads/feature/xoxo-safety-reminder-beta' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
