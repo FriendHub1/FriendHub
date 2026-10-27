@@ -3457,34 +3457,66 @@ export default {
       url.searchParams.set("profile", ${JSON.stringify(String(profileId))});
       history.replaceState(history.state, "", url.pathname + "?" + url.searchParams.toString() + url.hash);
 
-      // The app reads ?profile after its asynchronous session check. Restore
-      // the clean URL only after the app has consumed the parameter.
+      // Keep Home from flashing while the app resolves the shared profile.
+      document.documentElement.classList.add("xoxo-profile-bootstrap-pending");
+      var loadingStyle = document.createElement("style");
+      loadingStyle.id = "xoxo-profile-bootstrap-loading-style";
+      loadingStyle.textContent = "html.xoxo-profile-bootstrap-pending body>*:not(#xoxo-username-profile-loading){visibility:hidden!important}#xoxo-username-profile-loading{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#fff7ff;color:#8b3dc7;font:600 16px system-ui,sans-serif}#xoxo-username-profile-loading .heart{font-size:42px;animation:xoxoProfilePulse .9s ease-in-out infinite alternate}@keyframes xoxoProfilePulse{from{transform:scale(.88);opacity:.72}to{transform:scale(1.08);opacity:1}}";
+      (document.head || document.documentElement).appendChild(loadingStyle);
       var restoreCleanUrl = function(){
         try { history.replaceState(history.state, "", originalUrl); } catch (_) {}
+      };
+      var finishProfileBootstrap = function(){
+        restoreCleanUrl();
+        document.documentElement.classList.remove("xoxo-profile-bootstrap-pending");
+        var overlay = document.getElementById("xoxo-username-profile-loading");
+        if (overlay) overlay.remove();
+        var style = document.getElementById("xoxo-profile-bootstrap-loading-style");
+        if (style) style.remove();
       };
       var installProfileUrlHook = function(){
         var original = window.openSharedProfileFromUrl;
         if (typeof original !== "function") return false;
         if (original.__xoxoUsernameProfileHook) return true;
         var wrapped = async function(){
-          var result = original.apply(this, arguments);
-          restoreCleanUrl();
-          return await result;
+          try {
+            var result = await original.apply(this, arguments);
+            finishProfileBootstrap();
+            return result;
+          } catch (error) {
+            finishProfileBootstrap();
+            throw error;
+          }
         };
         wrapped.__xoxoUsernameProfileHook = true;
         window.openSharedProfileFromUrl = wrapped;
         return true;
       };
+      var addLoadingOverlay = function(){
+        if (document.body && !document.getElementById("xoxo-username-profile-loading")) {
+          var overlay = document.createElement("div");
+          overlay.id = "xoxo-username-profile-loading";
+          overlay.setAttribute("aria-label", "Cargando perfil");
+          overlay.innerHTML = '<span class="heart" aria-hidden="true">💜</span>';
+          document.body.prepend(overlay);
+          return true;
+        }
+        return false;
+      };
+      if (!addLoadingOverlay()) {
+        document.addEventListener("DOMContentLoaded", addLoadingOverlay, {once:true});
+      }
       var attempts = 0;
       var hookTimer = setInterval(function(){
         attempts += 1;
-        if (installProfileUrlHook() || attempts >= 200) clearInterval(hookTimer);
+        if (installProfileUrlHook()) clearInterval(hookTimer);
       }, 50);
       window.addEventListener("load", function(){
         setTimeout(function(){
-          if (!installProfileUrlHook()) restoreCleanUrl();
-        }, 10000);
+          if (!installProfileUrlHook()) finishProfileBootstrap();
+        }, 8000);
       }, {once:true});
+      setTimeout(finishProfileBootstrap, 12000);
     }
   } catch (_) {}
 })();
