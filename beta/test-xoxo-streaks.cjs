@@ -1,16 +1,18 @@
+"use strict";
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-const source = fs.readFileSync("beta/xoxo-streaks.js", "utf8");
 const sandbox = { window: {}, document: {}, globalThis: {} };
-vm.runInNewContext(source, sandbox);
+vm.runInNewContext(fs.readFileSync("beta/xoxo-streaks.js", "utf8"), sandbox);
+vm.runInContext(fs.readFileSync("beta/xoxo-streaks-chat-bridge.js", "utf8"), vm.createContext(sandbox));
 const api = sandbox.window.XOXOStreaksBeta;
+const bridgeApi = sandbox.window.XOXOStreaksChatBridgeBeta;
 
 assert.ok(api, "BETA module should expose its API");
+assert.ok(bridgeApi, "BETA host bridge should expose its API");
 assert.deepEqual(Array.from(api.locales).sort(),
-  ["en", "es", "pt-BR", "de", "nb", "pl", "fr", "cs", "sv", "it"].sort(),
-  "all ten XOXO Avenue locales must be supported");
+  ["en", "es", "pt-BR", "de", "nb", "pl", "fr", "cs", "sv", "it"].sort());
 assert.equal(api.localeKey("es-MX"), "es");
 assert.equal(api.localeKey("pt-BR"), "pt-BR");
 assert.equal(api.localeKey("nb-NO"), "nb");
@@ -20,5 +22,14 @@ assert.equal(api.localeKey("it-IT"), "it");
 assert.equal(api.localeKey("unknown"), "en");
 assert.deepEqual(Array.from(api.milestones), [3, 7, 14, 30, 100]);
 assert.equal(api.create(null), null);
-assert.equal(api.create({ client: {}, accountId: "same", otherUserId: "same", mount: { replaceChildren() {} } }), null);
-console.log("PASS: XOXO Streaks BETA locale, milestones and input-validation contract");
+assert.equal(bridgeApi.create({enabled:false}), null);
+assert.equal(bridgeApi.create({enabled:true}), null);
+const sql = fs.readFileSync("beta/xoxo-streaks-schema.sql", "utf8");
+assert.match(sql, /public\.direct_messages/);
+assert.match(sql, /new\.sender_id/);
+assert.match(sql, /new\.recipient_id/);
+assert.match(sql, /xoxo_get_dm_streak/);
+assert.doesNotMatch(sql, /public\.user_blocks/, "migration must not assume unverified block table");
+assert.match(sql, /media_view_mode/);
+assert.match(sql, /whisper_id/);
+console.log("PASS: locales, milestones, opt-in host bridge and SQL safety contract");
