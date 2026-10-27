@@ -90,14 +90,15 @@ begin
   v_low := least(v_me, p_other_user);
   v_high := greatest(v_me, p_other_user);
 
-  -- Conservatively exclude the cleared UTC day and all earlier activity if
-  -- either participant cleared this conversation. Daily aggregates cannot
-  -- distinguish messages sent before vs. after a clear within the same day.
+  -- Respect this signed-in user's own clear state. Do not reset the other
+  -- participant's view when only one person clears their local conversation.
+  -- Exclude the cleared UTC day and all earlier activity because daily
+  -- aggregates cannot distinguish messages before/after a clear on that day.
   select max((dc.cleared_at at time zone 'UTC')::date)
     into v_clear_cutoff
   from public.dm_conversation_clears dc
-  where (dc.user_id = v_me and dc.other_user_id = p_other_user)
-     or (dc.user_id = p_other_user and dc.other_user_id = v_me);
+  where dc.user_id = v_me
+    and dc.other_user_id = p_other_user;
 
   if not exists (
     select 1 from public.xoxo_dm_streak_days d
