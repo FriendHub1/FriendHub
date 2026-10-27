@@ -12,18 +12,18 @@ A streak may only be displayed when the canonical chat host has already determin
 
 The host must receive a canonical `isConversationVisible` / equivalent decision from the existing chat flow, or an equivalent server-authoritative permission result. If that decision is false, the streak mount is cleared and no streak RPC is requested.
 
-The current fail-closed adapter expects `window.xoxoIsConversationVisible(me, other) === true`. This is a temporary contract boundary, not a claim that the production chat currently implements that function. Repository code search did not locate this symbol or an authoritative canonical block-check function. The host therefore remains hidden unless the hook is explicitly supplied; do not add a permissive fallback.
+The current fail-closed adapter expects `window.xoxoIsConversationVisible(me, other) === true`. This is a temporary client contract boundary, not a claim that the production chat implements that function. The live database inspection confirmed the real `public.user_blocks(blocker_id, blocked_id)` relation and the exact bidirectional block predicate used by the existing direct-message INSERT policy. The proposed streak RPC now independently rejects blocks in either direction and requires an extant ordinary persistent DM between the two participants. The host remains hidden unless its visibility hook is explicitly supplied; do not add a permissive fallback.
 
 ## Audit result (2026-10-27)
 
 - Confirmed the Streaks host checks the current account, selected DM peer, visible chat container, Supabase client, and admin exclusion.
 - Confirmed it fails closed if the canonical permission hook is absent or does not return literal `true`.
-- Repository searches for the proposed hook and common block-policy names did not identify a reliable existing block API/table. Search results are not proof that no policy exists, so no table or RPC is inferred.
+- Read-only inspection of the live `pg_policies` catalog confirmed the DM INSERT policy checks `public.user_blocks` in both directions. The table columns were verified from `information_schema.columns`; no message contents or user rows were queried.
 - No production code or Supabase schema was changed during this audit.
 
 ## Forbidden shortcuts
 
-- Do not query an assumed `blocks`, `blocked_users`, or `user_blocks` table.
+- Do not infer alternative block tables or RPCs; use the verified `public.user_blocks` schema and bidirectional predicate.
 - Do not treat a hidden DOM element as proof that a block does or does not exist.
 - Do not rely on client-local block state as the security boundary.
 - Do not apply the streak SQL to production until the exact block policy has been identified and tested.
