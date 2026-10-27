@@ -71,23 +71,35 @@ const SHARE_SCRIPT = `(function(){try{
   }catch(_){}
   function rewrite(value){
     try{
-      if(typeof value!=="string"||!/whatsapp\\.com|wa\\.me/i.test(value)) return value;
+      if(typeof value!=="string") return value;
       var u=new URL(value,location.href);
-      if(!/whatsapp\\.com|wa\\.me/i.test(u.hostname)) return value;
+      var host=String(u.hostname||"").toLowerCase();
+      if(host!=="wa.me" && host!=="whatsapp.com" && !host.endsWith(".whatsapp.com")) return value;
       var text=u.searchParams.get("text")||"";
-      var match=text.match(/https:\\/\\/xoxoavenue\\.com(?:\\/[^\\s]*)?/i);
-      if(!match) return value;
-      var share=new URL(match[0]);
+      var marker="https://xoxoavenue.com";
+      var start=text.toLowerCase().indexOf(marker);
+      if(start<0) return value;
+      var end=start;
+      while(end<text.length && text.charAt(end)!==" " && text.charAt(end)!=="\n" && text.charAt(end)!=="\r" && text.charAt(end)!=="\t") end++;
+      var rawShare=text.slice(start,end);
+      while(rawShare.length && "),.!?]".indexOf(rawShare.charAt(rawShare.length-1))!==-1) rawShare=rawShare.slice(0,-1);
+      var share=new URL(rawShare);
+      if(share.hostname.toLowerCase()!=="xoxoavenue.com") return value;
       var lang=normalize(localStorage.getItem("friendhub_language")||new URL(location.href).searchParams.get("lang")||share.searchParams.get("lang")||document.documentElement.lang||"en");
       if(!messages[lang]) lang="en";
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261026b");
+      share.searchParams.set("xoxo_v","20261027c");
       var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
       var localized=messages[lang];
       if(text.indexOf(english)!==-1) text=text.replace(english,localized);
-      else if(lang!=="en" && text.trim()) text=text.replace(/^[^\\n]*(?=\\n|$)/,localized);
-      u.searchParams.set("text",text.replace(match[0],share.toString()));
+      else if(lang!=="en" && text.trim()) {
+        var lineEnd=text.indexOf("\n");
+        if(lineEnd<0) lineEnd=text.length;
+        text=localized+text.slice(lineEnd);
+      }
+      text=text.slice(0,start)+share.toString()+text.slice(end);
+      u.searchParams.set("text",text);
       return u.toString();
     }catch(_){return value;}
   }
