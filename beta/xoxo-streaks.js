@@ -43,14 +43,16 @@
 
     async function refresh() {
       const token = ++requestToken;
-      if (destroyed) return false;
+      if (destroyed || (typeof options.isCurrent === "function" && !options.isCurrent())) return false;
       try {
         const result = await options.client.rpc("xoxo_get_dm_streak", {
           p_other_user: options.otherUserId
         });
-        if (destroyed || token !== requestToken) return false;
+        if (destroyed || token !== requestToken ||
+            (typeof options.isCurrent === "function" && !options.isCurrent())) return false;
         if (result?.error) throw result.error;
         const row = Array.isArray(result?.data) ? result.data[0] : result?.data;
+        if (typeof options.isCurrent === "function" && !options.isCurrent()) return false;
         if (!row) {
           options.mount.replaceChildren();
           return false;
