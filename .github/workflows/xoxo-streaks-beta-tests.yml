@@ -1,0 +1,32 @@
+name: XOXO Streaks BETA tests
+
+on:
+  push:
+    branches:
+      - feature/xoxo-streaks-beta
+    paths:
+      - "beta/xoxo-streaks.js"
+      - "beta/xoxo-streaks-schema.sql"
+      - "beta/test-xoxo-streaks.cjs"
+      - ".github/workflows/xoxo-streaks-beta-tests.yml"
+  pull_request:
+    paths:
+      - "beta/xoxo-streaks.js"
+      - "beta/xoxo-streaks-schema.sql"
+      - "beta/test-xoxo-streaks.cjs"
+      - ".github/workflows/xoxo-streaks-beta-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test XOXO Streaks module contract
+        run: node beta/test-xoxo-streaks.cjs
