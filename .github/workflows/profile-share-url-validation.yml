@@ -2,7 +2,7 @@ name: XOXO Profile Share URL Validation
 
 on:
   push:
-    branches: ["feature/shareable-username-profiles"]
+    branches: ["main", "feature/shareable-username-profiles"]
     paths:
       - "worker-preview-wrapper.js"
       - "worker.js"
@@ -82,5 +82,7 @@ jobs:
         run: |
           grep -F "element.prepend(bootstrap, { html: true })" worker.js
           grep -F "xoxo-username-profile-bootstrap" worker.js
+      - name: Verify username routes run through the Worker before static assets
+        run: node --input-type=module -e 'import fs from "node:fs"; const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8")); if (!c.assets?.run_worker_first?.includes("/*")) throw new Error("Worker-first routing is required for /username profile routes"); console.log("Worker-first routing is configured for all routes.");'
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@4.153.0 deploy --dry-run --config ./wrangler.jsonc
