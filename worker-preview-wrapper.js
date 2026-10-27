@@ -198,7 +198,7 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
             if(host!=="xoxoavenue.com"&&host!=="www.xoxoavenue.com"&&host!==location.hostname.toLowerCase())return raw;
             var legacy=/^\\/u\\/[0-9a-f-]{36}\\/?$/i.test(u.pathname)||u.searchParams.has("profile");
             if(!legacy)return raw;
-            var current=new URL(location.origin+location.pathname);
+            var current=new URL("https://xoxoavenue.com"+location.pathname);
             var lang=u.searchParams.get("lang")||new URL(location.href).searchParams.get("lang");
             if(lang)current.searchParams.set("lang",lang);
             u.searchParams.forEach(function(v,k){if(k!=="profile"&&k!=="lang")current.searchParams.append(k,v);});
