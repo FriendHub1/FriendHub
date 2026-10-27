@@ -33,6 +33,6 @@ for (const query of ["", "?xoxo_safety_chat_beta=1",
     "Both explicit test opt-in flags are necessary");
 }
 assert.match(source, /enabled:!SIMULATE&&REPORT_RPC_WRITES_ENABLED/);
-assert.match(source, /previewOnly:!REPORT_RPC_WRITES_ENABLED/);
+assert.match(source, /previewOnly:SIMULATE\|\|!REPORT_RPC_WRITES_ENABLED/);
 assert.match(source, /authSignedOut=true/);
 console.log("PASS: restricted BETA report write opt-in rejects public domains and is off by default");
