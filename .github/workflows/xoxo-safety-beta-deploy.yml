@@ -34,6 +34,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Patch localized share support
         shell: python
         run: |
@@ -58,8 +60,9 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git checkout HEAD^ -- .github/workflows/xoxo-safety-beta-deploy.yml
+          git checkout HEAD~4 -- .github/workflows/xoxo-safety-beta-deploy.yml
           git rm .github/workflows/fix-localized-share.yml
+          git rm beta/stay-safe-share-trigger.js || true
           git add index.html .github/workflows/xoxo-safety-beta-deploy.yml
           if git diff --cached --quiet; then
             exit 0
