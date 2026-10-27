@@ -14,8 +14,8 @@ function section(before,after){
   assert.ok(i>=0 && j>i,"Worker BETA section not found: "+before);
   return worker.slice(i,j);
 }
-const route=section('// Stay Safe, Sweetheart! — opt-in BETA only on workers.dev.',
-  'const xoxoShareLanguage =');
+const route=section('// Stay Safe, Sweetheart! — production integration.',
+  'const xoxoShareLanguageRaw =');
 assert.match(route,/url\.hostname\.endsWith\("\.workers\.dev"\)/,
   "the combined route must not inject scripts on the public production domain");
 assert.match(route,/request\.method === "GET"/,
