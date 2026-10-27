@@ -9,7 +9,7 @@ const file = fs.readFileSync(path.join(__dirname, "stay-safe-chat-preview-bridge
 const root = {};
 let docEvents = 0;
 const doc = { readyState: "loading", addEventListener: () => { docEvents++; } };
-vm.runInNewContext(file, { window: root, document: doc }, { filename: "stay-safe-chat-preview-bridge.js" });
+vm.runInNewContext(file, { window: root, document: doc, location: { hostname: "example.com", search: "" } }, { filename: "stay-safe-chat-preview-bridge.js" });
 const api = root.XOXOSafetyChatPreviewBeta;
 assert.ok(api, "BETA preview API should be exported");
 assert.equal(api.reportWritesEnabled(), false, "No production Supabase writes in UI-only preview");
