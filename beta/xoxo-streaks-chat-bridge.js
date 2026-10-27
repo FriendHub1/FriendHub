@@ -48,6 +48,13 @@
           otherUserId: ctx.other,
           locale: options.getLocale(),
           mount,
+          isCurrent: function () {
+            const latest = currentContext();
+            return !closed && !!latest &&
+              latest.account === ctx.account &&
+              latest.other === ctx.other &&
+              options.getMount() === mount;
+          },
           onError: options.onError
         });
         key = instance ? nextKey : "";
