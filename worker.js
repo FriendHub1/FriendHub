@@ -391,7 +391,7 @@ function injectPreview(
         if(typeof value!=="string" || !/whatsapp\.com|wa\.me/i.test(value)) return value;
         var u=new URL(value,location.href);
         if(!/whatsapp\.com|wa\.me/i.test(u.hostname)) return value;
-        u.searchParams.set("text",localized+"\n\nhttps://xoxoavenue.com/?lang="+encodeURIComponent(lang));
+        u.searchParams.set("text",localized+"\n\nhttps://xoxoavenue.com/?lang="+encodeURIComponent(lang)+"&xoxo_share=1&xoxo_v=20261027c");
         return u.href;
       }catch(_){ return value; }
     }
@@ -2901,7 +2901,7 @@ async function xoxoServePublicSeoRoute(request, env, url) {
       if (typeof value !== "string" || value.indexOf(original) === -1) return value;
       var lang = localStorage.getItem(key);
       if (!Object.prototype.hasOwnProperty.call(messages, lang)) return value;
-      return value.replace(original, messages[lang]).replace(/https:\\/\\/xoxoavenue\\.com\\/\\?lang=[a-zA-Z-]+/g, "https://xoxoavenue.com/?lang=" + lang);
+      return value.replace(original, messages[lang]).replace(/https:\\/\\/xoxoavenue\\.com\\/\\?lang=[a-zA-Z-]+(?:&xoxo_share=1&xoxo_v=[a-zA-Z0-9]+)?/g, "https://xoxoavenue.com/?lang=" + lang + "&xoxo_share=1&xoxo_v=20261027c");
     }
     if (typeof navigator.share === "function") {
       var nativeShare = navigator.share.bind(navigator);
