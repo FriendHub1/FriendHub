@@ -28,10 +28,10 @@ const SHARE_SCRIPT = `(function(){try{
       if(typeof value!=="string"||!/whatsapp\\.com|wa\\.me/i.test(value)) return value;
       var u=new URL(value,location.href);
       var text=u.searchParams.get("text")||"";
-      var match=text.match(/https:\\/\\/xoxoavenue\\.com\\/\\?[^\\s]+/i);
+      var match=text.match(/https:\\/\\/xoxoavenue\\.com(?:\\/[^\\s]*)?/i);
       if(!match) return value;
       var share=new URL(match[0]);
-      var lang=String(share.searchParams.get("lang")||document.documentElement.lang||localStorage.getItem("friendhub_language")||"en").toLowerCase();
+      var lang=String(localStorage.getItem("friendhub_language")||share.searchParams.get("lang")||document.documentElement.lang||"en").toLowerCase();
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
       u.searchParams.set("text",text.replace(match[0],share.toString()));
