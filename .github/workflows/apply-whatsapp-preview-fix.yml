@@ -1,0 +1,123 @@
+name: Apply localized WhatsApp preview fix
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 1
+
+      - name: Patch localized WhatsApp preview metadata
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          worker = Path("worker.js")
+          text = worker.read_text()
+
+          old_fn = '''function makeDescription(profile) {
+  const bio = String(profile?.bio || "").trim();
+
+  if (bio) {
+    return bio.slice(0, 180);
+  }
+
+  const lookingFor = String(
+    profile?.looking_for || ""
+  ).trim();
+
+  if (lookingFor) {
+    return `Looking for ${lookingFor} on XOXO Avenue.`;
+  }
+
+  return "Meet people, make friends, and discover communities on XOXO Avenue.";
+}'''
+
+          new_fn = '''function makeDescription(profile, language = "") {
+  const bio = String(profile?.bio || "").trim();
+
+  if (bio) {
+    return bio.slice(0, 180);
+  }
+
+  const lookingFor = String(
+    profile?.looking_for || ""
+  ).trim();
+
+  if (lookingFor) {
+    return `Looking for ${lookingFor} on XOXO Avenue.`;
+  }
+
+  const localized = {
+    es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
+    en: "Meet people, make friends, and discover communities on XOXO Avenue.",
+    "pt-br": "Conheça pessoas, faça novos amigos e descubra comunidades no XOXO Avenue.",
+    fr: "Rencontrez de nouvelles personnes, faites-vous de nouveaux amis et découvrez des communautés sur XOXO Avenue.",
+    pl: "Poznawaj ludzi, nawiązuj nowe znajomości i odkrywaj społeczności na XOXO Avenue.",
+    de: "Lerne neue Menschen kennen, finde neue Freunde und entdecke Communities auf XOXO Avenue.",
+    nb: "Møt nye mennesker, få nye venner og oppdag fellesskap på XOXO Avenue.",
+    cs: "Poznávejte nové lidi, najděte nové přátele a objevujte komunity na XOXO Avenue.",
+    sv: "Träffa nya människor, få nya vänner och upptäck gemenskaper på XOXO Avenue.",
+    it: "Conosci nuove persone, fai nuove amicizie e scopri community su XOXO Avenue."
+  };
+
+  return localized[String(language || "").toLowerCase()] || localized.en;
+}'''
+
+          if old_fn not in text:
+              raise SystemExit("Expected makeDescription block not found; refusing to modify Worker.")
+          text = text.replace(old_fn, new_fn, 1)
+
+          old_call = 'makeDescription(profile)'
+          new_call = 'makeDescription(profile, String(url.searchParams.get("lang") || "").toLowerCase())'
+          if old_call not in text:
+              raise SystemExit("Expected makeDescription call not found; refusing to modify Worker.")
+          text = text.replace(old_call, new_call, 1)
+
+          old_link = 'https://xoxoavenue.com/?lang="+encodeURIComponent(lang)'
+          new_link = 'https://xoxoavenue.com/?lang="+encodeURIComponent(lang)+"&xoxo_share=1'
+          if old_link in text:
+              text = text.replace(old_link, new_link, 1)
+          else:
+              raise SystemExit("Expected localized WhatsApp URL was not found; refusing to modify Worker.")
+
+          worker.write_text(text)
+
+          for path in [
+              ".github/workflows/inspect-share.yml",
+              ".github/workflows/fix-whatsapp-localized-message.yml",
+              ".github/workflows/apply-whatsapp-preview-fix.yml",
+          ]:
+              p = Path(path)
+              if p.exists():
+                  p.unlink()
+
+      - name: Verify
+        run: |
+          grep -n "function makeDescription(profile, language" worker.js
+          grep -n "xoxo_share=1" worker.js
+          git diff --check
+
+      - name: Commit fix
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- worker.js .github/workflows; then
+            echo "No changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add worker.js .github/workflows
+          git commit -m "Fix localized WhatsApp preview"
+          git push origin HEAD:${{ github.head_ref }}
