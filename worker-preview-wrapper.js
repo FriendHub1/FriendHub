@@ -114,7 +114,7 @@ const SHARE_SCRIPT = `(function(){try{
     if(!messages[lang]) lang="en";
     var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
     if(value.indexOf(english)!==-1) value=value.replace(english,messages[lang]);
-    value=value.replace(/https:\/\/xoxoavenue\.com(?:\/\?[^\s]*)?/gi,function(raw){
+    value=value.replace(/https:\\/\\/xoxoavenue\\.com(?:\\/\\?[^\\s]*)?/gi,function(raw){
       try{
         var share=new URL(raw);
         share.searchParams.set("lang",lang);
