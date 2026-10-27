@@ -53,7 +53,9 @@
             return !closed && !!latest &&
               latest.account === ctx.account &&
               latest.other === ctx.other &&
-              options.getMount() === mount;
+              options.getMount() === mount &&
+              typeof options.isConversationAllowed === "function" &&
+              options.isConversationAllowed() === true;
           },
           onError: options.onError
         });
