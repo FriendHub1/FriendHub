@@ -98,7 +98,11 @@ const SHARE_SCRIPT = `(function(){try{
         if(lineEnd<0) lineEnd=text.length;
         text=localized+text.slice(lineEnd);
       }
-      text=text.slice(0,start)+share.toString()+text.slice(end);
+      var newStart=text.toLowerCase().indexOf(marker);
+      if(newStart<0) return value;
+      var newEnd=newStart;
+      while(newEnd<text.length && text.charAt(newEnd)!==" " && text.charAt(newEnd)!=="\n" && text.charAt(newEnd)!=="\r" && text.charAt(newEnd)!=="\t") newEnd++;
+      text=text.slice(0,newStart)+share.toString()+text.slice(newEnd);
       u.searchParams.set("text",text);
       return u.toString();
     }catch(_){return value;}
