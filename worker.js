@@ -16,33 +16,44 @@ function escapeHtml(value) {
  */
 
 async function getPublicProfileIdByUsername(username) {
-  const normalized = String(username || "").trim();
+  // Usernames are stored with a leading @ in the current public-profile table,
+  // while the friendly URL intentionally omits it: /username.
+  const normalized = String(username || "").trim().replace(/^@+/, "");
   if (!normalized) return null;
 
   try {
-    const lookupUrl = new URL(`${SUPABASE_URL}/rest/v1/friendhub_public_profiles`);
-    lookupUrl.searchParams.set("select", "user_id");
-    lookupUrl.searchParams.set("username", `eq.${normalized}`);
-    lookupUrl.searchParams.set("limit", "2");
+    const matches = new Map();
+    for (const candidate of [normalized, `@${normalized}`]) {
+      const lookupUrl = new URL(`${SUPABASE_URL}/rest/v1/friendhub_public_profiles`);
+      lookupUrl.searchParams.set("select", "user_id,username");
+      lookupUrl.searchParams.set("username", `eq.${candidate}`);
+      lookupUrl.searchParams.set("limit", "2");
 
-    const response = await fetch(lookupUrl.toString(), {
-      headers: {
-        apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        Accept: "application/json",
-        "Accept-Profile": "public",
-      },
-    });
+      const response = await fetch(lookupUrl.toString(), {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          Accept: "application/json",
+          "Accept-Profile": "public",
+        },
+      });
 
-    if (!response.ok) {
-      console.error("XOXO username profile lookup failed:", response.status);
-      return null;
+      if (!response.ok) {
+        console.error("XOXO username profile lookup failed:", response.status);
+        return null;
+      }
+
+      const rows = await response.json();
+      if (!Array.isArray(rows)) return null;
+      for (const row of rows) {
+        if (row?.user_id) matches.set(String(row.user_id), String(row.username || ""));
+      }
+      if (matches.size > 1) return null;
     }
 
-    const rows = await response.json();
-    // Do not route an ambiguous username to an arbitrary account.
-    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0]?.user_id) return null;
-    return String(rows[0].user_id);
+    // Only resolve when the username maps to exactly one public profile.
+    if (matches.size !== 1) return null;
+    return matches.keys().next().value || null;
   } catch (error) {
     console.error("XOXO username profile lookup error:", error);
     return null;
