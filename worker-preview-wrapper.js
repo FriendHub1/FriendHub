@@ -89,7 +89,7 @@ const SHARE_SCRIPT = `(function(){try{
       if(!messages[lang]) lang="en";
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027h");
+      share.searchParams.set("xoxo_v","20261027i");
       var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
       var localized=messages[lang];
       if(text.indexOf(english)!==-1) text=text.replace(english,localized);
@@ -122,7 +122,7 @@ const SHARE_SCRIPT = `(function(){try{
       var lang=currentShareLanguage();
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027h");
+      share.searchParams.set("xoxo_v","20261027i");
       return share.toString();
     }catch(_){return value;}
   }
@@ -197,7 +197,7 @@ async function localizedResponse(request, env, ctx) {
     sv: "sv_SE", it: "it_IT"
   })[languageFrom(url)] || "en_US";
   const shareUrl = url.origin + url.pathname + "?lang=" +
-    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261027h";
+    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261027i";
   const escapedShareUrl = shareUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   const response = new HTMLRewriter()
@@ -218,7 +218,9 @@ async function localizedResponse(request, env, ctx) {
           const escaped = description.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
           const title = "XOXO Avenue";
           const image = "https://xoxoavenue.com/xoxoavenue-social.png";
-          element.append(
+          // prepend (not append): index.html's <head> is ~650 KB, so appended tags land past
+          // byte 669,000 where link-preview crawlers that read only the start of the page miss them.
+          element.prepend(
             `<meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:site_name" content="XOXO Avenue"><meta property="og:url" content="${escapedShareUrl}"><meta property="og:locale" content="${locale}"><meta property="og:description" content="${escaped}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="description" content="${escaped}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${escaped}"><meta name="twitter:image" content="${image}">`,
             {html: true}
           );
