@@ -48,3 +48,42 @@ assert.match(sql, /v_clear_cutoff/);
 assert.ok((sql.match(/v_clear_cutoff is null or d\.activity_date > v_clear_cutoff/g) || []).length >= 4,
   "all streak queries must exclude cleared activity");
 console.log("PASS: locales, milestones, opt-in host bridge and SQL safety contract");
+
+
+// Regression test: a response for a chat that has already changed must never paint.
+(async function staleConversationResponseRegression() {
+  function element() {
+    return {
+      attrs: {}, children: [], style: { cssText: "" }, textContent: "",
+      setAttribute(k, v) { this.attrs[k] = v; },
+      append(...items) { this.children.push(...items); },
+      replaceChildren(...items) { this.children = items; }
+    };
+  }
+  let resolveRpc;
+  let currentPeer = "peer-a";
+  const mount = element();
+  const isolated = { window: {}, document: { createElement: element }, globalThis: {} };
+  vm.runInNewContext(fs.readFileSync("beta/xoxo-streaks.js", "utf8"), isolated);
+  const module = isolated.window.XOXOStreaksBeta;
+  const instance = module.create({
+    client: { rpc: () => new Promise(resolve => { resolveRpc = resolve; }) },
+    accountId: "account-a",
+    otherUserId: "peer-a",
+    locale: "es",
+    mount,
+    isCurrent: () => currentPeer === "peer-a"
+  });
+  const pending = instance.refresh();
+  currentPeer = "peer-b";
+  resolveRpc({ data: [{ current_streak: 7, longest_streak: 9, next_milestone: 14 }], error: null });
+  const rendered = await pending;
+  assert.equal(rendered, false, "stale response should be discarded");
+  assert.equal(mount.children.length, 0, "stale chat must not display the previous peer's streak");
+  instance.destroy();
+  assert.equal(mount.children.length, 0, "destroy must clear the mounted card");
+  console.log("PASS: stale conversation response is discarded without rendering private state");
+})().catch(error => {
+  console.error(error);
+  process.exitCode = 1;
+});
