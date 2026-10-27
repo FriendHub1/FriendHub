@@ -107,23 +107,39 @@ const SHARE_SCRIPT = `(function(){try{
       return u.toString();
     }catch(_){return value;}
   }
+  function currentShareLanguage(){
+    var rawLang="";
+    try{rawLang=localStorage.getItem("friendhub_language")||"";}catch(_){}
+    rawLang=rawLang||new URL(location.href).searchParams.get("lang")||document.documentElement.lang||"en";
+    var lang=normalize(rawLang);
+    return messages[lang]?lang:"en";
+  }
+  function localizeShareUrl(value){
+    if(typeof value!=="string" || !value.trim()) return value;
+    try{
+      var share=new URL(value,location.href);
+      if(share.hostname.toLowerCase()!=="xoxoavenue.com" && share.hostname.toLowerCase()!=="www.xoxoavenue.com") return value;
+      var lang=currentShareLanguage();
+      share.searchParams.set("lang",lang);
+      share.searchParams.set("xoxo_share","1");
+      share.searchParams.set("xoxo_v","20261027e");
+      return share.toString();
+    }catch(_){return value;}
+  }
   function localizeShareText(value){
     if(typeof value!=="string") return value;
-    var rawLang=localStorage.getItem("friendhub_language")||new URL(location.href).searchParams.get("lang")||document.documentElement.lang||"en";
-    var lang=normalize(rawLang);
-    if(!messages[lang]) lang="en";
+    var lang=currentShareLanguage();
     var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
     if(value.indexOf(english)!==-1) value=value.replace(english,messages[lang]);
-    value=value.replace(/https:\\/\\/xoxoavenue\\.com(?:\\/\\?[^\\s]*)?/gi,function(raw){
-      try{
-        var share=new URL(raw);
-        share.searchParams.set("lang",lang);
-        share.searchParams.set("xoxo_share","1");
-        share.searchParams.set("xoxo_v","20261027d");
-        return share.toString();
-      }catch(_){return raw;}
+    return value.replace(/https?:\/\/[^\s]+/gi,function(raw){
+      var suffix="";
+      var candidate=raw;
+      while(candidate.length && /[),.!?\]]/.test(candidate.charAt(candidate.length-1))){
+        suffix=candidate.charAt(candidate.length-1)+suffix;
+        candidate=candidate.slice(0,-1);
+      }
+      return localizeShareUrl(candidate)+suffix;
     });
-    return value;
   }
   if(typeof navigator!=="undefined" && typeof navigator.share==="function"){
     var nativeShare=navigator.share.bind(navigator);
@@ -131,7 +147,7 @@ const SHARE_SCRIPT = `(function(){try{
       if(data && typeof data==="object"){
         var copy=Object.assign({},data);
         if(typeof copy.text==="string") copy.text=localizeShareText(copy.text);
-        if(typeof copy.url==="string") copy.url=localizeShareText(copy.url);
+        if(typeof copy.url==="string") copy.url=localizeShareUrl(copy.url);
         return nativeShare(copy);
       }
       return nativeShare(data);
