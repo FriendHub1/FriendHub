@@ -1,0 +1,67 @@
+name: Fix WhatsApp language direct
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch direct share language
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path("index.html")
+          text = p.read_text()
+
+          old_lang = '''function getFriendHubLanguage() {
+                                      return localStorage.getItem("friendhub_language") === "es" ? "es" : "en";
+                                    }'''
+          new_lang = '''function getFriendHubLanguage() {
+                                      const urlLanguage = new URLSearchParams(window.location.search).get("lang");
+                                      const savedLanguage = localStorage.getItem("friendhub_language");
+                                      const supportedLanguages = ["en", "es", "pt-BR", "pl", "fr", "nb", "de", "cs", "sv", "it"];
+                                      if (urlLanguage && supportedLanguages.includes(urlLanguage)) return urlLanguage;
+                                      if (savedLanguage && supportedLanguages.includes(savedLanguage)) return savedLanguage;
+                                      return "en";
+                                    }'''
+          if old_lang in text:
+              text = text.replace(old_lang, new_lang, 1)
+          elif new_lang not in text:
+              raise SystemExit("getFriendHubLanguage target not found")
+
+          old_share = '''const text = language === "es"
+                                        ? "¡Únete a XOXO Avenue! Conoce gente, descubre comunidades y haz nuevos amigos."
+                                        : "Join me on XOXO Avenue — meet people, discover communities and make new friends!";'''
+          new_share = '''const shareMessages = {
+                                        en: "Join me on XOXO Avenue — meet people, discover communities and make new friends!",
+                                        es: "¡Únete a XOXO Avenue! Conoce gente, descubre comunidades y haz nuevos amigos.",
+                                        it: "Unisciti a me su XOXO Avenue — conosci nuove persone, scopri community e fai nuove amicizie!",
+                                        sv: "Häng med mig på XOXO Avenue — träffa nya människor, upptäck gemenskaper och få nya vänner!",
+                                        de: "Komm zu XOXO Avenue — lerne neue Menschen kennen, entdecke Communities und finde neue Freunde!"
+                                      };
+                                      const text = shareMessages[language] || shareMessages.en;'''
+          if old_share in text:
+              text = text.replace(old_share, new_share, 1)
+          elif new_share not in text:
+              raise SystemExit("share text target not found")
+
+          p.write_text(text)
+      - name: Remove this temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/fix-whatsapp-language-direct.yml
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -am "Fix WhatsApp language" || git commit -m "Fix WhatsApp language"
+          git push
