@@ -32,7 +32,8 @@ jobs:
           const bodyStart = start + startMarker.length;
           const bodyEnd = source.indexOf('`;\n      const response = new HTMLRewriter()', bodyStart);
           if (bodyEnd < 0) throw new Error('Could not extract profile share URL fix script');
-          const script = source.slice(bodyStart, bodyEnd);
+          const templateBody = source.slice(bodyStart, bodyEnd);
+          const script = Function('return `'+templateBody+'`')();
           new Function(script);
           for (const required of [
             'navigator.share',
