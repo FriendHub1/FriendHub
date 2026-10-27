@@ -1,6 +1,13 @@
 name: XOXO Profile Share URL Validation
 
 on:
+  push:
+    branches: ["feature/shareable-username-profiles"]
+    paths:
+      - "worker-preview-wrapper.js"
+      - "worker.js"
+      - "wrangler.jsonc"
+      - ".github/workflows/profile-share-url-validation.yml"
   pull_request:
     paths:
       - "worker-preview-wrapper.js"
