@@ -89,7 +89,7 @@ const SHARE_SCRIPT = `(function(){try{
       if(!messages[lang]) lang="en";
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
-      share.searchParams.set("xoxo_v","20261027c");
+      share.searchParams.set("xoxo_v","20261027d");
       var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
       var localized=messages[lang];
       if(text.indexOf(english)!==-1) text=text.replace(english,localized);
@@ -106,6 +106,40 @@ const SHARE_SCRIPT = `(function(){try{
       u.searchParams.set("text",text);
       return u.toString();
     }catch(_){return value;}
+  }
+  function localizeShareText(value){
+    if(typeof value!=="string") return value;
+    var rawLang=localStorage.getItem("friendhub_language")||new URL(location.href).searchParams.get("lang")||document.documentElement.lang||"en";
+    var lang=normalize(rawLang);
+    if(!messages[lang]) lang="en";
+    var english="Join me on XOXO Avenue — meet people, discover communities and make new friends!";
+    if(value.indexOf(english)!==-1) value=value.replace(english,messages[lang]);
+    value=value.replace(/https:\/\/xoxoavenue\.com(?:\/\?[^\s]*)?/gi,function(raw){
+      try{
+        var share=new URL(raw);
+        share.searchParams.set("lang",lang);
+        share.searchParams.set("xoxo_share","1");
+        share.searchParams.set("xoxo_v","20261027d");
+        return share.toString();
+      }catch(_){return raw;}
+    });
+    return value;
+  }
+  if(typeof navigator!=="undefined" && typeof navigator.share==="function"){
+    var nativeShare=navigator.share.bind(navigator);
+    navigator.share=function(data){
+      if(data && typeof data==="object"){
+        var copy=Object.assign({},data);
+        if(typeof copy.text==="string") copy.text=localizeShareText(copy.text);
+        if(typeof copy.url==="string") copy.url=localizeShareText(copy.url);
+        return nativeShare(copy);
+      }
+      return nativeShare(data);
+    };
+  }
+  if(typeof navigator!=="undefined" && navigator.clipboard && typeof navigator.clipboard.writeText==="function"){
+    var nativeWriteText=navigator.clipboard.writeText.bind(navigator.clipboard);
+    navigator.clipboard.writeText=function(value){return nativeWriteText(localizeShareText(value));};
   }
   var originalOpen=window.open;
   window.open=function(value){
@@ -147,7 +181,7 @@ async function localizedResponse(request, env, ctx) {
     sv: "sv_SE", it: "it_IT"
   })[languageFrom(url)] || "en_US";
   const shareUrl = url.origin + url.pathname + "?lang=" +
-    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261027c";
+    encodeURIComponent(languageFrom(url)) + "&xoxo_share=1&xoxo_v=20261027d";
   const escapedShareUrl = shareUrl.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 
   const response = new HTMLRewriter()
