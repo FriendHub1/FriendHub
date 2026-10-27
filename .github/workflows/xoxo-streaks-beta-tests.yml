@@ -19,6 +19,12 @@ on:
     paths:
       - "beta/xoxo-streaks.js"
       - "beta/xoxo-streaks-chat-bridge.js"
+      - "beta/xoxo-streaks-beta-host.js"
+      - "beta/test-streaks-beta-deploy-contract.cjs"
+      - "beta/build-streaks-beta-assets.sh"
+      - "wrangler.streaks-beta.jsonc"
+      - ".github/workflows/xoxo-streaks-beta-deploy.yml"
+      - "beta/xoxo-streaks-chat-bridge.js"
       - "beta/xoxo-streaks-schema.sql"
       - "beta/test-xoxo-streaks.cjs"
       - ".github/workflows/xoxo-streaks-beta-tests.yml"
