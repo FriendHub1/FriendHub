@@ -54,7 +54,7 @@ const document = {
   getElementById: id => id === "dmChat" ? chat : null,
   querySelector: () => null
 };
-const context = vm.createContext({ window, document, URLSearchParams,
+const context = vm.createContext({ window, document, location: window.location, URLSearchParams,
   currentUser: { id: user }, currentDmUserId: peer,
   supabaseClient: client, getFriendHubLanguage: () => "es" });
 for (const name of ["stay-safe-browser-report-adapter.js",
