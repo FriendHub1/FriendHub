@@ -55,7 +55,7 @@ if 'id="xoxo-streaks-beta-asset-loader"' in html:
     raise SystemExit("Duplicate Streaks BETA loader")
 if "</body>" not in html:
     raise SystemExit("Missing closing body in BETA index")
-p.write_text(html.replace("</body>", loader + "\\n</body>", 1), encoding="utf-8")
+p.write_text(html.replace("</body>", loader + "\n</body>", 1), encoding="utf-8")
 PY
 grep -q 'xoxo-streaks-beta-asset-loader' "$OUT/index.html"
 echo "PASS: isolated Streaks BETA assets built; source index.html untouched"
