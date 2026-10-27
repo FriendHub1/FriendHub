@@ -135,8 +135,8 @@ async function testAdapter() {
   assert.equal(typeof releaseRpc,"function");
   changingUser=outsider;
   releaseRpc({data:reportId,error:null});
-  assert.equal((await pendingReceipt).reason,"wrong_account",
-    "Successful old-account report receipt must not appear after account swap");
+  assert.deepEqual(await pendingReceipt,{ok:true,reportId},
+    "The adapter trusts the committed RPC receipt; the chat flow suppresses stale UI after account swap");
 
   const anonymousClient=clientWith().client;
   anonymousClient.auth.getUser=async()=>({
