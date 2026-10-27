@@ -1,0 +1,48 @@
+name: XOXO Profile Share URL Validation
+
+on:
+  pull_request:
+    paths:
+      - "worker-preview-wrapper.js"
+      - "worker.js"
+      - "wrangler.jsonc"
+      - ".github/workflows/profile-share-url-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate-profile-share-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Check Worker wrapper syntax
+        run: node --check worker-preview-wrapper.js
+      - name: Check injected profile-share script syntax and URL rewrite rules
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const source = readFileSync('worker-preview-wrapper.js', 'utf8');
+          const startMarker = 'const profileShareScript = `';
+          const start = source.indexOf(startMarker);
+          if (start < 0) throw new Error('Profile share URL fix script not found');
+          const bodyStart = start + startMarker.length;
+          const bodyEnd = source.indexOf('`;\n      const response = new HTMLRewriter()', bodyStart);
+          if (bodyEnd < 0) throw new Error('Could not extract profile share URL fix script');
+          const script = source.slice(bodyStart, bodyEnd);
+          new Function(script);
+          for (const required of [
+            'navigator.share',
+            'navigator.clipboard.writeText',
+            'u.searchParams.has("profile")',
+            'new URL(location.origin+location.pathname)'
+          ]) {
+            if (!script.includes(required)) throw new Error('Missing expected profile share behavior: ' + required);
+          }
+          console.log('Profile share script syntax and required URL rewrite behavior validated.');
+          NODE
+      - name: Validate Cloudflare Worker bundle
+        run: npx --yes wrangler@4.153.0 deploy --dry-run --config ./wrangler.jsonc
