@@ -6,12 +6,14 @@ on:
       - feature/xoxo-streaks-beta
     paths:
       - "beta/xoxo-streaks.js"
+      - "beta/xoxo-streaks-chat-bridge.js"
       - "beta/xoxo-streaks-schema.sql"
       - "beta/test-xoxo-streaks.cjs"
       - ".github/workflows/xoxo-streaks-beta-tests.yml"
   pull_request:
     paths:
       - "beta/xoxo-streaks.js"
+      - "beta/xoxo-streaks-chat-bridge.js"
       - "beta/xoxo-streaks-schema.sql"
       - "beta/test-xoxo-streaks.cjs"
       - ".github/workflows/xoxo-streaks-beta-tests.yml"
@@ -28,5 +30,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Test XOXO Streaks module contract
+      - name: Test XOXO Streaks BETA contract
         run: node beta/test-xoxo-streaks.cjs
