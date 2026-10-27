@@ -3158,8 +3158,12 @@ export default {
     }
 
     const xoxoShareLanguage = String(url.searchParams.get("lang") || "").toLowerCase();
-    const xoxoShareLanguageRaw = String(url.searchParams.get("lang") || "").toLowerCase();
-    const xoxoShareLanguage = xoxoShareLanguageRaw === "pt" ? "pt-br" : xoxoShareLanguageRaw === "no" ? "nb" : xoxoShareLanguageRaw;
+    const xoxoShareLanguageRaw = String(url.searchParams.get("lang") || "").trim().toLowerCase().replace(/_/g, "-");
+    const xoxoShareLanguage = xoxoShareLanguageRaw === "pt" || xoxoShareLanguageRaw.startsWith("pt-")
+      ? "pt-br"
+      : xoxoShareLanguageRaw === "no" || xoxoShareLanguageRaw === "nb" || xoxoShareLanguageRaw.startsWith("nb-")
+        ? "nb"
+        : xoxoShareLanguageRaw.split("-")[0];
     const xoxoShareDescriptions = {
       es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
       en: "Meet people, make friends, and discover communities on XOXO Avenue.",
