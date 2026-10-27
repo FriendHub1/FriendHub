@@ -3157,7 +3157,6 @@ export default {
       }
     }
 
-    const xoxoShareLanguage = String(url.searchParams.get("lang") || "").toLowerCase();
     const xoxoShareLanguageRaw = String(url.searchParams.get("lang") || "").trim().toLowerCase().replace(/_/g, "-");
     const xoxoShareLanguage = xoxoShareLanguageRaw === "pt" || xoxoShareLanguageRaw.startsWith("pt-")
       ? "pt-br"
