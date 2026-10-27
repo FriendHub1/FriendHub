@@ -35,13 +35,19 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Test XOXO Streaks BETA contract
+      - name: Test XOXO Streaks BETA contracts
         run: |
           node beta/test-xoxo-streaks.cjs
           node beta/test-streaks-beta-deploy-contract.cjs
+      - name: Check BETA build script syntax
+        run: bash -n beta/build-streaks-beta-assets.sh
+      - name: Build isolated BETA assets without deployment
+        run: bash beta/build-streaks-beta-assets.sh
+      - name: Validate Cloudflare bundle without deployment
+        run: npx --yes wrangler@4.102.0 deploy --dry-run --config ./wrangler.streaks-beta.jsonc
