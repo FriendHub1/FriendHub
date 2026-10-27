@@ -51,7 +51,7 @@ const SHARE_SCRIPT = `(function(){try{
       var match=text.match(/https:\\/\\/xoxoavenue\\.com(?:\\/[^\\s]*)?/i);
       if(!match) return value;
       var share=new URL(match[0]);
-      var lang=normalize(localStorage.getItem("friendhub_language")||share.searchParams.get("lang")||document.documentElement.lang||"en");
+      var lang=normalize(localStorage.getItem("friendhub_language")||new URL(location.href).searchParams.get("lang")||share.searchParams.get("lang")||document.documentElement.lang||"en");
       if(!messages[lang]) lang="en";
       share.searchParams.set("lang",lang);
       share.searchParams.set("xoxo_share","1");
