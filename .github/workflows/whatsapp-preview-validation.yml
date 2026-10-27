@@ -33,7 +33,7 @@ jobs:
           const descriptionMap = source.slice(source.indexOf('const DESCRIPTIONS = {'), source.indexOf('};', source.indexOf('const DESCRIPTIONS = {')));
           const missing = expected.filter(key => !descriptionMap.includes(key));
           if (missing.length) throw new Error('Missing localized preview descriptions: ' + missing.join(', '));
-          if (!source.includes('xoxo_v=20261027h')) throw new Error('Share preview cache version missing');
+          if (!source.includes('xoxo_v=20261027i')) throw new Error('Share preview cache version missing');
           if (!source.includes('meta[property^="og:"]')) throw new Error('Open Graph description handler missing');
           if (!source.includes('meta[name="description"]')) throw new Error('HTML description handler missing');
           const marker = 'const SHARE_SCRIPT = `';
@@ -46,3 +46,94 @@ jobs:
           NODE
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@4.102.0 deploy --dry-run --config ./wrangler.jsonc
+
+      - name: Run the Worker locally and verify the final HTML for all ten languages
+        run: |
+          npx --yes wrangler@4.153.0 dev --config ./wrangler.jsonc --local --port 8787 --ip 127.0.0.1 > "$RUNNER_TEMP/wrangler-dev.log" 2>&1 &
+          WORKER_PID=$!
+          trap 'kill "$WORKER_PID" 2>/dev/null || true' EXIT
+          node --input-type=module <<'NODE'
+          import http from 'node:http';
+
+          const PORT = Number(process.env.PREVIEW_PORT || 8787);
+          const VERSION = process.env.PREVIEW_VERSION || '20261027i';
+          const MAX_OG_OFFSET = 32768;
+          const EN_DEFAULT = 'Meet people, make friends, and discover communities on XOXO Avenue.';
+          const expected = {
+            es: ['Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.', 'es_ES'],
+            en: [EN_DEFAULT, 'en_US'],
+            'pt-BR': ['Conheça pessoas, faça novos amigos e descubra comunidades no XOXO Avenue.', 'pt_BR'],
+            fr: ['Rencontrez de nouvelles personnes, faites-vous de nouveaux amis et découvrez des communautés sur XOXO Avenue.', 'fr_FR'],
+            pl: ['Poznawaj ludzi, nawiązuj nowe znajomości i odkrywaj społeczności na XOXO Avenue.', 'pl_PL'],
+            de: ['Lerne neue Menschen kennen, finde neue Freunde und entdecke Communities auf XOXO Avenue.', 'de_DE'],
+            nb: ['Møt nye mennesker, få nye venner og oppdag fellesskap på XOXO Avenue.', 'nb_NO'],
+            cs: ['Poznávejte nové lidi, najděte nové přátele a objevujte komunity na XOXO Avenue.', 'cs_CZ'],
+            sv: ['Träffa nya människor, få nya vänner och upptäck gemenskaper på XOXO Avenue.', 'sv_SE'],
+            it: ['Conosci nuove persone, fai nuove amicizie e scopri community su XOXO Avenue.', 'it_IT']
+          };
+
+          function request(path) {
+            return new Promise((resolve, reject) => {
+              const req = http.get({
+                host: '127.0.0.1', port: PORT, path,
+                headers: { Host: 'xoxoavenue.com', 'User-Agent': 'WhatsApp/2.23.20.0 A', Accept: 'text/html' }
+              }, res => {
+                const chunks = [];
+                res.on('data', c => chunks.push(c));
+                res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString('utf8') }));
+              });
+              req.on('error', reject);
+              req.setTimeout(60000, () => req.destroy(new Error('timeout')));
+            });
+          }
+
+          async function waitForServer() {
+            for (let i = 0; i < 90; i++) {
+              try { const r = await request('/robots.txt'); if (r.status === 200) return; } catch {}
+              await new Promise(r => setTimeout(r, 2000));
+            }
+            throw new Error('Local Worker did not start');
+          }
+
+          const unescapeHtml = s => s.replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+          const attr = (tag, name) => {
+            const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const m = tag.match(new RegExp('\\s' + escapedName + '\\s*=\\s*"([^"]*)"', 'i'));
+            return m ? unescapeHtml(m[1]) : null;
+          };
+          const failures = [];
+          const fail = (lang, msg) => failures.push('[' + lang + '] ' + msg);
+
+          await waitForServer();
+          for (const entry of Object.entries(expected)) {
+            const lang = entry[0], description = entry[1][0], locale = entry[1][1];
+            const res = await request('/?lang=' + encodeURIComponent(lang) + '&xoxo_share=1&xoxo_v=' + VERSION);
+            if (res.status !== 200) { fail(lang, 'HTTP ' + res.status); continue; }
+            if (!String(res.headers['content-type'] || '').includes('text/html')) fail(lang, 'not text/html');
+            const metas = [...res.body.matchAll(/<meta\b[^>]*>/gi)].map(m => ({ tag: m[0], index: m.index }));
+            const find = (kind, key) => metas.filter(m => (attr(m.tag, kind) || '').toLowerCase() === key);
+            const one = (label, list, wanted, checkOffset) => {
+              if (list.length !== 1) { fail(lang, label + ': expected exactly 1 tag, found ' + list.length); return; }
+              const got = attr(list[0].tag, 'content');
+              if (got !== wanted) fail(lang, label + ': expected "' + wanted + '" but got "' + got + '"');
+              if (checkOffset && list[0].index > MAX_OG_OFFSET) fail(lang, label + ': found at index ' + list[0].index + ', beyond first ' + MAX_OG_OFFSET + ' characters');
+            };
+            one('og:description', find('property', 'og:description'), description, true);
+            one('twitter:description', find('name', 'twitter:description'), description, false);
+            one('meta description', find('name', 'description'), description, false);
+            one('og:locale', find('property', 'og:locale'), locale, true);
+            one('og:title', find('property', 'og:title'), 'XOXO Avenue', true);
+            const image = find('property', 'og:image');
+            if (image.length !== 1 || !/^https:\/\//.test(attr(image[0].tag, 'content') || '')) fail(lang, 'og:image must appear once with an https URL');
+            const url = find('property', 'og:url');
+            if (url.length !== 1 || !(attr(url[0].tag, 'content') || '').includes('xoxo_v=' + VERSION)) fail(lang, 'og:url must appear once and carry xoxo_v=' + VERSION);
+            if (lang !== 'en' && metas.some(m => (attr(m.tag, 'content') || '') === EN_DEFAULT)) fail(lang, 'English default description still present in a meta tag');
+            const bad = failures.some(f => f.startsWith('[' + lang + ']'));
+            console.log((bad ? 'FAIL ' : 'ok   ') + lang.padEnd(6) + ' og:description@' + (find('property', 'og:description')[0]?.index ?? '-'));
+          }
+          if (failures.length) { console.error('\n' + failures.join('\n')); process.exit(1); }
+          console.log('\nAll ten localized previews verified in the final HTML.');
+          NODE
+      - name: Show Worker log on failure
+        if: failure()
+        run: tail -n 80 "$RUNNER_TEMP/wrangler-dev.log" || true
