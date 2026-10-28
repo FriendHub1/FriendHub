@@ -8,6 +8,20 @@ body[data-xoxo-season="spring"]{--xoxo-season-border:#bde9bd;--xoxo-season-bg:rg
 body[data-xoxo-season="summer"]{--xoxo-season-border:#ffd77b;--xoxo-season-bg:rgba(100,49,71,.91);--xoxo-season-text:#fff8dc}
 body[data-xoxo-season="halloween"]{--xoxo-season-border:#d4a0ff;--xoxo-season-bg:rgba(48,24,67,.94);--xoxo-season-text:#f9edff}
 body[data-xoxo-season="pride"]{--xoxo-season-border:#ffb7e5;--xoxo-season-bg:linear-gradient(110deg,rgba(91,35,105,.94),rgba(35,66,104,.94));--xoxo-season-text:#fff}
+#xoxo-seasonal-decor{position:fixed;inset:0;z-index:9985;pointer-events:none;overflow:hidden;contain:layout paint}
+#xoxo-seasonal-decor .xoxo-season-float{position:absolute;display:block;opacity:0;filter:drop-shadow(0 3px 7px rgba(48,19,62,.14));animation:xoxoSeasonFloat 7s ease-in-out infinite;font-family:system-ui,sans-serif;user-select:none}
+#xoxo-seasonal-decor .xoxo-season-float:nth-child(1){top:11%;left:2.5%;font-size:clamp(24px,4vw,46px);animation-delay:-1s}
+#xoxo-seasonal-decor .xoxo-season-float:nth-child(2){top:20%;right:3%;font-size:clamp(21px,3.2vw,38px);animation-delay:-3s}
+#xoxo-seasonal-decor .xoxo-season-float:nth-child(3){bottom:18%;left:3%;font-size:clamp(20px,3vw,34px);animation-delay:-5s}
+#xoxo-seasonal-decor .xoxo-season-float:nth-child(4){bottom:13%;right:4%;font-size:clamp(24px,3.8vw,42px);animation-delay:-2s}
+body[data-xoxo-season="halloween"] #xoxo-seasonal-decor .xoxo-season-float,
+body[data-xoxo-season="autumn"] #xoxo-seasonal-decor .xoxo-season-float,
+body[data-xoxo-season="winter"] #xoxo-seasonal-decor .xoxo-season-float,
+body[data-xoxo-season="love"] #xoxo-seasonal-decor .xoxo-season-float,
+body[data-xoxo-season="spring"] #xoxo-seasonal-decor .xoxo-season-float,
+body[data-xoxo-season="summer"] #xoxo-seasonal-decor .xoxo-season-float,
+body[data-xoxo-season="pride"] #xoxo-seasonal-decor .xoxo-season-float{opacity:.9}
 @keyframes xoxoSeasonIn{from{opacity:0;transform:translateY(5px)}to{opacity:.94;transform:translateY(0)}}
-@media(max-width:520px){#xoxo-seasonal-theme-badge{right:9px;bottom:calc(9px + env(safe-area-inset-bottom,0px));padding:7px 10px;font-size:11px}}
-@media(prefers-reduced-motion:reduce){#xoxo-seasonal-theme-badge{animation:none}}
+@keyframes xoxoSeasonFloat{0%,100%{transform:translate3d(0,0,0) rotate(-5deg)}50%{transform:translate3d(0,-11px,0) rotate(5deg)}}
+@media(max-width:520px){#xoxo-seasonal-theme-badge{right:9px;bottom:calc(9px + env(safe-area-inset-bottom,0px));padding:7px 10px;font-size:11px}#xoxo-seasonal-decor .xoxo-season-float:nth-child(1){top:13%;left:1%}#xoxo-seasonal-decor .xoxo-season-float:nth-child(2){top:16%;right:1%}#xoxo-seasonal-decor .xoxo-season-float:nth-child(3){bottom:17%;left:1%}#xoxo-seasonal-decor .xoxo-season-float:nth-child(4){bottom:12%;right:1%}}
+@media(prefers-reduced-motion:reduce){#xoxo-seasonal-theme-badge,#xoxo-seasonal-decor .xoxo-season-float{animation:none}}
