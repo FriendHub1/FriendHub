@@ -229,9 +229,15 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
         }
       }catch(_){}})();`;
       const response = new HTMLRewriter()
-        .on("head", { element(element) { element.prepend(`<script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } })
+        .on("head", { element(element) { element.prepend(`<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=1"><script src="/xoxo-seasonal-themes.js?v=1" defer></script><script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } })
         .transform(baseResponse);
       return new Response(response.body, {status:response.status,statusText:response.statusText,headers:response.headers});
+    }
+    if (type.includes("text/html") && request.method === "GET") {
+      const themedResponse = new HTMLRewriter()
+        .on("head", { element(element) { element.append('<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=1"><script src="/xoxo-seasonal-themes.js?v=1" defer></script>', {html:true}); } })
+        .transform(baseResponse);
+      return new Response(themedResponse.body, {status:themedResponse.status,statusText:themedResponse.statusText,headers:themedResponse.headers});
     }
     return baseResponse;
   }
@@ -280,6 +286,7 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
             {html: true}
           );
         }
+        element.append('<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=1"><script src="/xoxo-seasonal-themes.js?v=1" defer></script>', {html:true});
         element.append(`<script id="xoxo-share-localizer">${SHARE_SCRIPT}</script>`, {html: true});
       }
     })
