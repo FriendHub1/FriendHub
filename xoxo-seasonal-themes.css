@@ -1,0 +1,13 @@
+/* XOXO Seasonal Themes 💜 — decorative layer only; preserves the existing lilac brand background. */
+#xoxo-seasonal-theme-badge{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:9990;pointer-events:none;display:flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--xoxo-season-border,#e8b3e8);border-radius:999px;background:var(--xoxo-season-bg,rgba(53,25,70,.88));color:var(--xoxo-season-text,#fff7ff);font:600 12px/1.2 system-ui,-apple-system,sans-serif;box-shadow:0 5px 18px rgba(24,9,36,.2);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);opacity:.94;animation:xoxoSeasonIn .55s ease-out both}
+#xoxo-seasonal-theme-badge .xoxo-season-icon{font-size:16px;line-height:1}
+body[data-xoxo-season="autumn"]{--xoxo-season-border:#e9b76d;--xoxo-season-bg:rgba(81,42,49,.92);--xoxo-season-text:#fff2d8}
+body[data-xoxo-season="winter"]{--xoxo-season-border:#c9e8ff;--xoxo-season-bg:rgba(38,48,83,.91);--xoxo-season-text:#f4fbff}
+body[data-xoxo-season="love"]{--xoxo-season-border:#ffadd7;--xoxo-season-bg:rgba(106,31,78,.92);--xoxo-season-text:#fff0fa}
+body[data-xoxo-season="spring"]{--xoxo-season-border:#bde9bd;--xoxo-season-bg:rgba(43,79,66,.91);--xoxo-season-text:#f4fff3}
+body[data-xoxo-season="summer"]{--xoxo-season-border:#ffd77b;--xoxo-season-bg:rgba(100,49,71,.91);--xoxo-season-text:#fff8dc}
+body[data-xoxo-season="halloween"]{--xoxo-season-border:#d4a0ff;--xoxo-season-bg:rgba(48,24,67,.94);--xoxo-season-text:#f9edff}
+body[data-xoxo-season="pride"]{--xoxo-season-border:#ffb7e5;--xoxo-season-bg:linear-gradient(110deg,rgba(91,35,105,.94),rgba(35,66,104,.94));--xoxo-season-text:#fff}
+@keyframes xoxoSeasonIn{from{opacity:0;transform:translateY(5px)}to{opacity:.94;transform:translateY(0)}}
+@media(max-width:520px){#xoxo-seasonal-theme-badge{right:9px;bottom:calc(9px + env(safe-area-inset-bottom,0px));padding:7px 10px;font-size:11px}}
+@media(prefers-reduced-motion:reduce){#xoxo-seasonal-theme-badge{animation:none}}
