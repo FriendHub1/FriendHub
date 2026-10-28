@@ -229,7 +229,8 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
         }
       }catch(_){}})();`;
       const response = new HTMLRewriter()
-        .on("head", { element(element) { element.prepend(`<script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } })
+        .on("head", { element(element) { element.prepend(`<script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true});
+        element.append(`<script id="xoxo-seasonal-themes-loader" src="/xoxo-seasonal-themes.js" defer></script>`, {html:true}); } })
         .transform(baseResponse);
       return new Response(response.body, {status:response.status,statusText:response.statusText,headers:response.headers});
     }
@@ -280,6 +281,7 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
             {html: true}
           );
         }
+        element.append(`<script id="xoxo-seasonal-themes-loader" src="/xoxo-seasonal-themes.js" defer></script>`, {html: true});
         element.append(`<script id="xoxo-share-localizer">${SHARE_SCRIPT}</script>`, {html: true});
       }
     })
