@@ -2,14 +2,14 @@
 (function(){
   "use strict";
   var copy={
-    halloween:{icon:"🎃",names:{es:"Noche mágica",en:"Halloween Magic","pt-br":"Magia de Halloween",de:"Halloween-Zauber",nb:"Halloween-magi",pl:"Magia Halloween",fr:"Magie d’Halloween",cs:"Halloween kouzlo",sv:"Halloweenmagi",it:"Magia di Halloween"}},
-    autumn:{icon:"🍂",names:{es:"Otoño mágico",en:"Autumn Magic","pt-br":"Magia de outono",de:"Herbstzauber",nb:"Høstmagi",pl:"Jesienna magia",fr:"Magie d’automne",cs:"Podzimní kouzlo",sv:"Höstmagi",it:"Magia d’autunno"}},
-    winter:{icon:"❄️",names:{es:"Invierno brillante",en:"Winter Glow","pt-br":"Brilho de inverno",de:"Winterzauber",nb:"Vinterglød",pl:"Zimowy blask",fr:"Éclat d’hiver",cs:"Zimní záře",sv:"Vinterglöd",it:"Magia d’inverno"}},
-    love:{icon:"💘",names:{es:"Love Season",en:"Love Season","pt-br":"Temporada do amor",de:"Zeit der Liebe",nb:"Kjærlighetssesong",pl:"Sezon miłości",fr:"Saison de l’amour",cs:"Čas lásky",sv:"Kärlekssäsong",it:"Stagione dell’amore"}},
-    spring:{icon:"🌸",names:{es:"Primavera en flor",en:"Spring Bloom","pt-br":"Primavera em flor",de:"Frühlingsblüte",nb:"Vårblomstring",pl:"Wiosenne kwitnienie",fr:"Printemps en fleurs",cs:"Jarní květ",sv:"Vårblomning",it:"Primavera in fiore"}},
-    summer:{icon:"☀️",names:{es:"Summer Crush",en:"Summer Crush","pt-br":"Paixão de verão",de:"Sommerflirt",nb:"Sommerflørt",pl:"Letni flirt",fr:"Flirt d’été",cs:"Letní flirt",sv:"Sommarflirt",it:"Flirt estivo"}},
-    pride:{icon:"🏳️‍🌈",names:{es:"Love is Love",en:"Love is Love","pt-br":"Amor é amor",de:"Liebe ist Liebe",nb:"Kjærlighet er kjærlighet",pl:"Miłość to miłość",fr:"L’amour, c’est l’amour",cs:"Láska je láska",sv:"Kärlek är kärlek",it:"L’amore è amore"}},
-    newyear:{icon:"✨",names:{es:"Feliz Año Nuevo",en:"Happy New Year","pt-br":"Feliz Ano Novo",de:"Frohes neues Jahr",nb:"Godt nytt år",pl:"Szczęśliwego Nowego Roku",fr:"Bonne année",cs:"Šťastný nový rok",sv:"Gott nytt år",it:"Felice anno nuovo"}}
+    halloween:{icon:"🎃",decor:["🎃","👻","🦇","✨"],names:{es:"Noche mágica",en:"Halloween Magic","pt-br":"Magia de Halloween",de:"Halloween-Zauber",nb:"Halloween-magi",pl:"Magia Halloween",fr:"Magie d’Halloween",cs:"Halloween kouzlo",sv:"Halloweenmagi",it:"Magia di Halloween"}},
+    autumn:{icon:"🍂",decor:["🍂","🍁","✨","🍂"],names:{es:"Otoño mágico",en:"Autumn Magic","pt-br":"Magia de outono",de:"Herbstzauber",nb:"Høstmagi",pl:"Jesienna magia",fr:"Magie d’automne",cs:"Podzimní kouzlo",sv:"Höstmagi",it:"Magia d’autunno"}},
+    winter:{icon:"❄️",decor:["❄️","✨","❄️","⭐"],names:{es:"Invierno brillante",en:"Winter Glow","pt-br":"Brilho de inverno",de:"Winterzauber",nb:"Vinterglød",pl:"Zimowy blask",fr:"Éclat d’hiver",cs:"Zimní záře",sv:"Vinterglöd",it:"Magia d’inverno"}},
+    love:{icon:"💘",decor:["💗","💖","✨","💘"],names:{es:"Love Season",en:"Love Season","pt-br":"Temporada do amor",de:"Zeit der Liebe",nb:"Kjærlighetssesong",pl:"Sezon miłości",fr:"Saison de l’amour",cs:"Čas lásky",sv:"Kärlekssäsong",it:"Stagione dell’amore"}},
+    spring:{icon:"🌸",decor:["🌸","🌷","🦋","✨"],names:{es:"Primavera en flor",en:"Spring Bloom","pt-br":"Primavera em flor",de:"Frühlingsblüte",nb:"Vårblomstring",pl:"Wiosenne kwitnienie",fr:"Printemps en fleurs",cs:"Jarní květ",sv:"Vårblomning",it:"Primavera in fiore"}},
+    summer:{icon:"☀️",decor:["☀️","🌺","✨","🌴"],names:{es:"Summer Crush",en:"Summer Crush","pt-br":"Paixão de verão",de:"Sommerflirt",nb:"Sommerflørt",pl:"Letni flirt",fr:"Flirt d’été",cs:"Letní flirt",sv:"Sommarflirt",it:"Flirt estivo"}},
+    pride:{icon:"🏳️‍🌈",decor:["🏳️‍🌈","💖","✨","💜"],names:{es:"Love is Love",en:"Love is Love","pt-br":"Amor é amor",de:"Liebe ist Liebe",nb:"Kjærlighet er kjærlighet",pl:"Miłość to miłość",fr:"L’amour, c’est l’amour",cs:"Láska je láska",sv:"Kärlek är kärlek",it:"L’amore è amore"}},
+    newyear:{icon:"✨",decor:["✨","🎉","⭐","✨"],names:{es:"Feliz Año Nuevo",en:"Happy New Year","pt-br":"Feliz Ano Novo",de:"Frohes neues Jahr",nb:"Godt nytt år",pl:"Szczęśliwego Nowego Roku",fr:"Bonne année",cs:"Šťastný nový rok",sv:"Gott nytt år",it:"Felice anno nuovo"}}
   };
   function language(){
     var raw="";
@@ -40,6 +40,10 @@
     badge.innerHTML='<span class="xoxo-season-icon" aria-hidden="true"></span><span class="xoxo-season-label"></span>';
     badge.querySelector(".xoxo-season-icon").textContent=item.icon;
     badge.querySelector(".xoxo-season-label").textContent=item.names[lang]||item.names.en;
+    var decor=document.getElementById("xoxo-seasonal-decor");
+    if(!decor){decor=document.createElement("div");decor.id="xoxo-seasonal-decor";decor.setAttribute("aria-hidden","true");document.body.appendChild(decor);}
+    decor.replaceChildren();
+    item.decor.forEach(function(symbol){var piece=document.createElement("span");piece.className="xoxo-season-float";piece.textContent=symbol;decor.appendChild(piece);});
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",apply,{once:true});else apply();
 })();
