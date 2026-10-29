@@ -2991,6 +2991,35 @@ export default {
         request.url
       );
 
+    /*
+     * ADSENSE ADS.TXT
+     * Serve the publisher declaration directly before profile/SEO routing.
+     */
+    if (url.pathname === "/ads.txt" && (request.method === "GET" || request.method === "HEAD")) {
+      const assetResponse = await env.ASSETS.fetch(new Request(url.origin + "/ads.txt", request));
+      const assetType = String(assetResponse.headers.get("content-type") || "").toLowerCase();
+      if (!assetResponse.ok || assetType.includes("text/html")) {
+        return new Response("ads.txt not found", {
+          status: 404,
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-store",
+            "X-XOXO-Worker": "ads-txt-not-found",
+          },
+        });
+      }
+      const headers = new Headers(assetResponse.headers);
+      headers.set("Content-Type", "text/plain; charset=utf-8");
+      headers.set("Cache-Control", "public, max-age=3600");
+      headers.set("X-Content-Type-Options", "nosniff");
+      headers.set("X-XOXO-Worker", "ads-txt");
+      return new Response(request.method === "HEAD" ? null : assetResponse.body, {
+        status: assetResponse.status,
+        statusText: assetResponse.statusText,
+        headers,
+      });
+    }
+
     if (url.pathname === "/api/admin-email-recipients") {
       return handleAdminEmailRecipients(request, env);
     }
