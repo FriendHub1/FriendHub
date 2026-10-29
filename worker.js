@@ -3009,7 +3009,7 @@ export default {
      * Keep public pages crawlable and point search engines to the sitemap.
      */
     if (url.pathname === "/robots.txt" && (request.method === "GET" || request.method === "HEAD")) {
-      return new Response("User-agent: *\\nAllow: /\\nDisallow: /api/\\nDisallow: /beta/\\n\\nSitemap: https://xoxoavenue.com/sitemap.xml\\n", {
+      return new Response("User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /beta/\n\nSitemap: https://xoxoavenue.com/sitemap.xml\n", {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8",
