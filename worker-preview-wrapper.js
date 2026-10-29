@@ -254,7 +254,7 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
   const isSharePreview = isHomeSharePreview;
   const isDefaultHomeSeo = isHomePage && !isHomeSharePreview;
   const homeTitle = "Make Friends Online & Meet People Worldwide | XOXO Avenue";
-  const homeDescription = "Meet people online, make new friends worldwide, discover social communities, explore public posts, and share your thoughts with XOXO Whispers on XOXO Avenue. 💜";
+  const homeDescription = "Discover new people, build genuine friendships, and find communities that share your interests. Connect with people worldwide and express yourself on XOXO Avenue.";
   const description = localizedDescription(url);
   const locale = ({
     es: "es_ES", en: "en_US", "pt-br": "pt_BR", fr: "fr_FR",
