@@ -3,16 +3,16 @@
 import baseWorker from "./worker.js";
 
 const DESCRIPTIONS = {
-  es: "Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.",
-  en: "Meet people, make friends, and discover communities on XOXO Avenue.",
-  "pt-br": "Conheça pessoas, faça novos amigos e descubra comunidades no XOXO Avenue.",
-  fr: "Rencontrez de nouvelles personnes, faites-vous de nouveaux amis et découvrez des communautés sur XOXO Avenue.",
-  pl: "Poznawaj ludzi, nawiązuj nowe znajomości i odkrywaj społeczności na XOXO Avenue.",
-  de: "Lerne neue Menschen kennen, finde neue Freunde und entdecke Communities auf XOXO Avenue.",
-  nb: "Møt nye mennesker, få nye venner og oppdag fellesskap på XOXO Avenue.",
-  cs: "Poznávejte nové lidi, najděte nové přátele a objevujte komunity na XOXO Avenue.",
-  sv: "Träffa nya människor, få nya vänner och upptäck gemenskaper på XOXO Avenue.",
-  it: "Conosci nuove persone, fai nuove amicizie e scopri community su XOXO Avenue."
+  es: "Conoce gente por internet, haz amistades internacionales y descubre comunidades y publicaciones públicas en XOXO Avenue.",
+  en: "Meet people online, make new friends worldwide, discover social communities, and explore public posts on XOXO Avenue.",
+  "pt-br": "Conheça pessoas online, faça amizades internacionais, descubra comunidades e explore publicações no XOXO Avenue.",
+  fr: "Rencontrez des personnes en ligne, créez des amitiés internationales, découvrez des communautés et explorez des publications sur XOXO Avenue.",
+  pl: "Poznawaj ludzi online, nawiązuj międzynarodowe przyjaźnie, odkrywaj społeczności i przeglądaj publiczne posty na XOXO Avenue.",
+  de: "Lerne online neue Menschen kennen, finde internationale Freunde, entdecke Communities und öffentliche Beiträge auf XOXO Avenue.",
+  nb: "Møt nye mennesker på nettet, få internasjonale venner, oppdag fellesskap og utforsk offentlige innlegg på XOXO Avenue.",
+  cs: "Poznávejte nové lidi online, navazujte mezinárodní přátelství, objevujte komunity a prohlížejte veřejné příspěvky na XOXO Avenue.",
+  sv: "Lär känna nya människor online, få internationella vänner, upptäck gemenskaper och utforska offentliga inlägg på XOXO Avenue.",
+  it: "Conosci persone online, fai amicizie internazionali, scopri community ed esplora post pubblici su XOXO Avenue."
 };
 
 function languageFrom(url) {
@@ -254,7 +254,7 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
   const isSharePreview = isHomeSharePreview;
   const isDefaultHomeSeo = isHomePage && !isHomeSharePreview;
   const homeTitle = "XOXO Avenue 💜 Meet People & Make Friends Worldwide";
-  const homeDescription = "Meet new people online, make international friends, explore public posts and communities, and share your thoughts with XOXO Whispers on XOXO Avenue. 💜";
+  const homeDescription = "Meet people online, make new friends worldwide, discover social communities, explore public posts, and share your thoughts with XOXO Whispers on XOXO Avenue. 💜";
   const description = localizedDescription(url);
   const locale = ({
     es: "es_ES", en: "en_US", "pt-br": "pt_BR", fr: "fr_FR",
