@@ -244,11 +244,17 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
 
   if (!type.includes("text/html")) return baseResponse;
 
-  const isHomeSharePreview =
+  const isHomePage =
+    url.pathname === "/" &&
     !url.searchParams.has("profile") &&
-    !url.searchParams.has("post") &&
+    !url.searchParams.has("post");
+  const isHomeSharePreview =
+    isHomePage &&
     (url.searchParams.get("xoxo_share") === "1" || url.searchParams.has("lang"));
   const isSharePreview = isHomeSharePreview;
+  const isDefaultHomeSeo = isHomePage && !isHomeSharePreview;
+  const homeTitle = "XOXO Avenue 💜 Meet People & Make Friends Worldwide";
+  const homeDescription = "Meet new people, make friends around the world, share your thoughts with XOXO Whispers, and discover your community on XOXO Avenue. 💜";
   const description = localizedDescription(url);
   const locale = ({
     es: "es_ES", en: "en_US", "pt-br": "pt_BR", fr: "fr_FR",
@@ -265,24 +271,28 @@ async function localizedResponse(request, env, ctx) {  const baseResponse = awai
     // Rebuild the full social preview as one consistent localized set. This
     // guarantees a title and image remain available when old metadata is absent
     // or duplicated, while avoiding stale English descriptions.
-    .on('meta[property^="og:"]', { element(element) { if (isSharePreview) element.remove(); } })
-    .on('meta[name^="twitter:"]', { element(element) { if (isSharePreview) element.remove(); } })
-    .on('meta[name="description"]', { element(element) { if (isSharePreview) element.remove(); } })
+    .on('title', { element(element) { if (isDefaultHomeSeo) element.setInnerContent(homeTitle); else if (isSharePreview) element.setInnerContent("XOXO Avenue"); } })
+    .on('meta[property^="og:"]', { element(element) { if (isSharePreview || isDefaultHomeSeo) element.remove(); } })
+    .on('meta[name^="twitter:"]', { element(element) { if (isSharePreview || isDefaultHomeSeo) element.remove(); } })
+    .on('meta[name="description"]', { element(element) { if (isSharePreview || isDefaultHomeSeo) element.remove(); } })
     .on('link[rel="canonical"]', {
       element(element) {
         if (isSharePreview) element.setAttribute("href", shareUrl);
+        else if (isDefaultHomeSeo) element.remove();
       }
     })
     .on("head", {
       element(element) {
-        if (isSharePreview) {
-          const escaped = description.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
-          const title = "XOXO Avenue";
+        if (isSharePreview || isDefaultHomeSeo) {
+          const title = isDefaultHomeSeo ? homeTitle : "XOXO Avenue";
+          const metaDescription = isDefaultHomeSeo ? homeDescription : description;
+          const escaped = metaDescription.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
           const image = "https://xoxoavenue.com/xoxoavenue-social.png";
-          // prepend (not append): index.html's <head> is ~650 KB, so appended tags land past
-          // byte 669,000 where link-preview crawlers that read only the start of the page miss them.
+          const canonical = isDefaultHomeSeo ? "https://xoxoavenue.com/" : escapedShareUrl;
+          const activeLocale = isDefaultHomeSeo ? "en_US" : locale;
+          // Prepend SEO metadata because the source HTML head is very large.
           element.prepend(
-            `<meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:site_name" content="XOXO Avenue"><meta property="og:url" content="${escapedShareUrl}"><meta property="og:locale" content="${locale}"><meta property="og:description" content="${escaped}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="description" content="${escaped}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${escaped}"><meta name="twitter:image" content="${image}">`,
+            `<link rel="canonical" href="${canonical}"><meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:site_name" content="XOXO Avenue"><meta property="og:url" content="${canonical}"><meta property="og:locale" content="${activeLocale}"><meta property="og:description" content="${escaped}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="description" content="${escaped}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${escaped}"><meta name="twitter:image" content="${image}">`,
             {html: true}
           );
         }
