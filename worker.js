@@ -2993,31 +2993,22 @@ export default {
 
     /*
      * ADSENSE ADS.TXT
-     * Serve the publisher declaration directly before profile/SEO routing.
+     * Serve the verified publisher declaration directly. This avoids SPA
+     * asset fallback returning HTML or a false 404 for this crawler endpoint.
      */
     if (url.pathname === "/ads.txt" && (request.method === "GET" || request.method === "HEAD")) {
-      const assetResponse = await env.ASSETS.fetch(new Request(url.origin + "/ads.txt", request));
-      const assetType = String(assetResponse.headers.get("content-type") || "").toLowerCase();
-      if (!assetResponse.ok || assetType.includes("text/html")) {
-        return new Response("ads.txt not found", {
-          status: 404,
+      return new Response(
+        request.method === "HEAD" ? null : "google.com, pub-5183362027645294, DIRECT, f08c47fec0942fa0\n",
+        {
+          status: 200,
           headers: {
             "Content-Type": "text/plain; charset=utf-8",
-            "Cache-Control": "no-store",
-            "X-XOXO-Worker": "ads-txt-not-found",
+            "Cache-Control": "public, max-age=3600",
+            "X-Content-Type-Options": "nosniff",
+            "X-XOXO-Worker": "ads-txt",
           },
-        });
-      }
-      const headers = new Headers(assetResponse.headers);
-      headers.set("Content-Type", "text/plain; charset=utf-8");
-      headers.set("Cache-Control", "public, max-age=3600");
-      headers.set("X-Content-Type-Options", "nosniff");
-      headers.set("X-XOXO-Worker", "ads-txt");
-      return new Response(request.method === "HEAD" ? null : assetResponse.body, {
-        status: assetResponse.status,
-        statusText: assetResponse.statusText,
-        headers,
-      });
+        }
+      );
     }
 
     if (url.pathname === "/api/admin-email-recipients") {
