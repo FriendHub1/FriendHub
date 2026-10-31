@@ -41,7 +41,18 @@ export function createGuestSupportHandler({SUPABASE_URL,jsonResponse,sendResendE
     if(!isImage&&!isVideo)throw new Error("Choose a JPG, PNG, WebP, GIF, MP4, MOV or WebM file.");
     if(file.size>(isImage?MAX_IMAGE:MAX_VIDEO))throw new Error(isImage?"Images can be up to 10 MB.":"Videos can be up to 30 MB.");
     const ext=(isImage?IMAGE_TYPES:VIDEO_TYPES)[type],path="guest/"+caseId+"/"+crypto.randomUUID()+"."+ext;
-    const r=await fetch(SUPABASE_URL+"/storage/v1/object/"+BUCKET+"/"+path.split("/").map(encodeURIComponent).join("/"),{method:"POST",headers:{apikey:env.SUPABASE_SECRET_KEY,Authorization:"Bearer "+env.SUPABASE_SECRET_KEY,"Content-Type":type,"x-upsert":"false"},body:await file.arrayBuffer()});
+    const bytes=await file.arrayBuffer(),head=new Uint8Array(bytes,0,Math.min(bytes.byteLength,12));
+    const starts=(...values)=>values.every((v,i)=>head[i]===v);
+    const ascii=(offset,value)=>Array.from(value).every((ch,i)=>head[offset+i]===ch.charCodeAt(0));
+    let valid=false;
+    if(type==="image/jpeg")valid=starts(0xff,0xd8,0xff);
+    else if(type==="image/png")valid=starts(0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a);
+    else if(type==="image/gif")valid=ascii(0,"GIF87a")||ascii(0,"GIF89a");
+    else if(type==="image/webp")valid=ascii(0,"RIFF")&&ascii(8,"WEBP");
+    else if(type==="video/webm")valid=starts(0x1a,0x45,0xdf,0xa3);
+    else if(type==="video/mp4"||type==="video/quicktime")valid=ascii(4,"ftyp");
+    if(!valid)throw new Error("The selected file does not match its file type.");
+    const r=await fetch(SUPABASE_URL+"/storage/v1/object/"+BUCKET+"/"+path.split("/").map(encodeURIComponent).join("/"),{method:"POST",headers:{apikey:env.SUPABASE_SECRET_KEY,Authorization:"Bearer "+env.SUPABASE_SECRET_KEY,"Content-Type":type,"x-upsert":"false"},body:bytes});
     if(!r.ok){console.error("Guest support upload",r.status,await r.text());throw new Error("The attachment could not be uploaded. Please try again.");}
     return {path,type:isImage?"image":"video"};
   }
