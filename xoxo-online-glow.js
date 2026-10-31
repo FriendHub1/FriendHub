@@ -78,6 +78,9 @@
       "#xoxoOnlineNowSection .xoxo-online-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:700;color:#fff;}",
       "#xoxoOnlineNowSection .xoxo-online-status{display:block;margin-top:2px;color:#8af5b4;font-size:10px;}",
       "#xoxoOnlineNowSection .xoxo-online-empty{padding:12px 4px;color:#e0cce9;font-size:13px;text-align:center;}",
+      ".friend-suggestion-avatar{position:relative;display:inline-block;}",
+      ".friend-suggestion-avatar .xoxo-online-card-dot{position:absolute;right:0;bottom:1px;width:13px;height:13px;border:3px solid #29163b;border-radius:50%;background:#42e58b;box-shadow:0 0 8px #42e58b;}",
+      ".friend-suggestion-card .xoxo-online-card-status{display:block;margin-top:3px;color:#42d985;font-size:11px;font-weight:700;}",
       "@keyframes xoxoOnlinePulse{0%,100%{opacity:.72;transform:scale(.98)}50%{opacity:1;transform:scale(1.045)}}",
       "@media(prefers-reduced-motion:reduce){#xoxoOnlineNowSection .xoxo-online-avatar:before{animation:none}}"
     ].join("");
@@ -106,6 +109,30 @@
     return section;
   }
 
+  function decorateSuggestionCards(onlineIds) {
+    const es = language() === "es";
+    document.querySelectorAll(".friend-suggestion-card[data-suggestion-user]").forEach(card => {
+      const id = String(card.getAttribute("data-suggestion-user") || "");
+      const avatar = card.querySelector(".friend-suggestion-avatar");
+      const detail = card.querySelector(".friend-suggestion-reason");
+      const isOnline = onlineIds.has(id);
+      let dot = avatar && avatar.querySelector(".xoxo-online-card-dot");
+      let label = card.querySelector(".xoxo-online-card-status");
+      if (isOnline && avatar && !dot) {
+        dot = document.createElement("span");
+        dot.className = "xoxo-online-card-dot";
+        dot.setAttribute("aria-label", es ? "En línea" : "Online");
+        avatar.appendChild(dot);
+      } else if (!isOnline && dot) dot.remove();
+      if (isOnline && detail && !label) {
+        label = document.createElement("span");
+        label.className = "xoxo-online-card-status";
+        label.textContent = es ? "● En línea" : "● Online";
+        detail.insertAdjacentElement("afterend", label);
+      } else if (!isOnline && label) label.remove();
+    });
+  }
+
   async function loadOnlinePeople() {
     const db = client();
     if (!db || typeof currentUser === "undefined" || !currentUser || !currentUser.id) return;
@@ -125,6 +152,8 @@
       let ids = [...new Set((presenceResult.data || [])
         .map(row => String(row.user_id || ""))
         .filter(id => id && id !== myId))];
+
+      decorateSuggestionCards(new Set(ids));
 
       if (!ids.length) {
         section.innerHTML = '<div class="xoxo-online-head"><h3 class="xoxo-online-title">' + t.title + '</h3><span class="xoxo-online-live">LIVE</span></div><p class="xoxo-online-subtitle">' + t.subtitle + '</p><div class="xoxo-online-empty">' + t.empty + '</div>';
