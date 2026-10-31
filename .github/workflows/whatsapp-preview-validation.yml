@@ -7,6 +7,8 @@ on:
       - "worker-preview-wrapper.js"
       - "worker.js"
       - "xoxo-online-glow.js"
+      - "xoxo-seasonal-themes.js"
+      - "xoxo-seasonal-themes.css"
       - "wrangler.jsonc"
       - ".github/workflows/whatsapp-preview-validation.yml"
   workflow_dispatch:
@@ -45,6 +47,11 @@ jobs:
           if (!source.includes('marker="https://xoxoavenue.com"')) throw new Error('Share URL marker missing');
           console.log('Validated ten localized descriptions, cache-busting metadata, and share-script syntax.');
           NODE
+      - name: Validate Seasonal Magic asset and production loader
+        run: |
+          node --check xoxo-seasonal-themes.js
+          grep -F 'xoxo-seasonal-themes.js?v=20261031a' worker-preview-wrapper.js
+          grep -F 'xoxo-seasonal-themes.css?v=20261031a' worker-preview-wrapper.js
       - name: Validate Online Glow asset and production loader
         run: |
           node --check xoxo-online-glow.js
