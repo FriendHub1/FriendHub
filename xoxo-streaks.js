@@ -367,15 +367,36 @@
 
   function boot() {
     ensureStyles();
-    watchChatLifecycle();
     watchLanguageChanges();
     installOpenHook();
     onChatChanged();
-    let tries = 0;
-    const timer = setInterval(() => {
-      if (installOpenHook() || ++tries > 30) clearInterval(timer);
-    }, 500);
     window.addEventListener("xoxo:dm-opened", onChatChanged);
+
+    // The messages view is mounted lazily after navigation from Home.
+    // Observe the document, not only #dmChat at initial page load.
+    const scanChat = () => {
+      ensureStyles();
+      watchChatLifecycle();
+      watchMessages();
+      installOpenHook();
+      const chat = document.getElementById("dmChat");
+      const peer = currentPeer();
+      const visible = !!chat && chat.style.display !== "none" && !!peer;
+      if (visible && peer !== lastObservedPeer) {
+        lastObservedPeer = peer;
+        onChatChanged();
+      } else if (!visible && lastObservedPeer) {
+        lastObservedPeer = "";
+      }
+    };
+
+    if (document.body && typeof MutationObserver === "function") {
+      const pageObserver = new MutationObserver(scanChat);
+      pageObserver.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:["style","class"] });
+    }
+    // Also catches app navigation or a late-created chat panel when no
+    // relevant DOM mutation is emitted by the page's router.
+    setInterval(scanChat, 500);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, {once:true});
