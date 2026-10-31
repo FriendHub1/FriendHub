@@ -1,1 +1,10 @@
-/* XOXO Avenue: seasonal overlays and wallpapers removed. Original site styling is preserved. */
+/* XOXO Seasonal Magic ✨ — automatic festive profile atmosphere */
+:root{--xoxo-seasonal-a:#b56cff;--xoxo-seasonal-b:#ff73c8;--xoxo-seasonal-glow:rgba(181,108,255,.18)}
+body.xoxo-seasonal-active{background-image:radial-gradient(ellipse at 12% 8%,var(--xoxo-seasonal-glow),transparent 42%),radial-gradient(ellipse at 88% 92%,color-mix(in srgb,var(--xoxo-seasonal-b) 13%,transparent),transparent 40%)}
+#xoxo-seasonal-magic{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;contain:layout style}
+#xoxo-seasonal-magic .xoxo-seasonal-ribbon{position:absolute;top:76px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 24px);padding:7px 15px;border:1px solid color-mix(in srgb,var(--xoxo-seasonal-a) 65%,white);border-radius:999px;background:color-mix(in srgb,#170d28 82%,transparent);box-shadow:0 0 18px var(--xoxo-seasonal-glow),inset 0 0 12px var(--xoxo-seasonal-glow);color:#fff;font:600 12px/1.2 system-ui,sans-serif;letter-spacing:.04em;text-shadow:0 0 10px var(--xoxo-seasonal-a);white-space:nowrap;opacity:.92}
+#xoxo-seasonal-magic .xoxo-seasonal-float{position:absolute;top:-8vh;left:var(--x);font-size:var(--s);opacity:0;filter:drop-shadow(0 0 8px var(--xoxo-seasonal-a));animation:xoxoSeasonalFall var(--d) linear var(--delay) infinite}
+@keyframes xoxoSeasonalFall{0%{transform:translate3d(0,-8vh,0) rotate(0);opacity:0}12%{opacity:.78}85%{opacity:.72}100%{transform:translate3d(var(--drift),112vh,0) rotate(300deg);opacity:0}}
+body.xoxo-seasonal-profile #xoxo-seasonal-magic .xoxo-seasonal-ribbon{top:12px}
+@media(prefers-reduced-motion:reduce){#xoxo-seasonal-magic .xoxo-seasonal-float{animation:none;opacity:.18;top:12vh}#xoxo-seasonal-magic .xoxo-seasonal-float:nth-of-type(n+4){display:none}}
+@media(max-width:600px){#xoxo-seasonal-magic .xoxo-seasonal-ribbon{top:64px;font-size:10px;padding:6px 11px}body.xoxo-seasonal-profile #xoxo-seasonal-magic .xoxo-seasonal-ribbon{top:8px}}
