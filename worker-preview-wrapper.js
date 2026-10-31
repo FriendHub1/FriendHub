@@ -52,11 +52,11 @@ async function localizedResponse(request, env, ctx) {
         if(typeof navigator!=="undefined"&&typeof navigator.share==="function"){var share=navigator.share.bind(navigator);navigator.share=function(data){if(data&&typeof data==="object"){var copy=Object.assign({},data);if(typeof copy.url==="string")copy.url=rewriteUrl(copy.url);if(typeof copy.text==="string")copy.text=rewriteText(copy.text);return share(copy);}return share(data);};}
         if(typeof navigator!=="undefined"&&navigator.clipboard&&typeof navigator.clipboard.writeText==="function"){var write=navigator.clipboard.writeText.bind(navigator.clipboard);navigator.clipboard.writeText=function(value){return write(rewriteText(value));};}
       }catch(_){}})();`;
-      const response = new HTMLRewriter().on("head", { element(element) { element.prepend(`<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=20261031a"><script src="/xoxo-seasonal-themes.js?v=20261031a" defer></script><script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } }).transform(baseResponse);
+      const response = new HTMLRewriter().on("head", { element(element) { element.prepend(`<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=20261031a"><script src="/xoxo-seasonal-themes.js?v=20261031a" defer></script><script src="/xoxo-username-login.js" defer></script><script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } }).transform(baseResponse);
       return new Response(response.body, {status:response.status,statusText:response.statusText,headers:response.headers});
     }
     if (type.includes("text/html") && request.method === "GET") {
-      const themedResponse = new HTMLRewriter().on("head", { element(element) { element.append('<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=20261031a"><script src="/xoxo-seasonal-themes.js?v=20261031a" defer></script>', {html:true}); } }).transform(baseResponse);
+      const themedResponse = new HTMLRewriter().on("head", { element(element) { element.append('<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=20261031a"><script src="/xoxo-seasonal-themes.js?v=20261031a" defer></script><script src="/xoxo-username-login.js" defer></script>', {html:true}); } }).transform(baseResponse);
       return new Response(themedResponse.body, {status:themedResponse.status,statusText:themedResponse.statusText,headers:themedResponse.headers});
     }
     return baseResponse;
