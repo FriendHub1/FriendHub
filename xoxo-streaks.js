@@ -141,25 +141,30 @@
     const style = document.createElement("style");
     style.id = "xoxo-streaks-style";
     style.textContent = `
-      #xoxoDmStreak {
-        display:flex; align-items:flex-start; gap:9px; width:max-content; max-width:calc(100% - 20px);
-        margin:8px auto 6px; padding:10px 14px; border-radius:15px;
+      #dmChat .dm-chat-header #xoxoDmStreak {
+        display:inline-flex; align-items:center; gap:7px; flex:0 1 auto;
+        width:auto; max-width:min(46%,280px); min-width:0; margin:0 8px;
+        padding:7px 11px; border-radius:999px; vertical-align:middle;
         background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,235,255,.98));
-        border:1px solid rgba(155,80,210,.22); box-shadow:0 5px 18px rgba(104,45,130,.10);
-        color:#64207e; font:600 13px/1.3 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+        border:1px solid rgba(155,80,210,.28); box-shadow:0 3px 12px rgba(104,45,130,.13);
+        color:#64207e; font:700 11px/1.2 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+        overflow:hidden;
       }
-      #xoxoDmStreak .xoxo-streak-fire { font-size:21px; line-height:1.1; padding-top:1px; }
-      #xoxoDmStreak .xoxo-streak-main { display:flex; flex-direction:column; gap:4px; min-width:0; }
-      #xoxoDmStreak .xoxo-streak-count { font-size:14px; font-weight:800; }
-      #xoxoDmStreak .xoxo-streak-tagline { font-size:11px; font-weight:600; opacity:.82; }
-      #xoxoDmStreak .xoxo-streak-divider { height:1px; background:rgba(155,80,210,.18); margin:3px 0; }
-      #xoxoDmStreak .xoxo-streak-best { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:11px; }
-      #xoxoDmStreak .xoxo-streak-best-label { font-weight:700; }
-      #xoxoDmStreak .xoxo-streak-best-value { font-weight:800; white-space:nowrap; }
-      #xoxoDmStreak .xoxo-streak-keep { font-size:10px; font-weight:600; opacity:.78; }
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-fire { font-size:17px; flex:0 0 auto; }
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-main { display:flex; flex-direction:column; gap:3px; min-width:0; }
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-count { font-size:11px; font-weight:850; white-space:nowrap; }
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-tagline { font-size:9px; font-weight:600; opacity:.78; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-best { display:flex; align-items:center; gap:4px; font-size:9px; white-space:nowrap; }
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-best-label { font-weight:700; }
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-best-value { font-weight:850; }
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-divider,
+      #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-keep { display:none; }
       #xoxoDmStreak.xoxo-streak-milestone { animation:xoxoStreakPop .65s ease both; }
-      @keyframes xoxoStreakPop { 0%{transform:scale(.86);opacity:0} 65%{transform:scale(1.05);opacity:1} 100%{transform:scale(1)} }
-      @media (max-width:600px){ #xoxoDmStreak{font-size:12px;padding:6px 11px} }
+      @keyframes xoxoStreakPop { 0%{transform:scale(.92);opacity:0} 65%{transform:scale(1.04);opacity:1} 100%{transform:scale(1)} }
+      @media (max-width:600px){
+        #dmChat .dm-chat-header #xoxoDmStreak { max-width:42%; margin:0 4px; padding:6px 8px; gap:5px; }
+        #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-tagline { display:none; }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -174,8 +179,10 @@
       el = document.createElement("div");
       el.id = "xoxoDmStreak";
       el.setAttribute("aria-live", "polite");
-      h.insertAdjacentElement("afterend", el);
+      el.setAttribute("role", "status");
     }
+    // Keep the streak inside the conversation toolbar, beside its controls.
+    if (el.parentElement !== h) h.appendChild(el);
     return el;
   }
 
@@ -193,19 +200,18 @@
     const best = Number(row.longest_streak) || n;
     const bestUnit = best === 1 ? t("day") : t("days");
 
-    el.style.display = "flex";
+    el.style.display = "inline-flex";
     el.classList.toggle("xoxo-streak-milestone", !!milestone);
+    el.title = t("tagline") + " " + t("keep");
     el.innerHTML = `
       <span class="xoxo-streak-fire" aria-hidden="true">🔥</span>
       <span class="xoxo-streak-main">
         <span class="xoxo-streak-count">${n} ${unit} ${escapeHtml(t("together"))}</span>
         <span class="xoxo-streak-tagline">${escapeHtml(t("tagline"))}</span>
-        <span class="xoxo-streak-divider" aria-hidden="true"></span>
         <span class="xoxo-streak-best">
           <span class="xoxo-streak-best-label">🏆 ${escapeHtml(t("bestStreak"))}</span>
           <span class="xoxo-streak-best-value">${best} ${escapeHtml(bestUnit)}</span>
         </span>
-        <span class="xoxo-streak-keep">${escapeHtml(t("keep"))}</span>
       </span>`;
   }
 
@@ -232,8 +238,13 @@
   let lastRenderedKey = "";
   let lastObservedPeer = "";
 
+  let lastStreakRow = null;
+  let lastLanguage = "";
+
   async function refresh(record) {
     const row = record || await getStreak();
+    lastStreakRow = row || null;
+    lastLanguage = lang();
     if (!row) {
       render(null, false);
       return;
@@ -320,9 +331,44 @@
     return true;
   }
 
+  function watchLanguageChanges() {
+    const repaint = () => {
+      const next = lang();
+      if (next === lastLanguage) return;
+      lastLanguage = next;
+      if (lastStreakRow) render(lastStreakRow, false);
+    };
+    // The storage event covers changes made in another tab; the wrapper
+    // covers same-tab language selectors, where the storage event does not fire.
+    window.addEventListener("storage", (event) => {
+      if (event.key === "friendhub_language") repaint();
+    });
+    window.addEventListener("xoxo:language-changed", repaint);
+    try {
+      const originalSetItem = Storage.prototype.setItem;
+      if (!originalSetItem.__xoxoStreakLanguageHook) {
+        const wrappedSetItem = function(key, value) {
+          const result = originalSetItem.apply(this, arguments);
+          if (key === "friendhub_language") setTimeout(repaint, 0);
+          return result;
+        };
+        wrappedSetItem.__xoxoStreakLanguageHook = true;
+        Storage.prototype.setItem = wrappedSetItem;
+      }
+    } catch (_) {}
+    if (typeof MutationObserver === "function" && document.documentElement) {
+      const observer = new MutationObserver(repaint);
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+    }
+    // Some language selectors update an in-memory locale without touching
+    // localStorage or <html lang>; this lightweight check catches that too.
+    setInterval(repaint, 700);
+  }
+
   function boot() {
     ensureStyles();
     watchChatLifecycle();
+    watchLanguageChanges();
     installOpenHook();
     onChatChanged();
     let tries = 0;
