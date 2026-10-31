@@ -2665,6 +2665,95 @@ async function xoxoMarkActivityDone(env, id, emailSent = false) {
   if (!r.ok) throw new Error(`Notification mark failed: ${r.status}`);
 }
 
+
+/*
+ * USERNAME PASSWORD LOGIN
+ * Resolve a username to its Auth email only inside the Worker.
+ * The email is never returned by this endpoint.
+ */
+async function handleUsernameLogin(request, env) {
+  if (request.method !== "POST") return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
+  if (!env.SUPABASE_SECRET_KEY) return jsonResponse({ ok: false, error: "Authentication unavailable" }, 503);
+
+  let body;
+  try {
+    const length = Number(request.headers.get("content-length") || 0);
+    if (length > 4096) return jsonResponse({ ok: false, error: "Invalid request" }, 400);
+    body = await request.json();
+  } catch (_) {
+    return jsonResponse({ ok: false, error: "Invalid request" }, 400);
+  }
+
+  const username = String(body && body.username || "").trim().replace(/^@+/, "");
+  const password = body && typeof body.password === "string" ? body.password : "";
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,29}$/.test(username) || !password || password.length > 256) {
+    return jsonResponse({ ok: false, error: "Invalid username or password" }, 401);
+  }
+
+  const secret = env.SUPABASE_SECRET_KEY;
+  let lookup;
+  try {
+    lookup = await fetch(SUPABASE_URL + "/rest/v1/rpc/get_auth_user_id_by_username", {
+      method: "POST",
+      headers: {
+        apikey: secret,
+        Authorization: "Bearer " + secret,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Accept-Profile": "public",
+        "Content-Profile": "public"
+      },
+      body: JSON.stringify({ target_username: username })
+    });
+  } catch (error) {
+    console.error("XOXO username lookup request failed:", error);
+    return jsonResponse({ ok: false, error: "Authentication unavailable" }, 502);
+  }
+
+  if (!lookup.ok) {
+    console.error("XOXO private username lookup failed:", lookup.status, await lookup.text());
+    return jsonResponse({ ok: false, error: "Authentication unavailable" }, 502);
+  }
+
+  const matches = await lookup.json();
+  if (!Array.isArray(matches) || matches.length !== 1 || !matches[0] || !matches[0].user_id) {
+    return jsonResponse({ ok: false, error: "Invalid username or password" }, 401);
+  }
+
+  const authUser = await getAuthUserById(String(matches[0].user_id), env);
+  const email = String(authUser && authUser.email || "").trim();
+  if (!email) return jsonResponse({ ok: false, error: "Invalid username or password" }, 401);
+
+  let authResponse;
+  try {
+    authResponse = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, password: password })
+    });
+  } catch (error) {
+    console.error("XOXO username password authentication request failed:", error);
+    return jsonResponse({ ok: false, error: "Authentication unavailable" }, 502);
+  }
+
+  if (!authResponse.ok) {
+    const detail = await authResponse.text();
+    console.warn("XOXO username password authentication rejected:", authResponse.status, detail.slice(0, 180));
+    return jsonResponse({ ok: false, error: "Invalid username or password" }, 401);
+  }
+
+  const session = await authResponse.json();
+  if (!session || !session.access_token || !session.refresh_token) {
+    return jsonResponse({ ok: false, error: "Authentication unavailable" }, 502);
+  }
+
+  return jsonResponse({
+    ok: true,
+    access_token: session.access_token,
+    refresh_token: session.refresh_token
+  });
+}
+
 async function handleActivityPresenceHeartbeat(request, env) {
   if (request.method !== 'POST') return jsonResponse({ok:false,error:'Method not allowed'},405);
   if (!env.SUPABASE_SECRET_KEY) return jsonResponse({ok:false,error:'Server configuration error'},500);
@@ -3082,7 +3171,7 @@ export default {
       return handleAdminEmailSend(request, env);
     }
 
-    if (url.pathname === "/api/activity-presence-heartbeat") {
+    if (url.pathname === "/api/auth/username-login") {\n      return handleUsernameLogin(request, env);\n    }\n\n    if (url.pathname === "/api/activity-presence-heartbeat") {
       return handleActivityPresenceHeartbeat(request, env);
     }
 
@@ -3305,6 +3394,7 @@ export default {
       const preview = await env.ASSETS.fetch(request);
       if (preview.ok && String(preview.headers.get("content-type") || "").includes("text/html")) {
         const chatScripts = enableSafetyChat ?
+          '<script src="/xoxo-username-login.js" defer></script>' +
           '<script src="/beta/stay-safe-sweetheart.js" defer></script>' +
           '<script src="/beta/stay-safe-report-form.js" defer></script>' +
           '<script src="/beta/stay-safe-evidence-picker.js" defer></script>' +
