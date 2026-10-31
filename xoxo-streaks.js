@@ -276,9 +276,30 @@
     render(row, milestone);
   }
 
+  function hasRecentOutgoingMessage() {
+    const me = currentAccount();
+    const peer = currentPeer();
+    const messages = Array.isArray(window.__xoxoCurrentDmMessages)
+      ? window.__xoxoCurrentDmMessages : [];
+    if (!me || !peer || !messages.length) return false;
+    const cutoff = Date.now() - 2 * 60 * 1000;
+    return messages.some((message) => {
+      if (!message || String(message.sender_id || "") !== me ||
+          String(message.recipient_id || "") !== peer || message.whisper_id) return false;
+      const sentAt = Date.parse(message.created_at || "");
+      return Number.isFinite(sentAt) && sentAt >= cutoff && sentAt <= Date.now() + 30000;
+    });
+  }
+
   function scheduleRecord() {
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(async () => {
+      // DOM changes alone never count: require a recent, persisted outgoing DM
+      // in the app's already-loaded message list. The RPC validates it again.
+      if (!hasRecentOutgoingMessage()) {
+        await refresh();
+        return;
+      }
       const row = await recordStreak();
       await refresh(row);
     }, 700);
