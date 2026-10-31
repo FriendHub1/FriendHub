@@ -109,7 +109,7 @@
           : "";
         const avatar = profile.profile_photo
           ? '<img src="' + escapeHtmlAttribute(profile.profile_photo) + '" alt="Profile photo" loading="lazy"' +
-            (bubbleUrl ? ' onerror="this.onerror=null;this.src=\\'' + bubbleUrl + '\\'"' : '') + '>'
+            (bubbleUrl ? ' onerror="this.onerror=null;this.src=&quot;' + bubbleUrl + '&quot;"' : '') + '>'
           : bubbleAvatar;
         const mutual = mutualCounts.get(id) || 0;
         const reason = mutual > 0
