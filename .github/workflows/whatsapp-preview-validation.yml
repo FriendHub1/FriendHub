@@ -58,18 +58,18 @@ jobs:
           const PORT = Number(process.env.PREVIEW_PORT || 8787);
           const VERSION = process.env.PREVIEW_VERSION || '20261027z10';
           const MAX_OG_OFFSET = 32768;
-          const EN_DEFAULT = 'Meet people, make friends, and discover communities on XOXO Avenue.';
+          const EN_DEFAULT = 'Meet people online, make new friends worldwide, discover social communities, and explore public posts on XOXO Avenue.';
           const expected = {
-            es: ['Conoce personas, haz nuevos amigos y descubre comunidades en XOXO Avenue.', 'es_ES'],
+            es: ['Conoce personas por internet, haz amistades internacionales y descubre comunidades y publicaciones públicas en XOXO Avenue.', 'es_ES'],
             en: [EN_DEFAULT, 'en_US'],
-            'pt-BR': ['Conheça pessoas, faça novos amigos e descubra comunidades no XOXO Avenue.', 'pt_BR'],
-            fr: ['Rencontrez de nouvelles personnes, faites-vous de nouveaux amis et découvrez des communautés sur XOXO Avenue.', 'fr_FR'],
-            pl: ['Poznawaj ludzi, nawiązuj nowe znajomości i odkrywaj społeczności na XOXO Avenue.', 'pl_PL'],
-            de: ['Lerne neue Menschen kennen, finde neue Freunde und entdecke Communities auf XOXO Avenue.', 'de_DE'],
-            nb: ['Møt nye mennesker, få nye venner og oppdag fellesskap på XOXO Avenue.', 'nb_NO'],
-            cs: ['Poznávejte nové lidi, najděte nové přátele a objevujte komunity na XOXO Avenue.', 'cs_CZ'],
-            sv: ['Träffa nya människor, få nya vänner och upptäck gemenskaper på XOXO Avenue.', 'sv_SE'],
-            it: ['Conosci nuove persone, fai nuove amicizie e scopri community su XOXO Avenue.', 'it_IT']
+            'pt-BR': ['Conheça pessoas online, faça amizades internacionais, descubra comunidades e explore publicações no XOXO Avenue.', 'pt_BR'],
+            fr: ['Rencontrez des personnes en ligne, créez des amitiés internationales, découvrez des communautés et explorez des publications sur XOXO Avenue.', 'fr_FR'],
+            pl: ['Poznawaj ludzi online, nawiązuj międzynarodowe przyjaźnie, odkrywaj społeczności i przeglądaj publiczne posty na XOXO Avenue.', 'pl_PL'],
+            de: ['Lerne online neue Menschen kennen, finde internationale Freunde, entdecke Communities und öffentliche Beiträge auf XOXO Avenue.', 'de_DE'],
+            nb: ['Møt nye mennesker på nettet, få internasjonale venner, oppdag fellesskap og utforsk offentlige innlegg på XOXO Avenue.', 'nb_NO'],
+            cs: ['Poznávejte nové lidi online, navazujte mezinárodní přátelství, objevujte komunity a prohlížejte veřejné příspěvky na XOXO Avenue.', 'cs_CZ'],
+            sv: ['Lär känna nya människor online, få internationella vänner, upptäck gemenskaper och utforska offentliga inlägg på XOXO Avenue.', 'sv_SE'],
+            it: ['Conosci persone online, fai amicizie internazionali, scopri community ed esplora post pubblici su XOXO Avenue.', 'it_IT']
           };
 
           function request(path) {
