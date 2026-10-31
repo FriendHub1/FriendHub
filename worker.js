@@ -3171,7 +3171,11 @@ export default {
       return handleAdminEmailSend(request, env);
     }
 
-    if (url.pathname === "/api/auth/username-login") {\n      return handleUsernameLogin(request, env);\n    }\n\n    if (url.pathname === "/api/activity-presence-heartbeat") {
+    if (url.pathname === "/api/auth/username-login") {
+      return handleUsernameLogin(request, env);
+    }
+
+    if (url.pathname === "/api/activity-presence-heartbeat") {
       return handleActivityPresenceHeartbeat(request, env);
     }
 
