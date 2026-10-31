@@ -1,7 +1,7 @@
 {
   "$schema": "https://developers.cloudflare.com/workers/wrangler/config-schema.json",
   "name": "friendhub",
-  "main": "./worker-preview-wrapper.js",
+  "main": "./worker-streak-wrapper.js",
   "compatibility_date": "2026-10-02",
   "assets": {
     "directory": "./",
