@@ -7,104 +7,84 @@
 
   const I18N = {
     es: {
-      label: "racha",
-      day: "día",
-      days: "días",
-      together: "juntos",
-      keep: "¡No rompan la racha! 💜",
+      label: "racha", day: "día", days: "días", together: "juntos",
+      tagline: "¡Su conexión se hace más fuerte! 💜",
+      bestStreak: "Mejor racha",
+      keep: "¡Sigan hablando para mantener viva la chispa! ✨",
       newStreak: "¡XOXO Streak! 💜",
       milestone: "¡{n} días hablando juntos!",
-      record: "Récord: {n} días",
     },
     en: {
-      label: "streak",
-      day: "day",
-      days: "days",
-      together: "together",
-      keep: "Keep the streak going! 💜",
+      label: "streak", day: "day", days: "days", together: "together",
+      tagline: "Your connection is getting stronger! 💜",
+      bestStreak: "Best streak",
+      keep: "Keep chatting to keep the spark alive! ✨",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} days talking together!",
-      record: "Record: {n} days",
     },
     "pt-br": {
-      label: "sequência",
-      day: "dia",
-      days: "dias",
-      together: "juntos",
-      keep: "Não deixem a sequência acabar! 💜",
+      label: "sequência", day: "dia", days: "dias", together: "juntos",
+      tagline: "A conexão de vocês está cada vez mais forte! 💜",
+      bestStreak: "Melhor sequência",
+      keep: "Continuem conversando para manter a chama acesa! ✨",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dias conversando juntos!",
-      record: "Recorde: {n} dias",
     },
     de: {
-      label: "Serie",
-      day: "Tag",
-      days: "Tage",
-      together: "zusammen",
-      keep: "Lasst die Serie nicht abreißen! 💜",
+      label: "Serie", day: "Tag", days: "Tage", together: "zusammen",
+      tagline: "Eure Verbindung wird immer stärker! 💜",
+      bestStreak: "Beste Serie",
+      keep: "Schreibt weiter, damit der Funke lebendig bleibt! ✨",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} Tage zusammen im Chat!",
-      record: "Rekord: {n} Tage",
     },
     nb: {
-      label: "rekke",
-      day: "dag",
-      days: "dager",
-      together: "sammen",
-      keep: "Hold rekken i gang! 💜",
+      label: "rekke", day: "dag", days: "dager", together: "sammen",
+      tagline: "Båndet mellom dere blir sterkere! 💜",
+      bestStreak: "Beste rekke",
+      keep: "Fortsett å chatte for å holde gnisten levende! ✨",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dager sammen i chatten!",
-      record: "Rekord: {n} dager",
     },
     pl: {
-      label: "seria",
-      day: "dzień",
-      days: "dni",
-      together: "razem",
-      keep: "Nie przerywajcie serii! 💜",
+      label: "seria", day: "dzień", days: "dni", together: "razem",
+      tagline: "Wasza więź staje się coraz silniejsza! 💜",
+      bestStreak: "Najlepsza seria",
+      keep: "Rozmawiajcie dalej, aby podtrzymać iskrę! ✨",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dni rozmów razem!",
-      record: "Rekord: {n} dni",
     },
     fr: {
-      label: "série",
-      day: "jour",
-      days: "jours",
-      together: "ensemble",
-      keep: "Ne laissez pas la série s'arrêter ! 💜",
+      label: "série", day: "jour", days: "jours", together: "ensemble",
+      tagline: "Votre complicité devient de plus en plus forte ! 💜",
+      bestStreak: "Meilleure série",
+      keep: "Continuez à discuter pour garder la flamme ! ✨",
       newStreak: "XOXO Streak ! 💜",
       milestone: "{n} jours de discussion ensemble !",
-      record: "Record : {n} jours",
     },
     cs: {
-      label: "série",
-      day: "den",
-      days: "dny",
-      together: "společně",
-      keep: "Nenechte sérii přerušit! 💜",
+      label: "série", day: "den", days: "dny", together: "společně",
+      tagline: "Vaše spojení je stále silnější! 💜",
+      bestStreak: "Nejlepší série",
+      keep: "Pište si dál a udržte jiskru! ✨",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dní spolu v chatu!",
-      record: "Rekord: {n} dní",
     },
     sv: {
-      label: "serie",
-      day: "dag",
-      days: "dagar",
-      together: "tillsammans",
-      keep: "Håll serien vid liv! 💜",
+      label: "serie", day: "dag", days: "dagar", together: "tillsammans",
+      tagline: "Er kontakt blir allt starkare! 💜",
+      bestStreak: "Bästa sviten",
+      keep: "Fortsätt chatta och håll gnistan vid liv! ✨",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dagar tillsammans i chatten!",
-      record: "Rekord: {n} dagar",
     },
     it: {
-      label: "serie",
-      day: "giorno",
-      days: "giorni",
-      together: "insieme",
-      keep: "Non interrompete la serie! 💜",
+      label: "serie", day: "giorno", days: "giorni", together: "insieme",
+      tagline: "Il vostro legame diventa sempre più forte! 💜",
+      bestStreak: "Migliore serie",
+      keep: "Continuate a chattare per tenere viva la scintilla! ✨",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} giorni di chat insieme!",
-      record: "Record: {n} giorni",
     },
   };
 
@@ -162,16 +142,21 @@
     style.id = "xoxo-streaks-style";
     style.textContent = `
       #xoxoDmStreak {
-        display:flex; align-items:center; gap:8px; width:max-content; max-width:100%;
-        margin:7px auto 5px; padding:7px 13px; border-radius:999px;
-        background:linear-gradient(135deg,rgba(255,255,255,.96),rgba(248,235,255,.96));
-        border:1px solid rgba(155,80,210,.18); box-shadow:0 5px 18px rgba(104,45,130,.10);
-        color:#64207e; font:600 13px/1.2 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+        display:flex; align-items:flex-start; gap:9px; width:max-content; max-width:calc(100% - 20px);
+        margin:8px auto 6px; padding:10px 14px; border-radius:15px;
+        background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(248,235,255,.98));
+        border:1px solid rgba(155,80,210,.22); box-shadow:0 5px 18px rgba(104,45,130,.10);
+        color:#64207e; font:600 13px/1.3 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       }
-      #xoxoDmStreak .xoxo-streak-fire { font-size:18px; line-height:1; }
-      #xoxoDmStreak .xoxo-streak-main { display:flex; flex-direction:column; gap:2px; }
+      #xoxoDmStreak .xoxo-streak-fire { font-size:21px; line-height:1.1; padding-top:1px; }
+      #xoxoDmStreak .xoxo-streak-main { display:flex; flex-direction:column; gap:4px; min-width:0; }
       #xoxoDmStreak .xoxo-streak-count { font-size:14px; font-weight:800; }
-      #xoxoDmStreak .xoxo-streak-sub { font-size:11px; font-weight:600; opacity:.78; }
+      #xoxoDmStreak .xoxo-streak-tagline { font-size:11px; font-weight:600; opacity:.82; }
+      #xoxoDmStreak .xoxo-streak-divider { height:1px; background:rgba(155,80,210,.18); margin:3px 0; }
+      #xoxoDmStreak .xoxo-streak-best { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:11px; }
+      #xoxoDmStreak .xoxo-streak-best-label { font-weight:700; }
+      #xoxoDmStreak .xoxo-streak-best-value { font-weight:800; white-space:nowrap; }
+      #xoxoDmStreak .xoxo-streak-keep { font-size:10px; font-weight:600; opacity:.78; }
       #xoxoDmStreak.xoxo-streak-milestone { animation:xoxoStreakPop .65s ease both; }
       @keyframes xoxoStreakPop { 0%{transform:scale(.86);opacity:0} 65%{transform:scale(1.05);opacity:1} 100%{transform:scale(1)} }
       @media (max-width:600px){ #xoxoDmStreak{font-size:12px;padding:6px 11px} }
@@ -205,9 +190,8 @@
 
     const n = Number(row.current_streak) || 0;
     const unit = n === 1 ? t("day") : t("days");
-    const record = Number(row.longest_streak) || n;
-    const today = new Date().toISOString().slice(0, 10);
-    const needsToday = row.last_active_date !== today;
+    const best = Number(row.longest_streak) || n;
+    const bestUnit = best === 1 ? t("day") : t("days");
 
     el.style.display = "flex";
     el.classList.toggle("xoxo-streak-milestone", !!milestone);
@@ -215,7 +199,13 @@
       <span class="xoxo-streak-fire" aria-hidden="true">🔥</span>
       <span class="xoxo-streak-main">
         <span class="xoxo-streak-count">${n} ${unit} ${escapeHtml(t("together"))}</span>
-        <span class="xoxo-streak-sub">${escapeHtml(milestone ? t("milestone", {n}) : (needsToday ? t("keep") : t("record", {n: record})))}</span>
+        <span class="xoxo-streak-tagline">${escapeHtml(t("tagline"))}</span>
+        <span class="xoxo-streak-divider" aria-hidden="true"></span>
+        <span class="xoxo-streak-best">
+          <span class="xoxo-streak-best-label">🏆 ${escapeHtml(t("bestStreak"))}</span>
+          <span class="xoxo-streak-best-value">${best} ${escapeHtml(bestUnit)}</span>
+        </span>
+        <span class="xoxo-streak-keep">${escapeHtml(t("keep"))}</span>
       </span>`;
   }
 
