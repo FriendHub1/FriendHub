@@ -269,7 +269,23 @@
   let lastLanguage = "";
 
   async function refresh(record) {
-    const row = record || await getStreak();
+    const accountAtStart = currentAccount();
+    const peerAtStart = currentPeer();
+    let row = record || null;
+
+    // Retry briefly while the authenticated Supabase session finishes restoring.
+    if (!row) {
+      for (const delay of [0, 350, 700, 1100]) {
+        if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+        if (currentAccount() !== accountAtStart || currentPeer() !== peerAtStart) return;
+        row = await getStreak();
+        if (row) break;
+      }
+    }
+
+    // Do not render a result if the user switched accounts or conversations.
+    if (currentAccount() !== accountAtStart || currentPeer() !== peerAtStart) return;
+
     lastStreakRow = row || null;
     lastLanguage = lang();
     if (!row) {
