@@ -2533,6 +2533,57 @@ async function handleVerifyDeletionCode(request,env) {
   return jsonResponse({ok:true,verified:true});
 }
 
+async function xoxoArchiveOwnedDmMedia(userId, env) {
+  const headers = xoxoServiceHeaders(env);
+  const listObjects = async (prefix) => {
+    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/list/dm-media`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ prefix, limit: 1000, offset: 0, sortBy: { column: "name", order: "asc" } }),
+    });
+    if (!response.ok) throw new Error(`Storage list failed (${response.status})`);
+    const rows = await response.json();
+    return Array.isArray(rows) ? rows.filter(row => row && row.name && !row.id && row.metadata) : [];
+  };
+  const sourcePrefix = userId;
+  const archivePrefix = `__deleted_accounts/${userId}`;
+  const [sourceRows, archivedRows] = await Promise.all([
+    listObjects(sourcePrefix),
+    listObjects(archivePrefix),
+  ]);
+  const archivedNames = new Set(archivedRows.map(row => String(row.name).split("/").pop()));
+  let archivedCount = 0;
+  for (const row of sourceRows) {
+    const fileName = String(row.name).split("/").pop();
+    if (!fileName || fileName === "." || fileName === "..") continue;
+    const originalPath = `${sourcePrefix}/${fileName}`;
+    const archivedPath = `${archivePrefix}/${fileName}`;
+    if (!archivedNames.has(fileName)) {
+      const moveResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/move`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ bucketId: "dm-media", sourceKey: originalPath, destinationKey: archivedPath }),
+      });
+      if (!moveResponse.ok) {
+        const detail = await moveResponse.text();
+        console.error("XOXO DM media archive move failed:", moveResponse.status, detail);
+        throw new Error("Could not safely archive all message attachments");
+      }
+      archivedNames.add(fileName);
+    }
+    const record = await xoxoDeletionRpc(env, "xoxo_record_deleted_account_media", {
+      p_user_id: userId,
+      p_original_path: originalPath,
+      p_archived_path: archivedPath,
+      p_mime_type: row.metadata?.mimetype || row.metadata?.contentType || null,
+      p_file_size: Number(row.metadata?.size || 0) || null,
+    });
+    if (!record.ok) throw new Error("Could not register archived message attachment");
+    archivedCount++;
+  }
+  return { archivedCount };
+}
+
 async function handleDeleteAccount(request, env) {
   if (request.method !== "POST") return jsonResponse({ok:false,error:"Method not allowed"},405);
   if (!env.SUPABASE_SECRET_KEY || !env.RESEND_API_KEY) return jsonResponse({ok:false,error:"Server configuration error"},500);
@@ -2545,6 +2596,15 @@ async function handleDeleteAccount(request, env) {
   const claim=await xoxoDeletionRpc(env,"xoxo_consume_account_deletion_code",{p_user_id:userId});
   if (!claim.ok) return jsonResponse({ok:false,error:"Could not validate email verification"},502);
   if (claim.value!==true) return jsonResponse({ok:false,error:"Verify the email code before deleting your account"},403);
+
+  // Preserve original DM media in the same private bucket before deleting the Auth owner.
+  // Storage moves performed with the service key create ownerless archive objects.
+  try {
+    await xoxoArchiveOwnedDmMedia(userId, env);
+  } catch (error) {
+    console.error("XOXO account deletion stopped to protect DM media:", error);
+    return jsonResponse({ok:false,error:"Message attachments could not be safely archived. Your account has not been deleted; please try again later."},500);
+  }
 
   const cleanupResponse=await fetch(`${SUPABASE_URL}/rest/v1/rpc/xoxo_delete_account_data`,{
     method:"POST",headers:xoxoServiceHeaders(env),body:JSON.stringify({p_user_id:userId})
