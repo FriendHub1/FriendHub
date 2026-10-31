@@ -238,20 +238,6 @@
     }
   }
 
-  async function recordStreak() {
-    const peer = currentPeer();
-    const me = currentAccount();
-    const c = client();
-    if (!peer || !me || !c || typeof c.rpc !== "function") return null;
-    try {
-      const result = await c.rpc("xoxo_dm_streak_record_message", { p_recipient: peer });
-      if (result?.error) return null;
-      return Array.isArray(result.data) ? result.data[0] : result.data;
-    } catch (_) {
-      return null;
-    }
-  }
-
   let refreshTimer = null;
   let lastRenderedKey = "";
 
@@ -276,25 +262,13 @@
     render(row, milestone);
   }
 
-  function hasRecentOutgoingMessage() {
-    // The RPC independently verifies the authenticated user's persisted recent DM.
-    // Avoid relying on an app-global message array that the application does not expose.
-    return Boolean(currentAccount() && currentPeer() &&
-      currentAccount() !== currentPeer());
-  }
-
   function scheduleRecord() {
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(async () => {
-      // DOM changes alone never count: require a recent, persisted outgoing DM
-      // in the app's already-loaded message list. The RPC validates it again.
-      if (!hasRecentOutgoingMessage()) {
-        await refresh();
-        return;
-      }
-      const row = await recordStreak();
-      await refresh(row);
-    }, 700);
+      // The database trigger records each persisted ordinary DM exactly once
+      // for that sender/day. The browser only refreshes the shared result.
+      await refresh();
+    }, 500);
   }
 
   function watchMessages() {
