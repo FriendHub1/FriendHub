@@ -230,8 +230,16 @@
         loadOnlinePeople();
       }
     });
-    const observer = new MutationObserver(() => {
-      if (!document.getElementById("xoxoOnlineNowSection") && findAnchor()) loadOnlinePeople();
+    const observer = new MutationObserver(mutations => {
+      const suggestionsChanged = mutations.some(mutation => {
+        const target = mutation.target;
+        return target && target.nodeType === 1 &&
+          (target.id === "friendSuggestionsList" ||
+           (typeof target.closest === "function" && target.closest("#friendSuggestionsList")));
+      });
+      if (suggestionsChanged || (!document.getElementById("xoxoOnlineNowSection") && findAnchor())) {
+        loadOnlinePeople();
+      }
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
