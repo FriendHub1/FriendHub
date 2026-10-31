@@ -4,6 +4,7 @@ export function createGuestSupportHandler({SUPABASE_URL,jsonResponse,sendResendE
   const IMAGE_TYPES={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif"};
   const VIDEO_TYPES={"video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"};
   const MAX_IMAGE=10*1024*1024, MAX_VIDEO=30*1024*1024;
+  const signedUrlCache=new Map();
   async function hash(value) {
     const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(String(value||"")));
     return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
@@ -15,10 +16,14 @@ export function createGuestSupportHandler({SUPABASE_URL,jsonResponse,sendResendE
     const rows=await r.json();return Array.isArray(rows)&&rows.length===1?rows[0]:null;
   }
   async function signedUrl(path,env) {
+    const cached=signedUrlCache.get(path);
+    if(cached&&cached.expiresAt>Date.now())return cached.url;
     const r=await fetch(SUPABASE_URL+"/storage/v1/object/sign/"+BUCKET+"/"+path.split("/").map(encodeURIComponent).join("/"),{method:"POST",headers:headers(env),body:JSON.stringify({expiresIn:3600})});
     if(!r.ok){console.error("Guest support signed URL",r.status,await r.text());return null;}
     const data=await r.json(),url=data.signedURL||data.signedUrl;
-    return url?(url.startsWith("http")?url:SUPABASE_URL+"/storage/v1"+(url.startsWith("/")?url:"/"+url)):null;
+    const resolved=url?(url.startsWith("http")?url:SUPABASE_URL+"/storage/v1"+(url.startsWith("/")?url:"/"+url)):null;
+    if(resolved){if(signedUrlCache.size>500)signedUrlCache.clear();signedUrlCache.set(path,{url:resolved,expiresAt:Date.now()+50*60*1000});}
+    return resolved;
   }
   async function messages(c,env) {
     const h=headers(env),r=await fetch(SUPABASE_URL+"/rest/v1/support_messages?case_id=eq."+encodeURIComponent(c.id)+"&select=id,sender_type,message,created_at,read_at,attachment_url,attachment_type&order=created_at.asc",{headers:h});
