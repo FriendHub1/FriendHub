@@ -262,8 +262,16 @@
       return;
     }
     const key = `${row.current_streak}:${row.longest_streak}:${row.last_active_date || ""}`;
-    const milestone = Number(row.current_streak) > 0 &&
-      [7,30,100].includes(Number(row.current_streak)) && key !== lastRenderedKey;
+    const n = Number(row.current_streak) || 0;
+    const milestoneKey = `xoxo-streak-milestone:${currentAccount()}:${currentPeer()}:${n}`;
+    let alreadyCelebrated = false;
+    try { alreadyCelebrated = localStorage.getItem(milestoneKey) === "1"; } catch (_) {}
+    const milestone = n > 0 &&
+      [7,30,100,180,365,500,1000].includes(n) &&
+      key !== lastRenderedKey && !alreadyCelebrated;
+    if (milestone) {
+      try { localStorage.setItem(milestoneKey, "1"); } catch (_) {}
+    }
     lastRenderedKey = key;
     render(row, milestone);
   }
