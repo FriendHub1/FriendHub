@@ -263,7 +263,7 @@
     }
     const key = `${row.current_streak}:${row.longest_streak}:${row.last_active_date || ""}`;
     const n = Number(row.current_streak) || 0;
-    const milestoneKey = `xoxo-streak-milestone:${currentAccount()}:${currentPeer()}:${n}`;
+    const milestoneKey = `xoxo-streak-milestone:${currentAccount()}:${currentPeer()}:${n}:${row.last_active_date || ""}`;
     let alreadyCelebrated = false;
     try { alreadyCelebrated = localStorage.getItem(milestoneKey) === "1"; } catch (_) {}
     const milestone = n > 0 &&
