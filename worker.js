@@ -1,3 +1,5 @@
+import { createGuestSupportHandler } from "./xoxo-guest-support.js";
+
 const SUPABASE_URL = "https://cxosofpxfmjkrhfabrqc.supabase.co";
 const SUPABASE_KEY = "sb_publishable_TPezCBhcWobUpElquePVwg_WamONWCM";
 
@@ -577,7 +579,7 @@ async function getSupportCase(
     await fetch(
       `${SUPABASE_URL}/rest/v1/support_cases?id=eq.${encodeURIComponent(
         caseId
-      )}&select=id,case_number,user_id,status`,
+      )}&select=id,case_number,user_id,guest_email,status`,
       {
         headers: {
           apikey:
@@ -617,7 +619,7 @@ async function getSupportCaseByNumber(
     await fetch(
       `${SUPABASE_URL}/rest/v1/support_cases?case_number=eq.${encodeURIComponent(
         caseNumber
-      )}&select=id,case_number,user_id,status`,
+      )}&select=id,case_number,user_id,guest_email,status`,
       {
         headers: {
           apikey:
@@ -1423,19 +1425,8 @@ async function handleSupportEmailInbound(
    * Confirm the sender owns this case.
    */
 
-  const authUser =
-    await getAuthUserById(
-      supportCase.user_id,
-      env
-    );
-
-  const expectedEmail =
-    String(
-      authUser?.email ||
-        ""
-    )
-      .trim()
-      .toLowerCase();
+  const authUser = supportCase.user_id ? await getAuthUserById(supportCase.user_id, env) : null;
+  const expectedEmail = String(authUser?.email || supportCase.guest_email || "").trim().toLowerCase();
 
   const XOXO_SUPPORT_GMAIL =
     "xoxoavenuesupport@gmail.com";
@@ -1563,8 +1554,7 @@ async function handleSupportEmailInbound(
    * and do not notify support Gmail again.
    */
   if (isAdminSender) {
-    const recipient =
-      String(authUser?.email || "").trim();
+    const recipient = String(authUser?.email || supportCase.guest_email || "").trim();
 
     if (!recipient) {
       console.error("Admin Gmail reply saved but user email was not found");
@@ -1887,17 +1877,8 @@ async function handleSupportEmail(
     }
   }
 
-  const authUser =
-    await getAuthUserById(
-      supportCase.user_id,
-      env
-    );
-
-  const recipient =
-    String(
-      authUser?.email ||
-        ""
-    ).trim();
+  const authUser = supportCase.user_id ? await getAuthUserById(supportCase.user_id, env) : null;
+  const recipient = String(authUser?.email || supportCase.guest_email || "").trim();
 
   if (!recipient) {
     return jsonResponse(
@@ -3118,6 +3099,8 @@ async function xoxoServePublicSeoRoute(request, env, url) {
 }
 /* END XOXO PUBLIC SEO ROUTES V2 */
 
+const handleGuestSupport = createGuestSupportHandler({ SUPABASE_URL, jsonResponse, sendResendEmail, escapeHtml });
+
 export default {
   async scheduled(controller, env, ctx) {
     // Keep existing profile reminders on the original hourly schedule only.
@@ -3276,6 +3259,8 @@ export default {
     /*
      * SUPPORT EMAIL API
      */
+
+    if (url.pathname === "/api/support-guest") return handleGuestSupport(request, env);
 
     if (
       url.pathname ===
