@@ -529,6 +529,17 @@
     // Also catches app navigation or a late-created chat panel when no
     // relevant DOM mutation is emitted by the page's router.
     setInterval(scanChat, 500);
+
+    // Re-check once the UTC streak day changes so an open chat receives
+    // the hourglass automatically, without requiring a reload or new message.
+    let observedUtcDay = new Date().toISOString().slice(0, 10);
+    setInterval(() => {
+      const currentUtcDay = new Date().toISOString().slice(0, 10);
+      if (currentUtcDay !== observedUtcDay) {
+        observedUtcDay = currentUtcDay;
+        refresh();
+      }
+    }, 15000);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, {once:true});
