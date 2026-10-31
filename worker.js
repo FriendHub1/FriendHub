@@ -3392,7 +3392,8 @@ export default {
           '<script src="/beta/stay-safe-browser-report-adapter.js" defer></script>' +
           '<script src="/beta/stay-safe-browser-flow.js" defer></script>' +
           '<script src="/beta/stay-safe-chat-preview-bridge.js" defer></script>' +
-          '<style id="xoxo-single-message-report-flag-hide">.xoxo-dm-report-flag{display:none!important}</style>' : "";
+          '<style id="xoxo-single-message-report-flag-hide">.xoxo-dm-report-flag{display:none!important}</style>' +
+          '<script src="/xoxo-guest-support-ui.js" defer></script>' : "";
         const adminScripts = enableSafetyAdmin ?
           '<script src="/beta/admin-report-queue.js" defer></script>' +
           '<script src="/beta/admin-report-panel-bridge.js" defer></script>' +
