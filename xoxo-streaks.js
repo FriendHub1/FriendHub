@@ -11,7 +11,7 @@
       tagline: "¡Su conexión se hace más fuerte! 💜",
       bestStreak: "Mejor racha",
       keep: "¡Sigan hablando para mantener viva la chispa! ✨",
-      warningKeep: "Escríbanse hoy para mantener la racha",
+      warningKeep: "¡Quedan pocas horas para salvar la racha!",
       waitingFriend: "Esperando a tu amistad...",
       yourTurn: "¡Te toca responder!",
       newStreak: "¡XOXO Streak! 💜",
@@ -22,7 +22,7 @@
       tagline: "Your connection is getting stronger! 💜",
       bestStreak: "Best streak",
       keep: "Keep chatting to keep the spark alive! ✨",
-      warningKeep: "Message each other today to keep it!",
+      warningKeep: "Only a few hours left to save your streak!",
       waitingFriend: "Waiting for your friend...",
       yourTurn: "Your turn to reply!",
       newStreak: "XOXO Streak! 💜",
@@ -33,7 +33,7 @@
       tagline: "A conexão de vocês está cada vez mais forte! 💜",
       bestStreak: "Melhor sequência",
       keep: "Continuem conversando para manter a chama acesa! ✨",
-      warningKeep: "Mandem mensagem hoje para manter a sequência!",
+      warningKeep: "Faltam poucas horas para salvar a sequência!",
       waitingFriend: "Aguardando seu amigo...",
       yourTurn: "É sua vez de responder!",
       newStreak: "XOXO Streak! 💜",
@@ -44,7 +44,7 @@
       tagline: "Eure Verbindung wird immer stärker! 💜",
       bestStreak: "Beste Serie",
       keep: "Schreibt weiter, damit der Funke lebendig bleibt! ✨",
-      warningKeep: "Schreibt euch heute, um eure Serie zu retten!",
+      warningKeep: "Nur noch wenige Stunden, um eure Serie zu retten!",
       waitingFriend: "Warte auf deine Freundesperson...",
       yourTurn: "Du bist mit Antworten dran!",
       newStreak: "XOXO Streak! 💜",
@@ -55,7 +55,7 @@
       tagline: "Båndet mellom dere blir sterkere! 💜",
       bestStreak: "Beste rekke",
       keep: "Fortsett å chatte for å holde gnisten levende! ✨",
-      warningKeep: "Send hverandre en melding i dag for å bevare rekken!",
+      warningKeep: "Bare noen få timer igjen for å redde rekken!",
       waitingFriend: "Venter på vennen din...",
       yourTurn: "Nå er det din tur til å svare!",
       newStreak: "XOXO Streak! 💜",
@@ -66,7 +66,7 @@
       tagline: "Wasza więź staje się coraz silniejsza! 💜",
       bestStreak: "Najlepsza seria",
       keep: "Rozmawiajcie dalej, aby podtrzymać iskrę! ✨",
-      warningKeep: "Napiszcie do siebie dzisiaj, aby utrzymać serię!",
+      warningKeep: "Zostało tylko kilka godzin, aby uratować serię!",
       waitingFriend: "Czekamy na odpowiedź znajomej osoby...",
       yourTurn: "Teraz Twoja kolej na odpowiedź!",
       newStreak: "XOXO Streak! 💜",
@@ -77,7 +77,7 @@
       tagline: "Votre complicité devient de plus en plus forte ! 💜",
       bestStreak: "Meilleure série",
       keep: "Continuez à discuter pour garder la flamme ! ✨",
-      warningKeep: "Échangez un message aujourd’hui pour garder votre série !",
+      warningKeep: "Plus que quelques heures pour sauver votre série !",
       waitingFriend: "En attente de votre ami·e...",
       yourTurn: "À vous de répondre !",
       newStreak: "XOXO Streak ! 💜",
@@ -88,7 +88,7 @@
       tagline: "Vaše spojení je stále silnější! 💜",
       bestStreak: "Nejlepší série",
       keep: "Pište si dál a udržte jiskru! ✨",
-      warningKeep: "Napište si dnes, abyste udrželi sérii!",
+      warningKeep: "Zbývá jen pár hodin na záchranu série!",
       waitingFriend: "Čekáme na odpověď vašeho přítele...",
       yourTurn: "Teď je řada na vás!",
       newStreak: "XOXO Streak! 💜",
@@ -99,7 +99,7 @@
       tagline: "Er kontakt blir allt starkare! 💜",
       bestStreak: "Bästa sviten",
       keep: "Fortsätt chatta och håll gnistan vid liv! ✨",
-      warningKeep: "Skriv till varandra idag för att behålla sviten!",
+      warningKeep: "Bara några timmar kvar för att rädda sviten!",
       waitingFriend: "Väntar på din vän...",
       yourTurn: "Det är din tur att svara!",
       newStreak: "XOXO Streak! 💜",
@@ -110,7 +110,7 @@
       tagline: "Il vostro legame diventa sempre più forte! 💜",
       bestStreak: "Migliore serie",
       keep: "Continuate a chattare per tenere viva la scintilla! ✨",
-      warningKeep: "Scrivetevi oggi per mantenere la serie!",
+      warningKeep: "Mancano poche ore per salvare la serie!",
       waitingFriend: "In attesa della risposta del tuo amico...",
       yourTurn: "Tocca a te rispondere!",
       newStreak: "XOXO Streak! 💜",
@@ -263,33 +263,37 @@
     const unit = n === 1 ? t("day") : t("days");
     const best = Number(row.longest_streak) || n;
     const bestUnit = best === 1 ? t("day") : t("days");
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    // The database keeps a streak alive through the UTC day after the last
-    // completed mutual-activity day. That final UTC day is the hourglass window.
-    const hourglass = String(row.last_active_date || "") === yesterday;
+    const now = Date.now();
+    const expiresAt = Date.parse(row.expires_at || "");
+    const remainingMs = Number.isFinite(expiresAt) ? expiresAt - now : 0;
+    // Snapchat-style warning window: show the hourglass during the final 4 hours
+    // of the rolling 24-hour streak cycle.
+    const hourglass = remainingMs > 0 && remainingMs <= 4 * 60 * 60 * 1000;
+    const mutualAt = Date.parse(row.last_mutual_at || "");
     const meIsA = currentAccount() === String(row.user_a || "");
-    const mySentToday = hourglass && (
-      meIsA ? row.user_a_last_date === today : row.user_b_last_date === today
-    );
-    const peerSentToday = hourglass && (
-      meIsA ? row.user_b_last_date === today : row.user_a_last_date === today
-    );
-    const warningText = mySentToday
+    const myLastAt = Date.parse((meIsA ? row.user_a_last_at : row.user_b_last_at) || "");
+    const peerLastAt = Date.parse((meIsA ? row.user_b_last_at : row.user_a_last_at) || "");
+    const mySentThisCycle = Number.isFinite(myLastAt) && Number.isFinite(mutualAt) && myLastAt > mutualAt;
+    const peerSentThisCycle = Number.isFinite(peerLastAt) && Number.isFinite(mutualAt) && peerLastAt > mutualAt;
+    const warningText = mySentThisCycle
       ? t("waitingFriend")
-      : peerSentToday
+      : peerSentThisCycle
         ? t("yourTurn")
         : t("warningKeep");
+    const totalMinutes = Math.max(0, Math.ceil(remainingMs / 60000));
+    const countdown = String(Math.floor(totalMinutes / 60)).padStart(2, "0") + ":" +
+      String(totalMinutes % 60).padStart(2, "0");
+    const warningLine = hourglass ? warningText + " · " + countdown : t("tagline");
 
     el.style.display = "inline-flex";
     el.classList.toggle("xoxo-streak-milestone", !!milestone && !hourglass);
     el.classList.toggle("xoxo-streak-hourglass", hourglass);
-    el.title = hourglass ? warningText : t("tagline") + " " + t("keep");
+    el.title = hourglass ? warningText + " · " + countdown : t("tagline") + " " + t("keep");
     el.innerHTML = `
       <span class="xoxo-streak-fire" aria-hidden="true">${hourglass ? "⏳" : "🔥"}</span>
       <span class="xoxo-streak-main">
         <span class="xoxo-streak-count">${n} ${unit} ${escapeHtml(t("together"))}</span>
-        <span class="xoxo-streak-tagline">${escapeHtml(hourglass ? warningText : t("tagline"))}</span>
+        <span class="xoxo-streak-tagline">${escapeHtml(warningLine)}</span>
         <span class="xoxo-streak-best">
           <span class="xoxo-streak-best-label">🏆 ${escapeHtml(t("bestStreak"))}</span>
           <span class="xoxo-streak-best-value">${best} ${escapeHtml(bestUnit)}</span>
@@ -530,16 +534,10 @@
     // relevant DOM mutation is emitted by the page's router.
     setInterval(scanChat, 500);
 
-    // Re-check once the UTC streak day changes so an open chat receives
-    // the hourglass automatically, without requiring a reload or new message.
-    let observedUtcDay = new Date().toISOString().slice(0, 10);
+    // Refresh the visible countdown without waiting for another message.
     setInterval(() => {
-      const currentUtcDay = new Date().toISOString().slice(0, 10);
-      if (currentUtcDay !== observedUtcDay) {
-        observedUtcDay = currentUtcDay;
-        refresh();
-      }
-    }, 15000);
+      if (lastStreakRow) render(lastStreakRow, false);
+    }, 30000);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, {once:true});
