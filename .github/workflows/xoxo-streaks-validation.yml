@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "xoxo-streaks.js"
+      - "xoxo-discovery-performance.js"
       - "beta/test-xoxo-streaks-logic.cjs"
       - ".github/workflows/xoxo-streaks-validation.yml"
   pull_request:
@@ -26,5 +27,7 @@ jobs:
           node-version: "22"
       - name: Check streak script syntax
         run: node --check xoxo-streaks.js
+      - name: Check discovery performance script syntax
+        run: node --check xoxo-discovery-performance.js
       - name: Test streak rules and message trigger guards
         run: node beta/test-xoxo-streaks-logic.cjs
