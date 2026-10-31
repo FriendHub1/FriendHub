@@ -3450,31 +3450,21 @@ export default {
     }
 
     if (!profileId) {
-      const response =
-        await env.ASSETS.fetch(
-          request
-        );
-
-      const headers =
-        new Headers(
-          response.headers
-        );
-
-      headers.set(
-        "X-XOXO-Worker",
-        "normal-page"
-      );
-
-      return new Response(
-        response.body,
-        {
-          status:
-            response.status,
-          statusText:
-            response.statusText,
-          headers,
-        }
-      );
+      const response = await env.ASSETS.fetch(request);
+      const isHomeHtml = url.pathname === "/" && request.method === "GET" &&
+        String(response.headers.get("content-type") || "").includes("text/html");
+      const page = isHomeHtml
+        ? new HTMLRewriter().on("head", { element(el) {
+            el.append('<script src="/xoxo-guest-support-ui.js" defer></script>', { html: true });
+          }}).transform(response)
+        : response;
+      const headers = new Headers(page.headers);
+      headers.set("X-XOXO-Worker", isHomeHtml ? "public-guest-support" : "normal-page");
+      return new Response(page.body, {
+        status: page.status,
+        statusText: page.statusText,
+        headers,
+      });
     }
 
     /*
