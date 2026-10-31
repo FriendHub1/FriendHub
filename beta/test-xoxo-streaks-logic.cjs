@@ -2,44 +2,66 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 
 const milestones = [7, 30, 100, 180, 365, 500, 1000];
-const day = value => new Date(value + "T00:00:00.000Z");
-const date = value => value.toISOString().slice(0, 10);
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
 
-function applyMessage(state, actor, today) {
+function message(state, actor, at) {
   const next = { ...state };
-  if (actor === "a") next.aDate = today;
-  else if (actor === "b") next.bDate = today;
+  if (actor === "a") next.aAt = at;
+  else if (actor === "b") next.bAt = at;
   else throw new Error("unknown actor");
-  if (next.aDate === today && next.bDate === today && next.lastActive !== today) {
-    const yesterday = date(new Date(day(today).getTime() - 86400000));
-    next.current = next.lastActive === yesterday && next.current > 0 ? next.current + 1 : 1;
+
+  const expired = next.expiresAt !== null && at >= next.expiresAt;
+  if (expired) next.current = 0;
+
+  const aDone = next.aAt !== null && (next.lastMutualAt === null || next.aAt > next.lastMutualAt);
+  const bDone = next.bAt !== null && (next.lastMutualAt === null || next.bAt > next.lastMutualAt);
+
+  if (aDone && bDone) {
+    next.current = expired || next.expiresAt === null ? 1 : next.current + 1;
     next.longest = Math.max(next.longest, next.current);
-    next.lastActive = today;
+    next.lastMutualAt = at;
+    next.expiresAt = at + DAY;
   }
   return next;
 }
-function visibleStreak(state, today) {
-  const cutoff = date(new Date(day(today).getTime() - 86400000));
-  return state.lastActive && state.lastActive < cutoff ? 0 : state.current;
+function visible(state, at) {
+  return state.expiresAt !== null && at < state.expiresAt ? state.current : 0;
+}
+function hourglass(state, at) {
+  const remaining = state.expiresAt === null ? 0 : state.expiresAt - at;
+  return remaining > 0 && remaining <= 4 * HOUR;
 }
 
-let state = { current: 0, longest: 0, lastActive: null, aDate: null, bDate: null };
-state = applyMessage(state, "a", "2026-10-30");
-assert.equal(state.current, 0, "one participant must not start a streak");
-state = applyMessage(state, "b", "2026-10-30");
-assert.equal(state.current, 1, "both participants start day one");
-state = applyMessage(state, "a", "2026-10-30");
-state = applyMessage(state, "b", "2026-10-30");
-assert.equal(state.current, 1, "multiple messages on one day count once");
-state = applyMessage(state, "a", "2026-10-31");
-assert.equal(state.current, 1, "one participant cannot advance the streak");
-state = applyMessage(state, "b", "2026-10-31");
-assert.equal(state.current, 2, "both participants on the next day advance to two");
-state = applyMessage(state, "a", "2026-11-02");
-assert.equal(visibleStreak(state, "2026-11-02"), 0, "a missed full day expires the visible streak");
-state = applyMessage(state, "b", "2026-11-02");
-assert.equal(state.current, 1, "both participants after a missed day restart at one");
-assert.equal(state.longest, 2, "longest streak is preserved after a reset");
+let s = { current: 0, longest: 0, aAt: null, bAt: null, lastMutualAt: null, expiresAt: null };
+const t0 = Date.parse("2026-10-30T12:00:00Z");
+s = message(s, "a", t0);
+assert.equal(s.current, 0, "one participant must not start a streak");
+s = message(s, "a", t0 + HOUR);
+assert.equal(s.current, 0, "repeated messages from one participant do not start a streak");
+s = message(s, "b", t0 + 2 * HOUR);
+assert.equal(s.current, 1, "both participants start the first streak cycle");
+assert.equal(s.expiresAt, t0 + 26 * HOUR, "the 24-hour deadline starts after mutual participation");
+
+s = message(s, "a", t0 + 22 * HOUR);
+assert.equal(s.current, 1, "the first participant's message alone does not advance the streak");
+assert.equal(s.expiresAt, t0 + 26 * HOUR, "one-sided messages do not extend the deadline");
+assert.equal(hourglass(s, t0 + 22 * HOUR + 1), true, "hourglass appears in the final four hours");
+assert.equal(hourglass(s, t0 + 10 * HOUR), false, "hourglass stays hidden outside the warning window");
+
+s = message(s, "a", t0 + 23 * HOUR);
+assert.equal(s.expiresAt, t0 + 26 * HOUR, "repeated messages by the same person do not reset the timer");
+s = message(s, "b", t0 + 24 * HOUR);
+assert.equal(s.current, 2, "the second participant completes the cycle and advances the streak");
+assert.equal(s.expiresAt, t0 + 48 * HOUR, "mutual participation starts the next 24-hour cycle");
+
+assert.equal(visible(s, t0 + 48 * HOUR - 1), 2, "streak remains visible until the exact expiry");
+assert.equal(visible(s, t0 + 48 * HOUR), 0, "streak expires at the exact deadline");
+s = message(s, "a", t0 + 49 * HOUR);
+assert.equal(s.current, 0, "one person cannot restart an expired streak alone");
+s = message(s, "b", t0 + 50 * HOUR);
+assert.equal(s.current, 1, "both participants after expiry restart at one");
+assert.equal(s.longest, 2, "longest streak is preserved after reset");
 assert.deepEqual(milestones, [7, 30, 100, 180, 365, 500, 1000]);
 
 const source = fs.readFileSync("xoxo-streaks.js", "utf8");
@@ -47,9 +69,12 @@ for (const required of [
   "function scheduleRecord()",
   "The database trigger records each persisted ordinary DM exactly once",
   "await refresh();",
-  "[7,30,100,180,365,500,1000]"
+  "[7,30,100,180,365,500,1000]",
+  "row.expires_at",
+  "4 * 60 * 60 * 1000",
+  "row.last_mutual_at"
 ]) assert.ok(source.includes(required), "missing production integration: " + required);
 assert.ok(!source.includes("xoxo_dm_streak_record_message"),
   "browser must not record streaks; the database trigger owns that operation");
 
-console.log("XOXO Streak logic tests passed: two-user participation, once-per-day counting, consecutive-day advance, missed-day reset, record preservation, milestone list, and persisted outgoing-message guard.");
+console.log("XOXO Streak tests passed: rolling 24-hour expiry, four-hour hourglass, mutual participation, no one-sided timer reset, expiry, restart, longest streak, and milestone list.");
