@@ -9,7 +9,7 @@ export default {
     const rewritten = new HTMLRewriter()
       .on("head", {
         element(element) {
-          element.append('<script src="/xoxo-streaks.js?v=20261031e" defer></script>', { html: true });
+          element.append('<script src="/xoxo-streaks.js?v=20261031f" defer></script>', { html: true });
         }
       })
       .transform(response);
