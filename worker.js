@@ -2543,7 +2543,7 @@ async function xoxoArchiveOwnedDmMedia(userId, env) {
     });
     if (!response.ok) throw new Error(`Storage list failed (${response.status})`);
     const rows = await response.json();
-    return Array.isArray(rows) ? rows.filter(row => row && row.name && !row.id && row.metadata) : [];
+    return Array.isArray(rows) ? rows.filter(row => row && row.name && row.metadata) : [];
   };
   const sourcePrefix = userId;
   const archivePrefix = `__deleted_accounts/${userId}`;
