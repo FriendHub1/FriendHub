@@ -11,6 +11,9 @@
       tagline: "¡Su conexión se hace más fuerte! 💜",
       bestStreak: "Mejor racha",
       keep: "¡Sigan hablando para mantener viva la chispa! ✨",
+      warningKeep: "Escríbanse hoy para mantener la racha",
+      waitingFriend: "Esperando a tu amistad...",
+      yourTurn: "¡Te toca responder!",
       newStreak: "¡XOXO Streak! 💜",
       milestone: "¡{n} días hablando juntos!",
     },
@@ -19,6 +22,9 @@
       tagline: "Your connection is getting stronger! 💜",
       bestStreak: "Best streak",
       keep: "Keep chatting to keep the spark alive! ✨",
+      warningKeep: "Message each other today to keep it!",
+      waitingFriend: "Waiting for your friend...",
+      yourTurn: "Your turn to reply!",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} days talking together!",
     },
@@ -27,6 +33,9 @@
       tagline: "A conexão de vocês está cada vez mais forte! 💜",
       bestStreak: "Melhor sequência",
       keep: "Continuem conversando para manter a chama acesa! ✨",
+      warningKeep: "Mandem mensagem hoje para manter a sequência!",
+      waitingFriend: "Aguardando seu amigo...",
+      yourTurn: "É sua vez de responder!",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dias conversando juntos!",
     },
@@ -35,6 +44,9 @@
       tagline: "Eure Verbindung wird immer stärker! 💜",
       bestStreak: "Beste Serie",
       keep: "Schreibt weiter, damit der Funke lebendig bleibt! ✨",
+      warningKeep: "Schreibt euch heute, um eure Serie zu retten!",
+      waitingFriend: "Warte auf deine Freundesperson...",
+      yourTurn: "Du bist mit Antworten dran!",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} Tage zusammen im Chat!",
     },
@@ -43,6 +55,9 @@
       tagline: "Båndet mellom dere blir sterkere! 💜",
       bestStreak: "Beste rekke",
       keep: "Fortsett å chatte for å holde gnisten levende! ✨",
+      warningKeep: "Send hverandre en melding i dag for å bevare rekken!",
+      waitingFriend: "Venter på vennen din...",
+      yourTurn: "Nå er det din tur til å svare!",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dager sammen i chatten!",
     },
@@ -51,6 +66,9 @@
       tagline: "Wasza więź staje się coraz silniejsza! 💜",
       bestStreak: "Najlepsza seria",
       keep: "Rozmawiajcie dalej, aby podtrzymać iskrę! ✨",
+      warningKeep: "Napiszcie do siebie dzisiaj, aby utrzymać serię!",
+      waitingFriend: "Czekamy na odpowiedź znajomej osoby...",
+      yourTurn: "Teraz Twoja kolej na odpowiedź!",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dni rozmów razem!",
     },
@@ -59,6 +77,9 @@
       tagline: "Votre complicité devient de plus en plus forte ! 💜",
       bestStreak: "Meilleure série",
       keep: "Continuez à discuter pour garder la flamme ! ✨",
+      warningKeep: "Échangez un message aujourd’hui pour garder votre série !",
+      waitingFriend: "En attente de votre ami·e...",
+      yourTurn: "À vous de répondre !",
       newStreak: "XOXO Streak ! 💜",
       milestone: "{n} jours de discussion ensemble !",
     },
@@ -67,6 +88,9 @@
       tagline: "Vaše spojení je stále silnější! 💜",
       bestStreak: "Nejlepší série",
       keep: "Pište si dál a udržte jiskru! ✨",
+      warningKeep: "Napište si dnes, abyste udrželi sérii!",
+      waitingFriend: "Čekáme na odpověď vašeho přítele...",
+      yourTurn: "Teď je řada na vás!",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dní spolu v chatu!",
     },
@@ -75,6 +99,9 @@
       tagline: "Er kontakt blir allt starkare! 💜",
       bestStreak: "Bästa sviten",
       keep: "Fortsätt chatta och håll gnistan vid liv! ✨",
+      warningKeep: "Skriv till varandra idag för att behålla sviten!",
+      waitingFriend: "Väntar på din vän...",
+      yourTurn: "Det är din tur att svara!",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} dagar tillsammans i chatten!",
     },
@@ -83,6 +110,9 @@
       tagline: "Il vostro legame diventa sempre più forte! 💜",
       bestStreak: "Migliore serie",
       keep: "Continuate a chattare per tenere viva la scintilla! ✨",
+      warningKeep: "Scrivetevi oggi per mantenere la serie!",
+      waitingFriend: "In attesa della risposta del tuo amico...",
+      yourTurn: "Tocca a te rispondere!",
       newStreak: "XOXO Streak! 💜",
       milestone: "{n} giorni di chat insieme!",
     },
@@ -186,6 +216,13 @@
       #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-best-value { font-weight:850; }
       #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-divider,
       #dmChat .dm-chat-header #xoxoDmStreak .xoxo-streak-keep { display:none; }
+      #dmChat .dm-chat-header #xoxoDmStreak.xoxo-streak-hourglass {
+        background:linear-gradient(135deg,rgba(255,250,231,.99),rgba(255,239,196,.99));
+        border-color:rgba(224,157,39,.55); color:#75430b;
+        box-shadow:0 3px 13px rgba(190,132,30,.2);
+      }
+      #xoxoDmStreak.xoxo-streak-hourglass .xoxo-streak-fire { color:#c78316; }
+      #xoxoDmStreak.xoxo-streak-hourglass .xoxo-streak-tagline { opacity:1; color:#85500d; }
       #xoxoDmStreak.xoxo-streak-milestone { animation:xoxoStreakPop .65s ease both; }
       @keyframes xoxoStreakPop { 0%{transform:scale(.92);opacity:0} 65%{transform:scale(1.04);opacity:1} 100%{transform:scale(1)} }
       @media (max-width:600px){
@@ -218,7 +255,7 @@
     if (!el) return;
     if (!row || !row.current_streak) {
       el.style.display = "none";
-      el.classList.remove("xoxo-streak-milestone");
+      el.classList.remove("xoxo-streak-milestone", "xoxo-streak-hourglass");
       return;
     }
 
@@ -226,15 +263,33 @@
     const unit = n === 1 ? t("day") : t("days");
     const best = Number(row.longest_streak) || n;
     const bestUnit = best === 1 ? t("day") : t("days");
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    // The database keeps a streak alive through the UTC day after the last
+    // completed mutual-activity day. That final UTC day is the hourglass window.
+    const hourglass = String(row.last_active_date || "") === yesterday;
+    const meIsA = currentAccount() === String(row.user_a || "");
+    const mySentToday = hourglass && (
+      meIsA ? row.user_a_last_date === today : row.user_b_last_date === today
+    );
+    const peerSentToday = hourglass && (
+      meIsA ? row.user_b_last_date === today : row.user_a_last_date === today
+    );
+    const warningText = mySentToday
+      ? t("waitingFriend")
+      : peerSentToday
+        ? t("yourTurn")
+        : t("warningKeep");
 
     el.style.display = "inline-flex";
-    el.classList.toggle("xoxo-streak-milestone", !!milestone);
-    el.title = t("tagline") + " " + t("keep");
+    el.classList.toggle("xoxo-streak-milestone", !!milestone && !hourglass);
+    el.classList.toggle("xoxo-streak-hourglass", hourglass);
+    el.title = hourglass ? warningText : t("tagline") + " " + t("keep");
     el.innerHTML = `
-      <span class="xoxo-streak-fire" aria-hidden="true">🔥</span>
+      <span class="xoxo-streak-fire" aria-hidden="true">${hourglass ? "⏳" : "🔥"}</span>
       <span class="xoxo-streak-main">
         <span class="xoxo-streak-count">${n} ${unit} ${escapeHtml(t("together"))}</span>
-        <span class="xoxo-streak-tagline">${escapeHtml(t("tagline"))}</span>
+        <span class="xoxo-streak-tagline">${escapeHtml(hourglass ? warningText : t("tagline"))}</span>
         <span class="xoxo-streak-best">
           <span class="xoxo-streak-best-label">🏆 ${escapeHtml(t("bestStreak"))}</span>
           <span class="xoxo-streak-best-value">${best} ${escapeHtml(bestUnit)}</span>
