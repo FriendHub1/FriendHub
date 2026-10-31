@@ -16,6 +16,18 @@
   };
   function lang(){let x=localStorage.getItem("friendhub_language")||document.documentElement.lang||"en";if(x==="nb")x="no";if(x==="pt-br")x="pt-BR";return LANG[x]?x:"en";}
   function tr(k){return LANG[lang()][k]||LANG.en[k];}
+  const DELIVERY={
+    en:{admin:"Your message was saved, but the support notification email could not be sent. Please email xoxoavenuesupport@gmail.com.",confirm:"Your message was saved, but the confirmation email could not be sent."},
+    es:{admin:"Tu mensaje se guardó, pero no se pudo enviar el aviso al soporte. Escribe a xoxoavenuesupport@gmail.com.",confirm:"Tu mensaje se guardó, pero no se pudo enviar el correo de confirmación."},
+    "pt-BR":{admin:"Sua mensagem foi salva, mas não foi possível avisar o suporte por e-mail. Escreva para xoxoavenuesupport@gmail.com.",confirm:"Sua mensagem foi salva, mas o e-mail de confirmação não pôde ser enviado."},
+    de:{admin:"Deine Nachricht wurde gespeichert, aber die Support-Benachrichtigung konnte nicht gesendet werden. Schreibe an xoxoavenuesupport@gmail.com.",confirm:"Deine Nachricht wurde gespeichert, aber die Bestätigungs-E-Mail konnte nicht gesendet werden."},
+    no:{admin:"Meldingen er lagret, men e-postvarselet til brukerstøtte kunne ikke sendes. Skriv til xoxoavenuesupport@gmail.com.",confirm:"Meldingen er lagret, men bekreftelses-e-posten kunne ikke sendes."},
+    pl:{admin:"Wiadomość została zapisana, ale nie udało się wysłać powiadomienia do pomocy. Napisz na xoxoavenuesupport@gmail.com.",confirm:"Wiadomość została zapisana, ale nie udało się wysłać potwierdzenia e-mailem."},
+    fr:{admin:"Votre message a été enregistré, mais l'e-mail d'alerte au support n'a pas pu être envoyé. Écrivez à xoxoavenuesupport@gmail.com.",confirm:"Votre message a été enregistré, mais l'e-mail de confirmation n'a pas pu être envoyé."},
+    cs:{admin:"Zpráva byla uložena, ale e-mailové upozornění podpory se nepodařilo odeslat. Napiš na xoxoavenuesupport@gmail.com.",confirm:"Zpráva byla uložena, ale potvrzovací e-mail se nepodařilo odeslat."},
+    sv:{admin:"Meddelandet sparades, men e-postaviseringen till supporten kunde inte skickas. Skriv till xoxoavenuesupport@gmail.com.",confirm:"Meddelandet sparades, men bekräftelsemejlet kunde inte skickas."},
+    it:{admin:"Il messaggio è stato salvato, ma non è stato possibile inviare la notifica al supporto. Scrivi a xoxoavenuesupport@gmail.com.",confirm:"Il messaggio è stato salvato, ma non è stato possibile inviare l'e-mail di conferma."}
+  };
   function token(){try{return localStorage.getItem(TOKEN_KEY)||"";}catch(_){return "";}}
   function saveToken(v){try{localStorage.setItem(TOKEN_KEY,v);}catch(_){}}
   function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
@@ -101,7 +113,8 @@
       }
       input.value="";
       await loadGuest();
-      feedback(tr("welcome"),false);
+      const delivery=DELIVERY[lang()]||DELIVERY.en;
+      feedback(data.admin_notified===false?delivery.admin:(data.confirmation_sent===false?delivery.confirm:tr("welcome")),data.admin_notified===false);
     }catch(e){feedback(e.message||tr("error"),true);}
     finally{button.disabled=false;button.textContent=tr("send");}
   }
