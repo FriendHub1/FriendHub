@@ -3399,6 +3399,7 @@ export default {
       if (preview.ok && String(preview.headers.get("content-type") || "").includes("text/html")) {
         const chatScripts = enableSafetyChat ?
           '<script src="/xoxo-username-login.js" defer></script>' +
+          '<script src="/xoxo-email-settings.js" defer></script>' +
           '<script src="/beta/stay-safe-sweetheart.js" defer></script>' +
           '<script src="/beta/stay-safe-report-form.js" defer></script>' +
           '<script src="/beta/stay-safe-evidence-picker.js" defer></script>' +
