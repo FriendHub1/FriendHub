@@ -2551,14 +2551,17 @@ async function xoxoArchiveOwnedDmMedia(userId, env) {
     listObjects(sourcePrefix),
     listObjects(archivePrefix),
   ]);
-  const archivedNames = new Set(archivedRows.map(row => String(row.name).split("/").pop()));
+  const sourceByName = new Map(sourceRows.map(row => [String(row.name).split("/").pop(), row]));
+  const archivedByName = new Map(archivedRows.map(row => [String(row.name).split("/").pop(), row]));
+  const fileNames = new Set([...sourceByName.keys(), ...archivedByName.keys()]);
   let archivedCount = 0;
-  for (const row of sourceRows) {
-    const fileName = String(row.name).split("/").pop();
+  for (const fileName of fileNames) {
     if (!fileName || fileName === "." || fileName === "..") continue;
     const originalPath = `${sourcePrefix}/${fileName}`;
     const archivedPath = `${archivePrefix}/${fileName}`;
-    if (!archivedNames.has(fileName)) {
+    const sourceRow = sourceByName.get(fileName);
+    const archivedRow = archivedByName.get(fileName);
+    if (!archivedRow && sourceRow) {
       const moveResponse = await fetch(`${SUPABASE_URL}/storage/v1/object/move`, {
         method: "POST",
         headers,
@@ -2569,14 +2572,14 @@ async function xoxoArchiveOwnedDmMedia(userId, env) {
         console.error("XOXO DM media archive move failed:", moveResponse.status, detail);
         throw new Error("Could not safely archive all message attachments");
       }
-      archivedNames.add(fileName);
     }
+    const metadata = sourceRow?.metadata || archivedRow?.metadata || {};
     const record = await xoxoDeletionRpc(env, "xoxo_record_deleted_account_media", {
       p_user_id: userId,
       p_original_path: originalPath,
       p_archived_path: archivedPath,
-      p_mime_type: row.metadata?.mimetype || row.metadata?.contentType || null,
-      p_file_size: Number(row.metadata?.size || 0) || null,
+      p_mime_type: metadata.mimetype || metadata.contentType || null,
+      p_file_size: Number(metadata.size || 0) || null,
     });
     if (!record.ok) throw new Error("Could not register archived message attachment");
     archivedCount++;
