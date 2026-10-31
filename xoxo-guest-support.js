@@ -19,8 +19,10 @@ export function createGuestSupportHandler({SUPABASE_URL,jsonResponse,sendResendE
   }
   async function notify(c,message,env,isNew) {
     const no=String(c.case_number),body=(isNew?"A visitor submitted a new support request.":"A visitor replied to a support case.")+"\nCase: #"+no+"\nContact: "+c.guest_email+"\n\n"+message+"\n\nReply directly to this email to respond.";
-    const result=await sendResendEmail(env,{from:"XOXO Avenue Support <support@xoxoavenue.com>",to:["xoxoavenuesupport@gmail.com"],reply_to:"case-"+no+"@reply.xoxoavenue.com",subject:"[##"+no+"##] - "+(isNew?"New guest support message":"Guest replied to support"),text:body,html:'<div style="font-family:Arial,sans-serif;line-height:1.6;color:#241735"><h2>XOXO Avenue Support 💜</h2><p>'+escapeHtml(body)+'</p></div>'});
-    return result.ok;
+    try {
+      const result=await sendResendEmail(env,{from:"XOXO Avenue Support <support@xoxoavenue.com>",to:["xoxoavenuesupport@gmail.com"],reply_to:"case-"+no+"@reply.xoxoavenue.com",subject:"[##"+no+"##] - "+(isNew?"New guest support message":"Guest replied to support"),text:body,html:'<div style="font-family:Arial,sans-serif;line-height:1.6;color:#241735"><h2>XOXO Avenue Support 💜</h2><p>'+escapeHtml(body)+'</p></div>'});
+      return result.ok;
+    } catch(error) { console.error("Guest support notification exception",String(error)); return false; }
   }
   return async function handleGuestSupport(request,env) {
     if(!env.SUPABASE_SECRET_KEY||!env.RESEND_API_KEY)return jsonResponse({ok:false,error:"Support is temporarily unavailable."},500);
@@ -51,10 +53,16 @@ export function createGuestSupportHandler({SUPABASE_URL,jsonResponse,sendResendE
       const c=rows[0],saved=await fetch(SUPABASE_URL+"/rest/v1/support_messages",{method:"POST",headers:{...h,Prefer:"return=minimal"},body:JSON.stringify({case_id:c.id,sender_id:null,sender_type:"user",message})});
       if(!saved.ok){console.error("Guest message insert",saved.status,await saved.text());await fetch(SUPABASE_URL+"/rest/v1/support_cases?id=eq."+encodeURIComponent(c.id),{method:"DELETE",headers:h});return jsonResponse({ok:false,error:"Your message couldn't be saved. Please try again."},502);}
       const adminNotified=await notify(c,message,env,true);
-      const confirmation=await sendResendEmail(env,{from:"XOXO Avenue Support <support@xoxoavenue.com>",to:[email],reply_to:"case-"+c.case_number+"@reply.xoxoavenue.com",subject:"[##"+c.case_number+"##] - We received your message",text:"Thanks for contacting XOXO Avenue Support. We received your message and will reply to this email. Your case number is #"+c.case_number+". You can reply directly to this email to continue the conversation. 💜",html:"<p>Thanks for contacting XOXO Avenue Support 💜</p><p>We received your message. Your case number is <b>#"+escapeHtml(c.case_number)+"</b>.</p><p>You can reply directly to this email to continue the conversation.</p>"});
+      let confirmation={ok:false};
+      try { confirmation=await sendResendEmail(env,{from:"XOXO Avenue Support <support@xoxoavenue.com>",to:[email],reply_to:"case-"+c.case_number+"@reply.xoxoavenue.com",subject:"[##"+c.case_number+"##] - We received your message",text:"Thanks for contacting XOXO Avenue Support. We received your message and will reply to this email. Your case number is #"+c.case_number+". You can reply directly to this email to continue the conversation. 💜",html:"<p>Thanks for contacting XOXO Avenue Support 💜</p><p>We received your message. Your case number is <b>#"+escapeHtml(c.case_number)+"</b>.</p><p>You can reply directly to this email to continue the conversation.</p>"}); }
+      catch(error) { console.error("Guest support confirmation exception",String(error)); }
       return jsonResponse({ok:true,token,support_case:{id:c.id,case_number:c.case_number,status:c.status},admin_notified:adminNotified,confirmation_sent:confirmation.ok},201);
     }
     if(action==="message"){
+      const ip=String(request.headers.get("CF-Connecting-IP")||"unknown"),ipHash=await hash(env.SUPABASE_SECRET_KEY+"|"+ip);
+      const rate=await fetch(SUPABASE_URL+"/rest/v1/rpc/xoxo_support_guest_rate_limit",{method:"POST",headers:h,body:JSON.stringify({p_ip_hash:ipHash,p_max_attempts:12})});
+      if(!rate.ok)return jsonResponse({ok:false,error:"Support is temporarily unavailable."},503);
+      if(await rate.json()!==true)return jsonResponse({ok:false,error:"Too many messages. Please wait before sending another message."},429);
       const token=String(request.headers.get("X-Xoxo-Support-Token")||"").trim();
       if(!/^[a-f0-9]{64}$/i.test(token))return jsonResponse({ok:false,error:"Support session not found."},401);
       const c=await findCase(token,env);if(!c)return jsonResponse({ok:false,error:"Support session not found."},404);
