@@ -136,6 +136,33 @@
     }
   }
 
+  // The app hides whole navigation sections when returning to Home.
+  // Checking only #dmChat.style.display misses a hidden ancestor and makes
+  // the lifecycle scanner believe the old conversation is still visible.
+  function isActuallyVisible(element) {
+    if (!element || !element.isConnected) return false;
+    let node = element;
+    while (node && node.nodeType === 1) {
+      if (node.hidden) return false;
+      let computed = null;
+      try {
+        computed = typeof window.getComputedStyle === "function"
+          ? window.getComputedStyle(node)
+          : node.style;
+      } catch (_) {
+        computed = node.style || null;
+      }
+      if (computed && (
+        computed.display === "none" ||
+        computed.visibility === "hidden" ||
+        computed.visibility === "collapse" ||
+        computed.opacity === "0"
+      )) return false;
+      node = node.parentElement;
+    }
+    return true;
+  }
+
   function ensureStyles() {
     if (document.getElementById("xoxo-streaks-style")) return;
     const style = document.createElement("style");
@@ -300,7 +327,7 @@
     if (!chat || chat.__xoxoStreakLifecycleObserver) return;
     const observer = new MutationObserver(() => {
       const peer = currentPeer();
-      const visible = chat.style.display !== "none" && !!peer;
+      const visible = isActuallyVisible(chat) && !!peer;
       if (!visible) {
         lastObservedPeer = "";
         return;
@@ -398,8 +425,7 @@
 
       const chat = document.getElementById("dmChat");
       const peer = currentPeer();
-      const visible = !!chat && chat.isConnected &&
-        chat.style.display !== "none" && !!peer;
+      const visible = !!chat && isActuallyVisible(chat) && !!peer;
       const chatHeader = chat && (chat.querySelector(".dm-chat-header") || chat.querySelector("header"));
       const messages = document.getElementById("dmMessages");
 
