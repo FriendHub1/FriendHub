@@ -1,5 +1,4 @@
-
- // XOXO Avenue server-side wrapper for localized WhatsApp link previews.
+// XOXO Avenue server-side wrapper for localized WhatsApp link previews.
 import baseWorker from "./worker.js";
 
 const DESCRIPTIONS = {
@@ -47,7 +46,13 @@ async function localizedResponse(request, env, ctx) {
     const reserved = new Set(["about","discover","privacy","terms","guidelines","api","u","post","profile-preview-image","post-preview-image","assets","beta","favicon.ico","robots.txt","sitemap.xml"]);
     const isUsernameProfile = /^\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\/?$/.test(url.pathname) && !reserved.has(routeName.toLowerCase());
     if (isUsernameProfile && type.includes("text/html") && request.method === "GET") {
-      const response = new HTMLRewriter().on("head", { element(element) { element.prepend('<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=3"><script src="/xoxo-seasonal-themes.js?v=3" defer></script>', {html:true}); } }).transform(baseResponse);
+      const profileShareScript = `(function(){try{
+        function rewriteUrl(raw){try{var u=new URL(raw,location.href),host=u.hostname.toLowerCase();if(host!=="xoxoavenue.com"&&host!=="www.xoxoavenue.com"&&host!==location.hostname.toLowerCase())return raw;var legacy=/^\\/u\\/[0-9a-f-]{36}\\/?$/i.test(u.pathname)||u.searchParams.has("profile");if(!legacy)return raw;var current=new URL("https://xoxoavenue.com"+location.pathname);u.searchParams.forEach(function(v,k){if(k!=="profile"&&k!=="lang")current.searchParams.append(k,v);});return current.toString();}catch(_){return raw;}}
+        function rewriteText(value){if(typeof value!=="string")return value;return value.replace(/https?:\\/\\/[^\\s]+/gi,function(raw){var suffix="",candidate=raw;while(candidate.length&&/[),.!?\\]]/.test(candidate.charAt(candidate.length-1))){suffix=candidate.slice(-1)+suffix;candidate=candidate.slice(0,-1);}return rewriteUrl(candidate)+suffix;});}
+        if(typeof navigator!=="undefined"&&typeof navigator.share==="function"){var share=navigator.share.bind(navigator);navigator.share=function(data){if(data&&typeof data==="object"){var copy=Object.assign({},data);if(typeof copy.url==="string")copy.url=rewriteUrl(copy.url);if(typeof copy.text==="string")copy.text=rewriteText(copy.text);return share(copy);}return share(data);};}
+        if(typeof navigator!=="undefined"&&navigator.clipboard&&typeof navigator.clipboard.writeText==="function"){var write=navigator.clipboard.writeText.bind(navigator.clipboard);navigator.clipboard.writeText=function(value){return write(rewriteText(value));};}
+      }catch(_){}})();`;
+      const response = new HTMLRewriter().on("head", { element(element) { element.prepend(`<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=3"><script src="/xoxo-seasonal-themes.js?v=3" defer></script><script id="xoxo-profile-share-url-fix">${profileShareScript}</script>`, {html:true}); } }).transform(baseResponse);
       return new Response(response.body, {status:response.status,statusText:response.statusText,headers:response.headers});
     }
     if (type.includes("text/html") && request.method === "GET") {
@@ -74,7 +79,7 @@ async function localizedResponse(request, env, ctx) {
     .on('meta[property^="og:"]', { element(element) { if (isSharePreview || isDefaultHomeSeo) element.remove(); } })
     .on('meta[name^="twitter:"]', { element(element) { if (isSharePreview || isDefaultHomeSeo) element.remove(); } })
     .on('meta[name="description"]', { element(element) { if (isSharePreview || isDefaultHomeSeo) element.remove(); } })
-    .on("link[rel="canonical"]", { element(element) { if (isSharePreview) element.setAttribute("href", shareUrl); else if (isDefaultHomeSeo) element.remove(); } })
+    .on('link[rel="canonical"]', { element(element) { if (isSharePreview) element.setAttribute("href", shareUrl); else if (isDefaultHomeSeo) element.remove(); } })
     .on("head", { element(element) {
       if (isSharePreview || isDefaultHomeSeo) {
         const title = isDefaultHomeSeo ? homeTitle : "XOXO Avenue";
@@ -83,12 +88,14 @@ async function localizedResponse(request, env, ctx) {
         const image = "https://xoxoavenue.com/xoxoavenue-social.png";
         const canonical = isDefaultHomeSeo ? "https://xoxoavenue.com/" : escapedShareUrl;
         const activeLocale = isDefaultHomeSeo ? "en_US" : locale;
-        element.prepend(`${isDefaultHomeSeo ? '<script type="application/ld+json">'+JSON.stringify({"@context":"https://schema.org","@type":"WebSite","name":"XOXO Avenue","url":"https://xoxoavenue.com/"})+'</script>' : ''}<link rel="canonical" href="${canonical}"><meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:site_name" content="XOXO Avenue"><meta property="og:url" content="${canonical}"><meta property="og:locale" content="${activeLocale}"><meta property="og:description" content="${escaped}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="description" content="${escaped}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${escaped}"><meta name="twitter:image" content="${image}">`, {html:true});
+        const structuredData = isDefaultHomeSeo ? `<script type="application/ld+json">${JSON.stringify({"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://xoxoavenue.com/#organization","name":"XOXO Avenue","url":"https://xoxoavenue.com/","sameAs":["https://www.instagram.com/xoxoavenueapp","https://www.tiktok.com/@xoxoavenueapp","https://www.facebook.com/xoxoavenueapp","https://x.com/xoxoavenueapp"]},{"@type":"WebSite","@id":"https://xoxoavenue.com/#website","url":"https://xoxoavenue.com/","name":"XOXO Avenue","description":homeDescription,"publisher":{"@id":"https://xoxoavenue.com/#organization"},"inLanguage":["es","en","pt-BR","de","nb","pl","fr","cs","sv","it"]}]})}</script>` : "";
+        element.prepend(`${structuredData}<link rel="canonical" href="${canonical}"><meta property="og:type" content="website"><meta property="og:title" content="${title}"><meta property="og:site_name" content="XOXO Avenue"><meta property="og:url" content="${canonical}"><meta property="og:locale" content="${activeLocale}"><meta property="og:description" content="${escaped}"><meta property="og:image" content="${image}"><meta property="og:image:secure_url" content="${image}"><meta name="description" content="${escaped}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${escaped}"><meta name="twitter:image" content="${image}">`, {html:true});
       }
       element.append('<link rel="stylesheet" href="/xoxo-seasonal-themes.css?v=3"><script src="/xoxo-seasonal-themes.js?v=3" defer></script><script src="/xoxo-streaks.js?v=20261030" defer></script>', {html:true});
-      element.append(`<script id="xoxo-share-localizer">${SHARE_SCRIPT}</script>`, {html: true});
+      element.append(`<script id="xoxo-share-localizer">${SHARE_SCRIPT}</script>`, {html:true});
     }})
     .transform(baseResponse);
+
   const headers = new Headers(response.headers);
   if (isSharePreview) headers.set("Cache-Control", "no-store");
   return new Response(response.body, {status: response.status, statusText: response.statusText, headers});
