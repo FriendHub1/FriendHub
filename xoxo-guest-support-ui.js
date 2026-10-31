@@ -119,13 +119,37 @@
     finally{button.disabled=false;button.textContent=tr("send");}
   }
   function install(){
-    if(typeof window.openXoxoSupportChat!=="function"||typeof window.sendXoxoSupportMessage!=="function"){setTimeout(install,100);return;}
     const originalOpen=window.openXoxoSupportChat,originalSend=window.sendXoxoSupportMessage;
-    window.openXoxoSupportChat=async function(){if(await signedIn())return originalOpen.apply(this,arguments);return openGuest();};
-    window.sendXoxoSupportMessage=async function(){if(await signedIn())return originalSend.apply(this,arguments);return sendGuest();};
-    const button=document.getElementById("supportChatSendBtn");if(button)button.textContent=tr("send");
+    // Capture the actual UI actions before the legacy inline handlers can redirect guests to login.
+    document.addEventListener("click",async function(event){
+      const start=event.target?.closest?.("#supportChatStartBtn");
+      const send=event.target?.closest?.("#supportChatSendBtn");
+      if(!start&&!send)return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if(await signedIn()){
+        if(start&&typeof originalOpen==="function")return originalOpen.apply(window,[]);
+        if(send&&typeof originalSend==="function")return originalSend.apply(window,[]);
+        return;
+      }
+      if(start)return openGuest();
+      return sendGuest();
+    },true);
     const input=document.getElementById("supportChatInput");
-    if(input)input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!token()&& !document.getElementById("xoxoGuestSupportEmail")?.value.trim()){e.preventDefault();feedback(tr("needEmail"),true);}});
+    if(input)input.addEventListener("keydown",async function(e){
+      if(e.key!=="Enter"||e.shiftKey)return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if(await signedIn()){
+        if(typeof originalSend==="function")return originalSend.apply(window,[]);
+        return;
+      }
+      if(!token()&&!document.getElementById("xoxoGuestSupportEmail")?.value.trim()){feedback(tr("needEmail"),true);return;}
+      return sendGuest();
+    },true);
+    window.openXoxoSupportChat=async function(){if(await signedIn())return originalOpen?.apply(this,arguments);return openGuest();};
+    window.sendXoxoSupportMessage=async function(){if(await signedIn())return originalSend?.apply(this,arguments);return sendGuest();};
+    const button=document.getElementById("supportChatSendBtn");if(button)button.textContent=tr("send");
     if(typeof window.loadXoxoAdminSupportCases==="function"){
       const originalLoad=window.loadXoxoAdminSupportCases;
       window.loadXoxoAdminSupportCases=async function(){const result=await originalLoad.apply(this,arguments);try{const {data:u}=await supabaseClient.auth.getUser();if(u?.user?.id!=="d9ea1914-fdba-465c-9700-5e640ff48763")return result;const {data:cases}=await supabaseClient.from("support_cases").select("case_number,guest_email").not("guest_email","is",null);for(const c of cases||[]){const card=[...document.querySelectorAll("#xoxoAdminSupportCases .xoxo-support-case")].find(el=>el.textContent.includes("Support case #"+c.case_number));const meta=card?.querySelector(".xoxo-admin-meta");if(meta)meta.textContent="Guest · "+c.guest_email;}}catch(e){console.warn("Guest support admin labels",e);}return result;};
