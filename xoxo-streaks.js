@@ -322,7 +322,13 @@
     if (typeof original !== "function" || original.__xoxoStreakWrapped) return false;
     async function wrapped() {
       const result = await original.apply(this, arguments);
-      if (currentPeer() !== lastObservedPeer) setTimeout(onChatChanged, 120);
+      // A conversation may be reopened with the same peer after navigating
+      // away (for example, the language selector returns the app to Home).
+      // Refresh unconditionally after the real app finishes opening the chat.
+      setTimeout(() => {
+        lastObservedPeer = currentPeer();
+        onChatChanged();
+      }, 180);
       return result;
     }
     wrapped.__xoxoStreakWrapped = true;
@@ -371,6 +377,12 @@
     installOpenHook();
     onChatChanged();
     window.addEventListener("xoxo:dm-opened", onChatChanged);
+
+    // Re-attach if the app defines/replaces its global chat opener later.
+    let hookAttempts = 0;
+    const hookTimer = setInterval(() => {
+      if (installOpenHook() || ++hookAttempts >= 80) clearInterval(hookTimer);
+    }, 250);
 
     // The messages view is mounted lazily after navigation from Home.
     // Observe the document, not only #dmChat at initial page load.
