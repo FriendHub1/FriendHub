@@ -157,8 +157,39 @@
     if(typeof window.loadXoxoAdminSupportCases==="function"){
       const originalLoad=window.loadXoxoAdminSupportCases;
       window.loadXoxoAdminSupportCases=async function(){const result=await originalLoad.apply(this,arguments);try{const {data:u}=await supabaseClient.auth.getUser();if(u?.user?.id!=="d9ea1914-fdba-465c-9700-5e640ff48763")return result;const {data:cases}=await supabaseClient.from("support_cases").select("case_number,guest_email").not("guest_email","is",null);for(const c of cases||[]){const card=[...document.querySelectorAll("#xoxoAdminSupportCases .xoxo-support-case")].find(el=>el.textContent.includes("Support case #"+c.case_number));const meta=card?.querySelector(".xoxo-admin-meta");if(meta)meta.textContent="Guest · "+c.guest_email;}}catch(e){console.warn("Guest support admin labels",e);}return result;};
+      let guestAdminCaseId=null;
+      const originalAdminLoadMessages=window.loadXoxoAdminSupportMessages;
+      if(originalAdminLoadMessages)window.loadXoxoAdminSupportMessages=async function(){
+        const result=await originalAdminLoadMessages.apply(this,arguments);
+        try{
+          if(!guestAdminCaseId)return result;
+          const {data:rows}=await supabaseClient.from("support_messages").select("id,attachment_type").eq("case_id",guestAdminCaseId);
+          for(const m of rows||[]){
+            if(m.attachment_type!=="video")continue;
+            const row=[...document.querySelectorAll("#xoxoAdminSupportMessages [data-support-message-id]")].find(el=>el.dataset.supportMessageId===String(m.id));
+            const img=row?.querySelector("img.xoxo-support-msg-image");
+            if(img){const video=document.createElement("video");video.src=img.src;video.controls=true;video.playsInline=true;video.className="xoxo-support-msg-image";video.style.maxWidth="100%";video.style.maxHeight="320px";img.replaceWith(video);}
+          }
+        }catch(e){console.warn("Guest support video rendering",e);}
+        return result;
+      };
       const originalOpenCase=window.openXoxoAdminSupportCase;
-      if(originalOpenCase)window.openXoxoAdminSupportCase=async function(id){const result=await originalOpenCase.apply(this,arguments);try{const {data:u}=await supabaseClient.auth.getUser();if(u?.user?.id!=="d9ea1914-fdba-465c-9700-5e640ff48763")return result;const {data:c}=await supabaseClient.from("support_cases").select("guest_email,guest_name,user_id").eq("id",id).maybeSingle();if(c&&!c.user_id){const head=document.querySelector("#xoxoAdminSupportConversation .xoxo-support-chat-head");if(head){const p=document.createElement("div");p.className="xoxo-admin-meta";p.textContent="Guest · "+(c.guest_name?c.guest_name+" · ":"")+c.guest_email;head.appendChild(p);}const profile=document.querySelector("#xoxoAdminSupportConversation button[onclick='openXoxoSupportUserProfile()']");if(profile)profile.hidden=true;}}catch(e){console.warn("Guest support details",e);}return result;};
+      if(originalOpenCase)window.openXoxoAdminSupportCase=async function(id){
+        guestAdminCaseId=id;
+        const result=await originalOpenCase.apply(this,arguments);
+        try{
+          const {data:u}=await supabaseClient.auth.getUser();
+          if(u?.user?.id!=="d9ea1914-fdba-465c-9700-5e640ff48763")return result;
+          const {data:c}=await supabaseClient.from("support_cases").select("guest_email,guest_name,user_id").eq("id",id).maybeSingle();
+          if(c&&!c.user_id){
+            const head=document.querySelector("#xoxoAdminSupportConversation .xoxo-support-chat-head");
+            if(head){const p=document.createElement("div");p.className="xoxo-admin-meta";p.textContent="Guest · "+(c.guest_name?c.guest_name+" · ":"")+c.guest_email;head.appendChild(p);}
+            const profile=document.querySelector("#xoxoAdminSupportConversation button[onclick='openXoxoSupportUserProfile()']");
+            if(profile)profile.hidden=true;
+          }
+        }catch(e){console.warn("Guest support details",e);}
+        return result;
+      };
     }
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",install,{once:true});else install();
