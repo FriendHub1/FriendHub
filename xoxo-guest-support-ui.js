@@ -32,9 +32,10 @@
   function saveToken(v){try{localStorage.setItem(TOKEN_KEY,v);}catch(_){}}
   function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
   async function api(method,body){
-    const t=token(),headers={"Content-Type":"application/json"};
+    const t=token(),headers={};
+    if(!(body instanceof FormData))headers["Content-Type"]="application/json";
     if(t)headers["X-Xoxo-Support-Token"]=t;
-    const r=await fetch("/api/support-guest",{method,headers,body:body?JSON.stringify(body):undefined});
+    const r=await fetch("/api/support-guest",{method,headers,body:body?(body instanceof FormData?body:JSON.stringify(body)):undefined});
     let data={};try{data=await r.json();}catch(_){}
     if(!r.ok)throw new Error(data.error||tr("error"));
     return data;
@@ -58,7 +59,9 @@
     const name=document.getElementById("xoxoGuestSupportName"),email=document.getElementById("xoxoGuestSupportEmail"),hint=document.getElementById("xoxoGuestSupportHint");
     name.placeholder=tr("name");email.placeholder=tr("email");hint.textContent=tr("emailHint");
     wrap.hidden=!!token();
-    const attach=document.querySelector("#supportChatPanel .support-chat-attach");if(attach){attach.hidden=true;attach.title=tr("attach");}
+    const attach=document.querySelector("#supportChatPanel .support-chat-attach");if(attach){attach.hidden=false;attach.title=tr("attach");attach.setAttribute("aria-label",tr("attach"));}
+    const fileInput=document.getElementById("supportAttachmentInput");
+    if(fileInput){fileInput.accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm";fileInput.multiple=false;if(!fileInput.dataset.guestBound){fileInput.dataset.guestBound="1";fileInput.addEventListener("change",()=>{const f=fileInput.files?.[0],preview=document.getElementById("supportAttachmentPreview");if(!f)return;const image=["image/jpeg","image/png","image/webp","image/gif"].includes(f.type),video=["video/mp4","video/quicktime","video/webm"].includes(f.type);if(!image&&!video){feedback("Choose JPG, PNG, WebP, GIF, MP4, MOV or WebM.",true);fileInput.value="";return;}if(f.size>(image?10:30)*1024*1024){feedback(image?"Images can be up to 10 MB.":"Videos can be up to 30 MB.",true);fileInput.value="";return;}if(preview){const url=URL.createObjectURL(f);preview.innerHTML=(image?'<img src="'+url+'" alt="Selected attachment">':'<video src="'+url+'" controls></video>')+'<button type="button" class="support-attachment-remove" aria-label="Remove attachment">×</button>';preview.classList.add("show");preview.querySelector("button")?.addEventListener("click",()=>{URL.revokeObjectURL(url);fileInput.value="";preview.innerHTML="";preview.classList.remove("show");});}feedback("Attachment ready. Add a message or press Send.");});}}
     const input=document.getElementById("supportChatInput");if(input)input.placeholder=tr("first");
   }
   function setCase(c){
@@ -74,8 +77,9 @@
     if(!rows?.length){box.innerHTML='<div class="support-chat-empty">'+esc(tr("empty"))+'</div>';return;}
     for(const m of rows){
       const div=document.createElement("div");div.className="support-chat-message "+(m.sender_type==="admin"?"admin":"user");
-      div.innerHTML=esc(m.message)+'<span class="support-chat-time">'+esc(m.created_at?new Date(m.created_at).toLocaleString():"")+'</span>';
-      box.appendChild(div);
+      div.textContent=m.message||"";
+      if(m.attachment_signed_url){const media=document.createElement(m.attachment_type==="video"?"video":"img");media.src=m.attachment_signed_url;if(m.attachment_type==="video"){media.controls=true;media.playsInline=true;}else media.alt="Support attachment";media.style.cssText="display:block;max-width:100%;max-height:260px;border-radius:12px;margin-top:8px";div.appendChild(media);}
+      const time=document.createElement("span");time.className="support-chat-time";time.textContent=m.created_at?new Date(m.created_at).toLocaleString():"";div.appendChild(time);box.appendChild(div);
     }
     box.scrollTop=box.scrollHeight;
   }
@@ -97,7 +101,7 @@
   }
   async function sendGuest(){
     const input=document.getElementById("supportChatInput"),button=document.getElementById("supportChatSendBtn");if(!input||!button)return;
-    const message=input.value.trim();if(!message){feedback(tr("first"),true);return;}
+    const message=input.value.trim(),file=document.getElementById("supportAttachmentInput")?.files?.[0]||null;if(!message&&!file){feedback(tr("first"),true);return;}
     button.disabled=true;button.textContent=tr("sending");feedback("");
     try{
       let data;
@@ -105,13 +109,13 @@
         const email=document.getElementById("xoxoGuestSupportEmail")?.value.trim()||"";
         const name=document.getElementById("xoxoGuestSupportName")?.value.trim()||"";
         const website=document.getElementById("xoxoGuestSupportWebsite")?.value||"";
-        data=await api("POST",{action:"create",email,name,message,website});
+        const form=new FormData();form.set("action","create");form.set("email",email);form.set("name",name);form.set("message",message);form.set("website",website);if(file)form.set("attachment",file,file.name);data=await api("POST",form);
         if(data.token)saveToken(data.token);
         setCase(data.support_case);
       }else{
-        data=await api("POST",{action:"message",message});
+        const form=new FormData();form.set("action","message");form.set("message",message);if(file)form.set("attachment",file,file.name);data=await api("POST",form);
       }
-      input.value="";
+      input.value="";const fileInput=document.getElementById("supportAttachmentInput"),preview=document.getElementById("supportAttachmentPreview");if(fileInput)fileInput.value="";if(preview){preview.innerHTML="";preview.classList.remove("show");}
       await loadGuest();
       const delivery=DELIVERY[lang()]||DELIVERY.en;
       feedback(data.admin_notified===false?delivery.admin:(data.confirmation_sent===false?delivery.confirm:tr("welcome")),data.admin_notified===false);
