@@ -48,7 +48,7 @@ jobs:
       - name: Validate Online Glow asset and production loader
         run: |
           node --check xoxo-online-glow.js
-          grep -F 'xoxo-online-glow.js?v=20261031b' worker-preview-wrapper.js
+          grep -F 'xoxo-online-glow.js?v=20261031c' worker-preview-wrapper.js
       - name: Validate Cloudflare Worker bundle
         run: npx --yes wrangler@4.102.0 deploy --dry-run --config ./wrangler.jsonc
 
