@@ -215,7 +215,7 @@
       <span class="xoxo-streak-fire" aria-hidden="true">🔥</span>
       <span class="xoxo-streak-main">
         <span class="xoxo-streak-count">${n} ${unit} ${escapeHtml(t("together"))}</span>
-        <span class="xoxo-streak-sub">${escapeHtml(needsToday ? t("keep") : t("record", {n: record}))}</span>
+        <span class="xoxo-streak-sub">${escapeHtml(milestone ? t("milestone", {n}) : (needsToday ? t("keep") : t("record", {n: record})))}</span>
       </span>`;
   }
 
