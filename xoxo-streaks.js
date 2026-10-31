@@ -277,18 +277,10 @@
   }
 
   function hasRecentOutgoingMessage() {
-    const me = currentAccount();
-    const peer = currentPeer();
-    const messages = Array.isArray(window.__xoxoCurrentDmMessages)
-      ? window.__xoxoCurrentDmMessages : [];
-    if (!me || !peer || !messages.length) return false;
-    const cutoff = Date.now() - 2 * 60 * 1000;
-    return messages.some((message) => {
-      if (!message || String(message.sender_id || "") !== me ||
-          String(message.recipient_id || "") !== peer || message.whisper_id) return false;
-      const sentAt = Date.parse(message.created_at || "");
-      return Number.isFinite(sentAt) && sentAt >= cutoff && sentAt <= Date.now() + 30000;
-    });
+    // The RPC independently verifies the authenticated user's persisted recent DM.
+    // Avoid relying on an app-global message array that the application does not expose.
+    return Boolean(currentAccount() && currentPeer() &&
+      currentAccount() !== currentPeer());
   }
 
   function scheduleRecord() {
