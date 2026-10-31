@@ -45,11 +45,10 @@ assert.deepEqual(milestones, [7, 30, 100, 180, 365, 500, 1000]);
 const source = fs.readFileSync("xoxo-streaks.js", "utf8");
 for (const required of [
   "function hasRecentOutgoingMessage()",
-  "message.sender_id || \"\"",
-  "message.recipient_id || \"\"",
-  "message.whisper_id",
-  "message.created_at",
+  "RPC independently verifies the authenticated user's persisted recent DM",
+  "function scheduleRecord()",
+  'c.rpc("xoxo_dm_streak_record_message"',
   "[7,30,100,180,365,500,1000]"
-]) assert.ok(source.includes(required), "missing production guard: " + required);
+]) assert.ok(source.includes(required), "missing production integration: " + required);
 
 console.log("XOXO Streak logic tests passed: two-user participation, once-per-day counting, consecutive-day advance, missed-day reset, record preservation, milestone list, and persisted outgoing-message guard.");
