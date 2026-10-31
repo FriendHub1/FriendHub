@@ -240,6 +240,7 @@
 
   let refreshTimer = null;
   let lastRenderedKey = "";
+  let lastObservedPeer = "";
 
   async function refresh(record) {
     const row = record || await getStreak();
@@ -284,6 +285,8 @@
 
   function onChatChanged() {
     ensureStyles();
+    const peer = currentPeer();
+    if (peer) lastObservedPeer = peer;
     const el = header();
     if (el) el.style.display = "none";
     lastRenderedKey = "";
@@ -291,12 +294,34 @@
     setTimeout(() => refresh(), 350);
   }
 
+  function watchChatLifecycle() {
+    const chat = document.getElementById("dmChat");
+    if (!chat || chat.__xoxoStreakLifecycleObserver) return;
+    const observer = new MutationObserver(() => {
+      const peer = currentPeer();
+      const visible = chat.style.display !== "none" && !!peer;
+      if (!visible) {
+        lastObservedPeer = "";
+        return;
+      }
+      if (peer !== lastObservedPeer) onChatChanged();
+    });
+    observer.observe(chat, {
+      attributes: true,
+      attributeFilter: ["style"],
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+    chat.__xoxoStreakLifecycleObserver = observer;
+  }
+
   function installOpenHook() {
     const original = window.openDirectChat;
     if (typeof original !== "function" || original.__xoxoStreakWrapped) return false;
     async function wrapped() {
       const result = await original.apply(this, arguments);
-      setTimeout(onChatChanged, 120);
+      if (currentPeer() !== lastObservedPeer) setTimeout(onChatChanged, 120);
       return result;
     }
     wrapped.__xoxoStreakWrapped = true;
@@ -307,6 +332,7 @@
 
   function boot() {
     ensureStyles();
+    watchChatLifecycle();
     installOpenHook();
     onChatChanged();
     let tries = 0;
