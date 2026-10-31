@@ -101,9 +101,16 @@
         const id = String(profile.user_id);
         const username = profile.username || "@User";
         const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
-        const avatar = profile.profile_photo
-          ? '<img src="' + escapeHtmlAttribute(profile.profile_photo) + '" alt="Profile photo" loading="lazy">'
+        const bubbleAvatar = typeof xoxoBubbleImg === "function"
+          ? xoxoBubbleImg(id, username)
           : initial;
+        const bubbleUrl = typeof xoxoBubbleUrl === "function"
+          ? escapeHtmlAttribute(xoxoBubbleUrl(id, username))
+          : "";
+        const avatar = profile.profile_photo
+          ? '<img src="' + escapeHtmlAttribute(profile.profile_photo) + '" alt="Profile photo" loading="lazy"' +
+            (bubbleUrl ? ' onerror="this.onerror=null;this.src=\\'' + bubbleUrl + '\\'"' : '') + '>'
+          : bubbleAvatar;
         const mutual = mutualCounts.get(id) || 0;
         const reason = mutual > 0
           ? mutual + " " + (es ? (mutual === 1 ? "conexión en común" : "conexiones en común") : (mutual === 1 ? "mutual connection" : "mutual connections"))
