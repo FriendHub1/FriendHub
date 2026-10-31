@@ -255,3 +255,48 @@ end;
 $function$;
 
 commit;
+
+ 
+-- Catch every Auth deletion path, including admin-initiated account removal.
+-- The self-service Worker already calls xoxo_delete_account_data; this trigger
+-- covers other deletion paths. The unique original_message_id prevents duplicates.
+begin;
+
+create or replace function public.xoxo_archive_deleted_account_messages()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  if exists (select 1 from public.xoxo_admins a where a.user_id = old.id) then
+    return old;
+  end if;
+
+  insert into xoxo_admin_private.deleted_account_messages (
+    original_message_id, sender_id, recipient_id, message_content,
+    message_created_at, deleted_account_id, sender_username_snapshot,
+    recipient_username_snapshot, sender_profile_photo_snapshot,
+    recipient_profile_photo_snapshot, attachment_metadata
+  )
+  select dm.id, dm.sender_id, dm.recipient_id, dm.content, dm.created_at, old.id,
+         sp.username, rp.username, sp.profile_photo, rp.profile_photo,
+         to_jsonb(dm) - 'id' - 'sender_id' - 'recipient_id' - 'content' - 'created_at'
+  from public.direct_messages dm
+  left join public.profiles sp on sp.user_id = dm.sender_id
+  left join public.profiles rp on rp.user_id = dm.recipient_id
+  where dm.sender_id = old.id or dm.recipient_id = old.id
+  on conflict (original_message_id) do nothing;
+
+  return old;
+end;
+$function$;
+
+drop trigger if exists xoxo_archive_deleted_account_messages on auth.users;
+create trigger xoxo_archive_deleted_account_messages
+before delete on auth.users
+for each row execute function public.xoxo_archive_deleted_account_messages();
+
+revoke all on function public.xoxo_archive_deleted_account_messages() from public, anon, authenticated;
+
+commit;
