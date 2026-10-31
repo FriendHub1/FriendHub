@@ -386,20 +386,43 @@
 
     // The messages view is mounted lazily after navigation from Home.
     // Observe the document, not only #dmChat at initial page load.
+    let lastChatNode = null;
+    let lastHeaderNode = null;
+    let lastMessagesNode = null;
+    let lastChatVisible = false;
     const scanChat = () => {
       ensureStyles();
       watchChatLifecycle();
       watchMessages();
       installOpenHook();
+
       const chat = document.getElementById("dmChat");
       const peer = currentPeer();
-      const visible = !!chat && chat.style.display !== "none" && !!peer;
-      if (visible && peer !== lastObservedPeer) {
+      const visible = !!chat && chat.isConnected &&
+        chat.style.display !== "none" && !!peer;
+      const chatHeader = chat && (chat.querySelector(".dm-chat-header") || chat.querySelector("header"));
+      const messages = document.getElementById("dmMessages");
+
+      // Language navigation may preserve the peer while rebuilding the DM view.
+      const viewWasRebuilt = visible && (
+        chat !== lastChatNode ||
+        chatHeader !== lastHeaderNode ||
+        messages !== lastMessagesNode
+      );
+      const justBecameVisible = visible && !lastChatVisible;
+      const peerChanged = visible && peer !== lastObservedPeer;
+
+      if (visible && (viewWasRebuilt || justBecameVisible || peerChanged)) {
         lastObservedPeer = peer;
         onChatChanged();
       } else if (!visible && lastObservedPeer) {
         lastObservedPeer = "";
       }
+
+      lastChatNode = chat;
+      lastHeaderNode = chatHeader;
+      lastMessagesNode = messages;
+      lastChatVisible = visible;
     };
 
     if (document.body && typeof MutationObserver === "function") {
