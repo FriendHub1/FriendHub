@@ -44,11 +44,12 @@ assert.deepEqual(milestones, [7, 30, 100, 180, 365, 500, 1000]);
 
 const source = fs.readFileSync("xoxo-streaks.js", "utf8");
 for (const required of [
-  "function hasRecentOutgoingMessage()",
-  "RPC independently verifies the authenticated user's persisted recent DM",
   "function scheduleRecord()",
-  'c.rpc("xoxo_dm_streak_record_message"',
+  "The database trigger records each persisted ordinary DM exactly once",
+  "await refresh();",
   "[7,30,100,180,365,500,1000]"
 ]) assert.ok(source.includes(required), "missing production integration: " + required);
+assert.ok(!source.includes("xoxo_dm_streak_record_message"),
+  "browser must not record streaks; the database trigger owns that operation");
 
 console.log("XOXO Streak logic tests passed: two-user participation, once-per-day counting, consecutive-day advance, missed-day reset, record preservation, milestone list, and persisted outgoing-message guard.");
