@@ -3452,15 +3452,40 @@ export default {
 
     if (!profileId) {
       const response = await env.ASSETS.fetch(request);
-      const isHomeHtml = url.pathname === "/" && request.method === "GET" &&
-        String(response.headers.get("content-type") || "").includes("text/html");
-      const page = isHomeHtml
-        ? new HTMLRewriter().on("head", { element(el) {
-            el.append('<script src="/xoxo-guest-support-ui.js" defer></script>', { html: true });
-          }}).transform(response)
-        : response;
+      const isHtml = String(response.headers.get("content-type") || "").includes("text/html");
+      const isUsernameProfile = !!friendlyUsernameMatch &&
+        (request.method === "GET" || request.method === "HEAD");
+      let page = response;
+
+      // If the server-side username lookup is unavailable, still let the
+      // existing client resolve and open the clean /username profile route.
+      if (isHtml && isUsernameProfile && request.method === "GET") {
+        const username = JSON.stringify(String(friendlyUsernameMatch));
+        const routeScript = `<script id="xoxo-clean-username-profile-route">
+(function(){
+  var username = ${username};
+  var attempts = 0;
+  var timer = setInterval(function(){
+    attempts++;
+    if (typeof window.openPublicProfileByUsername === "function") {
+      clearInterval(timer);
+      Promise.resolve(window.openPublicProfileByUsername(username)).catch(function(error){
+        console.error("[XOXO shared profile] Could not open username profile:", error);
+      });
+    } else if (attempts >= 240) {
+      clearInterval(timer);
+      console.error("[XOXO shared profile] Profile opener was not available.");
+    }
+  }, 50);
+})();
+</script>`;
+        page = new HTMLRewriter()
+          .on("head", { element(element) { element.append(routeScript, { html: true }); } })
+          .transform(response);
+      }
+
       const headers = new Headers(page.headers);
-      headers.set("X-XOXO-Worker", isHomeHtml ? "public-guest-support" : "normal-page");
+      headers.set("X-XOXO-Worker", isUsernameProfile ? "username-profile-client-fallback" : "normal-page");
       return new Response(page.body, {
         status: page.status,
         statusText: page.statusText,
