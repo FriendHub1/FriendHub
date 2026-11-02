@@ -3640,6 +3640,22 @@ export default {
           .transform(response);
       }
 
+      if (isHtml) {
+        // The guest CTA has an author-level display:flex rule, which overrides
+        // the browser's default [hidden] behavior. Restore hidden semantics so
+        // authenticated members do not see the public join invitation.
+        page = new HTMLRewriter()
+          .on("head", {
+            element(element) {
+              element.append(
+                '<style id="xoxo-whisper-guest-cta-hidden-fix">.xoxo-public-guest-cta[hidden],#xoxoDwGuestCta[hidden]{display:none!important}</style>',
+                { html: true }
+              );
+            },
+          })
+          .transform(page);
+      }
+
       const headers = new Headers(page.headers);
       headers.set("X-XOXO-Worker", isUsernameProfile ? "username-profile-client-fallback" : "normal-page");
       return new Response(page.body, {
