@@ -1159,6 +1159,23 @@ window.xoxoPtLabel=function(en,es,pt){
                                      .profile-visitor-meta { margin-top:3px; color:var(--fh-muted,#667085); font-size:12px; }
                                      .profile-visitor-count { flex:0 0 auto; padding:6px 9px; border-radius:999px; background:var(--fh-soft,#eef0ff); color:var(--fh-primary,#5865f2); font-size:12px; font-weight:800; }
 
+                                     .xoxo-profile-guest-card{overflow:hidden;position:relative;text-align:center;padding:clamp(24px,5vw,42px);background:radial-gradient(circle at 8% 0%,rgba(255,213,92,.18),transparent 34%),radial-gradient(circle at 100% 100%,rgba(181,113,255,.20),transparent 38%),var(--fh-surface,#fff)}
+                                     .xoxo-profile-guest-eyebrow{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border:1px solid rgba(190,151,255,.35);border-radius:999px;background:rgba(173,126,255,.10);font-size:12px;font-weight:800;letter-spacing:.04em}
+                                     .xoxo-profile-guest-card h2{margin:18px auto 8px;max-width:620px;font-size:clamp(26px,4vw,36px);line-height:1.12}
+                                     .xoxo-profile-guest-subtitle{font-weight:700;margin:0 auto 12px;color:var(--fh-muted,#766b85)}
+                                     .xoxo-profile-guest-copy{max-width:620px;margin:0 auto 22px;color:var(--fh-muted,#766b85)}
+                                     .xoxo-profile-guest-actions{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0 28px}
+                                     .xoxo-profile-guest-actions .btn{min-width:170px}
+                                     .xoxo-profile-guest-login{border:0;background:transparent;color:var(--fh-primary,#8c58d8);font-weight:800;padding:10px 12px}
+                                     .xoxo-profile-guest-benefits{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:650px;margin:0 auto;text-align:left}
+                                     .xoxo-profile-guest-benefit{display:flex;align-items:flex-start;gap:11px;padding:14px;border:1px solid var(--fh-border,#e9e1f1);border-radius:15px;background:var(--fh-surface-strong,rgba(255,255,255,.72))}
+                                     .xoxo-profile-guest-benefit-icon{flex:0 0 34px;width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:rgba(174,128,255,.13);font-size:18px}
+                                     .xoxo-profile-guest-benefit strong{display:block;margin-bottom:3px}
+                                     .xoxo-profile-guest-benefit span:last-child{display:block;color:var(--fh-muted,#766b85);font-size:13px;line-height:1.4}
+                                     .xoxo-public-guest-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin:14px 0}
+                                     @media(max-width:600px){.xoxo-profile-guest-benefits{grid-template-columns:1fr}.xoxo-profile-guest-card{padding:24px 17px}.xoxo-profile-guest-actions{flex-direction:column}.xoxo-profile-guest-actions .btn{width:100%;max-width:300px}}
+
+
                                      /* =========================================================
                                     PUBLIC PROFILE
                                     ========================================================= */
@@ -6657,16 +6674,7 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     <button type="button" class="my-profile-tab" data-my-profile-tab="whispers" onclick="showMyProfileTab('whispers', this)" hidden>🫧 My Whispers</button>
                                     </div>
 
-                                    <div id="profileLoginMessage" class="content-card" style="display:none;">
-                                    <h2>Create an account first</h2>
-                                    <p>
-                                    Your profile is connected to your XOXO Avenue account.
-                                    Please log in or create an account to continue.
-                                    </p>
-                                    <button class="btn btn-primary" onclick="openAuth('signup')">
-                                    Create Account
-                                    </button>
-                                    </div>
+                                    <div id="profileLoginMessage" class="content-card xoxo-profile-guest-card" style="display:none;" aria-live="polite"></div>
                                     <div id="myProfileMainPanel" class="my-profile-panel active">
                                     <div id="profileCard" class="profile-card">
                                     <div class="profile-photo-section">
@@ -10143,25 +10151,57 @@ function xoxoBubbleImg(userId, username) {
                                     avatar.innerHTML = xoxoBubbleImg(currentUser?.id, username);
                                     }
                                     function updateProfileVisibility() {
-                                    const loginMessage =
-                                    document.getElementById(
-                                    "profileLoginMessage"
-                                    );
-                                    const profileCard =
-                                    document.getElementById(
-                                    "profileCard"
-                                    );
+                                    const loginMessage = document.getElementById("profileLoginMessage");
+                                    const profileCard = document.getElementById("profileCard");
+                                    const visitorsCard = document.getElementById("profileVisitorsCard");
+                                    const myProfileTabs = document.getElementById("myProfileTabs");
+                                    const profileHeader = document.querySelector("#profile .page-header");
+                                    if (!loginMessage || !profileCard) return;
                                     if (currentUser) {
-                                    loginMessage.style.display =
-                                    "none";
-                                    profileCard.style.display =
-                                    "block";
-                                    } else {
-                                    loginMessage.style.display =
-                                    "block";
-                                    profileCard.style.display =
-                                    "none";
+                                      loginMessage.style.display = "none";
+                                      profileCard.style.display = "block";
+                                      if (visitorsCard) visitorsCard.style.display = "";
+                                      if (myProfileTabs) myProfileTabs.style.display = "flex";
+                                      if (profileHeader) profileHeader.style.display = "";
+                                      const signedInHeaderText = profileHeader?.querySelector("p");
+                                      if (signedInHeaderText) signedInHeaderText.textContent = "Customize how people discover you on XOXO Avenue.";
+                                      return;
                                     }
+                                    profileCard.style.display = "none";
+                                    loginMessage.style.display = "block";
+                                    if (visitorsCard) visitorsCard.style.display = "none";
+                                    if (myProfileTabs) myProfileTabs.style.display = "none";
+                                    if (profileHeader) profileHeader.style.display = "";
+                                    const copy = {
+                                      en:{eyebrow:"A little more XOXO",title:"Your little corner of XOXO Avenue starts here.",subtitle:"Your story. Your people. Your XOXO.",copy:"Create your free account and make this space yours. Discover people, share what you love, and build genuine connections.",create:"Create Free Account",already:"Already a member?",login:"Log In",what:"What awaits you?",profile:"Your own profile",profileDesc:"Show your personality and share what makes you, you.",connections:"Meaningful connections",connectionsDesc:"Follow people and build real friendships.",activity:"Your activity",activityDesc:"Keep your posts and interactions in one place.",visitors:"Profile visitors",visitorsDesc:"See who's stopping by your profile — a member-only perk."},
+                                      es:{eyebrow:"Un poquito más de XOXO",title:"Tu pequeño rincón de XOXO Avenue comienza aquí.",subtitle:"Tu historia. Tu gente. Tu XOXO.",copy:"Crea tu cuenta gratis y haz tuyo este espacio. Descubre personas, comparte lo que te gusta y construye conexiones auténticas.",create:"Crear cuenta gratis",already:"¿Ya tienes una cuenta?",login:"Iniciar sesión",what:"¿Qué te espera?",profile:"Tu propio perfil",profileDesc:"Muestra tu personalidad y comparte lo que te hace especial.",connections:"Conexiones especiales",connectionsDesc:"Sigue a otras personas y crea amistades reales.",activity:"Tu actividad",activityDesc:"Ten tus publicaciones e interacciones en un solo lugar.",visitors:"Visitas a tu perfil",visitorsDesc:"Descubre quién visita tu perfil: un beneficio exclusivo para miembros."},
+                                      "pt-BR":{eyebrow:"Um pouquinho mais de XOXO",title:"Seu cantinho no XOXO Avenue começa aqui.",subtitle:"Sua história. Suas pessoas. Seu XOXO.",copy:"Crie sua conta grátis e faça deste espaço o seu lugar. Descubra pessoas, compartilhe o que ama e construa conexões verdadeiras.",create:"Criar conta grátis",already:"Já tem uma conta?",login:"Entrar",what:"O que espera por você?",profile:"Seu próprio perfil",profileDesc:"Mostre sua personalidade e compartilhe o que faz você ser único.",connections:"Conexões especiais",connectionsDesc:"Siga pessoas e construa amizades verdadeiras.",activity:"Sua atividade",activityDesc:"Tenha suas publicações e interações em um só lugar.",visitors:"Visitantes do perfil",visitorsDesc:"Veja quem visita seu perfil — um benefício exclusivo para membros."},
+                                      fr:{eyebrow:"Un peu plus de XOXO",title:"Votre petit coin de XOXO Avenue commence ici.",subtitle:"Votre histoire. Vos rencontres. Votre XOXO.",copy:"Créez votre compte gratuit et faites de cet espace le vôtre. Découvrez des personnes, partagez vos passions et créez de vraies relations.",create:"Créer un compte gratuit",already:"Déjà membre ?",login:"Se connecter",what:"Qu'est-ce qui vous attend ?",profile:"Votre propre profil",profileDesc:"Montrez votre personnalité et partagez ce qui vous rend unique.",connections:"De belles rencontres",connectionsDesc:"Suivez des personnes et créez de vraies amitiés.",activity:"Votre activité",activityDesc:"Retrouvez vos publications et interactions au même endroit.",visitors:"Visiteurs du profil",visitorsDesc:"Découvrez qui consulte votre profil — un avantage réservé aux membres."},
+                                      pl:{eyebrow:"Trochę więcej XOXO",title:"Twój mały zakątek XOXO Avenue zaczyna się tutaj.",subtitle:"Twoja historia. Twoi ludzie. Twoje XOXO.",copy:"Utwórz darmowe konto i spraw, aby to miejsce stało się Twoje. Odkrywaj ludzi, dziel się pasjami i buduj prawdziwe relacje.",create:"Utwórz darmowe konto",already:"Masz już konto?",login:"Zaloguj się",what:"Co na Ciebie czeka?",profile:"Twój własny profil",profileDesc:"Pokaż swoją osobowość i podziel się tym, co Cię wyróżnia.",connections:"Wartościowe znajomości",connectionsDesc:"Obserwuj innych i buduj prawdziwe przyjaźnie.",activity:"Twoja aktywność",activityDesc:"Wszystkie posty i interakcje w jednym miejscu.",visitors:"Odwiedzający profil",visitorsDesc:"Sprawdź, kto odwiedza Twój profil — korzyść dla członków."},
+                                      de:{eyebrow:"Ein bisschen mehr XOXO",title:"Dein kleines Zuhause auf XOXO Avenue beginnt hier.",subtitle:"Deine Geschichte. Deine Menschen. Dein XOXO.",copy:"Erstelle kostenlos dein Konto und mach diesen Ort zu deinem. Entdecke Menschen, teile deine Interessen und knüpfe echte Kontakte.",create:"Kostenloses Konto erstellen",already:"Schon Mitglied?",login:"Anmelden",what:"Was erwartet dich?",profile:"Dein eigenes Profil",profileDesc:"Zeig deine Persönlichkeit und teile, was dich besonders macht.",connections:"Echte Verbindungen",connectionsDesc:"Folge anderen und knüpfe echte Freundschaften.",activity:"Deine Aktivitäten",activityDesc:"Behalte deine Beiträge und Interaktionen an einem Ort.",visitors:"Profilbesucher",visitorsDesc:"Sieh, wer dein Profil besucht — exklusiv für Mitglieder."},
+                                      nb:{eyebrow:"Litt mer XOXO",title:"Ditt eget lille hjørne av XOXO Avenue starter her.",subtitle:"Din historie. Dine folk. Din XOXO.",copy:"Opprett en gratis konto og gjør dette stedet til ditt. Oppdag mennesker, del det du liker, og bygg ekte forbindelser.",create:"Opprett gratis konto",already:"Har du allerede en konto?",login:"Logg inn",what:"Hva venter på deg?",profile:"Din egen profil",profileDesc:"Vis personligheten din og del det som gjør deg unik.",connections:"Meningsfulle forbindelser",connectionsDesc:"Følg andre og bygg ekte vennskap.",activity:"Aktiviteten din",activityDesc:"Samle innleggene og samhandlingene dine på ett sted.",visitors:"Profilbesøkende",visitorsDesc:"Se hvem som besøker profilen din — en medlemsfordel."},
+                                      cs:{eyebrow:"Trochu více XOXO",title:"Tvůj vlastní koutek na XOXO Avenue začíná právě tady.",subtitle:"Tvůj příběh. Tvoji lidé. Tvoje XOXO.",copy:"Vytvoř si účet zdarma a udělej si toto místo vlastním. Objevuj lidi, sdílej své zájmy a buduj opravdová spojení.",create:"Vytvořit účet zdarma",already:"Už máš účet?",login:"Přihlásit se",what:"Co na tebe čeká?",profile:"Tvůj vlastní profil",profileDesc:"Ukaž svou osobnost a sdílej, čím jsi jedinečný.",connections:"Smysluplná spojení",connectionsDesc:"Sleduj ostatní a buduj opravdová přátelství.",activity:"Tvoje aktivita",activityDesc:"Měj své příspěvky a interakce na jednom místě.",visitors:"Návštěvníci profilu",visitorsDesc:"Zjisti, kdo navštěvuje tvůj profil — výhoda pro členy."},
+                                      sv:{eyebrow:"Lite mer XOXO",title:"Din egen lilla plats på XOXO Avenue börjar här.",subtitle:"Din berättelse. Dina människor. Ditt XOXO.",copy:"Skapa ett gratis konto och gör den här platsen till din. Upptäck människor, dela det du tycker om och skapa äkta kontakter.",create:"Skapa gratis konto",already:"Har du redan ett konto?",login:"Logga in",what:"Vad väntar på dig?",profile:"Din egen profil",profileDesc:"Visa din personlighet och dela det som gör dig unik.",connections:"Meningsfulla kontakter",connectionsDesc:"Följ andra och bygg äkta vänskaper.",activity:"Din aktivitet",activityDesc:"Samla dina inlägg och interaktioner på ett ställe.",visitors:"Profilbesökare",visitorsDesc:"Se vem som besöker din profil — en medlemsförmån."},
+                                      it:{eyebrow:"Un po' più di XOXO",title:"Il tuo piccolo spazio su XOXO Avenue comincia qui.",subtitle:"La tua storia. Le tue persone. Il tuo XOXO.",copy:"Crea il tuo account gratuito e fai tuo questo spazio. Scopri nuove persone, condividi ciò che ami e costruisci legami autentici.",create:"Crea un account gratuito",already:"Hai già un account?",login:"Accedi",what:"Cosa ti aspetta?",profile:"Il tuo profilo",profileDesc:"Mostra la tua personalità e condividi ciò che ti rende speciale.",connections:"Connessioni autentiche",connectionsDesc:"Segui altre persone e crea vere amicizie.",activity:"La tua attività",activityDesc:"Raccogli post e interazioni in un unico posto.",visitors:"Visitatori del profilo",visitorsDesc:"Scopri chi visita il tuo profilo — un vantaggio per i membri."}
+                                    };
+                                    const t = copy[getFriendHubLanguage()] || copy.en;
+                                    const guestHeaderText = profileHeader?.querySelector("p");
+                                    if (guestHeaderText) guestHeaderText.textContent = `${t.title} ${t.subtitle}`;
+                                    loginMessage.innerHTML = `
+                                      <div class="xoxo-profile-guest-eyebrow">💜 ${t.eyebrow}</div>
+                                      <p class="xoxo-profile-guest-copy">${t.copy}</p>
+                                      <div class="xoxo-profile-guest-actions">
+                                        <button type="button" class="btn btn-primary" onclick="openAuth('signup')">${t.create}</button>
+                                        <span>${t.already}</span>
+                                        <button type="button" class="xoxo-profile-guest-login" onclick="openAuth('login')">${t.login}</button>
+                                      </div>
+                                      <h3 style="margin:0 0 13px">${t.what}</h3>
+                                      <div class="xoxo-profile-guest-benefits">
+                                        <div class="xoxo-profile-guest-benefit"><span class="xoxo-profile-guest-benefit-icon">👤</span><span><strong>${t.profile}</strong><span>${t.profileDesc}</span></span></div>
+                                        <div class="xoxo-profile-guest-benefit"><span class="xoxo-profile-guest-benefit-icon">💜</span><span><strong>${t.connections}</strong><span>${t.connectionsDesc}</span></span></div>
+                                        <div class="xoxo-profile-guest-benefit"><span class="xoxo-profile-guest-benefit-icon">✨</span><span><strong>${t.activity}</strong><span>${t.activityDesc}</span></span></div>
+                                        <div class="xoxo-profile-guest-benefit"><span class="xoxo-profile-guest-benefit-icon">👀</span><span><strong>${t.visitors}</strong><span>${t.visitorsDesc}</span></span></div>
+                                      </div>`;
                                     }
                                     function selectPostType(type, button) {
                                     currentPostType =
@@ -10304,7 +10344,7 @@ function xoxoBubbleImg(userId, username) {
                                     profile.profile_photo || null
                                     ])
                                     );
-                                    const databasePosts = (previewData || []).slice(0, 3).map(row => {
+                                    const databasePosts = (previewData || []).slice(0, 20).map(row => {
                                     let tags = [];
                                     try { tags = row.content_tags ? JSON.parse(row.content_tags) : []; } catch { tags = []; }
                                     return {
@@ -11402,10 +11442,7 @@ function xoxoBubbleImg(userId, username) {
                                     });
 
                                     async function openMentionProfile(username) {
-                                    if (!currentUser || !username) {
-                                    if (!currentUser) openAuth("login");
-                                    return;
-                                    }
+                                    if (!username) return;
                                     await openPublicProfileByUsername(username);
                                     }
 
@@ -11753,7 +11790,7 @@ function xoxoBubbleImg(userId, username) {
                                     ========================================================= */
                                     let xoxoUsernameLookupSequence = 0;
                                     async function openPublicProfileByUsername(username) {
-                                    if (!currentUser || !username) { if (!currentUser) openAuth("login"); return; }
+                                    if (!username) return;
                                     const normalizedUsername = String(username).trim();
                                     const lookupSequence = ++xoxoUsernameLookupSequence;
                                     window.xoxoProfileDiag?.mark('username lookup started');
@@ -11763,11 +11800,9 @@ function xoxoBubbleImg(userId, username) {
                                     if (earlyProfileContent) earlyProfileContent.innerHTML = `<div class="public-profile-card" aria-busy="true"><div style="width:92px;height:92px;margin:16px auto;border-radius:50%;background:rgba(180,125,215,.25)"></div><div class="empty-state">${getFriendHubLanguage() === 'de' ? 'Profil wird geladen...' : 'Loading profile...'}</div></div>`;
                                     const earlyProfilePosts = document.getElementById("publicProfilePosts");
                                     if (earlyProfilePosts) earlyProfilePosts.innerHTML = '';
-                                    const { data: profile, error } = await supabaseClient
-                                    .from("friendhub_public_profiles")
-                                    .select("user_id")
-                                    .eq("username", normalizedUsername)
-                                    .maybeSingle();
+                                    const { data: matchingProfiles, error } = await supabaseClient
+                                    .rpc("get_public_profile_id_by_username", { target_username: normalizedUsername });
+                                    const profile = Array.isArray(matchingProfiles) ? matchingProfiles[0] : null;
                                     window.xoxoProfileDiag?.mark('username lookup finished');
                                     if (lookupSequence !== xoxoUsernameLookupSequence) return;
                                     if (error || !profile?.user_id) {
@@ -11953,11 +11988,12 @@ async function xoxoOpenPublicProfileCore(userId) {
                                     <button class="public-profile-stat" onclick="openFollowList('followers', '${escapeHtmlAttribute(String(userId))}')"><strong>${followersCount}</strong>${getFriendHubLanguage() === "pl" ? "Obserwujący" : "Followers"}</button>
                                     <button class="public-profile-stat" onclick="openFollowList('following', '${escapeHtmlAttribute(String(userId))}')"><strong>${followingCount}</strong>${getFriendHubLanguage() === "pl" ? "Obserwowani" : "Following"}</button>
                                     </div>
-                                    ${isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary public-profile-follow${isFollowing ? " following" : ""}" onclick="toggleFollow('${escapeHtmlAttribute(String(userId))}')">${isFollowing ? (getFriendHubLanguage() === "pl" ? "Obserwowani" : "Following") : (getFriendHubLanguage() === "pl" ? "Obserwuj" : "Follow")}</button>`}
-                                    ${isOwnProfile ? "" : `<button id="publicBlockButton" class="btn public-profile-block${isBlocked ? " blocked" : ""}" onclick="toggleBlockUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">${isBlocked ? "Unblock" : "Block"}</button>`}
-                                    ${isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${getFriendHubLanguage() === "cs" ? "Nahlásit uživatele" : getFriendHubLanguage() === "fr" ? "Signaler l’utilisateur" : (getFriendHubLanguage() === "pl" ? "Zgłoś użytkownika" : window.xoxoPtLabel("Report user","Reportar usuario","Denunciar usuário"))}</button>`}
+                                    ${!currentUser && !isOwnProfile ? `<div class="xoxo-public-guest-actions"><button type="button" class="btn btn-primary" onclick="openAuth('signup')">${getFriendHubLanguage() === "es" ? "Crear cuenta gratis" : getFriendHubLanguage() === "pt-BR" ? "Criar conta grátis" : "Create Free Account"}</button><button type="button" class="btn btn-secondary" onclick="openAuth('login')">${getFriendHubLanguage() === "es" ? "Iniciar sesión" : getFriendHubLanguage() === "pt-BR" ? "Entrar" : "Log In"}</button></div>` : ""}
+                                    ${!currentUser || isOwnProfile ? "" : `<button id="publicFollowButton" class="btn btn-primary public-profile-follow${isFollowing ? " following" : ""}" onclick="toggleFollow('${escapeHtmlAttribute(String(userId))}')">${isFollowing ? (getFriendHubLanguage() === "pl" ? "Obserwowani" : "Following") : (getFriendHubLanguage() === "pl" ? "Obserwuj" : "Follow")}</button>`}
+                                    ${!currentUser || isOwnProfile ? "" : `<button id="publicBlockButton" class="btn public-profile-block${isBlocked ? " blocked" : ""}" onclick="toggleBlockUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">${isBlocked ? "Unblock" : "Block"}</button>`}
+                                    ${!currentUser || isOwnProfile ? "" : `<button id="publicReportButton" class="btn btn-secondary" onclick="openReportUser('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#9873; ${getFriendHubLanguage() === "cs" ? "Nahlásit uživatele" : getFriendHubLanguage() === "fr" ? "Signaler l’utilisateur" : (getFriendHubLanguage() === "pl" ? "Zgłoś użytkownika" : window.xoxoPtLabel("Report user","Reportar usuario","Denunciar usuário"))}</button>`}
                                     ${isOwnProfile ? "" : `<button id="publicShareButton" class="btn btn-secondary" onclick="sharePublicProfile('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}')">&#128279; ${getFriendHubLanguage() === "cs" ? "Sdílet profil" : getFriendHubLanguage() === "pl" ? "Udostępnij profil" : window.xoxoPtLabel("Share profile","Compartir perfil","Compartilhar perfil")}</button>`}
-                                    ${isOwnProfile || isBlocked ? "" : `<button id="publicMessageButton" class="btn public-profile-message" onclick="openDirectChat('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(profile.profile_photo || "")}')">&#128172; ${getFriendHubLanguage() === "cs" ? "Zpráva" : getFriendHubLanguage() === "pl" ? "Wiadomość" : (getFriendHubLanguage() === "es" ? "Mensaje" : "Message")}</button>`}
+                                    ${!currentUser || isOwnProfile || isBlocked ? "" : `<button id="publicMessageButton" class="btn public-profile-message" onclick="openDirectChat('${escapeHtmlAttribute(String(userId))}', '${escapeHtmlAttribute(username)}', '${escapeHtmlAttribute(profile.profile_photo || "")}')">&#128172; ${getFriendHubLanguage() === "cs" ? "Zpráva" : getFriendHubLanguage() === "pl" ? "Wiadomość" : (getFriendHubLanguage() === "es" ? "Mensaje" : "Message")}</button>`}
                                     <div class="public-profile-details">
                                     ${profile.gender_identity && profile.gender_identity !== "Prefer not to say" ? `<div class="public-profile-detail"><strong>Gender</strong><span>${escapeHtml(profile.gender_identity)}</span></div>` : ""}
                                     ${profile.sexual_orientation && profile.sexual_orientation !== "Prefer not to say" ? `<div class="public-profile-detail"><strong>Sexual orientation</strong><span>${escapeHtml(profile.sexual_orientation)}</span></div>` : ""}
@@ -12413,7 +12449,8 @@ async function sharePublicProfile(userId, username = "@User") {
                                     }
 
                                     async function openFollowList(kind, userId) {
-                                    if (!currentUser || !userId || !["followers", "following"].includes(kind)) return;
+                                    if (!userId || !["followers", "following"].includes(kind)) return;
+                                    if (!currentUser) { openAuth("login"); return; }
                                     const title = document.getElementById("followListTitle");
                                     const list = document.getElementById("followListContent");
                                     if (title) title.textContent = kind === "followers" ? "Followers" : "Following";
@@ -24336,7 +24373,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       return String(document.documentElement.lang||"").toLowerCase();
     }
     function rewrite(value){
-      if(typeof value!=="string" || !/^(?:https?:)?\\/\\/(?:wa\\.me|api\\.whatsapp\\.com)\\//i.test(value)) return value;
+      if(typeof value!=="string" || !/^(?:https?:)?\/\/(?:wa\.me|api\.whatsapp\.com)\//i.test(value)) return value;
       var l=lang(), message=messages[l];
       if(!message) return value;
       try{
