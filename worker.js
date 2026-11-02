@@ -997,8 +997,7 @@ async function verifyResendWebhook(
 function extractEmailAddress(
   value
 ) {
-  const text =
-    String(value || "")
+  const text =    String(value || "")
       .trim();
 
   const match =
@@ -1997,8 +1996,7 @@ ${escapeHtml(message)}
       `[##${caseNumber}##] - Message received!`;
 
     textBody =
-      [
-        "# This is an automated confirmation #",
+      [        "# This is an automated confirmation #",
         "",
         "Hey there,",
         "",
@@ -2997,8 +2995,7 @@ async function handleAdminEmailSend(request, env) {
   const verified = rows.filter(row =>
     wanted.has(String(row.user_id)) &&
     row.email_verified === true &&
-    typeof row.email === "string" &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)
+    typeof row.email === "string" &&    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)
   );
   if (verified.length !== ids.length) {
     return jsonResponse({ok:false,error:"One or more recipients are not verified or are no longer eligible. Refresh the recipient list."},400);
@@ -3674,13 +3671,17 @@ export default {
       const bootstrap = `<script id="xoxo-username-profile-bootstrap">
 (function(){
   try {
-    var originalUrl = location.pathname + location.search + location.hash;
     var url = new URL(location.href);
-    if (!url.searchParams.has("profile")) {
-      url.searchParams.set("profile", ${JSON.stringify(String(profileId))});
-      history.replaceState(history.state, "", url.pathname + "?" + url.searchParams.toString() + url.hash);
+    // The Worker may already have carried ?profile=UUID from a legacy share link.
+    // Always keep that UUID for app startup, but restore the clean /username URL
+    // after the profile has opened.
+    var cleanUrl = new URL(location.href);
+    cleanUrl.searchParams.delete("profile");
+    var originalUrl = cleanUrl.pathname + (cleanUrl.search ? "?" + cleanUrl.searchParams.toString() : "") + cleanUrl.hash;
+    url.searchParams.set("profile", ${JSON.stringify(String(profileId))});
+    history.replaceState(history.state, "", url.pathname + "?" + url.searchParams.toString() + url.hash);
 
-      // Keep Home from flashing while the app resolves the shared profile.
+    // Keep Home from flashing while the app resolves the shared profile.
       document.documentElement.classList.add("xoxo-profile-bootstrap-pending");
       var loadingStyle = document.createElement("style");
       loadingStyle.id = "xoxo-profile-bootstrap-loading-style";
@@ -3741,7 +3742,6 @@ export default {
         setTimeout(finishProfileBootstrap, 2500);
       }, {once:true});
       setTimeout(finishProfileBootstrap, 8000);
-    }
   } catch (_) {}
 })();
 </script>`;
