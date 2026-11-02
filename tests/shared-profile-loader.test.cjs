@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
+const { test } = require("node:test");
 
 const workerPath = path.join(__dirname, "..", "worker.js");
 const source = fs.readFileSync(workerPath, "utf8");
