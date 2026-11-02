@@ -3126,6 +3126,129 @@ async function xoxoServePublicSeoRoute(request, env, url) {
 
 const handleGuestSupport = createGuestSupportHandler({ SUPABASE_URL, jsonResponse, sendResendEmail, escapeHtml });
 
+const XOXO_PROFILE_LOADER_STYLE = \`<style id="xoxo-profile-bootstrap-loading-style">
+html.xoxo-profile-bootstrap-pending,
+html.xoxo-profile-bootstrap-pending body {
+  background: radial-gradient(ellipse at 50% 46%, #ffe8ff 0%, #efcaff 35%, #d9a8ff 67%, #a95af0 100%) !important;
+  min-height: 100%;
+}
+html.xoxo-profile-bootstrap-pending body { overflow: hidden !important; }
+html.xoxo-profile-bootstrap-pending body > *:not(#xoxo-username-profile-loading) {
+  visibility: hidden !important;
+}
+#xoxo-username-profile-loading {
+  position: fixed; inset: 0; z-index: 2147483647;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 46%, #ffe8ff 0%, #efcaff 35%, #d9a8ff 67%, #a95af0 100%);
+  color: #fff;
+}
+#xoxo-username-profile-loading:before,
+#xoxo-username-profile-loading:after {
+  content: ''; position: absolute; width: min(76vw, 620px); aspect-ratio: 1;
+  border: 1px solid #fff5; border-radius: 50%;
+  box-shadow: 0 0 55px #ff8df766, inset 0 0 50px #fff2; pointer-events: none;
+}
+#xoxo-username-profile-loading:after {
+  width: min(96vw, 820px); transform: scaleY(.42) rotate(-18deg); border-color: #ffc3ff99;
+}
+#xoxo-username-profile-loading .brand {
+  position: relative; z-index: 1; width: min(52vw, 310px); aspect-ratio: 1;
+  display: grid; place-items: center; filter: drop-shadow(0 12px 28px #7020b966);
+  animation: xoxoProfilePulse 1.25s ease-in-out infinite alternate;
+}
+#xoxo-username-profile-loading .brand svg { display: block; width: 100%; height: 100%; overflow: visible; }
+#xoxo-username-profile-loading .loading-hearts {
+  position: absolute; top: calc(100% + 22px); left: 50%; transform: translateX(-50%);
+  display: flex; gap: 9px; font-size: 15px; color: #fff9; white-space: nowrap;
+}
+#xoxo-username-profile-loading .loading-hearts span:nth-child(3) {
+  color: #fff; filter: drop-shadow(0 0 8px #fff); animation: xoxoHeartBeat .8s ease-in-out infinite alternate;
+}
+@keyframes xoxoProfilePulse { from { transform: scale(.96); opacity: .88; } to { transform: scale(1.035); opacity: 1; } }
+@keyframes xoxoHeartBeat { from { transform: scale(.85); } to { transform: scale(1.22); } }
+@media (max-width: 600px) {
+  #xoxo-username-profile-loading .brand { width: min(70vw, 280px); }
+  #xoxo-username-profile-loading:before { width: 90vw; }
+  #xoxo-username-profile-loading:after { width: 112vw; }
+  #xoxo-username-profile-loading .loading-hearts { top: calc(100% + 17px); font-size: 13px; gap: 7px; }
+}
+@media (min-width: 601px) { #xoxo-username-profile-loading .brand { width: min(28vw, 330px); } }
+@media (prefers-reduced-motion: reduce) {
+  #xoxo-username-profile-loading .brand,
+  #xoxo-username-profile-loading .loading-hearts span:nth-child(3) { animation: none; }
+}
+</style>\`;
+
+const XOXO_PROFILE_LOADER_MARKUP = \`<div id="xoxo-username-profile-loading" role="status" aria-label="Loading XOXO Avenue profile">
+  <div class="brand" role="img" aria-label="XOXO Avenue: purple heart with XO and crown">
+    <svg viewBox="0 0 300 300" aria-hidden="true">
+      <defs>
+        <linearGradient id="xoxoHeartFill" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#edbaff"/><stop offset="48%" stop-color="#8b20e8"/><stop offset="100%" stop-color="#4d08a9"/>
+        </linearGradient>
+        <linearGradient id="xoxoHeartStroke" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#fff"/><stop offset="55%" stop-color="#f8aaff"/><stop offset="100%" stop-color="#d9a2ff"/>
+        </linearGradient>
+      </defs>
+      <path d="M150 258C126 237 34 174 34 104C34 40 112 26 150 78C188 26 266 40 266 104C266 174 174 237 150 258Z" fill="url(#xoxoHeartFill)" stroke="url(#xoxoHeartStroke)" stroke-width="7"/>
+      <path d="M150 245C124 222 49 167 49 106C49 57 108 44 150 91C192 44 251 57 251 106C251 167 176 222 150 245Z" fill="none" stroke="#fff8ff" stroke-width="2.5"/>
+      <path d="M116 39L128 15L150 34L172 15L184 39L150 53Z" fill="#a83cf4" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
+      <circle cx="116" cy="39" r="5" fill="#fff"/><circle cx="184" cy="39" r="5" fill="#fff"/>
+      <path d="M150 44C144 37 135 42 139 49L150 59L161 49C165 42 156 37 150 44Z" fill="#fff"/>
+      <text x="107" y="164" text-anchor="middle" font-family="Arial,sans-serif" font-size="83" font-weight="900" fill="#fff" stroke="#c56aff" stroke-width="2" paint-order="stroke">X</text>
+      <path d="M193 111C176 91 150 105 160 128C166 142 193 160 193 160C193 160 220 142 226 128C236 105 210 91 193 111Z" fill="#fff" stroke="#f0aaff" stroke-width="4"/>
+    </svg>
+    <div class="loading-hearts" aria-hidden="true"><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span></div>
+  </div>
+</div>\`;
+
+function buildProfileBootstrap(profileId) {
+  const serializedProfileId = JSON.stringify(String(profileId));
+  const lines = [
+    "(function(){",
+    "  'use strict';",
+    "  var profileId = " + serializedProfileId + ";",
+    "  var cleanUrl = new URL(location.href);",
+    "  cleanUrl.searchParams.delete('profile');",
+    "  var originalUrl = cleanUrl.pathname + (cleanUrl.search ? '?' + cleanUrl.searchParams.toString() : '') + cleanUrl.hash;",
+    "  var startupUrl = new URL(location.href);",
+    "  startupUrl.searchParams.set('profile', profileId);",
+    "  history.replaceState(history.state, '', startupUrl.pathname + '?' + startupUrl.searchParams.toString() + startupUrl.hash);",
+    "  var finished = false;",
+    "  var observer = null;",
+    "  var poll = null;",
+    "  function profileIsReady(){",
+    "    var page = document.getElementById('publicProfile');",
+    "    var content = document.getElementById('publicProfileContent');",
+    "    if (!page || !page.classList.contains('active') || !content) return false;",
+    "    if (content.querySelector('[aria-busy=\"true\"]')) return false;",
+    "    var text = String(content.textContent || '').trim();",
+    "    if (!text) return false;",
+    "    return !/(loading profile|profil wird geladen|cargando perfil|carregando perfil|chargement du profil|ładowanie profilu|načítání profilu|laddar profil|laster inn profilen|caricamento profilo)/i.test(text);",
+    "  }",
+    "  function finish(){",
+    "    if (finished || !profileIsReady()) return;",
+    "    finished = true;",
+    "    try { history.replaceState(history.state, '', originalUrl); } catch (_) {}",
+    "    document.documentElement.classList.remove('xoxo-profile-bootstrap-pending');",
+    "    var overlay = document.getElementById('xoxo-username-profile-loading');",
+    "    if (overlay) overlay.remove();",
+    "    var style = document.getElementById('xoxo-profile-bootstrap-loading-style');",
+    "    if (style) style.remove();",
+    "    if (observer) observer.disconnect();",
+    "    if (poll) clearInterval(poll);",
+    "  }",
+    "  function check(){ if (profileIsReady()) finish(); }",
+    "  observer = new MutationObserver(check);",
+    "  if (document.documentElement) observer.observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['class','aria-busy']});",
+    "  poll = setInterval(check, 120);",
+    "  check();",
+    "})();"
+  ];
+  return '<script id="xoxo-username-profile-bootstrap">\\n' + lines.join('\\n') + '\\n</script>';
+}
+
 export default {
   async scheduled(controller, env, ctx) {
     // Keep existing profile reminders on the original hourly schedule only.
@@ -3560,11 +3683,14 @@ export default {
      * LOAD XOXO INDEX
      */
 
-    const indexRequest =
-      new Request(
-        `${url.origin}/`,
-        request
-      );
+    // Fetch the SPA shell without forwarding conditional headers from the
+    // shared-profile request. A 304 here has no HTML body for HTMLRewriter.
+    const indexHeaders = new Headers(request.headers);
+    ["if-none-match", "if-modified-since", "if-match", "if-unmodified-since", "range"].forEach((name) => indexHeaders.delete(name));
+    const indexRequest = new Request(`${url.origin}/`, {
+      method: request.method,
+      headers: indexHeaders,
+    });
 
     const assetResponse =
       await env.ASSETS.fetch(
@@ -3652,100 +3778,29 @@ export default {
         metadata
       );
 
-    // The existing client app reads ?profile=ID during startup. Supply it
-    // temporarily, then restore the clean username URL after page load so the
-    // address bar and any later share action use /username.
-    if (friendlyUsernameMatch || friendlyProfileMatch) {
-      const bootstrap = `<script id="xoxo-username-profile-bootstrap">
-(function(){
-  try {
-    var url = new URL(location.href);
-    // The Worker may already have carried ?profile=UUID from a legacy share link.
-    // Always keep that UUID for app startup, but restore the clean /username URL
-    // after the profile has opened.
-    var cleanUrl = new URL(location.href);
-    cleanUrl.searchParams.delete("profile");
-    var originalUrl = cleanUrl.pathname + (cleanUrl.search ? "?" + cleanUrl.searchParams.toString() : "") + cleanUrl.hash;
-    url.searchParams.set("profile", ${JSON.stringify(String(profileId))});
-    history.replaceState(history.state, "", url.pathname + "?" + url.searchParams.toString() + url.hash);
-
-    // Keep Home from flashing while the app resolves the shared profile.
-      document.documentElement.classList.add("xoxo-profile-bootstrap-pending");
-      var loadingStyle = document.createElement("style");
-      loadingStyle.id = "xoxo-profile-bootstrap-loading-style";
-      loadingStyle.textContent = "html.xoxo-profile-bootstrap-pending,html.xoxo-profile-bootstrap-pending body{background:radial-gradient(ellipse at 50% 46%,#ffe8ff 0%,#efcaff 35%,#d9a8ff 67%,#a95af0 100%)!important;min-height:100%;}html.xoxo-profile-bootstrap-pending body>*:not(#xoxo-username-profile-loading){visibility:hidden!important}#xoxo-username-profile-loading{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse at 50% 46%,#ffe8ff 0%,#efcaff 35%,#d9a8ff 67%,#a95af0 100%);color:#fff}#xoxo-username-profile-loading:before,#xoxo-username-profile-loading:after{content:"";position:absolute;width:min(76vw,620px);aspect-ratio:1;border:1px solid #fff5;border-radius:50%;box-shadow:0 0 55px #ff8df766,inset 0 0 50px #fff2;pointer-events:none}#xoxo-username-profile-loading:after{width:min(96vw,820px);transform:scaleY(.42) rotate(-18deg);border-color:#ffc3ff99}#xoxo-username-profile-loading .brand{position:relative;z-index:1;width:min(52vw,310px);aspect-ratio:1;display:grid;place-items:center;filter:drop-shadow(0 12px 28px #7020b966);animation:xoxoProfilePulse 1.25s ease-in-out infinite alternate}#xoxo-username-profile-loading .brand svg{display:block;width:100%;height:100%;overflow:visible}#xoxo-username-profile-loading .loading-hearts{position:absolute;top:calc(100% + 22px);left:50%;transform:translateX(-50%);display:flex;gap:9px;font-size:15px;color:#fff9;white-space:nowrap}#xoxo-username-profile-loading .loading-hearts span:nth-child(3){color:#fff;filter:drop-shadow(0 0 8px #fff);animation:xoxoHeartBeat .8s ease-in-out infinite alternate}@keyframes xoxoProfilePulse{from{transform:scale(.96);opacity:.88}to{transform:scale(1.035);opacity:1}}@keyframes xoxoHeartBeat{from{transform:scale(.85)}to{transform:scale(1.22)}}@media(max-width:600px){#xoxo-username-profile-loading .brand{width:min(70vw,280px)}#xoxo-username-profile-loading:before{width:90vw}#xoxo-username-profile-loading:after{width:112vw}#xoxo-username-profile-loading .loading-hearts{top:calc(100% + 17px);font-size:13px;gap:7px}}@media(min-width:601px){#xoxo-username-profile-loading .brand{width:min(28vw,330px)}}@media(prefers-reduced-motion:reduce){#xoxo-username-profile-loading .brand,#xoxo-username-profile-loading .loading-hearts span:nth-child(3){animation:none}}";
-      (document.head || document.documentElement).appendChild(loadingStyle);
-      var restoreCleanUrl = function(){
-        try { history.replaceState(history.state, "", originalUrl); } catch (_) {}
-      };
-      var finishProfileBootstrap = function(){
-        restoreCleanUrl();
-        document.documentElement.classList.remove("xoxo-profile-bootstrap-pending");
-        var overlay = document.getElementById("xoxo-username-profile-loading");
-        if (overlay) overlay.remove();
-        var style = document.getElementById("xoxo-profile-bootstrap-loading-style");
-        if (style) style.remove();
-      };
-      var profileOpenStarted = false;
-      var installProfileUrlHook = function(){
-        // The app's actual navigation API accepts a profile UUID.
-        // The Worker has already resolved this username to profileId above.
-        var original = window.openPublicProfile;
-        if (typeof original !== "function") return false;
-        if (profileOpenStarted) return true;
-        profileOpenStarted = true;
-        Promise.resolve()
-          .then(function(){
-            return original.call(window, ${JSON.stringify(String(profileId))});
-          })
-          .then(function(){ finishProfileBootstrap(); })
-          .catch(function(error){
-            console.error("[XOXO profile bootstrap] Could not open shared profile:", error);
-            finishProfileBootstrap();
-          });
-        return true;
-      };
-      var addLoadingOverlay = function(){
-        if (document.body && !document.getElementById("xoxo-username-profile-loading")) {
-          var overlay = document.createElement("div");
-          overlay.id = "xoxo-username-profile-loading";
-          overlay.setAttribute("aria-label", "Cargando perfil");
-          overlay.innerHTML = '<div class="brand" role="img" aria-label="XOXO Avenue: corazón morado con XO y corona"><svg viewBox="0 0 300 300" aria-hidden="true"><defs><linearGradient id="xoxoHeartFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#edbaff"/><stop offset="48%" stop-color="#8b20e8"/><stop offset="100%" stop-color="#4d08a9"/></linearGradient><linearGradient id="xoxoHeartStroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff"/><stop offset="55%" stop-color="#f8aaff"/><stop offset="100%" stop-color="#d9a2ff"/></linearGradient></defs><path d="M150 258C126 237 34 174 34 104C34 40 112 26 150 78C188 26 266 40 266 104C266 174 174 237 150 258Z" fill="url(#xoxoHeartFill)" stroke="url(#xoxoHeartStroke)" stroke-width="7"/><path d="M150 245C124 222 49 167 49 106C49 57 108 44 150 91C192 44 251 57 251 106C251 167 176 222 150 245Z" fill="none" stroke="#fff8ff" stroke-width="2.5"/><path d="M116 39L128 15L150 34L172 15L184 39L150 53Z" fill="#a83cf4" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><circle cx="116" cy="39" r="5" fill="#fff"/><circle cx="184" cy="39" r="5" fill="#fff"/><path d="M150 44C144 37 135 42 139 49L150 59L161 49C165 42 156 37 150 44Z" fill="#fff"/><text x="107" y="164" text-anchor="middle" font-family="Arial,sans-serif" font-size="83" font-weight="900" fill="#fff" stroke="#c56aff" stroke-width="2" paint-order="stroke">X</text><path d="M193 111C176 91 150 105 160 128C166 142 193 160 193 160C193 160 220 142 226 128C236 105 210 91 193 111Z" fill="#fff" stroke="#f0aaff" stroke-width="4"/></svg><div class="loading-hearts" aria-hidden="true"><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span></div></div>';
-          document.body.prepend(overlay);
-          return true;
-        }
-        return false;
-      };
-      // Insert the overlay as soon as the browser creates <body>, not at DOMContentLoaded.
-      // The pending class and lilac background are already active from the head bootstrap.
-      if (!addLoadingOverlay()) {
-        var overlayObserver = new MutationObserver(function(){
-          if (addLoadingOverlay()) overlayObserver.disconnect();
-        });
-        if (document.documentElement) {
-          overlayObserver.observe(document.documentElement, {childList:true, subtree:true});
-        }
-        document.addEventListener("DOMContentLoaded", function(){
-          if (addLoadingOverlay()) overlayObserver.disconnect();
-        }, {once:true});
-      }
-      var attempts = 0;
-      var hookTimer = setInterval(function(){
-        attempts += 1;
-        if (installProfileUrlHook()) clearInterval(hookTimer);
-      }, 50);
-      window.addEventListener("load", function(){
-        // If the app's profile opener was already called before the hook
-        // attached, release the cover after a short safety window.
-        setTimeout(finishProfileBootstrap, 2500);
-      }, {once:true});
-      setTimeout(finishProfileBootstrap, 8000);
-  } catch (_) {}
-})();
-</script>`;
-      // Run before the site app scripts so the client reads ?profile=ID during initialization.
+    // The client app reads ?profile=ID during checkSession(). The server
+    // renders the cover before the browser can paint Home; the bootstrap only
+    // observes the real profile state and releases the cover once it is ready.
+    if (request.method === "GET") {
+      const bootstrap = buildProfileBootstrap(profileId);
       transformed = new HTMLRewriter()
-        .on("head", { element(element) { element.prepend(bootstrap, { html: true }); } })
+        .on("html", {
+          element(element) {
+            const classes = (element.getAttribute("class") || "").split(/\s+/).filter(Boolean);
+            if (!classes.includes("xoxo-profile-bootstrap-pending")) classes.push("xoxo-profile-bootstrap-pending");
+            element.setAttribute("class", classes.join(" "));
+          },
+        })
+        .on("head", {
+          element(element) {
+            element.prepend(XOXO_PROFILE_LOADER_STYLE + bootstrap, { html: true });
+          },
+        })
+        .on("body", {
+          element(element) {
+            element.prepend(XOXO_PROFILE_LOADER_MARKUP, { html: true });
+          },
+        })
         .transform(transformed);
     }
 
