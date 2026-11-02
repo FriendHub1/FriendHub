@@ -80,7 +80,7 @@ jobs:
           NODE
       - name: Verify username profile bootstrap runs before app scripts
         run: |
-          grep -F "element.prepend(bootstrap, { html: true })" worker.js
+          grep -F "element.prepend(XOXO_PROFILE_LOADER_STYLE + bootstrap, { html: true });" worker.js
           grep -F "xoxo-username-profile-bootstrap" worker.js
       - name: Verify username routes run through the Worker before static assets
         run: node --input-type=module -e 'import fs from "node:fs"; const c=JSON.parse(fs.readFileSync("wrangler.jsonc","utf8")); if (!c.assets?.run_worker_first?.includes("/*")) throw new Error("Worker-first routing is required for /username profile routes"); console.log("Worker-first routing is configured for all routes.");'
