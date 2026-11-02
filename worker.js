@@ -997,7 +997,8 @@ async function verifyResendWebhook(
 function extractEmailAddress(
   value
 ) {
-  const text =    String(value || "")
+  const text =
+    String(value || "")
       .trim();
 
   const match =
@@ -1996,7 +1997,8 @@ ${escapeHtml(message)}
       `[##${caseNumber}##] - Message received!`;
 
     textBody =
-      [        "# This is an automated confirmation #",
+      [
+        "# This is an automated confirmation #",
         "",
         "Hey there,",
         "",
@@ -2995,7 +2997,8 @@ async function handleAdminEmailSend(request, env) {
   const verified = rows.filter(row =>
     wanted.has(String(row.user_id)) &&
     row.email_verified === true &&
-    typeof row.email === "string" &&    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)
+    typeof row.email === "string" &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)
   );
   if (verified.length !== ids.length) {
     return jsonResponse({ok:false,error:"One or more recipients are not verified or are no longer eligible. Refresh the recipient list."},400);
