@@ -3649,7 +3649,10 @@ export default {
         var original = window.openSharedProfileFromUrl;
         if (typeof original !== "function") return false;
         if (original.__xoxoUsernameProfileHook) return true;
+        var opened = false;
         var wrapped = async function(){
+          if (opened) return;
+          opened = true;
           try {
             var result = await original.apply(this, arguments);
             finishProfileBootstrap();
@@ -3661,6 +3664,13 @@ export default {
         };
         wrapped.__xoxoUsernameProfileHook = true;
         window.openSharedProfileFromUrl = wrapped;
+        // The app's auth callback is not guaranteed to re-run on every
+        // browser/session restoration. Open the shared profile as soon as
+        // its real client handler exists instead of revealing Home first.
+        Promise.resolve().then(function(){ return wrapped(); }).catch(function(error){
+          console.error("[XOXO profile bootstrap] Could not open shared profile:", error);
+          finishProfileBootstrap();
+        });
         return true;
       };
       var addLoadingOverlay = function(){
