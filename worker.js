@@ -28,7 +28,6 @@ async function getPublicProfileIdByUsername(username) {
         method: "POST",
         headers: {
           apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
           "Content-Type": "application/json",
           Accept: "application/json",
           "Accept-Profile": "public",
@@ -54,12 +53,11 @@ async function getPublicProfileIdByUsername(username) {
     // clients for discovery; still require one exact case-insensitive match.
     const fallbackUrl = new URL(`${SUPABASE_URL}/rest/v1/friendhub_public_profiles`);
     fallbackUrl.searchParams.set("select", "user_id,username");
-    fallbackUrl.searchParams.set("username", `ilike.${normalized}`);
+    fallbackUrl.searchParams.set("username", `ilike.@${normalized}`);
     fallbackUrl.searchParams.set("limit", "2");
     const fallback = await fetch(fallbackUrl.toString(), {
       headers: {
         apikey: SUPABASE_KEY,
-        Authorization: `Bearer ${SUPABASE_KEY}`,
         Accept: "application/json",
       },
     });
@@ -88,7 +86,6 @@ async function getPublicProfile(userId) {
         method: "POST",
         headers: {
           apikey: SUPABASE_KEY,
-          Authorization: `Bearer ${SUPABASE_KEY}`,
           "Content-Type": "application/json",
           Accept: "application/json",
           "Accept-Profile": "public",
