@@ -3246,7 +3246,7 @@ function buildProfileBootstrap(profileId) {
     "  check();",
     "})();"
   ];
-  return '<script id="xoxo-username-profile-bootstrap">\\n' + lines.join('\\n') + '\\n</script>';
+  return '<script id="xoxo-username-profile-bootstrap">\n' + lines.join('\n') + '\n</script>';
 }
 
 export default {
