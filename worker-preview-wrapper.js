@@ -40,9 +40,9 @@ async function localizedResponse(request, env, ctx) {
   const url = new URL(request.url);
   // Public username profile URLs are canonical and never carry a language query.
   // The visitor's saved XOXO language preference controls the interface language.
-  const profilePath = url.pathname.replace(/^\\//, "").replace(/\\/$/, "");
+  const profilePath = url.pathname.replace(/^\//, "").replace(/\/$/, "");
   const reservedProfilePaths = new Set(["about","discover","privacy","terms","guidelines","api","u","post","profile-preview-image","post-preview-image","assets","beta","favicon.ico","robots.txt","sitemap.xml"]);
-  const isUsernameProfile = /^\\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\\/?$/.test(url.pathname) && !reservedProfilePaths.has(profilePath.toLowerCase());
+  const isUsernameProfile = /^\\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\/?$/.test(url.pathname) && !reservedProfilePaths.has(profilePath.toLowerCase());
   if (isUsernameProfile && url.searchParams.has("lang") && (request.method === "GET" || request.method === "HEAD")) {
     url.searchParams.delete("lang");
     return Response.redirect(url.origin + url.pathname + (url.search ? url.search : ""), 302);
