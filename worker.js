@@ -3556,20 +3556,6 @@ export default {
       );
     }
 
-    // Canonicalize legacy UUID profile links to the public username URL.
-    // Keep unrelated query parameters (for example language), but remove the
-    // legacy profile selector so shared links converge on /username.
-    if (friendlyProfileMatch && (request.method === "GET" || request.method === "HEAD")) {
-      const canonicalUsername = String(profile.username || "").trim().replace(/^@+/, "");
-      if (/^[A-Za-z0-9][A-Za-z0-9._-]{0,29}$/.test(canonicalUsername)) {
-        const canonicalUrl = new URL(url.origin + "/" + encodeURIComponent(canonicalUsername));
-        for (const [key, value] of url.searchParams.entries()) {
-          if (key !== "profile") canonicalUrl.searchParams.append(key, value);
-        }
-        return Response.redirect(canonicalUrl.toString(), 302);
-      }
-    }
-
     /*
      * LOAD XOXO INDEX
      */
@@ -3669,7 +3655,7 @@ export default {
     // The existing client app reads ?profile=ID during startup. Supply it
     // temporarily, then restore the clean username URL after page load so the
     // address bar and any later share action use /username.
-    if (friendlyUsernameMatch) {
+    if (friendlyUsernameMatch || friendlyProfileMatch) {
       const bootstrap = `<script id="xoxo-username-profile-bootstrap">
 (function(){
   try {
