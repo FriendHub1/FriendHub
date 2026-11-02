@@ -3671,31 +3671,31 @@ export default {
         if (style) style.remove();
       };
       var installProfileUrlHook = function(){
-        var original = window.openSharedProfileFromUrl;
+        var original = window.openPublicProfileByUsername;
         if (typeof original !== "function") return false;
         if (original.__xoxoUsernameProfileHook) return true;
         var opened = false;
-        var wrapped = async function(){
+        var wrapped = function(){
           if (opened) return;
           opened = true;
           try {
-            var result = await original.apply(this, arguments);
-            finishProfileBootstrap();
-            return result;
+            Promise.resolve(original.call(window, "" + username))
+              .then(function(){ finishProfileBootstrap(); })
+              .catch(function(error){
+                console.error("[XOXO profile bootstrap] Could not open shared profile:", error);
+                finishProfileBootstrap();
+              });
           } catch (error) {
+            console.error("[XOXO profile bootstrap] Could not open shared profile:", error);
             finishProfileBootstrap();
-            throw error;
           }
         };
         wrapped.__xoxoUsernameProfileHook = true;
-        window.openSharedProfileFromUrl = wrapped;
-        // The app's auth callback is not guaranteed to re-run on every
-        // browser/session restoration. Open the shared profile as soon as
-        // its real client handler exists instead of revealing Home first.
-        Promise.resolve().then(function(){ return wrapped(); }).catch(function(error){
-          console.error("[XOXO profile bootstrap] Could not open shared profile:", error);
-          finishProfileBootstrap();
-        });
+        // Use the same public username opener as the clean-route fallback.
+        // The previous implementation waited for a nonexistent function and
+        // therefore revealed Home without ever opening the shared profile.
+        window.openPublicProfileByUsername = wrapped;
+        Promise.resolve().then(wrapped);
         return true;
       };
       var addLoadingOverlay = function(){
