@@ -3554,7 +3554,7 @@ export default {
           '<script src="/beta/admin-report-queue.js" defer></script>' +
           '<script src="/beta/admin-report-panel-bridge.js" defer></script>' +
           '<script src="/beta/admin-email-center.js" defer></script>' : "";
-        const updated = new HTMLRewriter().on("head", { element(element) { element.append(chatScripts + adminScripts, { html: true }); } }).transform(preview);
+        const updated = new HTMLRewriter().on("head", { element(element) { element.append(chatScripts + adminScripts + '<style id="xoxo-whisper-guest-cta-hidden-fix">.xoxo-public-guest-cta[hidden],#xoxoDwGuestCta[hidden]{display:none!important}</style>', { html: true }); } }).transform(preview);
         const headers = new Headers(updated.headers);
         headers.set("Cache-Control", "no-store");
         headers.set("X-XOXO-Worker", isXoxoProductionHost ? "safety-production" : enableSafetyChat && enableSafetyAdmin ? "safety-combined-beta-opt-in" : enableSafetyChat ? "safety-chat-beta-opt-in" : "admin-report-beta-opt-in");
