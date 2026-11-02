@@ -12010,32 +12010,8 @@ async function xoxoOpenPublicProfileCore(userId) {
                                     void Promise.resolve().then(() => loadPosts()).catch(e => console.warn('Feed refresh unavailable:', e));
                                     if (!currentUser) {
                                     if (postsContainer) {
-                                    // R33: guest teaser waits for count without blocking the profile card.
-                                    postsContainer.innerHTML = '<div class="empty-state" aria-busy="true">' + (getFriendHubLanguage() === 'de' ? 'Beiträge werden geladen...' : 'Loading posts...') + '</div>';
-                                    void countPromise.then(countResult => {
-                                    if (String(currentPublicProfileUserId) !== String(userId) || !postsContainer.isConnected) return;
-                                    if (countResult?.error) console.warn('Public post count error:', countResult.error);
-                                    const publicPostCount = Number(countResult?.data || 0);
-                                    console.info('[XOXO R33 timing] guest count rendered at', Math.round(performance.now() - xoxoOpenStartedAt), 'ms');
-                                    const guestPostText = getFriendHubLanguage() === "es"
-                                    ? `👀 ${escapeHtml(username)} tiene ${publicPostCount} ${publicPostCount === 1 ? "publicación" : "publicaciones"}.`
-                                    : `👀 ${escapeHtml(username)} has ${publicPostCount} ${publicPostCount === 1 ? "post" : "posts"}.`;
-                                    const guestLoginText = getFriendHubLanguage() === "es"
-                                    ? "Regístrate o inicia sesión para ver sus publicaciones."
-                                    : "Sign up or log in to see their posts.";
-                                    postsContainer.innerHTML = `<div class="xoxo-profile-love-letter">
-                                      <div class="xoxo-profile-love-count">${guestPostText}</div>
-                                      <p class="xoxo-profile-love-locked">${guestLoginText}</p>
-                                      <div class="xoxo-profile-love-divider"></div>
-                                      <div class="xoxo-profile-love-heading">💌 ${getFriendHubLanguage() === "es" ? "Hay mucho más por descubrir ♡" : "There's more to discover ♡"}</div>
-                                      <p class="xoxo-profile-love-desc">${getFriendHubLanguage() === "es"
-                                        ? `Descubriste el perfil de ${escapeHtml(username)}. Únete a XOXO Avenue para explorar sus publicaciones, conectar y hacer nuevas amistades.`
-                                        : `You've discovered ${escapeHtml(username)}'s profile. Join XOXO Avenue to explore their posts, connect, and make new friends.`}</p>
-                                      <button type="button" class="xoxo-profile-love-signup" onclick="openAuth('signup')">${getFriendHubLanguage() === "es" ? "Crea tu cuenta ♡" : "Create Your Account ♡"}</button>
-                                      <button type="button" class="xoxo-profile-love-login" onclick="openAuth('login')">${getFriendHubLanguage() === "es" ? "Ya tengo una cuenta" : "I Already Have an Account"}</button>
-                                      <small>${getFriendHubLanguage() === "es" ? "Tu próxima amistad podría comenzar aquí. 💗" : "Your next friendship could start here. 💗"}</small>
-                                    </div>`;
-                                    }).catch(e => console.warn('[XOXO R33] guest count unavailable', e));
+                                    postsContainer.innerHTML = '<div class="empty-state" aria-busy="true">' + (getFriendHubLanguage() === 'es' ? 'Cargando publicaciones...' : 'Loading posts...') + '</div>';
+                                    void renderGuestPublicProfilePosts(String(userId), profile.profile_photo || null);
                                     }
                                     } else if (isBlocked) {
                                     if (postsContainer) postsContainer.innerHTML = '<div class="empty-state">You blocked this user. Unblock them to see their posts.</div>';
@@ -14898,6 +14874,48 @@ async function sharePublicProfile(userId, username = "@User") {
 
                                     await loadPosts();
                                     await openPublicProfile(String(userId));
+                                    }
+
+                                    async function renderGuestPublicProfilePosts(userId, profilePhoto) {
+                                    const container = document.getElementById("publicProfilePosts");
+                                    if (!container) return;
+                                    const language = getFriendHubLanguage();
+                                    const messages = {
+                                      empty: { en: "No public posts yet.", es: "Todavía no hay publicaciones públicas.", "pt-BR": "Ainda não há publicações públicas.", fr: "Aucune publication publique pour le moment.", pl: "Nie ma jeszcze publicznych postów.", de: "Noch keine öffentlichen Beiträge.", nb: "Ingen offentlige innlegg ennå.", cs: "Zatím žádné veřejné příspěvky.", sv: "Inga offentliga inlägg ännu.", it: "Ancora nessun post pubblico." },
+                                      error: { en: "Public posts couldn't be loaded. Please try again later.", es: "No se pudieron cargar las publicaciones públicas. Inténtalo más tarde.", "pt-BR": "Não foi possível carregar as publicações públicas. Tente novamente mais tarde.", fr: "Impossible de charger les publications publiques. Réessayez plus tard.", pl: "Nie udało się załadować publicznych postów. Spróbuj ponownie później.", de: "Öffentliche Beiträge konnten nicht geladen werden. Bitte später erneut versuchen.", nb: "Offentlige innlegg kunne ikke lastes inn. Prøv igjen senere.", cs: "Veřejné příspěvky se nepodařilo načíst. Zkuste to prosím později.", sv: "Offentliga inlägg kunde inte läsas in. Försök igen senare.", it: "Impossibile caricare i post pubblici. Riprova più tardi." }
+                                    };
+                                    try {
+                                      const { data, error } = await supabaseClient.rpc("get_public_profile_posts", { target_user_id: userId });
+                                      if (String(currentPublicProfileUserId) !== String(userId) || !container.isConnected) return;
+                                      if (error) throw error;
+                                      const userPosts = (data || []).map(row => {
+                                        let tags = [];
+                                        try { tags = row.content_tags ? JSON.parse(row.content_tags) : []; } catch { tags = []; }
+                                        return {
+                                          id: row.id,
+                                          username: row.username,
+                                          text: row.content || "",
+                                          type: row.post_type,
+                                          tags,
+                                          time: formatPostTime(row.created_at),
+                                          media: row.media_url ? { type: row.media_type || "image", src: row.media_url } : null,
+                                          likes: 0,
+                                          comments: 0,
+                                          liked: false,
+                                          saved: false,
+                                          userId: row.user_id,
+                                          profilePhoto: profilePhoto || null,
+                                          editedAt: row.edited_at || null
+                                        };
+                                      });
+                                      container.innerHTML = userPosts.length
+                                        ? userPosts.map(post => renderPost(post)).join("")
+                                        : `<div class="empty-state">${messages.empty[language] || messages.empty.en}</div>`;
+                                    } catch (error) {
+                                      console.error("Guest public profile posts load error:", error);
+                                      if (String(currentPublicProfileUserId) !== String(userId) || !container.isConnected) return;
+                                      container.innerHTML = `<div class="empty-state">${messages.error[language] || messages.error.en}</div>`;
+                                    }
                                     }
 
                                     function renderPublicProfilePosts(userId, profilePhoto) {
