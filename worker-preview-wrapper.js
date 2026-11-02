@@ -48,6 +48,27 @@ async function localizedResponse(request, env, ctx) {
     return Response.redirect(url.origin + url.pathname + (url.search ? url.search : ""), 302);
   }
   const baseResponse = await baseWorker.fetch(request, env, ctx);
+
+  // Legacy /u/UUID links are resolved by the base Worker and redirected to
+  // /username. Carry the already-resolved UUID forward so the client can open
+  // the exact profile without depending on a second username lookup.
+  const legacyProfileMatch = url.pathname.match(/^\/u\/([0-9a-fA-F-]{36})\/?$/);
+  if (legacyProfileMatch && baseResponse.status >= 300 && baseResponse.status < 400) {
+    const location = baseResponse.headers.get("location");
+    if (location) {
+      try {
+        const target = new URL(location, url.origin);
+        if (target.origin === url.origin && /^\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\/?$/.test(target.pathname)) {
+          target.searchParams.set("profile", legacyProfileMatch[1]);
+          const headers = new Headers(baseResponse.headers);
+          headers.set("Location", target.toString());
+          headers.set("Cache-Control", "no-store");
+          return new Response(null, { status: baseResponse.status, statusText: baseResponse.statusText, headers });
+        }
+      } catch (_) {}
+    }
+  }
+
   const type = String(baseResponse.headers.get("content-type") || "").toLowerCase();
 
   if (url.pathname !== "/") {
