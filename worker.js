@@ -3674,16 +3674,15 @@ export default {
       };
       var profileOpenStarted = false;
       var installProfileUrlHook = function(){
-        var original = window.openPublicProfileByUsername;
+        // The app's actual navigation API accepts a profile UUID.
+        // The Worker has already resolved this username to profileId above.
+        var original = window.openPublicProfile;
         if (typeof original !== "function") return false;
         if (profileOpenStarted) return true;
         profileOpenStarted = true;
-        // Call the site's real public-profile route handler directly. Do not
-        // replace the global function; normal in-app profile navigation must
-        // continue to work after the shared profile has opened.
         Promise.resolve()
           .then(function(){
-            return original.call(window, ${JSON.stringify(String(friendlyUsernameMatch))});
+            return original.call(window, ${JSON.stringify(String(profileId))});
           })
           .then(function(){ finishProfileBootstrap(); })
           .catch(function(error){
