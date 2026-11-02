@@ -38,15 +38,43 @@ async function getPublicProfileIdByUsername(username) {
       }
     );
 
-    if (!response.ok) {
-      console.error("XOXO username profile lookup failed:", response.status, await response.text());
+    if (response.ok) {
+      const rows = await response.json();
+      // Ambiguous matches are rejected instead of selecting an arbitrary account.
+      if (Array.isArray(rows) && rows.length === 1 && rows[0]?.user_id) {
+        return String(rows[0].user_id);
+      }
+      // An empty successful RPC response is authoritative (unknown/private/admin account).
       return null;
     }
 
-    const rows = await response.json();
-    // Ambiguous matches are rejected instead of selecting an arbitrary account.
-    if (!Array.isArray(rows) || rows.length !== 1 || !rows[0]?.user_id) return null;
-    return String(rows[0].user_id);
+    console.error("XOXO username RPC unavailable:", response.status);
+    // Compatibility fallback for projects where the lookup migration has not
+    // yet been applied. The public profile view is already exposed to anon
+    // clients for discovery; still require one exact case-insensitive match.
+    const fallbackUrl = new URL(`${SUPABASE_URL}/rest/v1/friendhub_public_profiles`);
+    fallbackUrl.searchParams.set("select", "user_id,username");
+    fallbackUrl.searchParams.set("username", `ilike.${normalized}`);
+    fallbackUrl.searchParams.set("limit", "2");
+    const fallback = await fetch(fallbackUrl.toString(), {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        Accept: "application/json",
+      },
+    });
+    if (!fallback.ok) {
+      console.error("XOXO public username fallback failed:", fallback.status);
+      return null;
+    }
+    const candidates = await fallback.json();
+    const matches = Array.isArray(candidates)
+      ? candidates.filter(row =>
+          String(row.username || "").trim().replace(/^@+/, "").toLowerCase() === normalized.toLowerCase()
+          && row.user_id
+        )
+      : [];
+    return matches.length === 1 ? String(matches[0].user_id) : null;
   } catch (error) {
     console.error("XOXO username profile lookup error:", error);
     return null;
