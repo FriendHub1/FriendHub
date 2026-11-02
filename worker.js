@@ -3679,7 +3679,7 @@ export default {
           if (opened) return;
           opened = true;
           try {
-            Promise.resolve(original.call(window, "" + username))
+            Promise.resolve(original.call(window, ${JSON.stringify(String(friendlyUsernameMatch))}))
               .then(function(){ finishProfileBootstrap(); })
               .catch(function(error){
                 console.error("[XOXO profile bootstrap] Could not open shared profile:", error);
