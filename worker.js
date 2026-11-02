@@ -3670,32 +3670,24 @@ export default {
         var style = document.getElementById("xoxo-profile-bootstrap-loading-style");
         if (style) style.remove();
       };
+      var profileOpenStarted = false;
       var installProfileUrlHook = function(){
         var original = window.openPublicProfileByUsername;
         if (typeof original !== "function") return false;
-        if (original.__xoxoUsernameProfileHook) return true;
-        var opened = false;
-        var wrapped = function(){
-          if (opened) return;
-          opened = true;
-          try {
-            Promise.resolve(original.call(window, ${JSON.stringify(String(friendlyUsernameMatch))}))
-              .then(function(){ finishProfileBootstrap(); })
-              .catch(function(error){
-                console.error("[XOXO profile bootstrap] Could not open shared profile:", error);
-                finishProfileBootstrap();
-              });
-          } catch (error) {
+        if (profileOpenStarted) return true;
+        profileOpenStarted = true;
+        // Call the site's real public-profile route handler directly. Do not
+        // replace the global function; normal in-app profile navigation must
+        // continue to work after the shared profile has opened.
+        Promise.resolve()
+          .then(function(){
+            return original.call(window, ${JSON.stringify(String(friendlyUsernameMatch))});
+          })
+          .then(function(){ finishProfileBootstrap(); })
+          .catch(function(error){
             console.error("[XOXO profile bootstrap] Could not open shared profile:", error);
             finishProfileBootstrap();
-          }
-        };
-        wrapped.__xoxoUsernameProfileHook = true;
-        // Use the same public username opener as the clean-route fallback.
-        // The previous implementation waited for a nonexistent function and
-        // therefore revealed Home without ever opening the shared profile.
-        window.openPublicProfileByUsername = wrapped;
-        Promise.resolve().then(wrapped);
+          });
         return true;
       };
       var addLoadingOverlay = function(){
