@@ -3126,7 +3126,7 @@ async function xoxoServePublicSeoRoute(request, env, url) {
 
 const handleGuestSupport = createGuestSupportHandler({ SUPABASE_URL, jsonResponse, sendResendEmail, escapeHtml });
 
-const XOXO_PROFILE_LOADER_STYLE = \`<style id="xoxo-profile-bootstrap-loading-style">
+const XOXO_PROFILE_LOADER_STYLE = `<style id="xoxo-profile-bootstrap-loading-style">
 html.xoxo-profile-bootstrap-pending,
 html.xoxo-profile-bootstrap-pending body {
   background: radial-gradient(ellipse at 50% 46%, #ffe8ff 0%, #efcaff 35%, #d9a8ff 67%, #a95af0 100%) !important;
@@ -3178,9 +3178,9 @@ html.xoxo-profile-bootstrap-pending body > *:not(#xoxo-username-profile-loading)
   #xoxo-username-profile-loading .brand,
   #xoxo-username-profile-loading .loading-hearts span:nth-child(3) { animation: none; }
 }
-</style>\`;
+</style>`;
 
-const XOXO_PROFILE_LOADER_MARKUP = \`<div id="xoxo-username-profile-loading" role="status" aria-label="Loading XOXO Avenue profile">
+const XOXO_PROFILE_LOADER_MARKUP = `<div id="xoxo-username-profile-loading" role="status" aria-label="Loading XOXO Avenue profile">
   <div class="brand" role="img" aria-label="XOXO Avenue: purple heart with XO and crown">
     <svg viewBox="0 0 300 300" aria-hidden="true">
       <defs>
@@ -3201,7 +3201,7 @@ const XOXO_PROFILE_LOADER_MARKUP = \`<div id="xoxo-username-profile-loading" rol
     </svg>
     <div class="loading-hearts" aria-hidden="true"><span>♥</span><span>♥</span><span>♥</span><span>♥</span><span>♥</span></div>
   </div>
-</div>\`;
+</div>`;
 
 function buildProfileBootstrap(profileId) {
   const serializedProfileId = JSON.stringify(String(profileId));
