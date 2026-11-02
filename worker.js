@@ -3365,7 +3365,9 @@ export default {
 
     // A resolved public profile must take priority over generic SEO/SPA routes.
     // Otherwise the custom domain can return Home before username-profile rendering.
-    if (!profileId) {
+    // A clean /username path must reach the profile resolver/client fallback.
+    // Generic SEO routing can otherwise serve Home and swallow the profile route.
+    if (!profileId && !friendlyUsernameMatch) {
       const publicSeoResponse = await xoxoServePublicSeoRoute(request, env, url);
       if (publicSeoResponse) return publicSeoResponse;
     }
