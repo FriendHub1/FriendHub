@@ -6400,13 +6400,20 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
                                     <h1>Discover</h1>
                                     <p>Find people and communities that match what you're looking for.</p>
                                     </div>
-                                    <!-- XOXO Whispers: official release -->
-<section id="xoxoDiscoverWhispers" class="xoxo-dw" hidden aria-label="XOXO Whispers">
+                                    <!-- Public Discover previews: active Whispers and currently online members -->
+<section id="xoxoDiscoverWhispers" class="xoxo-dw" aria-label="XOXO Whispers">
   <div class="xoxo-dw-heading"><div><h2>🫧 XOXO Whispers</h2><p>Pequeñas notas, grandes conexiones 💜</p></div><div class="xoxo-dw-header-actions"><button type="button" id="xoxoDwRefresh" title="Actualizar">↻</button><button type="button" id="xoxoDwToggle" aria-expanded="true" aria-controls="xoxoDwBody" title="Mostrar u ocultar Whispers">⌃</button></div></div><div id="xoxoDwBody">
   <div id="xoxoDwCards" class="xoxo-dw-cards"></div>
+  <div id="xoxoDwGuestCta" class="xoxo-public-guest-cta" hidden><span data-xoxo-dw-guest-copy>Join XOXO Avenue to publish your own Whisper and react to notes.</span><button type="button" data-xoxo-auth>💜 <span data-xoxo-dw-join>Join free</span></button></div>
   <div class="xoxo-dw-compose"><textarea id="xoxoDwInput" maxlength="100" rows="2" placeholder="¿Qué estás pensando? 🫧"></textarea><div class="xoxo-dw-actions"><span id="xoxoDwCount">0/100</span><button type="button" id="xoxoDwPublish">Publicar 🫧</button><button type="button" id="xoxoDwDelete" hidden>Eliminar mi Whisper</button></div></div>
   <p id="xoxoDwStatus" class="xoxo-dw-status" role="status"></p>
 </div></section>
+<section id="xoxoDiscoverOnline" class="xoxo-do" aria-label="People online">
+  <div class="xoxo-do-heading"><div><h2>🟢 People online</h2><p data-xoxo-online-subtitle>Meet members who are here right now.</p></div><button type="button" id="xoxoOnlineRefresh" title="Refresh">↻</button></div>
+  <div id="xoxoOnlineList" class="xoxo-do-list" aria-live="polite"><p class="xoxo-do-empty">Checking who's online…</p></div>
+  <div class="xoxo-do-join"><span data-xoxo-online-join-copy>Want to appear here and meet new people?</span><button type="button" data-xoxo-auth>✨ <span data-xoxo-online-join>Join free</span></button></div>
+  <p id="xoxoOnlineStatus" class="xoxo-do-status" role="status"></p>
+</section>
 <div id="friendSuggestionsSection" class="friend-suggestions-section" style="display:none;">
                                     <div class="friend-suggestions-heading">
                                     <div>
@@ -22986,196 +22993,100 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 .xoxo-dw-custom{box-sizing:border-box;width:100%;margin-top:7px;border:1px solid #b785e5;border-radius:8px;background:#100d22;color:#fff;font-size:12px;padding:6px}
 .xoxo-dw-custom-send{margin-top:5px;width:100%;font-size:12px!important}
 .xoxo-dw-plus{font-weight:800!important;font-size:15px!important}
+
+.xoxo-public-guest-cta,.xoxo-do-join{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0 4px;padding:12px 14px;border:1px solid #d18cff66;border-radius:14px;background:#ffffff0d;color:#f8eaff;font-size:12px}
+.xoxo-public-guest-cta button,.xoxo-do-join button{border:1px solid #e2a5ff;border-radius:12px;padding:8px 12px;background:linear-gradient(120deg,#9d49c9,#6d36aa);color:#fff;font-weight:800;cursor:pointer}
+.xoxo-do{margin:0 0 24px;padding:18px;border:1px solid #63dba36b;border-radius:22px;background:linear-gradient(120deg,#142e32,#171b37 65%,#23143b);color:#fff;box-shadow:0 12px 36px #110a2440}
+.xoxo-do-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.xoxo-do-heading h2{font-size:19px;margin:0;color:#fff}.xoxo-do-heading p{font-size:12px;margin:5px 0 0;color:#c5e8df}
+#xoxoOnlineRefresh{background:#ffffff18;border:1px solid #ffffff40;border-radius:50%;color:#fff;width:36px;height:36px;cursor:pointer}
+.xoxo-do-list{display:flex;gap:12px;overflow-x:auto;padding:17px 2px 10px;scrollbar-width:thin}.xoxo-do-person{flex:0 0 104px;display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid #63dba355;border-radius:16px;background:#ffffff0b;color:#fff;padding:11px 7px;cursor:pointer;min-width:0}.xoxo-do-avatar{width:54px;height:54px;border-radius:50%;overflow:hidden;border:2px solid #70e3a5;position:relative;background:#26465a}.xoxo-do-avatar img{width:100%;height:100%;object-fit:cover}.xoxo-do-dot{position:absolute;right:0;bottom:1px;width:11px;height:11px;border:2px solid #183034;border-radius:50%;background:#34d879}.xoxo-do-person strong{font-size:12px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.xoxo-do-person small{font-size:10px;color:#9cf0bd}.xoxo-do-empty,.xoxo-do-status{font-size:12px;color:#c5e8df}.xoxo-do-join{border-color:#63dba355;background:#ffffff09}.xoxo-do-join button{border-color:#8ce6b4;background:linear-gradient(120deg,#23885c,#236b7d)}
+@media(max-width:520px){.xoxo-do{padding:14px 12px}.xoxo-do-list{gap:9px}.xoxo-do-person{flex-basis:94px}}
 </style>
 <script id="xoxo-discover-whispers-beta-script">
 (function(){
 'use strict';
-const ADMIN='d9ea1914-fdba-465c-9700-5e640ff48763',TESTER='469c2cac-c0d8-4fcd-8b63-12468bed20ee';
 const emojis=['❤️','😍','😂','🎉','🔥'];
-const root=document.getElementById('xoxoDiscoverWhispers');
-if(!root)return;
-const $=id=>document.getElementById(id),cards=$('xoxoDwCards'),status=$('xoxoDwStatus'),input=$('xoxoDwInput');
-const body=$('xoxoDwBody'),toggle=$('xoxoDwToggle');
-function setExpanded(open){body.hidden=!open;toggle.textContent=open?'⌃':'⌄';toggle.setAttribute('aria-expanded',String(open));try{localStorage.setItem('xoxo-whispers-expanded-v1',open?'1':'0')}catch(e){}}
-let expanded=true;try{expanded=localStorage.getItem('xoxo-whispers-expanded-v1')!=='0'}catch(e){}
-setExpanded(expanded);toggle.addEventListener('click',()=>setExpanded(body.hidden));
-let owner=null,loading=false,lastUser='',lastRefresh=0;
+const root=document.getElementById('xoxoDiscoverWhispers');if(!root)return;
+const $=id=>document.getElementById(id),cards=$('xoxoDwCards'),status=$('xoxoDwStatus'),input=$('xoxoDwInput'),body=$('xoxoDwBody'),toggle=$('xoxoDwToggle');
 const uid=()=>typeof currentUser!=='undefined'?String(currentUser?.id||''):'';
 const client=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
+const lang=()=>{try{return localStorage.getItem('friendhub_language')||'en'}catch(e){return 'en'}};
+const words={
+'en':{subtitle:'Little notes, big connections 💜',delete:'Delete my Whisper',toggle:'Show or hide Whispers',reply:'💬 Reply',replyGuest:'Sign in to reply',guest:'Join XOXO Avenue to publish your own Whisper and react to notes.',join:'Join free',loading:'Loading active Whispers…',empty:'No active Whispers right now. Check back soon! 🫧',status:'Active Whispers · Each one disappears after 24 hours 🫧',react:'Sign in to react',reply:'Sign in to reply',publish:'Publish 🫧',placeholder:"What's on your mind? 🫧",refresh:'Refresh',close:'Close',expired:'This Whisper has expired.'},
+'es':{subtitle:'Pequeñas notas, grandes conexiones 💜',delete:'Eliminar mi Whisper',toggle:'Mostrar u ocultar Whispers',reply:'💬 Responder',replyGuest:'Inicia sesión para responder',guest:'Únete a XOXO Avenue para publicar tu Whisper y reaccionar a las notas.',join:'Únete gratis',loading:'Cargando Whispers activos…',empty:'No hay Whispers activos ahora. ¡Vuelve pronto! 🫧',status:'Whispers activos · Cada uno desaparece después de 24 horas 🫧',react:'Inicia sesión para reaccionar',reply:'Inicia sesión para responder',publish:'Publicar 🫧',placeholder:'¿Qué estás pensando? 🫧',refresh:'Actualizar',close:'Cerrar',expired:'Este Whisper ya expiró.'},
+'pt-BR':{subtitle:'Pequenas notas, grandes conexões 💜',delete:'Excluir meu Whisper',toggle:'Mostrar ou ocultar Whispers',reply:'💬 Responder',replyGuest:'Entre para responder',guest:'Entre no XOXO Avenue para publicar seu Whisper e reagir às notas.',join:'Cadastre-se grátis',loading:'Carregando Whispers ativos…',empty:'Não há Whispers ativos agora. Volte em breve! 🫧',status:'Whispers ativos · Cada um desaparece após 24 horas 🫧',react:'Entre para reagir',reply:'Entre para responder',publish:'Publicar 🫧',placeholder:'No que você está pensando? 🫧',refresh:'Atualizar',close:'Fechar',expired:'Este Whisper expirou.'},
+'de':{subtitle:'Kleine Notizen, große Verbindungen 💜',delete:'Meinen Whisper löschen',toggle:'Whispers ein- oder ausblenden',reply:'💬 Antworten',replyGuest:'Zum Antworten anmelden',guest:'Werde Teil von XOXO Avenue und veröffentliche deinen Whisper oder reagiere auf Notizen.',join:'Kostenlos beitreten',loading:'Aktive Whispers werden geladen…',empty:'Zurzeit gibt es keine aktiven Whispers. Schau bald wieder vorbei! 🫧',status:'Aktive Whispers · Jeder verschwindet nach 24 Stunden 🫧',react:'Zum Reagieren anmelden',reply:'Zum Antworten anmelden',publish:'Veröffentlichen 🫧',placeholder:'Was geht dir durch den Kopf? 🫧',refresh:'Aktualisieren',close:'Schließen',expired:'Dieser Whisper ist abgelaufen.'},
+'nb':{subtitle:'Små notater, store forbindelser 💜',delete:'Slett min Whisper',toggle:'Vis eller skjul Whispers',reply:'💬 Svar',replyGuest:'Logg inn for å svare',guest:'Bli med på XOXO Avenue for å publisere din egen Whisper og reagere på notater.',join:'Bli med gratis',loading:'Laster aktive Whispers…',empty:'Ingen aktive Whispers akkurat nå. Kom tilbake snart! 🫧',status:'Aktive Whispers · Hver forsvinner etter 24 timer 🫧',react:'Logg inn for å reagere',reply:'Logg inn for å svare',publish:'Publiser 🫧',placeholder:'Hva tenker du på? 🫧',refresh:'Oppdater',close:'Lukk',expired:'Denne Whisperen har utløpt.'},
+'pl':{subtitle:'Małe notatki, wielkie znajomości 💜',delete:'Usuń mój Whisper',toggle:'Pokaż lub ukryj Whispers',reply:'💬 Odpowiedz',replyGuest:'Zaloguj się, aby odpowiedzieć',guest:'Dołącz do XOXO Avenue, aby publikować własne Whispers i reagować na notatki.',join:'Dołącz za darmo',loading:'Ładowanie aktywnych Whispers…',empty:'Obecnie nie ma aktywnych Whispers. Wróć wkrótce! 🫧',status:'Aktywne Whispers · Każdy znika po 24 godzinach 🫧',react:'Zaloguj się, aby reagować',reply:'Zaloguj się, aby odpowiedzieć',publish:'Opublikuj 🫧',placeholder:'O czym myślisz? 🫧',refresh:'Odśwież',close:'Zamknij',expired:'Ten Whisper wygasł.'},
+'fr':{subtitle:'Petites notes, grandes connexions 💜',delete:'Supprimer mon Whisper',toggle:'Afficher ou masquer les Whispers',reply:'💬 Répondre',replyGuest:'Connecte-toi pour répondre',guest:'Rejoins XOXO Avenue pour publier ton Whisper et réagir aux notes.',join:'Inscription gratuite',loading:'Chargement des Whispers actifs…',empty:'Aucun Whisper actif pour le moment. Reviens bientôt ! 🫧',status:'Whispers actifs · Chacun disparaît après 24 heures 🫧',react:'Connecte-toi pour réagir',reply:'Connecte-toi pour répondre',publish:'Publier 🫧',placeholder:'À quoi penses-tu ? 🫧',refresh:'Actualiser',close:'Fermer',expired:'Ce Whisper a expiré.'},
+'cs':{subtitle:'Malé poznámky, velká spojení 💜',delete:'Smazat můj Whisper',toggle:'Zobrazit nebo skrýt Whispers',reply:'💬 Odpovědět',replyGuest:'Pro odpověď se přihlas',guest:'Přidej se k XOXO Avenue a zveřejňuj vlastní Whispers a reaguj na poznámky.',join:'Připojit se zdarma',loading:'Načítání aktivních Whispers…',empty:'Momentálně nejsou aktivní žádné Whispers. Vrať se brzy! 🫧',status:'Aktivní Whispers · Každý zmizí po 24 hodinách 🫧',react:'Pro reakci se přihlas',reply:'Pro odpověď se přihlas',publish:'Zveřejnit 🫧',placeholder:'Na co právě myslíš? 🫧',refresh:'Obnovit',close:'Zavřít',expired:'Tento Whisper vypršel.'},
+'sv':{subtitle:'Små anteckningar, stora kontakter 💜',delete:'Ta bort min Whisper',toggle:'Visa eller dölj Whispers',reply:'💬 Svara',replyGuest:'Logga in för att svara',guest:'Gå med i XOXO Avenue för att publicera en egen Whisper och reagera på anteckningar.',join:'Gå med gratis',loading:'Laddar aktiva Whispers…',empty:'Det finns inga aktiva Whispers just nu. Kom tillbaka snart! 🫧',status:'Aktiva Whispers · Varje Whisper försvinner efter 24 timmar 🫧',react:'Logga in för att reagera',reply:'Logga in för att svara',publish:'Publicera 🫧',placeholder:'Vad tänker du på? 🫧',refresh:'Uppdatera',close:'Stäng',expired:'Den här Whispern har gått ut.'},
+'it':{subtitle:'Piccole note, grandi connessioni 💜',delete:'Elimina il mio Whisper',toggle:'Mostra o nascondi Whispers',reply:'💬 Rispondi',replyGuest:'Accedi per rispondere',guest:'Unisciti a XOXO Avenue per pubblicare il tuo Whisper e reagire alle note.',join:'Iscriviti gratis',loading:'Caricamento dei Whisper attivi…',empty:'Al momento non ci sono Whisper attivi. Torna presto! 🫧',status:'Whispers attivi · Ognuno scompare dopo 24 ore 🫧',react:'Accedi per reagire',reply:'Accedi per rispondere',publish:'Pubblica 🫧',placeholder:'A cosa stai pensando? 🫧',refresh:'Aggiorna',close:'Chiudi',expired:'Questo Whisper è scaduto.'}
+};
+const t=k=>(words[lang()]||words.en)[k]||words.en[k]||k;
+function setExpanded(open){body.hidden=!open;toggle.textContent=open?'⌃':'⌄';toggle.setAttribute('aria-expanded',String(open));try{localStorage.setItem('xoxo-whispers-expanded-v1',open?'1':'0')}catch(e){}}
+let expanded=true;try{expanded=localStorage.getItem('xoxo-whispers-expanded-v1')!=='0'}catch(e){}setExpanded(expanded);toggle.addEventListener('click',()=>setExpanded(body.hidden));
+let owner=null,loading=false,lastUser=null,lastRefresh=0;
 const say=s=>{status.textContent=s};
-function profileLabel(id,profile){return profile?.username?('@'+String(profile.username).replace(/^@/,'')):(id===ADMIN?'@XOXOAdmin':'@Miembro XOXO')}
 function make(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=txt;return e}
+function auth(){if(typeof openAuth==='function')openAuth('signup')}
+function applyLabels(){const h=root.querySelector('.xoxo-dw-heading p');if(h)h.textContent=t('subtitle');const guest=$('xoxoDwGuestCta');if(guest){guest.querySelector('[data-xoxo-dw-guest-copy]').textContent=t('guest');guest.querySelector('[data-xoxo-dw-join]').textContent=t('join')}input.placeholder=t('placeholder');$('xoxoDwPublish').textContent=t('publish');$('xoxoDwDelete').textContent=t('delete');$('xoxoDwRefresh').title=t('refresh');$('xoxoDwToggle').title=t('toggle')}
 async function refresh(){
- const id=uid(),sb=client();if(!id||!sb||loading)return;
- loading=true;lastRefresh=Date.now();say('Cargando Whispers…');
+ const id=uid(),sb=client();if(!sb||loading)return;loading=true;lastRefresh=Date.now();say(t('loading'));
  try{
-  const r=await sb.from('xoxo_whispers').select('id,user_id,content,expires_at,created_at').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}).limit(30);
-  if(r.error)throw r.error;
-  const rows=r.data||[];
-  owner=rows.find(w=>String(w.user_id)===id)||null;
-  const [pr,rr]=await Promise.all([
-   rows.length?sb.from('profiles').select('user_id,username,profile_photo').in('user_id',[...new Set(rows.map(w=>w.user_id))]):Promise.resolve({data:[]}),
-   rows.length?sb.from('xoxo_whisper_reactions').select('whisper_id,emoji').in('whisper_id',rows.map(w=>w.id)):Promise.resolve({data:[]})
-  ]);
-  const profiles=new Map((pr.data||[]).map(p=>[String(p.user_id),p]));
-  const totals=new Map();
-  for(const x of rr.data||[]){const k=String(x.whisper_id);if(!totals.has(k))totals.set(k,new Map());const m=totals.get(k);m.set(x.emoji,(m.get(x.emoji)||0)+1)}
-  document.querySelectorAll('.xoxo-dw-floating-picker').forEach(el=>el.remove());
-  cards.replaceChildren();
-  if(!rows.length)cards.append(make('p','xoxo-dw-status','Todavía no hay Whispers activos. ¡Publica el primero! 🫧'));
+  const r=await sb.rpc('get_public_active_whispers');if(r.error)throw r.error;const rows=r.data||[];owner=id?rows.find(w=>String(w.user_id)===id)||null:null;
+  let totals=new Map();
+  if(id&&rows.length){const rr=await sb.from('xoxo_whisper_reactions').select('whisper_id,emoji').in('whisper_id',rows.map(w=>w.id));if(!rr.error)for(const x of rr.data||[]){const k=String(x.whisper_id);if(!totals.has(k))totals.set(k,new Map());const m=totals.get(k);m.set(x.emoji,(m.get(x.emoji)||0)+1)}}
+  document.querySelectorAll('.xoxo-dw-floating-picker').forEach(el=>el.remove());cards.replaceChildren();
+  if(!rows.length)cards.append(make('p','xoxo-dw-status',t('empty')));
   for(const w of rows){
-   const person=profiles.get(String(w.user_id)),isOwn=String(w.user_id)===id;
-   const card=make('article','xoxo-dw-card'),bubble=make('div','xoxo-dw-bubble',w.content||'');
-   const user=make('button','xoxo-dw-person'),avatar=make('span','xoxo-dw-avatar'),name=make('strong','',profileLabel(String(w.user_id),person));
-   user.type='button';user.title='Ver perfil';
-   const img=make('img');
-   const official=typeof xoxoBubbleUrl==='function'?xoxoBubbleUrl(w.user_id,person?.username):'https://www.xoxoavenue.com/01_violeta.png';
-   img.src=person?.profile_photo||official;img.alt=person?.profile_photo?'Foto de perfil':'Burbuja oficial XOXO';
-   img.onerror=()=>{if(img.src!==official){img.onerror=null;img.src=official}};
-   avatar.append(img);
-   user.append(avatar,name);
-   user.addEventListener('click',()=>{if(typeof openPublicProfile==='function')openPublicProfile(w.user_id)});
-   const minutes=Math.max(0,Math.ceil((new Date(w.expires_at).getTime()-Date.now())/60000));
-   const timer=make('small','xoxo-dw-timer',minutes>=60?Math.ceil(minutes/60)+'h restantes':minutes+'m restantes');
+   const isOwn=!!id&&String(w.user_id)===id,person={username:w.username,profile_photo:w.profile_photo};
+   const card=make('article','xoxo-dw-card'),bubble=make('div','xoxo-dw-bubble',w.content||''),user=make('button','xoxo-dw-person'),avatar=make('span','xoxo-dw-avatar'),name=make('strong','',person.username?'@'+String(person.username).replace(/^@/,''):'@XOXO Member');
+   user.type='button';user.title='View profile';const img=make('img');const official=typeof xoxoBubbleUrl==='function'?xoxoBubbleUrl(w.user_id,person.username):'https://www.xoxoavenue.com/01_violeta.png';img.src=person.profile_photo||official;img.alt='XOXO profile avatar';img.onerror=()=>{if(img.src!==official){img.onerror=null;img.src=official}};avatar.append(img);user.append(avatar,name);user.addEventListener('click',()=>{if(typeof openPublicProfile==='function')openPublicProfile(w.user_id)});
+   const minutes=Math.max(0,Math.ceil((new Date(w.expires_at).getTime()-Date.now())/60000));card.append(bubble,user,make('small','xoxo-dw-timer',minutes>=60?Math.ceil(minutes/60)+'h left':minutes+'m left'));
    const reactions=make('div','xoxo-dw-reactions');
-   let reactionPending=false;
-   async function react(emoji,b){
-      if(reactionPending)return;
-      reactionPending=true;
-      if(b)b.disabled=true;
-      try{
-       if(!emoji||Array.from(emoji).length>16)throw Error('Selecciona un emoji válido.');
-       const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
-       if(live.error||!live.data)throw Error('Este Whisper ya expiró.');
-       const existing=await sb.from('xoxo_whisper_reactions').select('id,emoji')
-         .eq('whisper_id',w.id).eq('user_id',id).maybeSingle();
-       if(existing.error)throw existing.error;
-       let result;
-       if(existing.data){
-         result=existing.data.emoji===emoji
-           ?await sb.from('xoxo_whisper_reactions').delete().eq('id',existing.data.id).eq('user_id',id)
-           :await sb.from('xoxo_whisper_reactions').update({emoji}).eq('id',existing.data.id).eq('user_id',id);
-       }else{
-         result=await sb.from('xoxo_whisper_reactions').insert({whisper_id:w.id,user_id:id,emoji});
-       }
-       if(result.error)throw result.error;
-       await refresh();
-      }catch(e){say('Reacción: '+(e.message||'No disponible'));}
-      finally{reactionPending=false;if(b&&b.isConnected)b.disabled=false;}
-   }
-   if(!isOwn)for(const emoji of emojis){
-    const count=totals.get(String(w.id))?.get(emoji)||0;
-    const b=make('button','',emoji+(count?' '+count:''));b.type='button';b.title='Reaccionar '+emoji;
-    b.addEventListener('click',()=>react(emoji,b));
-    reactions.append(b);
-   }
-   if(!isOwn){
-    const plus=make('button','xoxo-dw-plus','+');plus.type='button';plus.title='Elegir otro emoji';plus.setAttribute('aria-expanded','false');
-    const picker=make('div','xoxo-dw-picker');picker.hidden=true;
-    const choices=make('div','xoxo-dw-picker-grid');
-    for(const e of ['💜','👍','🥰','😘','😮','😢','👏','🙌','🥳','💯','👀','✨','💖','💋','🫶','🌹','🤩','😎','🤗','🦋','🌈','💎','🫧','🤍']){
-      const choice=make('button','',e);choice.type='button';choice.title='Reaccionar '+e;choice.addEventListener('click',()=>react(e,choice));choices.append(choice);
-    }
-    const custom=make('input','xoxo-dw-custom');custom.type='text';custom.maxLength=32;custom.placeholder='Pega otro emoji…';custom.setAttribute('aria-label','Emoji personalizado');
-    const send=make('button','xoxo-dw-custom-send','Enviar');send.type='button';send.addEventListener('click',()=>react(custom.value.trim(),send));
-    picker.append(choices,custom,send);
-    picker.classList.add('xoxo-dw-floating-picker');
-    document.body.append(picker);
-    function placePicker(){
-      if(picker.hidden)return;
-      const r=plus.getBoundingClientRect(),vw=document.documentElement.clientWidth,vh=window.innerHeight;
-      const w=picker.offsetWidth||260,h=picker.offsetHeight||300;
-      const left=Math.max(12,Math.min(r.left,vw-w-12));
-      const below=r.bottom+8,above=r.top-h-8;
-      const top=(below+h<=vh-12||above<12)?Math.max(12,Math.min(below,vh-h-12)):Math.max(12,above);
-      picker.style.left=left+'px';picker.style.top=top+'px';
-    }
-    function closePicker(){picker.hidden=true;plus.setAttribute('aria-expanded','false')}
-    plus.addEventListener('click',(ev)=>{
-      ev.stopPropagation();
-      document.querySelectorAll('.xoxo-dw-floating-picker').forEach(other=>{if(other!==picker)other.hidden=true});
-      picker.hidden=!picker.hidden;
-      plus.setAttribute('aria-expanded',String(!picker.hidden));
-      if(!picker.hidden)placePicker();
-    });
-    picker.addEventListener('click',ev=>ev.stopPropagation());
-    reactions.append(plus);
-   }else{
-    for(const [emoji,count] of totals.get(String(w.id))||[])reactions.append(make('span','xoxo-dw-timer',emoji+' '+count));
-   }
-   bubble.setAttribute('role','button');bubble.tabIndex=0;bubble.title='Abrir Whisper';
-   const openWhisper=async()=>{
-     const modal=document.createElement('div');modal.style.cssText='position:fixed;inset:0;background:#080315d9;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:20px';
-     const box=document.createElement('div');box.style.cssText='max-width:400px;width:100%;background:linear-gradient(140deg,#2b1046,#141a35);border:1px solid #d18cff;border-radius:22px;padding:25px;color:white;box-shadow:0 20px 70px #0009';
-     const close=make('button','','✕ Cerrar');close.type='button';close.style.cssText='float:right;background:#8d3cba;color:white;border:0;border-radius:12px;padding:8px;cursor:pointer';
-     close.addEventListener('click',()=>modal.remove());modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});
-     box.append(close,make('h3','',profileLabel(String(w.user_id),person)),make('p','',w.content||''),make('small','','Expira: '+new Date(w.expires_at).toLocaleString()));
-     modal.append(box);document.body.append(modal);
-     if(!isOwn){
-       try{
-         const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
-         if(!live.error&&live.data){
-           const result=await sb.from('xoxo_whisper_views').insert({whisper_id:w.id,viewer_id:id});
-           if(result.error&&result.error.code!=='23505')console.warn('Whisper view not saved:',result.error.message);
-         }
-       }catch(e){console.warn('Whisper view unavailable:',e)}
-     }
-   };
-   bubble.addEventListener('click',openWhisper);
-   bubble.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openWhisper()}});
-   card.append(bubble,user,timer,reactions);
-   if(!isOwn){const reply=make('button','xoxo-dw-reply','💬 Responder');reply.type='button';
-    reply.addEventListener('click',async()=>{reply.disabled=true;try{
-     const live=await sb.from('xoxo_whispers').select('id,user_id,content,expires_at').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();
-     if(live.error||!live.data)throw Error('El Whisper ya expiró.');
-     await window.xoxoOpenWhisperQuickReply(live.data,profileLabel(String(w.user_id),person));
-    }catch(e){say('Respuesta: '+(e.message||'No disponible'))}finally{reply.disabled=false}});
-    card.append(reply);
-   }
+   if(!id&&!isOwn){const react=make('button','', '💜 '+t('react'));react.type='button';react.addEventListener('click',auth);reactions.append(react)}
+   else if(id&&!isOwn){for(const emoji of emojis){const count=totals.get(String(w.id))?.get(emoji)||0;const b=make('button','',emoji+(count?' '+count:''));b.type='button';b.addEventListener('click',async()=>{b.disabled=true;try{const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();if(live.error||!live.data)throw Error(t('expired'));const ex=await sb.from('xoxo_whisper_reactions').select('id,emoji').eq('whisper_id',w.id).eq('user_id',id).maybeSingle();if(ex.error)throw ex.error;let result;if(ex.data)result=ex.data.emoji===emoji?await sb.from('xoxo_whisper_reactions').delete().eq('id',ex.data.id).eq('user_id',id):await sb.from('xoxo_whisper_reactions').update({emoji}).eq('id',ex.data.id).eq('user_id',id);else result=await sb.from('xoxo_whisper_reactions').insert({whisper_id:w.id,user_id:id,emoji});if(result.error)throw result.error;await refresh()}catch(e){say(e.message||'Reaction unavailable')}finally{b.disabled=false}});reactions.append(b)}}
+   if(isOwn){for(const [emoji,count] of totals.get(String(w.id))||[])reactions.append(make('span','xoxo-dw-timer',emoji+' '+count))}
+   bubble.tabIndex=0;bubble.setAttribute('role','button');const openWhisper=async()=>{const modal=make('div','');modal.style.cssText='position:fixed;inset:0;background:#080315d9;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:20px';const box=make('div','');box.style.cssText='max-width:400px;width:100%;background:linear-gradient(140deg,#2b1046,#141a35);border:1px solid #d18cff;border-radius:22px;padding:25px;color:white;box-shadow:0 20px 70px #0009';const close=make('button','', '✕ '+t('close'));close.type='button';close.style.cssText='float:right;background:#8d3cba;color:white;border:0;border-radius:12px;padding:8px;cursor:pointer';close.addEventListener('click',()=>modal.remove());modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});box.append(close,make('h3','',name.textContent),make('p','',w.content||''),make('small','',new Date(w.expires_at).toLocaleString()));modal.append(box);document.body.append(modal);if(id&&!isOwn){const live=await sb.from('xoxo_whispers').select('id').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();if(!live.error&&live.data){const v=await sb.from('xoxo_whisper_views').insert({whisper_id:w.id,viewer_id:id});if(v.error&&v.error.code!=='23505')console.warn('Whisper view not saved',v.error.message)}}};bubble.addEventListener('click',openWhisper);bubble.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openWhisper()}});
+   if(!isOwn){const reply=make('button','xoxo-dw-reply',id?t('reply'):t('replyGuest'));reply.type='button';reply.addEventListener('click',async()=>{if(!id){auth();return}reply.disabled=true;try{const live=await sb.from('xoxo_whispers').select('id,user_id,content,expires_at').eq('id',w.id).gt('expires_at',new Date().toISOString()).maybeSingle();if(live.error||!live.data)throw Error(t('expired'));await window.xoxoOpenWhisperQuickReply(live.data,name.textContent)}catch(e){say(e.message||'Reply unavailable')}finally{reply.disabled=false}});card.append(reactions,reply)}else card.append(reactions);
    cards.append(card);
   }
-  input.readOnly=!!owner;input.value=owner?.content||'';$('xoxoDwPublish').hidden=!!owner;$('xoxoDwDelete').hidden=!owner;
-  $('xoxoDwCount').textContent=Array.from(input.value).length+'/100';
-  say(rows.length+' Whisper(s) activo(s) · Expiran después de 24 horas 🫧');window.xoxoTranslateWhisperUI?.();
- }catch(e){say('No se pudieron cargar Whispers: '+(e.message||'Error'))}
- finally{loading=false}
+  const logged=!!id;const composer=root.querySelector('.xoxo-dw-compose');composer.hidden=!logged;$('xoxoDwGuestCta').hidden=logged;
+  input.readOnly=!!owner;input.value=owner?.content||'';$('xoxoDwPublish').hidden=!!owner;$('xoxoDwDelete').hidden=!owner;$('xoxoDwCount').textContent=Array.from(input.value).length+'/100';
+  say(rows.length?t('status'):t('empty'));applyLabels();
+ }catch(e){say('Whispers: '+(e.message||'unavailable'))}finally{loading=false}
 }
-async function act(kind){
- const id=uid(),sb=client();if(!id||!sb)return;
- const button=$(kind==='publish'?'xoxoDwPublish':'xoxoDwDelete');button.disabled=true;
- try{
-  if(kind==='publish'){
-   const value=input.value.trim();if(!value||Array.from(value).length>100)throw Error('Escribe de 1 a 100 caracteres.');
-   if(owner)throw Error('Ya tienes un Whisper activo.');
-   const clean=await sb.from('xoxo_whispers').delete().eq('user_id',id).lte('expires_at',new Date().toISOString());
-   if(clean.error)throw clean.error;
-   const r=await sb.from('xoxo_whispers').insert({user_id:id,content:value});if(r.error)throw r.error;
-  }else{
-   if(!owner||!confirm('¿Eliminar tu Whisper?'))return;
-   const r=await sb.from('xoxo_whispers').delete().eq('id',owner.id).eq('user_id',id);if(r.error)throw r.error;
-  }
-  await refresh();
- }catch(e){say('No se pudo guardar: '+(e.message||'Error'))}finally{button.disabled=false}
-}
-document.addEventListener('click',ev=>{
-  document.querySelectorAll('.xoxo-dw-floating-picker').forEach(p=>{if(!p.hidden){p.hidden=true;document.querySelectorAll('.xoxo-dw-plus').forEach(b=>b.setAttribute('aria-expanded','false'))}});
-});
-window.addEventListener('resize',()=>document.querySelectorAll('.xoxo-dw-floating-picker').forEach(p=>p.hidden=true));
-window.addEventListener('scroll',()=>document.querySelectorAll('.xoxo-dw-floating-picker').forEach(p=>p.hidden=true),true);
-$('xoxoDwRefresh').addEventListener('click',refresh);
-$('xoxoDwPublish').addEventListener('click',()=>act('publish'));
-$('xoxoDwDelete').addEventListener('click',()=>act('delete'));
-input.addEventListener('input',()=>{$('xoxoDwCount').textContent=Array.from(input.value).length+'/100'});
-function sync(){
- const id=uid(),yes=!!id;
- root.hidden=!yes;
- if(!yes){lastUser='';return}
- if(id!==lastUser){lastUser=id;refresh()}
- else if(Date.now()-lastRefresh>60000&&document.getElementById('discover')?.classList.contains('active'))refresh();
-}
-sync();setInterval(sync,2000);
+async function act(kind){const id=uid(),sb=client();if(!id||!sb){auth();return}const button=$(kind==='publish'?'xoxoDwPublish':'xoxoDwDelete');button.disabled=true;try{if(kind==='publish'){const value=input.value.trim();if(!value||Array.from(value).length>100)throw Error('Write 1–100 characters.');if(owner)throw Error('You already have an active Whisper.');const clean=await sb.from('xoxo_whispers').delete().eq('user_id',id).lte('expires_at',new Date().toISOString());if(clean.error)throw clean.error;const r=await sb.from('xoxo_whispers').insert({user_id:id,content:value});if(r.error)throw r.error}else{if(!owner||!confirm('Delete your Whisper?'))return;const r=await sb.from('xoxo_whispers').delete().eq('id',owner.id).eq('user_id',id);if(r.error)throw r.error}await refresh()}catch(e){say(e.message||'Could not save')}finally{button.disabled=false}}
+root.querySelector('[data-xoxo-auth]').addEventListener('click',auth);$('xoxoDwRefresh').addEventListener('click',refresh);$('xoxoDwPublish').addEventListener('click',()=>act('publish'));$('xoxoDwDelete').addEventListener('click',()=>act('delete'));input.addEventListener('input',()=>{$('xoxoDwCount').textContent=Array.from(input.value).length+'/100'});
+function sync(){const key=uid()||'guest';if(key!==lastUser){lastUser=key;refresh()}else if(Date.now()-lastRefresh>60000&&document.getElementById('discover')?.classList.contains('active'))refresh()}
+applyLabels();sync();setInterval(sync,5000);window.addEventListener('storage',applyLabels);document.addEventListener('change',applyLabels,true);
 })();
 </script>
+<script id="xoxo-public-online-discover-script">
+(function(){'use strict';
+const list=document.getElementById('xoxoOnlineList'),status=document.getElementById('xoxoOnlineStatus');if(!list)return;
+const langs={
+'en':{sub:'Meet members who are here right now.',joincopy:'Want to appear here and meet new people?',join:'Join free',loading:"Checking who's online…",empty:'No members are online right now. Check back soon!',online:'Online',refresh:'Refresh'},
+'es':{sub:'Conoce a las personas que están aquí ahora mismo.',joincopy:'¿Quieres aparecer aquí y conocer gente nueva?',join:'Únete gratis',loading:'Comprobando quién está conectado…',empty:'No hay miembros conectados ahora. ¡Vuelve pronto!',online:'En línea',refresh:'Actualizar'},
+'pt-BR':{sub:'Conheça os membros que estão aqui agora.',joincopy:'Quer aparecer aqui e conhecer pessoas novas?',join:'Cadastre-se grátis',loading:'Verificando quem está online…',empty:'Ninguém está online agora. Volte em breve!',online:'Online',refresh:'Atualizar'},
+'de':{sub:'Lerne Mitglieder kennen, die gerade hier sind.',joincopy:'Möchtest du hier erscheinen und neue Leute kennenlernen?',join:'Kostenlos beitreten',loading:'Wer ist gerade online?',empty:'Gerade ist niemand online. Schau bald wieder vorbei!',online:'Online',refresh:'Aktualisieren'},
+'nb':{sub:'Møt medlemmer som er her akkurat nå.',joincopy:'Vil du vises her og møte nye mennesker?',join:'Bli med gratis',loading:'Sjekker hvem som er pålogget…',empty:'Ingen medlemmer er pålogget akkurat nå. Kom snart tilbake!',online:'Pålogget',refresh:'Oppdater'},
+'pl':{sub:'Poznaj osoby, które są tutaj właśnie teraz.',joincopy:'Chcesz pojawić się tutaj i poznać nowe osoby?',join:'Dołącz za darmo',loading:'Sprawdzanie, kto jest online…',empty:'Nikt nie jest teraz online. Wróć wkrótce!',online:'Online',refresh:'Odśwież'},
+'fr':{sub:'Rencontre les membres présents en ce moment.',joincopy:'Tu veux apparaître ici et rencontrer de nouvelles personnes ?',join:'Inscription gratuite',loading:'Recherche des membres en ligne…',empty:'Personne n’est en ligne pour le moment. Reviens bientôt !',online:'En ligne',refresh:'Actualiser'},
+'cs':{sub:'Poznej členy, kteří jsou právě tady.',joincopy:'Chceš se zde zobrazit a poznat nové lidi?',join:'Připojit se zdarma',loading:'Zjišťujeme, kdo je online…',empty:'Právě tu nikdo není online. Vrať se brzy!',online:'Online',refresh:'Obnovit'},
+'sv':{sub:'Träffa medlemmar som är här just nu.',joincopy:'Vill du synas här och träffa nya människor?',join:'Gå med gratis',loading:'Kontrollerar vilka som är online…',empty:'Ingen är online just nu. Kom tillbaka snart!',online:'Online',refresh:'Uppdatera'},
+'it':{sub:'Incontra i membri presenti in questo momento.',joincopy:'Vuoi apparire qui e conoscere nuove persone?',join:'Iscriviti gratis',loading:'Controllo di chi è online…',empty:'Nessun membro è online al momento. Torna presto!',online:'Online',refresh:'Aggiorna'}
+};
+const lang=()=>{try{return localStorage.getItem('friendhub_language')||'en'}catch(e){return'en'}};const t=k=>(langs[lang()]||langs.en)[k]||langs.en[k];const $=id=>document.getElementById(id);
+function auth(){if(typeof openAuth==='function')openAuth('signup')}
+function labels(){const w=langs[lang()]||langs.en;document.querySelector('[data-xoxo-online-subtitle]').textContent=w.sub;document.querySelector('[data-xoxo-online-join-copy]').textContent=w.joincopy;document.querySelector('[data-xoxo-online-join]').textContent=w.join;$('xoxoOnlineRefresh').title=w.refresh}
+let busy=false,last=0;
+async function refresh(){const sb=typeof supabaseClient!=='undefined'?supabaseClient:null;if(busy||!sb)return;busy=true;last=Date.now();list.replaceChildren();const loading=document.createElement('p');loading.className='xoxo-do-empty';loading.textContent=t('loading');list.append(loading);try{const r=await sb.rpc('get_public_online_members');if(r.error)throw r.error;const rows=r.data||[];list.replaceChildren();if(!rows.length){const e=document.createElement('p');e.className='xoxo-do-empty';e.textContent=t('empty');list.append(e)}for(const person of rows){const b=document.createElement('button');b.type='button';b.className='xoxo-do-person';const avatar=document.createElement('span');avatar.className='xoxo-do-avatar';const img=document.createElement('img');const fallback=typeof xoxoBubbleUrl==='function'?xoxoBubbleUrl(person.user_id,person.username):'https://www.xoxoavenue.com/01_violeta.png';img.src=person.profile_photo||fallback;img.alt='XOXO Bubble';img.onerror=()=>{if(img.src!==fallback){img.onerror=null;img.src=fallback}};const dot=document.createElement('i');dot.className='xoxo-do-dot';avatar.append(img,dot);const name=document.createElement('strong');name.textContent=person.username?'@'+String(person.username).replace(/^@/,''):'@XOXO Member';const state=document.createElement('small');state.textContent='● '+t('online');b.append(avatar,name,state);b.addEventListener('click',()=>{if(typeof openPublicProfile==='function')openPublicProfile(person.user_id)});list.append(b)}status.textContent=rows.length+' '+t('online').toLowerCase()}catch(e){list.replaceChildren();const x=document.createElement('p');x.className='xoxo-do-empty';x.textContent='Online status unavailable';list.append(x);status.textContent=''}finally{busy=false}}
+$ ('xoxoOnlineRefresh').addEventListener('click',refresh);document.querySelector('[data-xoxo-online-join]')?.closest('button')?.addEventListener('click',auth);labels();refresh();setInterval(()=>{if(document.getElementById('discover')?.classList.contains('active')&&Date.now()-last>30000)refresh()},10000);window.addEventListener('storage',labels);document.addEventListener('change',labels,true);
+})();
+</script>
+
 
 <style id="xoxo-my-whispers-beta-style">
 #myProfileTabs .my-profile-tab[hidden]{display:none!important}
@@ -23515,7 +23426,7 @@ function update(){if(working)return;working=true;try{
   translateElement(heading);
   translateElement(panel.querySelector('#xoxoMyWhispersContent'));
  }
- for(const root of document.querySelectorAll('#xoxoDiscoverWhispers,.xoxo-wqr-dialog,#xoxoWhisperReplySuccessToast,#xoxo-whisper-tester-panel'))translateElement(root);
+ for(const root of document.querySelectorAll('.xoxo-wqr-dialog,#xoxoWhisperReplySuccessToast,#xoxo-whisper-tester-panel'))translateElement(root);
  // Profile reply buttons may live outside the Whisper panel; restrict to exact label.
  for(const b of document.querySelectorAll('button')){const t=b.textContent.trim();if(['💬 Responder','💬 Reply','💬 Répondre','💬 Odpowiedz','💬 Responder en DM','💬 Reply by DM','💬 Responder por DM','💬 Répondre en MP','💬 Odpowiedz w DM'].includes(t)){const translated=tr(t);if(translated!==t)b.textContent=translated}}
 }finally{working=false}}
