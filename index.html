@@ -6408,12 +6408,6 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
   <div class="xoxo-dw-compose"><textarea id="xoxoDwInput" maxlength="100" rows="2" placeholder="¿Qué estás pensando? 🫧"></textarea><div class="xoxo-dw-actions"><span id="xoxoDwCount">0/100</span><button type="button" id="xoxoDwPublish">Publicar 🫧</button><button type="button" id="xoxoDwDelete" hidden>Eliminar mi Whisper</button></div></div>
   <p id="xoxoDwStatus" class="xoxo-dw-status" role="status"></p>
 </div></section>
-<section id="xoxoDiscoverOnline" class="xoxo-do" aria-label="People online">
-  <div class="xoxo-do-heading"><div><h2>🟢 People online</h2><p data-xoxo-online-subtitle>Meet members who are here right now.</p></div><button type="button" id="xoxoOnlineRefresh" title="Refresh">↻</button></div>
-  <div id="xoxoOnlineList" class="xoxo-do-list" aria-live="polite"><p class="xoxo-do-empty">Checking who's online…</p></div>
-  <div class="xoxo-do-join"><span data-xoxo-online-join-copy>Want to appear here and meet new people?</span><button type="button" data-xoxo-auth>✨ <span data-xoxo-online-join>Join free</span></button></div>
-  <p id="xoxoOnlineStatus" class="xoxo-do-status" role="status"></p>
-</section>
 <div id="friendSuggestionsSection" class="friend-suggestions-section" style="display:none;">
                                     <div class="friend-suggestions-heading">
                                     <div>
@@ -23063,41 +23057,6 @@ function sync(){const key=uid()||'guest';if(key!==lastUser){lastUser=key;refresh
 applyLabels();sync();setInterval(sync,5000);window.addEventListener('storage',applyLabels);document.addEventListener('change',applyLabels,true);
 })();
 </script>
-
-<style id="xoxo-online-auth-state-fix">.xoxo-do-join[hidden]{display:none!important}</style>
-<script id="xoxo-public-online-discover-script">
-(function(){'use strict';
-const list=document.getElementById('xoxoOnlineList'),status=document.getElementById('xoxoOnlineStatus');if(!list)return;
-const joinBox=document.querySelector('.xoxo-do-join');
-const langs={
-'en':{sub:'Meet members who are here right now.',joincopy:'Want to appear here and meet new people?',join:'Join free',loading:"Checking who's online…",empty:'No members are online right now. Check back soon!',memberEmpty:'No other members are online right now. Check back soon!',online:'Online',refresh:'Refresh'},
-'es':{sub:'Conoce a las personas que están aquí ahora mismo.',joincopy:'¿Quieres aparecer aquí y conocer gente nueva?',join:'Únete gratis',loading:'Comprobando quién está conectado…',empty:'No hay miembros conectados ahora. ¡Vuelve pronto!',memberEmpty:'No hay otros miembros conectados ahora. ¡Vuelve pronto!',online:'En línea',refresh:'Actualizar'},
-'pt-BR':{sub:'Conheça os membros que estão aqui agora.',joincopy:'Quer aparecer aqui e conhecer pessoas novas?',join:'Cadastre-se grátis',loading:'Verificando quem está online…',empty:'Ninguém está online agora. Volte em breve!',memberEmpty:'Nenhum outro membro está online agora. Volte em breve!',online:'Online',refresh:'Atualizar'},
-'de':{sub:'Lerne Mitglieder kennen, die gerade hier sind.',joincopy:'Möchtest du hier erscheinen und neue Leute kennenlernen?',join:'Kostenlos beitreten',loading:'Wer ist gerade online?',empty:'Gerade ist niemand online. Schau bald wieder vorbei!',memberEmpty:'Gerade sind keine anderen Mitglieder online. Schau bald wieder vorbei!',online:'Online',refresh:'Aktualisieren'},
-'nb':{sub:'Møt medlemmer som er her akkurat nå.',joincopy:'Vil du vises her og møte nye mennesker?',join:'Bli med gratis',loading:'Sjekker hvem som er pålogget…',empty:'Ingen medlemmer er pålogget akkurat nå. Kom snart tilbake!',memberEmpty:'Ingen andre medlemmer er pålogget akkurat nå. Kom snart tilbake!',online:'Pålogget',refresh:'Oppdater'},
-'pl':{sub:'Poznaj osoby, które są tutaj właśnie teraz.',joincopy:'Chcesz pojawić się tutaj i poznać nowe osoby?',join:'Dołącz za darmo',loading:'Sprawdzanie, kto jest online…',empty:'Nikt nie jest teraz online. Wróć wkrótce!',memberEmpty:'Żaden inny członek nie jest teraz online. Wróć wkrótce!',online:'Online',refresh:'Odśwież'},
-'fr':{sub:'Rencontre les membres présents en ce moment.',joincopy:'Tu veux apparaître ici et rencontrer de nouvelles personnes ?',join:'Inscription gratuite',loading:'Recherche des membres en ligne…',empty:'Personne n’est en ligne pour le moment. Reviens bientôt !',memberEmpty:'Aucun autre membre n’est en ligne pour le moment. Reviens bientôt !',online:'En ligne',refresh:'Actualiser'},
-'cs':{sub:'Poznej členy, kteří jsou právě tady.',joincopy:'Chceš se zde zobrazit a poznat nové lidi?',join:'Připojit se zdarma',loading:'Zjišťujeme, kdo je online…',empty:'Právě tu nikdo není online. Vrať se brzy!',memberEmpty:'Právě tu není online žádný další člen. Vrať se brzy!',online:'Online',refresh:'Obnovit'},
-'sv':{sub:'Träffa medlemmar som är här just nu.',joincopy:'Vill du synas här och träffa nya människor?',join:'Gå med gratis',loading:'Kontrollerar vilka som är online…',empty:'Ingen är online just nu. Kom tillbaka snart!',memberEmpty:'Inga andra medlemmar är online just nu. Kom tillbaka snart!',online:'Online',refresh:'Uppdatera'},
-'it':{sub:'Incontra i membri presenti in questo momento.',joincopy:'Vuoi apparire qui e conoscere nuove persone?',join:'Iscriviti gratis',loading:'Controllo di chi è online…',empty:'Nessun membro è online al momento. Torna presto!',memberEmpty:'Nessun altro membro è online al momento. Torna presto!',online:'Online',refresh:'Aggiorna'}
-};
-const lang=()=>{try{return localStorage.getItem('friendhub_language')||'en'}catch(e){return'en'}};
-const t=k=>(langs[lang()]||langs.en)[k]||langs.en[k];
-const $=id=>document.getElementById(id);
-const sb=()=>typeof supabaseClient!=='undefined'?supabaseClient:null;
-let authenticated=!!(typeof currentUser!=='undefined'&&currentUser?.id),busy=false,last=0;
-function auth(){if(typeof openAuth==='function')openAuth('signup')}
-function labels(){const w=langs[lang()]||langs.en;const sub=document.querySelector('[data-xoxo-online-subtitle]'),copy=document.querySelector('[data-xoxo-online-join-copy]'),join=document.querySelector('[data-xoxo-online-join]');if(sub)sub.textContent=w.sub;if(copy)copy.textContent=w.joincopy;if(join)join.textContent=w.join;if($('xoxoOnlineRefresh'))$('xoxoOnlineRefresh').title=w.refresh}
-function setAuthenticated(value){authenticated=!!value;if(joinBox)joinBox.hidden=authenticated;}
-async function detectAuth(){const client=sb();let logged=!!(typeof currentUser!=='undefined'&&currentUser?.id);if(!logged&&client?.auth?.getSession){try{const result=await client.auth.getSession();logged=!!result?.data?.session?.user?.id}catch(e){}}setAuthenticated(logged);return logged}
-async function refresh(){const client=sb();if(busy||!client)return;busy=true;last=Date.now();list.replaceChildren();const loading=document.createElement('p');loading.className='xoxo-do-empty';loading.textContent=t('loading');list.append(loading);try{const logged=await detectAuth();const r=await client.rpc('get_public_online_members');if(r.error)throw r.error;const rows=r.data||[];list.replaceChildren();if(!rows.length){const e=document.createElement('p');e.className='xoxo-do-empty';e.textContent=logged?t('memberEmpty'):t('empty');list.append(e)}for(const person of rows){const b=document.createElement('button');b.type='button';b.className='xoxo-do-person';const avatar=document.createElement('span');avatar.className='xoxo-do-avatar';const img=document.createElement('img');const fallback=typeof xoxoBubbleUrl==='function'?xoxoBubbleUrl(person.user_id,person.username):'https://www.xoxoavenue.com/01_violeta.png';img.src=person.profile_photo||fallback;img.alt='XOXO Bubble';img.onerror=()=>{if(img.src!==fallback){img.onerror=null;img.src=fallback}};const dot=document.createElement('i');dot.className='xoxo-do-dot';avatar.append(img,dot);const name=document.createElement('strong');name.textContent=person.username?'@'+String(person.username).replace(/^@/,''):'@XOXO Member';const state=document.createElement('small');state.textContent='● '+t('online');b.append(avatar,name,state);b.addEventListener('click',()=>{if(typeof openPublicProfile==='function')openPublicProfile(person.user_id)});list.append(b)}status.textContent=rows.length+' '+t('online').toLowerCase()}catch(e){list.replaceChildren();const x=document.createElement('p');x.className='xoxo-do-empty';x.textContent='Online status unavailable';list.append(x);status.textContent=''}finally{busy=false}}
-$('xoxoOnlineRefresh')?.addEventListener('click',refresh);joinBox?.querySelector('button[data-xoxo-auth]')?.addEventListener('click',auth);labels();setAuthenticated(authenticated);refresh();
-const client=sb();if(client?.auth?.onAuthStateChange){client.auth.onAuthStateChange((_event,session)=>{setAuthenticated(!!session?.user?.id);refresh()})}
-setInterval(()=>{if(document.getElementById('discover')?.classList.contains('active')&&Date.now()-last>30000)refresh()},10000);
-window.addEventListener('storage',()=>{labels();detectAuth()});document.addEventListener('change',labels,true);
-})();
-</script>
-
 
 <style id="xoxo-my-whispers-beta-style">
 #myProfileTabs .my-profile-tab[hidden]{display:none!important}
