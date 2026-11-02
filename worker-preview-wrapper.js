@@ -37,8 +37,17 @@ const SHARE_SCRIPT = `(function(){try{
 }catch(_){} })();`;
 
 async function localizedResponse(request, env, ctx) {
-  const baseResponse = await baseWorker.fetch(request, env, ctx);
   const url = new URL(request.url);
+  // Public username profile URLs are canonical and never carry a language query.
+  // The visitor's saved XOXO language preference controls the interface language.
+  const profilePath = url.pathname.replace(/^\\//, "").replace(/\\/$/, "");
+  const reservedProfilePaths = new Set(["about","discover","privacy","terms","guidelines","api","u","post","profile-preview-image","post-preview-image","assets","beta","favicon.ico","robots.txt","sitemap.xml"]);
+  const isUsernameProfile = /^\\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\\/?$/.test(url.pathname) && !reservedProfilePaths.has(profilePath.toLowerCase());
+  if (isUsernameProfile && url.searchParams.has("lang") && (request.method === "GET" || request.method === "HEAD")) {
+    url.searchParams.delete("lang");
+    return Response.redirect(url.origin + url.pathname + (url.search ? url.search : ""), 302);
+  }
+  const baseResponse = await baseWorker.fetch(request, env, ctx);
   const type = String(baseResponse.headers.get("content-type") || "").toLowerCase();
 
   if (url.pathname !== "/") {
@@ -47,7 +56,7 @@ async function localizedResponse(request, env, ctx) {
     const isUsernameProfile = /^\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\/?$/.test(url.pathname) && !reserved.has(routeName.toLowerCase());
     if (isUsernameProfile && type.includes("text/html") && request.method === "GET") {
       const profileShareScript = `(function(){try{
-        function rewriteUrl(raw){try{var u=new URL(raw,location.href),host=u.hostname.toLowerCase();if(host!=="xoxoavenue.com"&&host!=="www.xoxoavenue.com"&&host!==location.hostname.toLowerCase())return raw;var legacy=/^\\/u\\/[0-9a-f-]{36}\\/?$/i.test(u.pathname)||u.searchParams.has("profile");if(!legacy)return raw;var current=new URL("https://xoxoavenue.com"+location.pathname);u.searchParams.forEach(function(v,k){if(k!=="profile"&&k!=="lang")current.searchParams.append(k,v);});return current.toString();}catch(_){return raw;}}
+        function rewriteUrl(raw){try{var u=new URL(raw,location.href),host=u.hostname.toLowerCase();if(host!=="xoxoavenue.com"&&host!=="www.xoxoavenue.com"&&host!==location.hostname.toLowerCase())return raw;var legacy=/^\\/u\\/[0-9a-f-]{36}\\/?$/i.test(u.pathname)||u.searchParams.has("profile");var currentProfile=/^\\/[A-Za-z0-9][A-Za-z0-9._-]{0,29}\\/?$/.test(location.pathname);if(!legacy&&!currentProfile)return raw;var current=new URL("https://xoxoavenue.com"+location.pathname);u.searchParams.forEach(function(v,k){if(k!=="profile"&&k!=="lang")current.searchParams.append(k,v);});return current.toString();}catch(_){return raw;}}
         function rewriteText(value){if(typeof value!=="string")return value;return value.replace(/https?:\\/\\/[^\\s]+/gi,function(raw){var suffix="",candidate=raw;while(candidate.length&&/[),.!?\\]]/.test(candidate.charAt(candidate.length-1))){suffix=candidate.slice(-1)+suffix;candidate=candidate.slice(0,-1);}return rewriteUrl(candidate)+suffix;});}
         if(typeof navigator!=="undefined"&&typeof navigator.share==="function"){var share=navigator.share.bind(navigator);navigator.share=function(data){if(data&&typeof data==="object"){var copy=Object.assign({},data);if(typeof copy.url==="string")copy.url=rewriteUrl(copy.url);if(typeof copy.text==="string")copy.text=rewriteText(copy.text);return share(copy);}return share(data);};}
         if(typeof navigator!=="undefined"&&navigator.clipboard&&typeof navigator.clipboard.writeText==="function"){var write=navigator.clipboard.writeText.bind(navigator.clipboard);navigator.clipboard.writeText=function(value){return write(rewriteText(value));};}
