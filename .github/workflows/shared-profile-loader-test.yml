@@ -1,0 +1,26 @@
+name: Shared profile loader test
+
+on:
+  pull_request:
+    paths:
+      - "worker.js"
+      - "tests/shared-profile-loader.test.cjs"
+      - ".github/workflows/shared-profile-loader-test.yml"
+  push:
+    branches:
+      - main
+      - fix/shared-profile-loader-root-cause
+    paths:
+      - "worker.js"
+      - "tests/shared-profile-loader.test.cjs"
+      - ".github/workflows/shared-profile-loader-test.yml"
+
+jobs:
+  profile-loader:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test tests/shared-profile-loader.test.cjs
