@@ -3495,8 +3495,15 @@ export default {
       "api", "u", "post", "profile-preview-image", "post-preview-image",
       "assets", "beta", "favicon.ico", "robots.txt", "sitemap.xml",
     ]);
+    // Root-level static assets must bypass username resolution. Otherwise requests
+    // for files such as /xoxo-username-login.js can trigger unnecessary Supabase
+    // lookups before the asset is served. Keep dotted usernames valid unless the
+    // final extension is one of the site's known static-resource extensions.
+    const isRootStaticAsset =
+      /\.(?:js|mjs|cjs|css|png|jpe?g|webp|avif|svg|ico|json|webmanifest|txt|xml|woff2?|map|gif|mp4|webm|wasm|pdf)$/i.test(url.pathname);
     const friendlyUsernameMatch =
       !friendlyProfileMatch &&
+      !isRootStaticAsset &&
       url.pathname.match(/^\/([A-Za-z0-9][A-Za-z0-9._-]{0,29})\/?$/) &&
       !reservedProfilePaths.has(url.pathname.replace(/^\//, "").replace(/\/$/, "").toLowerCase())
         ? url.pathname.replace(/^\//, "").replace(/\/$/, "")
