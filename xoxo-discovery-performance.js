@@ -79,14 +79,14 @@
         if (!id || id === myId || alreadyFollowing.has(id) || blockedIds.has(id) || seen.has(id)) continue;
         profiles.push(profile);
         seen.add(id);
-        if (profiles.length >= 6) break;
+        if (profiles.length >= 10) break;
       }
 
       profiles.sort((a, b) =>
         (mutualCounts.get(String(b.user_id)) || 0) -
         (mutualCounts.get(String(a.user_id)) || 0)
       );
-      profiles = profiles.slice(0, 6);
+      profiles = profiles.slice(0, 10);
 
       if (list.dataset.loadToken !== token) return;
       list.dataset.loadToken = "";
