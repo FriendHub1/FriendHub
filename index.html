@@ -1202,7 +1202,7 @@ window.xoxoPtLabel=function(en,es,pt){
                                     .friend-suggestion-avatar { width:48px; height:48px; border-radius:50%; overflow:hidden; display:grid; place-items:center; flex:0 0 48px; background:#eef1f5; font-weight:700; }
                                     .friend-suggestion-avatar img { width:100%; height:100%; object-fit:cover; }
                                     /* Framed photos: fill the circle exactly (same box as the profile page) so avatar_settings crop/zoom match. */
-                                    .friend-suggestion-avatar, .profile-visitor-avatar { position:relative; }
+                                    .friend-suggestion-avatar, .profile-visitor-avatar { position:relative; isolation:isolate; transform:translateZ(0); -webkit-mask-image:-webkit-radial-gradient(white,black); }
                                     .friend-suggestion-avatar > img, .profile-visitor-avatar > img { position:absolute; top:0; left:0; width:100%; height:100%; display:block; object-fit:cover; }
                                     .friend-suggestion-name { display:block; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
                                     .friend-suggestion-reason { display:block; margin-top:3px; font-size:.82rem; opacity:.72; }
@@ -12482,7 +12482,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     /* Repair pass: if a photo's framing (crop/zoom) did not arrive in time while the page was busy,
                                        retry in the background and re-frame the photo so it matches the profile page. */
                                     profiles.filter(p => p.profile_photo && !p.avatar_settings).forEach(async p => {
-                                    for (let attempt = 0; attempt < 3; attempt++) {
+                                    for (let attempt = 0; attempt < 5; attempt++) {
                                     await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
                                     try {
                                     const { data, error } = await supabaseClient.rpc("xoxo_get_public_avatar_settings", { target_user_id: String(p.user_id) });
