@@ -1204,10 +1204,6 @@ window.xoxoPtLabel=function(en,es,pt){
                                     /* Framed photos: fill the circle exactly (same box as the profile page) so avatar_settings crop/zoom match. */
                                     .friend-suggestion-avatar, .profile-visitor-avatar { position:relative; isolation:isolate; transform:translateZ(0); -webkit-mask-image:-webkit-radial-gradient(white,black); }
                                     .friend-suggestion-avatar > img, .profile-visitor-avatar > img { position:absolute; top:0; left:0; width:100%; height:100%; display:block; object-fit:cover; }
-                                    /* XOXO fix v2: suggestion avatars use the SAME clip structure as the profile page (iPhone/Mac Safari, Chrome, Android). */
-                                    .friend-suggestion-avatar { overflow:hidden; border-radius:50%; transform:none; }
-                                    .friend-suggestion-avatar .xoxo-sug-clip { display:block; position:relative; width:100%; height:100%; overflow:hidden; border-radius:50%; isolation:isolate; -webkit-mask-image:-webkit-radial-gradient(white,black); }
-                                    .friend-suggestion-avatar .xoxo-sug-clip > img { position:absolute; top:0; left:0; width:100%; height:100%; max-width:none; max-height:none; display:block; object-fit:cover; transform-origin:center center; -webkit-backface-visibility:hidden; backface-visibility:hidden; -webkit-user-drag:none; }
                                     .friend-suggestion-name { display:block; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
                                     .friend-suggestion-reason { display:block; margin-top:3px; font-size:.82rem; opacity:.72; }
                                     .friend-suggestion-actions { display:flex; gap:8px; margin-top:12px; }
@@ -12358,7 +12354,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     function xoxoSuggestionAvatarHtml(profile, username) {
                                       if (!profile || !profile.profile_photo) return xoxoBubbleImg(profile && profile.user_id, username);
                                       const ok = profile.avatar_settings ? "1" : "0";
-                                      return `<span class="xoxo-sug-clip"><img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" decoding="async" data-xoxo-avatar-user="${escapeHtmlAttribute(String(profile.user_id))}" data-xoxo-avatar-ok="${ok}" style="${xoxoAvatarStyle(profile.avatar_settings)}"></span>`;
+                                      return `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" decoding="async" data-xoxo-avatar-user="${escapeHtmlAttribute(String(profile.user_id))}" data-xoxo-avatar-ok="${ok}" style="${xoxoAvatarStyle(profile.avatar_settings)}">`;
                                     }
                                     async function xoxoRepairSuggestionAvatars(root) {
                                       const scope = root || document;
@@ -12393,6 +12389,21 @@ async function sharePublicProfile(userId, username = "@User") {
                                         timer = setTimeout(function () { timer = null; xoxoRepairSuggestionAvatars(document); }, 500);
                                       }).observe(document.documentElement, { childList: true, subtree: true });
                                     })();
+                                    async function xoxoFreshAvatarSettings(userId) {
+                                      const id = String(userId || "");
+                                      if (!id) return null;
+                                      for (let attempt = 0; attempt < 3; attempt++) {
+                                        try {
+                                          const { data, error } = await supabaseClient.rpc("xoxo_get_public_avatar_settings", { target_user_id: id });
+                                          if (!error) {
+                                            try { xoxoPublicAvatarSettingsCache.set(id, { cachedAt: Date.now(), promise: Promise.resolve(data || null) }); } catch (_) {}
+                                            return data || null;
+                                          }
+                                        } catch (_) {}
+                                        await new Promise(resolve => setTimeout(resolve, 400 * (attempt + 1)));
+                                      }
+                                      return null;
+                                    }
                                     const XOXO_SUGGESTION_MAX = 12; // max profiles shown in "People You May Know"
                                     async function loadFriendSuggestions() {
                                     const section = document.getElementById("friendSuggestionsSection");
@@ -12456,10 +12467,10 @@ async function sharePublicProfile(userId, username = "@User") {
                                     /* If there are not enough mutuals yet, add public profiles as discovery suggestions. */
                                     let profiles = [];
                                     if (candidateIds.length) {
-                                    const { data, error } = await getCachedPublicProfiles(
-                                    candidateIds,
-                                    ["username", "country", "profile_photo"]
-                                    );
+                                    const { data, error } = await supabaseClient
+                                    .from("friendhub_public_profiles")
+                                    .select("user_id, username, country, profile_photo")
+                                    .in("user_id", candidateIds);
                                     if (error) throw error;
                                     profiles = data || [];
                                     }
@@ -12484,7 +12495,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     profiles.sort((a, b) => (mutualCounts.get(String(b.user_id)) || 0) - (mutualCounts.get(String(a.user_id)) || 0));
                                     profiles = profiles.slice(0, XOXO_SUGGESTION_MAX);
                                     await Promise.all(profiles.filter(profile => profile.profile_photo).map(async profile => {
-                                      profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
+                                      profile.avatar_settings = await xoxoFreshAvatarSettings(profile.user_id);
                                     }));
 
                                     if (!profiles.length) {
