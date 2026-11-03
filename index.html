@@ -12364,7 +12364,8 @@ async function sharePublicProfile(userId, username = "@User") {
                                       const imgs = [...scope.querySelectorAll('img[data-xoxo-avatar-user][data-xoxo-avatar-ok="0"]')];
                                       imgs.forEach(img => img.setAttribute("data-xoxo-avatar-ok", "pending"));
                                       const delays = [0, 1500, 4500, 10000];
-                                      await Promise.all(imgs.map(async img => {
+                                      await Promise.all(imgs.map(async imgStart => {
+                                        let img = imgStart;
                                         const uid = img.getAttribute("data-xoxo-avatar-user");
                                         const noSet = window.__xoxoAvatarNoSettings.get(uid);
                                         if (noSet && Date.now() - noSet < 10 * 60 * 1000) { img.setAttribute("data-xoxo-avatar-ok", "1"); return; }
@@ -12375,7 +12376,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                             const { data, error } = await supabaseClient.rpc("xoxo_get_public_avatar_settings", { target_user_id: uid });
                                             if (!error && data) {
                                               img.style.cssText = xoxoAvatarStyle(data);
-                                              xoxoReframeAvatar(img);
+                                              img = xoxoReframeAvatar(img, true);
                                               try { xoxoPublicAvatarSettingsCache.set(uid, { cachedAt: Date.now(), promise: Promise.resolve(data) }); } catch (_) {}
                                               img.setAttribute("data-xoxo-avatar-ok", "1");
                                               return;
@@ -12388,8 +12389,20 @@ async function sharePublicProfile(userId, username = "@User") {
                                     }
                                     /* WebKit (Safari iPhone/Mac) can keep a stale transform for images created while their page was hidden.
                                        Re-applying the same inline style once the image is loaded/visible forces it to repaint correctly. */
-                                    function xoxoReframeAvatar(img) {
-                                      try { const css = img.style.cssText; img.style.cssText = ""; void img.offsetWidth; img.style.cssText = css; } catch (_) {}
+                                    function xoxoReframeAvatar(img, force) {
+                                      /* Safari keeps a stale crop on images created while their page was display:none.
+                                         Replacing the <img> with a fresh copy once it is visible makes it render like the profile page. */
+                                      try {
+                                        if (!img || !img.isConnected) return img;
+                                        const visible = img.offsetParent !== null;
+                                        if (!force && (!visible || img.getAttribute("data-xoxo-reframed") === "1")) return img;
+                                        const fresh = img.cloneNode(false);
+                                        img.replaceWith(fresh);
+                                        const nowVisible = fresh.offsetParent !== null;
+                                        fresh.setAttribute("data-xoxo-reframed", nowVisible ? "1" : "0");
+                                        if (!nowVisible && window.__xoxoAvatarIO) window.__xoxoAvatarIO.observe(fresh);
+                                        return fresh;
+                                      } catch (_) { return img; }
                                     }
                                     (function () {
                                       if (window.__xoxoAvatarRepairObserver || typeof MutationObserver === "undefined") return;
@@ -12399,6 +12412,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                             if (entry.isIntersecting) { xoxoReframeAvatar(entry.target); io.unobserve(entry.target); }
                                           }), { threshold: 0.01 })
                                         : null;
+                                      window.__xoxoAvatarIO = io;
                                       function hook() {
                                         document.querySelectorAll('img[data-xoxo-avatar-user]:not([data-xoxo-hooked])').forEach(img => {
                                           img.setAttribute("data-xoxo-hooked", "1");
