@@ -10121,8 +10121,8 @@ function renderOptionButtons() {
                                     }
 /* XOXO Bubbles — official image avatars. Stable per user; no database changes. */
 const XOXO_BUBBLE_FILES = [
-  "https://www.xoxoavenue.com/01_violeta.png", "https://www.xoxoavenue.com/02_rosa.png", "https://www.xoxoavenue.com/03_azul.png",
-  "https://www.xoxoavenue.com/04_verde.png", "https://www.xoxoavenue.com/05_dorado.png", "https://www.xoxoavenue.com/06_rojo_rubi.png"
+  "/01_violeta.png", "/02_rosa.png", "/03_azul.png",
+  "/04_verde.png", "/05_dorado.png", "/06_rojo_rubi.png"
 ];
 function xoxoBubbleUrl(userId, username) {
   const key = String(userId || username || "xoxo");
@@ -10134,7 +10134,7 @@ function xoxoBubbleUrl(userId, username) {
   return XOXO_BUBBLE_FILES[(hash >>> 0) % XOXO_BUBBLE_FILES.length];
 }
 function xoxoBubbleImg(userId, username) {
-  return `<img src="${xoxoBubbleUrl(userId, username)}" alt="XOXO Bubble avatar" loading="lazy">`;
+  return `<img src="${xoxoBubbleUrl(userId, username)}" alt="XOXO Bubble avatar" loading="eager">`;
 }
                                     function updateProfileAvatar(username, photo) {
                                     const avatar =
