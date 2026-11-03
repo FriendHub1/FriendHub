@@ -8323,12 +8323,35 @@ async function enforceXoxoSuspension() {
                                        request the same username/profile photo from Supabase. */
                                     const PUBLIC_PROFILE_CACHE_TTL_MS = 5 * 60 * 1000;
                                     const publicProfileCache = new Map();
+                                    const xoxoPublicAvatarSettingsCache = new Map();
 
                                     function invalidatePublicProfileCache(userId) {
                                     if (!userId) return;
                                     publicProfileCache.delete(String(userId));
+                                    xoxoPublicAvatarSettingsCache.delete(String(userId));
                                     }
 
+                                    
+                                    async function xoxoGetPublicAvatarSettings(userId) {
+                                    const id = String(userId || "");
+                                    if (!id) return null;
+                                    const cached = xoxoPublicAvatarSettingsCache.get(id);
+                                    if (cached && Date.now() - cached.cachedAt < PUBLIC_PROFILE_CACHE_TTL_MS) return cached.promise;
+                                    const request = xoxoProfileWithTimeout(
+                                    supabaseClient.rpc("xoxo_get_public_avatar_settings", { target_user_id: id }),
+                                    3500,
+                                    "avatar settings"
+                                    ).then(({data, error}) => {
+                                    if (error) throw error;
+                                    return data || null;
+                                    }).catch(error => {
+                                    if (xoxoPublicAvatarSettingsCache.get(id)?.promise === request) xoxoPublicAvatarSettingsCache.delete(id);
+                                    console.warn("Avatar settings unavailable:", error);
+                                    return null;
+                                    });
+                                    xoxoPublicAvatarSettingsCache.set(id, {cachedAt: Date.now(), promise: request});
+                                    return request;
+                                    }
                                     async function getCachedPublicProfiles(userIds, fields = []) {
                                     const ids = [...new Set((userIds || []).map(id => String(id || "")).filter(Boolean))];
                                     if (!ids.length) return { data: [], error: null };
@@ -8385,6 +8408,7 @@ async function enforceXoxoSuspension() {
                                     let currentDmUserId = null;
                                     let currentDmUsername = "";
                                     let currentDmProfilePhoto = null;
+                                    let currentDmAvatarSettings = null;
                                     let dmUnreadRefreshTimer = null;
                                     let friendhubPresenceTimer = null;
                                     let xoxoPresenceLocationSent = false;
@@ -9419,11 +9443,11 @@ function xoxoSetLang(kind,name,enabled){
  const target=xoxoLangState[kind];const i=target.findIndex(x=>x.name===name);
  if(enabled&&i<0)target.push({name,level:kind==='spoken'?'Native':'Beginner'});
  if(!enabled&&i>=0)target.splice(i,1);
- xoxoRenderLang(kind);
+ xoxoRenderLang(kind);xoxoScheduleProfileDraftSave();
 }
 function xoxoSetLangLevel(kind,name,level){
  const item=xoxoLangState[kind].find(x=>x.name===name);if(item)item.level=level;
- xoxoRenderLang(kind);
+ xoxoRenderLang(kind);xoxoScheduleProfileDraftSave();
 }
 function xoxoRenderLang(kind){
  const id=kind==='spoken'?'Spoken':'Learning';const selected=xoxoLangState[kind];
@@ -9564,6 +9588,9 @@ function renderOptionButtons() {
                                     }
 
                                     const profileById = new Map((visitorProfiles || []).map(profile => [String(profile.user_id), profile]));
+                                    await Promise.all((visitorProfiles || []).filter(profile => profile.profile_photo).map(async profile => {
+                                      profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
+                                    }));
 
                                     list.innerHTML = rows.map(row => {
                                     const viewerId = String(row.viewer_id || "");
@@ -9571,7 +9598,7 @@ function renderOptionButtons() {
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = profile.profile_photo
-                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">`
                                     : xoxoBubbleImg(profile.user_id, username);
                                     const count = Math.max(1, Number(row.visit_count) || 1);
                                     const countLabel = count === 1 ? "1 visit" : `${count} visits`;
@@ -9588,7 +9615,127 @@ function renderOptionButtons() {
                                     }).join("");
                                     }
 
-                                    async function loadCurrentProfile() {
+                                    
+let xoxoProfileDraftTimer = null;
+let xoxoProfileDraftRestoring = false;
+let xoxoProfileDraftHasChanges = false;
+let xoxoProfileDraftPhotoUrl = null;
+
+function xoxoProfileDraftDB(){
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open("xoxo-profile-drafts",1);
+    request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains("drafts"))request.result.createObjectStore("drafts");};
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  });
+}
+async function xoxoProfileDraftGet(id){
+  const db=await xoxoProfileDraftDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction("drafts","readonly"),r=tx.objectStore("drafts").get(String(id));
+    r.onsuccess=()=>resolve(r.result||null);r.onerror=()=>reject(r.error);
+    tx.oncomplete=()=>db.close();
+  });
+}
+async function xoxoProfileDraftPut(id,value){
+  const db=await xoxoProfileDraftDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction("drafts","readwrite");
+    tx.objectStore("drafts").put(value,String(id));
+    tx.oncomplete=()=>{db.close();resolve();};
+    tx.onerror=()=>{db.close();reject(tx.error);};
+  });
+}
+async function xoxoClearProfileDraft(){
+  clearTimeout(xoxoProfileDraftTimer);
+  xoxoProfileDraftHasChanges=false;
+  if(!currentUser)return;
+  try{
+    const db=await xoxoProfileDraftDB();
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction("drafts","readwrite");
+      tx.objectStore("drafts").delete(String(currentUser.id));
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+    });
+    db.close();
+  }catch(e){console.warn("Could not clear local profile draft:",e);}
+}
+async function xoxoSaveProfileDraft(){
+  if(!currentUser||!xoxoProfileDraftHasChanges||xoxoProfileDraftRestoring)return;
+  const val=id=>document.getElementById(id)?.value||"";
+  const draft={
+    userId:String(currentUser.id),savedAt:Date.now(),
+    fields:{
+      username:val("username"),age:val("age"),country:val("country"),
+      genderIdentity:val("genderIdentity"),sexualOrientation:val("sexualOrientation"),
+      bio:val("bio"),languages:xoxoLanguageValues(),
+      interests:getSelectedOptions("interests"),
+      lookingFor:getSelectedOptions("lookingFor")
+    },
+    avatarSettings:xoxoAvatarDraft?{...xoxoAvatarDraft}:null,
+    photo:selectedProfilePhotoFile?{
+      blob:selectedProfilePhotoFile,name:selectedProfilePhotoFile.name,
+      type:selectedProfilePhotoFile.type,lastModified:selectedProfilePhotoFile.lastModified
+    }:null
+  };
+  try{await xoxoProfileDraftPut(currentUser.id,draft);}
+  catch(e){console.warn("Local profile draft could not be saved:",e);}
+}
+function xoxoScheduleProfileDraftSave(){
+  if(xoxoProfileDraftRestoring||!currentUser)return;
+  xoxoProfileDraftHasChanges=true;
+  clearTimeout(xoxoProfileDraftTimer);
+  xoxoProfileDraftTimer=setTimeout(xoxoSaveProfileDraft,500);
+}
+async function xoxoRestoreProfileDraft(){
+  if(!currentUser)return;
+  try{
+    const d=await xoxoProfileDraftGet(currentUser.id);
+    if(!d||d.userId!==String(currentUser.id)||!d.fields||Date.now()-d.savedAt>30*86400000)return;
+    xoxoProfileDraftRestoring=true;
+    const f=d.fields;
+    for(const [id,key] of [["username","username"],["age","age"],["country","country"],["genderIdentity","genderIdentity"],["sexualOrientation","sexualOrientation"],["bio","bio"]]){
+      const el=document.getElementById(id);if(el&&f[key]!=null)el.value=f[key];
+    }
+    xoxoLoadLanguages(f.languages||[]);
+    setSelectedOptions("interests",f.interests||[]);
+    setSelectedOptions("lookingFor",f.lookingFor||[]);
+    xoxoAvatarDraft=d.avatarSettings||null;
+    if(d.photo?.blob){
+      const file=new File([d.photo.blob],d.photo.name||"profile-photo.jpg",{
+        type:d.photo.type||"image/jpeg",lastModified:d.photo.lastModified||Date.now()
+      });
+      selectedProfilePhotoFile=file;
+      if(xoxoProfileDraftPhotoUrl)URL.revokeObjectURL(xoxoProfileDraftPhotoUrl);
+      xoxoProfileDraftPhotoUrl=URL.createObjectURL(file);
+      selectedProfilePhoto=xoxoProfileDraftPhotoUrl;
+    }
+    updateProfileAvatar(document.getElementById("username")?.value||"",selectedProfilePhoto);
+    updateBioCount();
+    xoxoProfileDraftHasChanges=true;
+  }catch(e){console.warn("Could not restore local profile draft:",e);}
+  finally{xoxoProfileDraftRestoring=false;}
+}
+function xoxoInitProfileDraftAutosave(){
+  const profile=document.getElementById("profile");
+  if(!profile)return;
+  profile.addEventListener("input",e=>{
+    if(["username","age","country","genderIdentity","sexualOrientation","bio"].includes(e.target.id))xoxoScheduleProfileDraftSave();
+  });
+  profile.addEventListener("change",e=>{
+    if(["username","age","country","genderIdentity","sexualOrientation","bio"].includes(e.target.id))xoxoScheduleProfileDraftSave();
+  });
+  profile.addEventListener("click",e=>{
+    if(e.target.closest(".option-btn"))setTimeout(xoxoScheduleProfileDraftSave,0);
+  });
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="hidden")xoxoSaveProfileDraft();
+  });
+  window.addEventListener("pagehide",()=>xoxoSaveProfileDraft());
+}
+xoxoInitProfileDraftAutosave();
+
+async function loadCurrentProfile() {
                                     if (!currentUser) {
                                     return;
                                     }
@@ -9612,11 +9759,37 @@ function renderOptionButtons() {
                                     xoxoProfileCheckComplete = true;
                                     xoxoProfileRequired = true;
                                     clearProfileForm();
+await xoxoRestoreProfileDraft();
                                     if (!xoxoProfileSetupInProgress) setTimeout(showRequiredProfileWelcome, 0);
                                     return;
                                     }
-                                    currentProfile =
-                                    data;
+                                    currentProfile = data;
+
+                                    const xoxoLanguages = ["en", "es", "pt-BR", "pl", "fr", "de", "nb", "cs", "sv", "it"];
+                                    const savedUiLanguage = xoxoLanguages.includes(data.ui_language) ? data.ui_language : null;
+                                    const localUiLanguage = localStorage.getItem("friendhub_language");
+
+                                    if (savedUiLanguage) {
+                                        if (localUiLanguage !== savedUiLanguage) {
+                                            localStorage.setItem("friendhub_language", savedUiLanguage);
+                                            const destination = new URL(window.location.href);
+                                            destination.searchParams.set("lang", savedUiLanguage);
+                                            destination.searchParams.set("xoxo_language_refresh", String(Date.now()));
+                                            window.location.assign(destination.toString());
+                                            return;
+                                        }
+                                    } else {
+                                        const languageToSave = xoxoLanguages.includes(localUiLanguage) ? localUiLanguage : "en";
+                                        localStorage.setItem("friendhub_language", languageToSave);
+                                        const { error: languageSaveError } = await supabaseClient
+                                            .from("profiles")
+                                            .update({ ui_language: languageToSave })
+                                            .eq("user_id", currentUser.id);
+
+                                        if (languageSaveError) {
+                                            console.error("[XOXO] Could not initialize UI language:", languageSaveError);
+                                        }
+                                    }
                                     xoxoProfileCheckComplete = true;
                                     xoxoProfileRequired = false;
                                     const completeProfileModal = document.getElementById("completeProfileModal");
@@ -9680,6 +9853,7 @@ function renderOptionButtons() {
                                     data.username,
                                     data.profile_photo
                                     );
+await xoxoRestoreProfileDraft();
                                     }
                                     // Only accounts registered after activation need a 20-character bio.
                                     // Supabase enforces the same cutoff on profile inserts and updates.
@@ -9848,6 +10022,7 @@ function renderOptionButtons() {
                                     const oldUsername =
                                     currentProfile?.username || null;
                                     const profileData = {
+                                    ui_language: getFriendHubLanguage(),
                                     user_id:
                                     currentUser.id,
                                     username,
@@ -9934,6 +10109,7 @@ function renderOptionButtons() {
                                     }
                                     currentProfile =
                                     result.data;
+await xoxoClearProfileDraft();
                                     xoxoAvatarDraft = null;
                                     xoxoProfileCheckComplete = true;
                                     xoxoProfileRequired = false;
@@ -10007,6 +10183,7 @@ function renderOptionButtons() {
                                     }
                                     selectedProfilePhotoFile = file;
                                     xoxoAvatarDraft = {x:50,y:50,zoom:1};
+xoxoScheduleProfileDraftSave();
                                     const reader = new FileReader();
                                     reader.onload = function(e) {
                                     selectedProfilePhoto = e.target.result;
@@ -10346,6 +10523,10 @@ function xoxoBubbleImg(userId, username) {
                                     profile.profile_photo || null
                                     ])
                                     );
+                                    const previewAvatarSettings = new Map();
+                                    await Promise.all((previewData || []).filter(row => previewProfilePhotoMap.get(String(row.user_id || ""))).map(async row => {
+                                      previewAvatarSettings.set(String(row.user_id), await xoxoGetPublicAvatarSettings(row.user_id));
+                                    }));
                                     const databasePosts = (previewData || []).slice(0, 20).map(row => {
                                     let tags = [];
                                     try { tags = row.content_tags ? JSON.parse(row.content_tags) : []; } catch { tags = []; }
@@ -10356,6 +10537,7 @@ function xoxoBubbleImg(userId, username) {
                                     likes: 0, comments: 0, liked: false, saved: false,
                                     userId: row.user_id,
                                     profilePhoto: previewProfilePhotoMap.get(String(row.user_id || "")) || null,
+                                    profilePhotoSettings: previewAvatarSettings.get(String(row.user_id || "")) || null,
                                     editedAt: row.edited_at || null
                                     };
                                     });
@@ -10407,6 +10589,9 @@ function xoxoBubbleImg(userId, username) {
                                     console.error("Post author profiles load error:", authorProfileError);
                                     } else {
                                     postAuthorProfiles = authorProfileData || [];
+                                    await Promise.all(postAuthorProfiles.filter(profile => profile.profile_photo).map(async profile => {
+                                      profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
+                                    }));
                                     }
                                     }
                                     const postAuthorProfileMap = new Map(
@@ -10516,6 +10701,9 @@ function xoxoBubbleImg(userId, username) {
                                     || (String(row.user_id || "") === String(currentUser.id)
                                     ? currentProfile?.profile_photo || null
                                     : null),
+                                    profilePhotoSettings:
+                                    postAuthorProfileMap.get(String(row.user_id || ""))?.avatar_settings
+                                    || (String(row.user_id || "") === String(currentUser.id) ? currentProfile?.avatar_settings || null : null),
                                     editedAt:
                                     row.edited_at || null
                                     };
@@ -10904,6 +11092,7 @@ function xoxoBubbleImg(userId, username) {
                                     if (orientation && String(profile.sexual_orientation || "").toLowerCase() !== orientation.toLowerCase()) return false;
                                     return true;
                                     }).slice(0, 24);
+                                    await Promise.all(matches.filter(profile => profile.profile_photo).map(async profile => { profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id); }));
 
                                     if (!matches.length) {
                                     results.innerHTML = '<div class="empty-state">No people match these filters yet.</div>';
@@ -10914,7 +11103,7 @@ function xoxoBubbleImg(userId, username) {
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = profile.profile_photo
-                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">`
                                     : xoxoBubbleImg(profile.user_id, username);
                                     const meta = [profile.country, profile.gender_identity && profile.gender_identity !== "Prefer not to say" ? profile.gender_identity : ""]
                                     .filter(Boolean).map(escapeHtml).join(" · ");
@@ -11087,6 +11276,10 @@ function xoxoBubbleImg(userId, username) {
 
                                       if (requestId !== friendHubGlobalSearchRequest) return;
 
+                                      await Promise.all(profiles.filter(profile => profile.profile_photo).map(async profile => {
+                                        profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
+                                      }));
+                                      if (requestId !== friendHubGlobalSearchRequest) return;
                                       const interests = [];
                                       const seenInterests = new Set();
                                       profiles.forEach(profile => {
@@ -11114,7 +11307,7 @@ function xoxoBubbleImg(userId, username) {
                                             const username = profile.username || "@User";
                                             const initial = escapeHtml(username.replace("@","").charAt(0).toUpperCase() || "U");
                                             const avatar = profile.profile_photo
-                                              ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+                                              ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">`
                                               : xoxoBubbleImg(profile.user_id, username);
                                             const meta = [profile.country, friendHubSearchList(profile.interests).slice(0,2).join(" · ")]
                                               .filter(Boolean).join(" · ");
@@ -11597,6 +11790,7 @@ function xoxoBubbleImg(userId, username) {
                                     `<img
                                     src="${escapeHtmlAttribute(post.profilePhoto)}"
                                     alt="Profile photo"
+                                    style="${xoxoAvatarStyle(post.profilePhotoSettings)}"
                                     >`;
                                     } else {
                                     avatarHtml =
@@ -12240,6 +12434,9 @@ async function sharePublicProfile(userId, username = "@User") {
 
                                     profiles.sort((a, b) => (mutualCounts.get(String(b.user_id)) || 0) - (mutualCounts.get(String(a.user_id)) || 0));
                                     profiles = profiles.slice(0, 6);
+                                    await Promise.all(profiles.filter(profile => profile.profile_photo).map(async profile => {
+                                      profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
+                                    }));
 
                                     if (!profiles.length) {
                                     if (list.dataset.loadToken === suggestionLoadToken) list.dataset.loadToken = "";
@@ -12256,7 +12453,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = profile.profile_photo
-                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">`
                                     : xoxoBubbleImg(profile.user_id, username);
                                     const mutual = mutualCounts.get(id) || 0;
                                     const reason = mutual > 0
@@ -12407,13 +12604,14 @@ async function sharePublicProfile(userId, username = "@User") {
                                     }
 
                                     const byId = new Map((profiles || []).map(profile => [String(profile.user_id), profile]));
+await Promise.all((profiles || []).filter(p => p.profile_photo).map(async p => { p.avatar_settings = await xoxoGetPublicAvatarSettings(p.user_id); }));
                                     list.innerHTML = ids.map(id => {
                                     const profile = byId.get(id);
                                     if (!profile) return "";
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = profile.profile_photo
-                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">`
+                                    ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">`
                                     : xoxoBubbleImg(profile.user_id, username);
                                     return `<button type="button" class="my-profile-person" onclick="openPublicProfile('${escapeHtmlAttribute(id)}')">
                                     <span class="my-profile-person-avatar">${avatar}</span>
@@ -12446,12 +12644,13 @@ async function sharePublicProfile(userId, username = "@User") {
                                     );
                                     if (profileError) { console.error("Follow profiles error:", profileError); if (list) list.innerHTML = '<div class="empty-state">Could not load this list.</div>'; return; }
                                     const byId = new Map((profiles || []).map(profile => [String(profile.user_id), profile]));
+                                    await Promise.all((profiles || []).filter(p => p.profile_photo).map(async p => { p.avatar_settings = await xoxoGetPublicAvatarSettings(p.user_id); }));
                                     if (list) list.innerHTML = ids.map(id => {
                                     const profile = byId.get(id);
                                     if (!profile) return "";
                                     const username = profile.username || "@User";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
-                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo">` : xoxoBubbleImg(profile.user_id, username);
+                                    const avatar = profile.profile_photo ? `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">` : xoxoBubbleImg(profile.user_id, username);
                                     return `<button class="follow-list-item" onclick="closeFollowList(); openPublicProfile('${escapeHtmlAttribute(id)}')"><span class="follow-list-avatar">${avatar}</span><span><span class="follow-list-name">${escapeHtml(username)}</span><span class="follow-list-country">${escapeHtml(profile.country || "Country not added")}</span></span></button>`;
                                     }).join("") || `<div class="empty-state">No ${kind} yet.</div>`;
                                     }
@@ -13197,6 +13396,9 @@ async function sharePublicProfile(userId, username = "@User") {
 
                                     if (profileError) console.error("DM inbox profile load error:", profileError);
 
+                                    await Promise.all((profiles || []).filter(profile => profile.profile_photo).map(async profile => {
+                                    profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
+                                    }));
                                     const profileMap = new Map(
                                     (profiles || []).map(profile => [String(profile.user_id), profile])
                                     );
@@ -13214,7 +13416,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     const photo = profile.profile_photo || "";
                                     const initial = escapeHtml(username.replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = photo
-                                    ? `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo">`
+                                    ? `<img src="${escapeHtmlAttribute(photo)}" alt="Profile photo" style="${xoxoAvatarStyle(profile.avatar_settings)}">`
                                     : xoxoBubbleImg(conversation.userId, username);
                                     const lastContentRaw = String(conversation.lastMessage.content || "");
                                     const lastContent = parseDmGifContent(lastContentRaw)
@@ -13275,6 +13477,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                       currentDmUserId === "d9ea1914-fdba-465c-9700-5e640ff48763";
                                     currentDmUsername = xoxoWhisperPrivateAdminDm ? "@XOXOAdmin" : (username || "@User");
                                     currentDmProfilePhoto = profilePhoto || null;
+                                    currentDmAvatarSettings = currentDmProfilePhoto ? await xoxoGetPublicAvatarSettings(userId) : null;
 
                                     openMessagesPage();
 
@@ -13290,7 +13493,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     if (avatar) {
                                     const initial = String(currentDmUsername || "@User").replace(/^@/, "").trim().charAt(0).toUpperCase() || "U";
                                     avatar.innerHTML = currentDmProfilePhoto
-                                      ? `<img src="${escapeHtmlAttribute(currentDmProfilePhoto)}" alt="">`
+                                      ? `<img src="${escapeHtmlAttribute(currentDmProfilePhoto)}" alt="" style="${xoxoAvatarStyle(currentDmAvatarSettings)}">`
                                       : xoxoBubbleImg(currentDmUserId, currentDmUsername);
                                     }
                                     if (input) {
@@ -13858,7 +14061,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     const avatarInitial = String(avatarUsername).replace(/^@/, "").trim().charAt(0).toUpperCase() || "?";
                                     const avatarHtml = `<span class="dm-message-avatar"${mine ? ` aria-hidden="true"` : ` onclick="openCurrentDmPublicProfile()" role="button" tabindex="0" aria-label="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}" title="${getFriendHubLanguage() === "es" ? "Ver perfil" : "View profile"}" style="cursor:pointer;"`}>${
                                     avatarPhoto
-                                    ? `<img src="${escapeHtmlAttribute(avatarPhoto)}" alt="">`
+                                    ? `<img src="${escapeHtmlAttribute(avatarPhoto)}" alt="" style="${xoxoAvatarStyle(mine ? currentProfile?.avatar_settings : currentDmAvatarSettings)}">`
                                     : xoxoBubbleImg(mine ? currentUser?.id : currentDmUserId, avatarUsername)
                                     }</span>`;
                                     const reactionsHtml = renderDmReactions(message);
@@ -14980,6 +15183,9 @@ async function sharePublicProfile(userId, username = "@User") {
                                     if (actorError) {
                                     console.error("Notification actor profiles error:", actorError);
                                     } else {
+                                    await Promise.all((actorProfiles || []).filter(profile => profile.profile_photo).map(async profile => {
+                                        profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
+                                    }));
                                     notificationActorProfiles = new Map((actorProfiles || []).map(profile => [String(profile.user_id), profile]));
                                     }
                                     }
@@ -15073,7 +15279,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     const username = actor?.username || "";
                                     const initial = escapeHtml((username || "U").replace("@", "").charAt(0).toUpperCase() || "U");
                                     const avatar = actor?.profile_photo
-                                    ? `<img src="${escapeHtmlAttribute(actor.profile_photo)}" alt="Profile photo">`
+                                    ? `<img src="${escapeHtmlAttribute(actor.profile_photo)}" alt="Profile photo" style="${xoxoAvatarStyle(actor.avatar_settings)}">`
                                     : xoxoBubbleImg(item.actor_id, username);
                                     const icon = notificationTypeIcon(String(item.type || ""));
                                     const clickAction = (item.type === "whisper_reaction" || item.type === "whisper_reply")
@@ -15361,6 +15567,9 @@ async function sharePublicProfile(userId, username = "@User") {
                                     console.error("Comment author profiles load error:", commentProfileError);
                                     } else {
                                     commentAuthorProfiles = commentProfileData || [];
+                                    await Promise.all(commentAuthorProfiles.filter(profile => profile.profile_photo).map(async profile => {
+                                        profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
+                                    }));
                                     }
                                     }
                                     const commentAuthorProfileMap = new Map(
@@ -15372,7 +15581,9 @@ async function sharePublicProfile(userId, username = "@User") {
                                     commentAuthorProfileMap.get(String(comment.user_id || ""))?.profile_photo
                                     || (String(comment.user_id || "") === String(currentUser.id)
                                     ? currentProfile?.profile_photo || null
-                                    : null)
+                                    : null),
+                                    profilePhotoSettings: commentAuthorProfileMap.get(String(comment.user_id || ""))?.avatar_settings
+                                    || (String(comment.user_id || "") === String(currentUser.id) ? currentProfile?.avatar_settings || null : null)
                                     }));
                                     const commentIds = currentComments.map(comment => comment.id);
                                     const { data: commentLikes, error: likesError } =
@@ -15424,7 +15635,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     (comment.username || "U").replace("@", "").charAt(0).toUpperCase()
                                     );
                                     const avatar = comment.profilePhoto
-                                    ? `<img src="${escapeHtmlAttribute(comment.profilePhoto)}" alt="Profile photo">`
+                                    ? `<img src="${escapeHtmlAttribute(comment.profilePhoto)}" alt="Profile photo" style="${xoxoAvatarStyle(comment.profilePhotoSettings)}">`
                                     : xoxoBubbleImg(comment.user_id, comment.username);
                                     const canDelete = currentUser && String(comment.user_id) === String(currentUser.id);
                                     const replies = !isReply ? (repliesByParent.get(String(comment.id)) || []) : [];
@@ -16235,7 +16446,10 @@ function buildSharedPostUrl(postId) {
                                               );
                                               if (!authorError) {
                                                 const author = Array.isArray(authorRows) ? authorRows[0] : null;
-                                                if (author?.profile_photo) post.profilePhoto = author.profile_photo;
+                                                if (author?.profile_photo) {
+                                                  post.profilePhoto = author.profile_photo;
+                                                  post.profilePhotoSettings = await xoxoGetPublicAvatarSettings(row.user_id);
+                                                }
                                               }
                                             } catch (authorLookupError) {
                                               console.warn("Shared post author photo unavailable:", authorLookupError);
@@ -16510,11 +16724,23 @@ function buildSharedPostUrl(postId) {
                                     (function () {
                                     const FRIENDHUB_LANGUAGE_KEY = "friendhub_language";
                                     const selectedLanguage = localStorage.getItem(FRIENDHUB_LANGUAGE_KEY) || "en";
-                                    window.changeFriendHubLanguage = function (language) {
+                                    window.changeFriendHubLanguage = async function (language) {
                                     const safeLanguage = ["en", "es", "pt-BR", "pl", "fr", "de", "nb", "cs", "sv", "it"].includes(language) ? language : "en";
                                     localStorage.setItem(FRIENDHUB_LANGUAGE_KEY, safeLanguage);
-                                    // Navigate to a clean document for every language, preserving
-                                    // the current route and any unrelated URL parameters.
+
+                                    try {
+                                        if (currentUser?.id) {
+                                            const { error } = await supabaseClient
+                                                .from("profiles")
+                                                .update({ ui_language: safeLanguage })
+                                                .eq("user_id", currentUser.id);
+
+                                            if (error) console.error("[XOXO] Language save error:", error);
+                                        }
+                                    } catch (error) {
+                                        console.error("[XOXO] Language sync error:", error);
+                                    }
+
                                     const destination = new URL(window.location.href);
                                     destination.searchParams.set("lang", safeLanguage);
                                     destination.searchParams.set("xoxo_language_refresh", String(Date.now()));
@@ -17805,7 +18031,7 @@ function xoxoDmAvatar(id) {
   const user=xoxoDmProfiles.get(String(id)) || xoxoAdminUsers.find(u=>String(u.user_id)===String(id));
   const url=user?.profile_photo || user?.avatar_url || user?.profile_photo_url || user?.photo_url;
   if(url && /^https:\/\//i.test(url)){
-    const img=document.createElement("img");img.src=url;img.alt="";
+    const img=document.createElement("img");img.src=url;img.alt="";img.style.cssText=xoxoAvatarStyle(user?.avatar_settings);
     img.referrerPolicy="no-referrer";img.onerror=()=>{img.src=xoxoBubbleUrl(id, user?.username);};
     el.append(img);
   }else {const img=document.createElement("img");img.src=xoxoBubbleUrl(id,user?.username);img.alt="XOXO Bubble avatar";el.append(img);}
@@ -17827,6 +18053,11 @@ async function xoxoDmLoadProfiles(conversations){
     });
     if(error){console.warn("DM profile photos unavailable",error);break;}
     for(const profile of data||[])xoxoDmProfiles.set(String(profile.user_id),profile);
+  }
+  await Promise.all([...xoxoDmProfiles.values()].filter(u=>u.profile_photo).map(async u=>{
+    u.avatar_settings=await xoxoGetPublicAvatarSettings(u.user_id);
+  }));
+
   }
 }
 async function loadXoxoDmConversations() {
@@ -22222,7 +22453,7 @@ async function xoxoAvatarClose(apply){
   return;
  }
  document.getElementById('xoxoAvatarEditor').classList.remove('open');
- if(apply&&xoxoAvatarWorking){xoxoAvatarDraft={...xoxoAvatarWorking};updateProfileAvatar(document.getElementById('username').value,selectedProfilePhoto || currentProfile?.profile_photo);showProfileMessage('Avatar adjusted. Press Save Profile to save your changes.','success')}
+ if(apply&&xoxoAvatarWorking){xoxoAvatarDraft={...xoxoAvatarWorking};updateProfileAvatar(document.getElementById('username').value,selectedProfilePhoto || currentProfile?.profile_photo);showProfileMessage('Avatar adjusted. Press Save Profile to save your changes.','success');xoxoScheduleProfileDraftSave()}
  xoxoAvatarWorking=null;
 }
 (function(){
@@ -22338,8 +22569,9 @@ async function xoxoAvatarClose(apply){
   xoxoRenderMoreFriends(true);
  }catch(err){console.error('More friends error',err);if(id===state.requestId)el('xoxoMoreFriendsResults').innerHTML='<div class="xoxo-more-friends-status">'+safe(tr('Could not load suggestions. Please try again.','No se pudieron cargar las sugerencias. Inténtalo de nuevo.','Impossible de charger les suggestions.','Nie udało się załadować sugestii.','Não foi possível carregar as sugestões.'))+'</div>';}finally{state.loading=false;}}
  window.xoxoMoreFriendsSearchKey=function(event){if(event.key!=='Enter')return;event.preventDefault();xoxoRenderMoreFriends(true);};
- window.xoxoRenderMoreFriends=function(reset){if(reset)state.visible=12;const term=el('xoxoMoreFriendsSearch').value.trim().toLocaleLowerCase();const country=el('xoxoMoreFriendsCountry').value.trim().toLocaleLowerCase();const filtered=state.profiles.filter(p=>(!country||String(p.country||'').toLocaleLowerCase().includes(country))&&(!term||String(p.username||'').toLocaleLowerCase().includes(term))&&!state.following.has(String(p.user_id)));
- const cards=filtered.slice(0,state.visible).map(p=>{const id=String(p.user_id);const name=String(p.username||'@User');const avatar=p.profile_photo?'<img src="'+attr(p.profile_photo)+'" alt="">':(typeof xoxoBubbleImg==='function'?xoxoBubbleImg(id,name):safe(name.charAt(0)));return '<div class="friend-suggestion-card" data-more-friend="'+attr(id)+'"><button type="button" class="friend-suggestion-profile" onclick="xoxoViewMoreFriend(\''+attr(id)+'\')"><span class="friend-suggestion-avatar">'+avatar+'</span><span><span class="friend-suggestion-name">'+safe(name)+'</span><span class="friend-suggestion-reason">'+safe(p.country||tr('XOXO Avenue member','Miembro de XOXO Avenue','Membre de XOXO Avenue','Użytkownik XOXO Avenue','Membro do XOXO Avenue'))+'</span></span></button><div class="friend-suggestion-actions"><button class="btn btn-primary" type="button" onclick="xoxoFollowMoreFriend(\''+attr(id)+'\',this)">'+safe(tr('Follow','Seguir','Suivre','Obserwuj','Seguir'))+'</button><button class="btn btn-secondary" type="button" onclick="xoxoViewMoreFriend(\''+attr(id)+'\')">'+safe(tr('Profile','Perfil','Profil','Profil','Perfil'))+'</button></div></div>';}).join('');
+ window.xoxoRenderMoreFriends=async function(reset){if(reset)state.visible=12;const term=el('xoxoMoreFriendsSearch').value.trim().toLocaleLowerCase();const country=el('xoxoMoreFriendsCountry').value.trim().toLocaleLowerCase();const filtered=state.profiles.filter(p=>(!country||String(p.country||'').toLocaleLowerCase().includes(country))&&(!term||String(p.username||'').toLocaleLowerCase().includes(term))&&!state.following.has(String(p.user_id)));
+await Promise.all(filtered.slice(0,state.visible).filter(p=>p.profile_photo).map(async p=>{p.avatar_settings=await xoxoGetPublicAvatarSettings(p.user_id); }));
+ const cards=filtered.slice(0,state.visible).map(p=>{const id=String(p.user_id);const name=String(p.username||'@User');const avatar=p.profile_photo?'<img src="'+attr(p.profile_photo)+'" alt="" style="'+xoxoAvatarStyle(p.avatar_settings)+'">':(typeof xoxoBubbleImg==='function'?xoxoBubbleImg(id,name):safe(name.charAt(0)));return '<div class="friend-suggestion-card" data-more-friend="'+attr(id)+'"><button type="button" class="friend-suggestion-profile" onclick="xoxoViewMoreFriend(\''+attr(id)+'\')"><span class="friend-suggestion-avatar">'+avatar+'</span><span><span class="friend-suggestion-name">'+safe(name)+'</span><span class="friend-suggestion-reason">'+safe(p.country||tr('XOXO Avenue member','Miembro de XOXO Avenue','Membre de XOXO Avenue','Użytkownik XOXO Avenue','Membro do XOXO Avenue'))+'</span></span></button><div class="friend-suggestion-actions"><button class="btn btn-primary" type="button" onclick="xoxoFollowMoreFriend(\''+attr(id)+'\',this)">'+safe(tr('Follow','Seguir','Suivre','Obserwuj','Seguir'))+'</button><button class="btn btn-secondary" type="button" onclick="xoxoViewMoreFriend(\''+attr(id)+'\')">'+safe(tr('Profile','Perfil','Profil','Profil','Perfil'))+'</button></div></div>';}).join('');
  el('xoxoMoreFriendsResults').innerHTML=cards?'<div class="xoxo-more-friends-grid">'+cards+'</div>':'<div class="xoxo-more-friends-status">'+safe(tr('No matching suggestions yet.','Aún no hay sugerencias que coincidan.','Aucune suggestion correspondante.','Brak pasujących sugestii.','Ainda não há sugestões correspondentes.'))+'</div>';
  el('xoxoMoreFriendsLoadMore').style.display=filtered.length>state.visible?'':'none';};
  window.xoxoLoadMoreFriends=function(){state.visible+=12;xoxoRenderMoreFriends(false);};
@@ -22669,6 +22901,7 @@ async function xoxoAvatarClose(apply){
         supabaseClient.from('xoxo_whisper_reactions').select('whisper_id,emoji').in('whisper_id',items.map(item=>item.id))
       ]);
       const profiles=new Map((profilesResult.data||[]).map(p=>[String(p.user_id),p]));
+      await Promise.all([...profiles.values()].filter(p=>p.profile_photo).map(async p=>{p.avatar_settings=await xoxoGetPublicAvatarSettings(p.user_id)}));
       const totals=new Map();
       for(const r of (reactionsResult.data||[])){
         const key=String(r.whisper_id);
@@ -22686,7 +22919,7 @@ async function xoxoAvatarClose(apply){
         profileButton.type='button';profileButton.className='xoxo-note-profile';
         const avatar=document.createElement('span');avatar.className='xoxo-note-avatar';
         if(profile?.profile_photo){
-          const img=document.createElement('img');img.src=profile.profile_photo;img.alt='';
+          const img=document.createElement('img');img.src=profile.profile_photo;img.alt='';img.style.cssText=xoxoAvatarStyle(profile.avatar_settings);
           avatar.append(img);
         }else avatar.textContent='🫧';
         const handle=document.createElement('span');handle.className='xoxo-note-handle';
@@ -23032,12 +23265,14 @@ async function refresh(){
   const r=await sb.rpc('get_public_active_whispers');if(r.error)throw r.error;const rows=r.data||[];owner=id?rows.find(w=>String(w.user_id)===id)||null:null;
   let totals=new Map();
   if(id&&rows.length){const rr=await sb.from('xoxo_whisper_reactions').select('whisper_id,emoji').in('whisper_id',rows.map(w=>w.id));if(!rr.error)for(const x of rr.data||[]){const k=String(x.whisper_id);if(!totals.has(k))totals.set(k,new Map());const m=totals.get(k);m.set(x.emoji,(m.get(x.emoji)||0)+1)}}
+  const avatarSettingsByUserId=new Map();
+  await Promise.all([...new Set(rows.filter(w=>w.profile_photo).map(w=>String(w.user_id)))].map(async userId=>{avatarSettingsByUserId.set(userId,await xoxoGetPublicAvatarSettings(userId));}));
   document.querySelectorAll('.xoxo-dw-floating-picker').forEach(el=>el.remove());cards.replaceChildren();
   if(!rows.length)cards.append(make('p','xoxo-dw-status',t('empty')));
   for(const w of rows){
    const isOwn=!!id&&String(w.user_id)===id,person={username:w.username,profile_photo:w.profile_photo};
    const card=make('article','xoxo-dw-card'),bubble=make('div','xoxo-dw-bubble',w.content||''),user=make('button','xoxo-dw-person'),avatar=make('span','xoxo-dw-avatar'),name=make('strong','',person.username?'@'+String(person.username).replace(/^@/,''):'@XOXO Member');
-   user.type='button';user.title='View profile';const img=make('img');const official=typeof xoxoBubbleUrl==='function'?xoxoBubbleUrl(w.user_id,person.username):'https://www.xoxoavenue.com/01_violeta.png';img.src=person.profile_photo||official;img.alt='XOXO profile avatar';img.onerror=()=>{if(img.src!==official){img.onerror=null;img.src=official}};avatar.append(img);user.append(avatar,name);user.addEventListener('click',()=>{if(typeof openPublicProfile==='function')openPublicProfile(w.user_id)});
+   user.type='button';user.title='View profile';const img=make('img');const official=typeof xoxoBubbleUrl==='function'?xoxoBubbleUrl(w.user_id,person.username):'https://www.xoxoavenue.com/01_violeta.png';img.src=person.profile_photo||official;img.alt='XOXO profile avatar';if(person.profile_photo)img.style.cssText=xoxoAvatarStyle(avatarSettingsByUserId.get(String(w.user_id)));img.onerror=()=>{if(img.src!==official){img.onerror=null;img.src=official}};avatar.append(img);user.append(avatar,name);user.addEventListener('click',()=>{if(typeof openPublicProfile==='function')openPublicProfile(w.user_id)});
    const minutes=Math.max(0,Math.ceil((new Date(w.expires_at).getTime()-Date.now())/60000));card.append(bubble,user,make('small','xoxo-dw-timer',minutes>=60?Math.ceil(minutes/60)+'h left':minutes+'m left'));
    const reactions=make('div','xoxo-dw-reactions');
    if(!id&&!isOwn){const react=make('button','', '💜 '+t('react'));react.type='button';react.addEventListener('click',auth);reactions.append(react)}
@@ -23098,6 +23333,7 @@ async function load(){
   const names=new Map();
   if(allIds.length){
    const people=await sb.from('profiles').select('user_id,username,profile_photo').in('user_id',allIds);
+   await Promise.all((people.data||[]).filter(p=>p.profile_photo).map(async p=>{p.avatar_settings=await xoxoGetPublicAvatarSettings(p.user_id)}));
    for(const person of people.data||[])names.set(person.user_id,person);
   }
   const labelFor=userId=>{
@@ -23140,6 +23376,7 @@ async function load(){
     const img=element('img','');
     img.src=photo||bubble;
     img.alt=photo?'Foto de '+labelFor(userId):'XOXO Bubble de '+labelFor(userId);
+   if(photo)img.style.cssText=xoxoAvatarStyle(person?.avatar_settings);
     img.loading='lazy';
     img.onerror=()=>{if(img.src!==new URL(bubble,location.href).href){img.onerror=null;img.src=bubble}else{img.remove();avatar.textContent='🫧'}};
     avatar.append(img);
