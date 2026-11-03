@@ -12352,6 +12352,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     alert(isSpanish ? "Reporte enviado. Gracias." : "Report submitted. Thank you.");
                                     }
 
+                                    const XOXO_SUGGESTION_MAX = 12; // max profiles shown in "People You May Know"
                                     async function loadFriendSuggestions() {
                                     const section = document.getElementById("friendSuggestionsSection");
                                     const list = document.getElementById("friendSuggestionsList");
@@ -12422,11 +12423,11 @@ async function sharePublicProfile(userId, username = "@User") {
                                     profiles = data || [];
                                     }
 
-                                    if (profiles.length < 6) {
+                                    if (profiles.length < XOXO_SUGGESTION_MAX) {
                                     const { data: fallbackProfiles, error: fallbackError } = await supabaseClient
                                     .from("friendhub_public_profiles")
                                     .select("user_id, username, country, profile_photo")
-                                    .limit(24);
+                                    .limit(60);
                                     if (fallbackError) throw fallbackError;
 
                                     const seen = new Set(profiles.map(p => String(p.user_id)));
@@ -12435,12 +12436,12 @@ async function sharePublicProfile(userId, username = "@User") {
                                     if (!id || id === myId || alreadyFollowing.has(id) || blockedIds.has(id) || seen.has(id)) continue;
                                     profiles.push(profile);
                                     seen.add(id);
-                                    if (profiles.length >= 6) break;
+                                    if (profiles.length >= XOXO_SUGGESTION_MAX) break;
                                     }
                                     }
 
                                     profiles.sort((a, b) => (mutualCounts.get(String(b.user_id)) || 0) - (mutualCounts.get(String(a.user_id)) || 0));
-                                    profiles = profiles.slice(0, 6);
+                                    profiles = profiles.slice(0, XOXO_SUGGESTION_MAX);
                                     await Promise.all(profiles.filter(profile => profile.profile_photo).map(async profile => {
                                       profile.avatar_settings = await xoxoGetPublicAvatarSettings(profile.user_id);
                                     }));
@@ -12478,6 +12479,23 @@ async function sharePublicProfile(userId, username = "@User") {
                                     </div>
                                     </div>`;
                                     }).join("");
+                                    /* Repair pass: if a photo's framing (crop/zoom) did not arrive in time while the page was busy,
+                                       retry in the background and re-frame the photo so it matches the profile page. */
+                                    profiles.filter(p => p.profile_photo && !p.avatar_settings).forEach(async p => {
+                                    for (let attempt = 0; attempt < 3; attempt++) {
+                                    await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+                                    try {
+                                    const { data, error } = await supabaseClient.rpc("xoxo_get_public_avatar_settings", { target_user_id: String(p.user_id) });
+                                    if (error) continue;
+                                    if (data) {
+                                    p.avatar_settings = data;
+                                    const img = document.querySelector(`[data-suggestion-user="${CSS.escape(String(p.user_id))}"] .friend-suggestion-avatar img`);
+                                    if (img) img.style.cssText = xoxoAvatarStyle(data);
+                                    }
+                                    return;
+                                    } catch (_) {}
+                                    }
+                                    });
                                     } catch (error) {
                                     console.error("Friend suggestions error:", error);
                                     if (list.dataset.loadToken === suggestionLoadToken) list.dataset.loadToken = "";
@@ -12498,7 +12516,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     const card = document.querySelector(`[data-suggestion-user="${CSS.escape(String(userId))}"]`);
                                     if (card) card.remove();
                                     const list = document.getElementById("friendSuggestionsList");
-                                    if (list && !list.querySelector(".friend-suggestion-card")) loadFriendSuggestions();
+                                    if (list) loadFriendSuggestions(); // refill the gap left by the followed profile
                                     } catch (error) {
                                     console.error("Suggestion Follow error:", error);
                                     alert(getFriendHubLanguage() === "es" ? "No se pudo seguir a esta persona. Inténtalo de nuevo." : "Could not follow this person. Please try again.");
