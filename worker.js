@@ -2827,7 +2827,7 @@ async function handleActivityEmailQueue(env) {
       const [prefs,presence,recent] = await Promise.all([
         xoxoRestGet(env,'xoxo_email_notification_preferences',`select=email_enabled&user_id=eq.${userId}&limit=1`),
         xoxoRestGet(env,'user_presence',`select=last_active_at&user_id=eq.${userId}&limit=1`),
-        xoxoRestGet(env,'xoxo_email_notification_queue',`select=id&recipient_id=eq.${userId}&sent_at=gte.${encodeURIComponent(new Date(Date.now()-XOXO_ACTIVITY_COOLDOWN_MS).toISOString())}&limit=1`),
+        xoxoRestGet(env,'xoxo_email_notification_queue',`select=id&recipient_id=eq.${userId}&notification_type=eq.${encodeURIComponent(item.notification_type)}&sent_at=gte.${encodeURIComponent(new Date(Date.now()-XOXO_ACTIVITY_COOLDOWN_MS).toISOString())}&limit=1`),
       ]);
       if (prefs[0]?.email_enabled === false || recent.length) {
         await xoxoAuditEmailPresence(env,item,'skip',prefs[0]?.email_enabled === false ? 'email_preference_disabled' : 'cooldown_30_minutes',presence[0]?.last_active_at || null);
