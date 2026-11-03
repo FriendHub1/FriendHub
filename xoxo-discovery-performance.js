@@ -50,7 +50,7 @@
         : Promise.resolve({ data: [], error: null });
       const fallbackPromise = supabaseClient.from("friendhub_public_profiles")
         .select("user_id, username, country, profile_photo")
-        .limit(36);
+        .limit(200);
 
       const [secondDegreeResult, fallbackResult] = await Promise.all([
         secondDegreePromise, fallbackPromise
@@ -79,14 +79,42 @@
         if (!id || id === myId || alreadyFollowing.has(id) || blockedIds.has(id) || seen.has(id)) continue;
         profiles.push(profile);
         seen.add(id);
-        if (profiles.length >= 10) break;
       }
 
-      profiles.sort((a, b) =>
-        (mutualCounts.get(String(b.user_id)) || 0) -
-        (mutualCounts.get(String(a.user_id)) || 0)
-      );
-      profiles = profiles.slice(0, 10);
+      // Prefer profiles not shown in the immediately previous suggestion batch.
+      // This makes Refresh rotate to other eligible people when the pool is large enough.
+      const recentKey = "xoxo_friend_suggestions_recent_" + myId;
+      let recentlyShown = [];
+      try {
+        const stored = sessionStorage.getItem(recentKey);
+        recentlyShown = stored ? JSON.parse(stored) : [];
+        if (!Array.isArray(recentlyShown)) recentlyShown = [];
+      } catch (_) {
+        recentlyShown = [];
+      }
+
+      const rankedProfiles = profiles
+        .map(profile => ({
+          profile,
+          mutuals: mutualCounts.get(String(profile.user_id)) || 0,
+          random: Math.random()
+        }))
+        .sort((a, b) => b.mutuals - a.mutuals || a.random - b.random);
+
+      const previousSet = new Set(recentlyShown.map(String));
+      const freshProfiles = rankedProfiles.filter(item => !previousSet.has(String(item.profile.user_id)));
+      const repeatedProfiles = rankedProfiles.filter(item => previousSet.has(String(item.profile.user_id)));
+      const selected = freshProfiles.slice(0, 10);
+      if (selected.length < 10) {
+        selected.push(...repeatedProfiles.slice(0, 10 - selected.length));
+      }
+      profiles = selected.map(item => item.profile);
+
+      try {
+        sessionStorage.setItem(recentKey, JSON.stringify(profiles.map(profile => String(profile.user_id))));
+      } catch (_) {
+        // Suggestions still work if browser storage is unavailable.
+      }
 
       if (list.dataset.loadToken !== token) return;
       list.dataset.loadToken = "";
