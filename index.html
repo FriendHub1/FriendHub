@@ -12357,36 +12357,60 @@ async function sharePublicProfile(userId, username = "@User") {
                                       return `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" decoding="async" data-xoxo-avatar-user="${escapeHtmlAttribute(String(profile.user_id))}" data-xoxo-avatar-ok="${ok}" style="${xoxoAvatarStyle(profile.avatar_settings)}">`;
                                     }
                                     async function xoxoRepairSuggestionAvatars(root) {
+                                      /* The first settings request can come back empty while the session/page is still busy (iPhone/Mac).
+                                         Keep asking a few times; apply the crop/zoom as soon as it arrives. */
+                                      window.__xoxoAvatarNoSettings = window.__xoxoAvatarNoSettings || new Map();
                                       const scope = root || document;
                                       const imgs = [...scope.querySelectorAll('img[data-xoxo-avatar-user][data-xoxo-avatar-ok="0"]')];
                                       imgs.forEach(img => img.setAttribute("data-xoxo-avatar-ok", "pending"));
+                                      const delays = [0, 1500, 4500, 10000];
                                       await Promise.all(imgs.map(async img => {
                                         const uid = img.getAttribute("data-xoxo-avatar-user");
-                                        for (let attempt = 0; attempt < 8; attempt++) {
+                                        const noSet = window.__xoxoAvatarNoSettings.get(uid);
+                                        if (noSet && Date.now() - noSet < 10 * 60 * 1000) { img.setAttribute("data-xoxo-avatar-ok", "1"); return; }
+                                        for (let i = 0; i < delays.length; i++) {
+                                          if (delays[i]) await new Promise(resolve => setTimeout(resolve, delays[i]));
                                           if (!img.isConnected) return;
                                           try {
                                             const { data, error } = await supabaseClient.rpc("xoxo_get_public_avatar_settings", { target_user_id: uid });
-                                            if (!error) {
-                                              if (data) {
-                                                img.style.cssText = xoxoAvatarStyle(data);
-                                                try { xoxoPublicAvatarSettingsCache.set(uid, { cachedAt: Date.now(), promise: Promise.resolve(data) }); } catch (_) {}
-                                              }
+                                            if (!error && data) {
+                                              img.style.cssText = xoxoAvatarStyle(data);
+                                              xoxoReframeAvatar(img);
+                                              try { xoxoPublicAvatarSettingsCache.set(uid, { cachedAt: Date.now(), promise: Promise.resolve(data) }); } catch (_) {}
                                               img.setAttribute("data-xoxo-avatar-ok", "1");
                                               return;
                                             }
                                           } catch (_) {}
-                                          await new Promise(resolve => setTimeout(resolve, 600 * (attempt + 1)));
                                         }
-                                        img.setAttribute("data-xoxo-avatar-ok", "failed");
+                                        window.__xoxoAvatarNoSettings.set(uid, Date.now());
+                                        img.setAttribute("data-xoxo-avatar-ok", "1");
                                       }));
+                                    }
+                                    /* WebKit (Safari iPhone/Mac) can keep a stale transform for images created while their page was hidden.
+                                       Re-applying the same inline style once the image is loaded/visible forces it to repaint correctly. */
+                                    function xoxoReframeAvatar(img) {
+                                      try { const css = img.style.cssText; img.style.cssText = ""; void img.offsetWidth; img.style.cssText = css; } catch (_) {}
                                     }
                                     (function () {
                                       if (window.__xoxoAvatarRepairObserver || typeof MutationObserver === "undefined") return;
                                       window.__xoxoAvatarRepairObserver = true;
+                                      const io = ("IntersectionObserver" in window)
+                                        ? new IntersectionObserver(entries => entries.forEach(entry => {
+                                            if (entry.isIntersecting) { xoxoReframeAvatar(entry.target); io.unobserve(entry.target); }
+                                          }), { threshold: 0.01 })
+                                        : null;
+                                      function hook() {
+                                        document.querySelectorAll('img[data-xoxo-avatar-user]:not([data-xoxo-hooked])').forEach(img => {
+                                          img.setAttribute("data-xoxo-hooked", "1");
+                                          img.addEventListener("load", () => xoxoReframeAvatar(img), { once: true });
+                                          if (img.complete && img.naturalWidth) xoxoReframeAvatar(img);
+                                          if (io) io.observe(img);
+                                        });
+                                      }
                                       let timer = null;
                                       new MutationObserver(function () {
                                         if (timer) return;
-                                        timer = setTimeout(function () { timer = null; xoxoRepairSuggestionAvatars(document); }, 500);
+                                        timer = setTimeout(function () { timer = null; hook(); xoxoRepairSuggestionAvatars(document); }, 400);
                                       }).observe(document.documentElement, { childList: true, subtree: true });
                                     })();
                                     async function xoxoFreshAvatarSettings(userId) {
@@ -12396,7 +12420,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                         try {
                                           const { data, error } = await supabaseClient.rpc("xoxo_get_public_avatar_settings", { target_user_id: id });
                                           if (!error) {
-                                            try { xoxoPublicAvatarSettingsCache.set(id, { cachedAt: Date.now(), promise: Promise.resolve(data || null) }); } catch (_) {}
+                                            if (data) { try { xoxoPublicAvatarSettingsCache.set(id, { cachedAt: Date.now(), promise: Promise.resolve(data) }); } catch (_) {} }
                                             return data || null;
                                           }
                                         } catch (_) {}
