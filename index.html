@@ -18061,8 +18061,6 @@ async function xoxoDmLoadProfiles(conversations){
   await Promise.all([...xoxoDmProfiles.values()].filter(u=>u.profile_photo).map(async u=>{
     u.avatar_settings=await xoxoGetPublicAvatarSettings(u.user_id);
   }));
-
-  }
 }
 async function loadXoxoDmConversations() {
   const list=document.getElementById("xmmConversationList");
