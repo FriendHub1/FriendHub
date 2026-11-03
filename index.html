@@ -12054,9 +12054,13 @@ async function xoxoOpenPublicProfileCore(userId) {
                                       <div class="empty-state">${getFriendHubLanguage() === 'de' ? 'Profil wird geladen...' : 'Loading profile...'}</div>
                                     </div>`;
                                     if (postsContainer) postsContainer.innerHTML = '';
+                                    // Follow counts: only count visible (non-suspended / existing) profiles so the number matches the list.
+                                    const xoxoFollowCounts = Promise.resolve(
+                                      supabaseClient.rpc("get_follow_counts", { target_id: String(userId) })
+                                    );
                                     const xoxoSocialPromise = xoxoProfileWithTimeout(Promise.all([
-                                    supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("following_id", String(userId)),
-                                    supabaseClient.from("user_follows").select("id", { count: "exact", head: true }).eq("follower_id", String(userId)),
+                                    xoxoFollowCounts.then(r => ({ count: r.data?.[0]?.followers ?? 0, error: r.error })),
+                                    xoxoFollowCounts.then(r => ({ count: r.data?.[0]?.following ?? 0, error: r.error })),
                                     !currentUser || String(currentUser.id) === String(userId)
                                     ? Promise.resolve({ data: null, error: null })
                                     : supabaseClient.from("user_follows").select("id").eq("follower_id", currentUser.id).eq("following_id", String(userId)).maybeSingle(),
