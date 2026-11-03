@@ -12354,6 +12354,8 @@ async function sharePublicProfile(userId, username = "@User") {
                                     function xoxoSuggestionAvatarHtml(profile, username) {
                                       if (!profile || !profile.profile_photo) return xoxoBubbleImg(profile && profile.user_id, username);
                                       const ok = profile.avatar_settings ? "1" : "0";
+                                      window.__xoxoAvatarSettingsById = window.__xoxoAvatarSettingsById || new Map();
+                                      if (profile.avatar_settings) window.__xoxoAvatarSettingsById.set(String(profile.user_id), profile.avatar_settings);
                                       return `<img src="${escapeHtmlAttribute(profile.profile_photo)}" alt="Profile photo" decoding="async" data-xoxo-avatar-user="${escapeHtmlAttribute(String(profile.user_id))}" data-xoxo-avatar-ok="${ok}" style="${xoxoAvatarStyle(profile.avatar_settings)}">`;
                                     }
                                     async function xoxoRepairSuggestionAvatars(root) {
@@ -12376,6 +12378,8 @@ async function sharePublicProfile(userId, username = "@User") {
                                             const { data, error } = await supabaseClient.rpc("xoxo_get_public_avatar_settings", { target_user_id: uid });
                                             if (!error && data) {
                                               img.style.cssText = xoxoAvatarStyle(data);
+                                              window.__xoxoAvatarSettingsById = window.__xoxoAvatarSettingsById || new Map();
+                                              window.__xoxoAvatarSettingsById.set(uid, data);
                                               img = xoxoReframeAvatar(img, true);
                                               try { xoxoPublicAvatarSettingsCache.set(uid, { cachedAt: Date.now(), promise: Promise.resolve(data) }); } catch (_) {}
                                               img.setAttribute("data-xoxo-avatar-ok", "1");
@@ -12413,7 +12417,17 @@ async function sharePublicProfile(userId, username = "@User") {
                                           }), { threshold: 0.01 })
                                         : null;
                                       window.__xoxoAvatarIO = io;
+                                      function enforce() {
+                                        /* Safety net: if an avatar lost its crop/zoom style, put it back from the saved settings. */
+                                        const map = window.__xoxoAvatarSettingsById;
+                                        if (!map || !map.size) return;
+                                        document.querySelectorAll('img[data-xoxo-avatar-user]').forEach(img => {
+                                          const st = map.get(img.getAttribute("data-xoxo-avatar-user"));
+                                          if (st && (!img.hasAttribute("style") || !img.style.transform)) img.style.cssText = xoxoAvatarStyle(st);
+                                        });
+                                      }
                                       function hook() {
+                                        enforce();
                                         document.querySelectorAll('img[data-xoxo-avatar-user]:not([data-xoxo-hooked])').forEach(img => {
                                           img.setAttribute("data-xoxo-hooked", "1");
                                           img.addEventListener("load", () => xoxoReframeAvatar(img), { once: true });
@@ -12425,7 +12439,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                       new MutationObserver(function () {
                                         if (timer) return;
                                         timer = setTimeout(function () { timer = null; hook(); xoxoRepairSuggestionAvatars(document); }, 400);
-                                      }).observe(document.documentElement, { childList: true, subtree: true });
+                                      }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] });
                                     })();
                                     async function xoxoFreshAvatarSettings(userId) {
                                       const id = String(userId || "");
