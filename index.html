@@ -12456,7 +12456,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                       }
                                       return null;
                                     }
-                                    const XOXO_SUGGESTION_MAX = 12; // max profiles shown in "People You May Know"
+                                    const XOXO_SUGGESTION_MAX = 10; // max profiles shown in "People You May Know"
                                     async function loadFriendSuggestions() {
                                     const section = document.getElementById("friendSuggestionsSection");
                                     const list = document.getElementById("friendSuggestionsList");
@@ -12531,7 +12531,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     const { data: fallbackProfiles, error: fallbackError } = await supabaseClient
                                     .from("friendhub_public_profiles")
                                     .select("user_id, username, country, profile_photo")
-                                    .limit(60);
+                                    .limit(1000);
                                     if (fallbackError) throw fallbackError;
 
                                     const seen = new Set(profiles.map(p => String(p.user_id)));
@@ -12541,6 +12541,17 @@ async function sharePublicProfile(userId, username = "@User") {
                                     profiles.push(profile);
                                     seen.add(id);
                                     if (profiles.length >= XOXO_SUGGESTION_MAX) break;
+                                    }
+                                    /* Not enough new people yet: fill with accounts already followed (shown as "Following"). */
+                                    if (profiles.length < XOXO_SUGGESTION_MAX) {
+                                    for (const profile of fallbackProfiles || []) {
+                                    const id = String(profile.user_id || "");
+                                    if (!id || id === myId || blockedIds.has(id) || seen.has(id)) continue;
+                                    profile.__alreadyFollowing = true;
+                                    profiles.push(profile);
+                                    seen.add(id);
+                                    if (profiles.length >= XOXO_SUGGESTION_MAX) break;
+                                    }
                                     }
                                     }
 
@@ -12576,7 +12587,7 @@ async function sharePublicProfile(userId, username = "@User") {
                                     <span><span class="friend-suggestion-name">${escapeHtml(username)}</span><span class="friend-suggestion-reason">${escapeHtml(reason)}</span></span>
                                     </button>
                                     <div class="friend-suggestion-actions">
-                                    <button class="btn btn-primary" type="button" onclick="followFriendSuggestion('${escapeHtmlAttribute(id)}', this)">${getFriendHubLanguage() === "fr" ? "Suivre" : (getFriendHubLanguage() === "pl" ? "Obserwuj" : (isSpanish ? "Seguir" : "Follow"))}</button>
+                                    ${profile.__alreadyFollowing ? `<button class="btn btn-primary" type="button" disabled>${getFriendHubLanguage() === "fr" ? "Abonné" : (getFriendHubLanguage() === "pl" ? "Obserwujesz" : (isSpanish ? "Siguiendo" : "Following"))}</button>` : `<button class="btn btn-primary" type="button" onclick="followFriendSuggestion('${escapeHtmlAttribute(id)}', this)">${getFriendHubLanguage() === "fr" ? "Suivre" : (getFriendHubLanguage() === "pl" ? "Obserwuj" : (isSpanish ? "Seguir" : "Follow"))}</button>`}
                                     <button class="btn btn-secondary" type="button" onclick="openPublicProfile('${escapeHtmlAttribute(id)}')">${getFriendHubLanguage() === "fr" ? "Profil" : (getFriendHubLanguage() === "pl" ? "Profil" : (isSpanish ? "Perfil" : "Profile"))}</button>
                                     </div>
                                     </div>`;
@@ -22651,13 +22662,13 @@ async function xoxoAvatarClose(apply){
 <script id="xoxo-more-friends-script">
 (function(){
  'use strict';
- const state={profiles:[],following:new Set(),blocked:new Set(),visible:12,loading:false,requestId:0};
+ const state={profiles:[],following:new Set(),blocked:new Set(),visible:24,loading:false,requestId:0};
  const el=id=>document.getElementById(id);
  const tr=(en,es,fr,pl,pt)=>{const l=typeof getFriendHubLanguage==='function'?getFriendHubLanguage():'en';return l==='es'?es:l==='fr'?fr:l==='pl'?pl:l==='pt-BR'?pt:en};
  function safe(v){return typeof escapeHtml==='function'?escapeHtml(String(v??'')):String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
  function attr(v){return typeof escapeHtmlAttribute==='function'?escapeHtmlAttribute(String(v??'')):safe(v);}
  function setupText(){el('xoxoMoreFriendsTitle').textContent=tr('✨ Discover More Friends','✨ Descubre más amigos','✨ Découvrez plus d’amis','✨ Odkryj więcej znajomych','✨ Descubra mais amigos');el('xoxoMoreFriendsSearch').placeholder=tr('Search by username','Buscar por usuario','Rechercher un utilisateur','Szukaj użytkownika','Buscar usuário');el('xoxoMoreFriendsCountry').placeholder=tr('Search by country','Buscar por país','Rechercher par pays','Szukaj kraju','Buscar por país');el('xoxoMoreFriendsLoadMore').textContent=tr('Load More','Ver más','Voir plus','Pokaż więcej','Ver mais');}
- window.xoxoOpenMoreFriends=async function(){if(!currentUser){if(typeof openAuth==='function')openAuth('login');return;}const overlay=el('xoxoMoreFriendsOverlay');overlay.classList.add('open');document.body.style.overflow='hidden';setupText();el('xoxoMoreFriendsSearch').value='';el('xoxoMoreFriendsCountry').value='';el('xoxoMoreFriendsResults').innerHTML='<div class="xoxo-more-friends-status">'+safe(tr('Loading suggestions...','Cargando sugerencias...','Chargement...','Ładowanie...','Carregando sugestões...'))+'</div>';state.visible=12;await fetchFriends();};
+ window.xoxoOpenMoreFriends=async function(){if(!currentUser){if(typeof openAuth==='function')openAuth('login');return;}const overlay=el('xoxoMoreFriendsOverlay');overlay.classList.add('open');document.body.style.overflow='hidden';setupText();el('xoxoMoreFriendsSearch').value='';el('xoxoMoreFriendsCountry').value='';el('xoxoMoreFriendsResults').innerHTML='<div class="xoxo-more-friends-status">'+safe(tr('Loading suggestions...','Cargando sugerencias...','Chargement...','Ładowanie...','Carregando sugestões...'))+'</div>';state.visible=24;await fetchFriends();};
  window.xoxoCloseMoreFriends=function(){state.requestId++;el('xoxoMoreFriendsOverlay').classList.remove('open');document.body.style.overflow='';};
  async function fetchFriends(){const id=++state.requestId;state.loading=true;try{
   const uid=String(currentUser.id);
@@ -22666,11 +22677,11 @@ async function xoxoAvatarClose(apply){
   state.following=new Set((follows.data||[]).map(r=>String(r.following_id)));
   state.blocked=blocks.error?new Set():new Set((blocks.data||[]).map(r=>String(r.blocked_id)));
   // Page through public profiles; never invent results or assume a single 24-profile sample is exhaustive.
-  const profiles=[];const seen=new Set();let offset=0;const size=200;
-  for(let page=0;page<10;page++){
+  const profiles=[];const seen=new Set();let offset=0;const size=1000;
+  for(let page=0;page<1000;page++){
    const {data,error}=await supabaseClient.from('friendhub_public_profiles').select('user_id,username,country,profile_photo').range(offset,offset+size-1);
    if(error)throw error;
-   for(const p of data||[]){const pid=String(p.user_id||'');if(pid&&pid!==uid&&!state.following.has(pid)&&!state.blocked.has(pid)&&!seen.has(pid)){profiles.push(p);seen.add(pid);}}
+   for(const p of data||[]){const pid=String(p.user_id||'');if(pid&&pid!==uid&&!state.blocked.has(pid)&&!seen.has(pid)){profiles.push(p);seen.add(pid);}}
    if(!data||data.length<size)break;offset+=size;
   }
   if(id!==state.requestId||!el('xoxoMoreFriendsOverlay').classList.contains('open'))return;
@@ -22678,12 +22689,13 @@ async function xoxoAvatarClose(apply){
   xoxoRenderMoreFriends(true);
  }catch(err){console.error('More friends error',err);if(id===state.requestId)el('xoxoMoreFriendsResults').innerHTML='<div class="xoxo-more-friends-status">'+safe(tr('Could not load suggestions. Please try again.','No se pudieron cargar las sugerencias. Inténtalo de nuevo.','Impossible de charger les suggestions.','Nie udało się załadować sugestii.','Não foi possível carregar as sugestões.'))+'</div>';}finally{state.loading=false;}}
  window.xoxoMoreFriendsSearchKey=function(event){if(event.key!=='Enter')return;event.preventDefault();xoxoRenderMoreFriends(true);};
- window.xoxoRenderMoreFriends=async function(reset){if(reset)state.visible=12;const term=el('xoxoMoreFriendsSearch').value.trim().toLocaleLowerCase();const country=el('xoxoMoreFriendsCountry').value.trim().toLocaleLowerCase();const filtered=state.profiles.filter(p=>(!country||String(p.country||'').toLocaleLowerCase().includes(country))&&(!term||String(p.username||'').toLocaleLowerCase().includes(term))&&!state.following.has(String(p.user_id)));
+ window.xoxoRenderMoreFriends=async function(reset){if(reset)state.visible=24;const term=el('xoxoMoreFriendsSearch').value.trim().toLocaleLowerCase();const country=el('xoxoMoreFriendsCountry').value.trim().toLocaleLowerCase();const filtered=state.profiles.filter(p=>(!country||String(p.country||'').toLocaleLowerCase().includes(country))&&(!term||String(p.username||'').toLocaleLowerCase().includes(term)));
+filtered.sort((a,b)=>(state.following.has(String(a.user_id))?1:0)-(state.following.has(String(b.user_id))?1:0));
 await Promise.all(filtered.slice(0,state.visible).filter(p=>p.profile_photo).map(async p=>{p.avatar_settings=await xoxoGetPublicAvatarSettings(p.user_id); }));
- const cards=filtered.slice(0,state.visible).map(p=>{const id=String(p.user_id);const name=String(p.username||'@User');const avatar=p.profile_photo?xoxoSuggestionAvatarHtml(p,name):(typeof xoxoBubbleImg==='function'?xoxoBubbleImg(id,name):safe(name.charAt(0)));return '<div class="friend-suggestion-card" data-more-friend="'+attr(id)+'"><button type="button" class="friend-suggestion-profile" onclick="xoxoViewMoreFriend(\''+attr(id)+'\')"><span class="friend-suggestion-avatar">'+avatar+'</span><span><span class="friend-suggestion-name">'+safe(name)+'</span><span class="friend-suggestion-reason">'+safe(p.country||tr('XOXO Avenue member','Miembro de XOXO Avenue','Membre de XOXO Avenue','Użytkownik XOXO Avenue','Membro do XOXO Avenue'))+'</span></span></button><div class="friend-suggestion-actions"><button class="btn btn-primary" type="button" onclick="xoxoFollowMoreFriend(\''+attr(id)+'\',this)">'+safe(tr('Follow','Seguir','Suivre','Obserwuj','Seguir'))+'</button><button class="btn btn-secondary" type="button" onclick="xoxoViewMoreFriend(\''+attr(id)+'\')">'+safe(tr('Profile','Perfil','Profil','Profil','Perfil'))+'</button></div></div>';}).join('');
+ const cards=filtered.slice(0,state.visible).map(p=>{const id=String(p.user_id);const name=String(p.username||'@User');const avatar=p.profile_photo?xoxoSuggestionAvatarHtml(p,name):(typeof xoxoBubbleImg==='function'?xoxoBubbleImg(id,name):safe(name.charAt(0)));return '<div class="friend-suggestion-card" data-more-friend="'+attr(id)+'"><button type="button" class="friend-suggestion-profile" onclick="xoxoViewMoreFriend(\''+attr(id)+'\')"><span class="friend-suggestion-avatar">'+avatar+'</span><span><span class="friend-suggestion-name">'+safe(name)+'</span><span class="friend-suggestion-reason">'+safe(p.country||tr('XOXO Avenue member','Miembro de XOXO Avenue','Membre de XOXO Avenue','Użytkownik XOXO Avenue','Membro do XOXO Avenue'))+'</span></span></button><div class="friend-suggestion-actions">'+(state.following.has(id)?'<button class="btn btn-primary" type="button" disabled>'+safe(tr('Following','Siguiendo','Abonné','Obserwujesz','Seguindo'))+'</button>':'<button class="btn btn-primary" type="button" onclick="xoxoFollowMoreFriend(\''+attr(id)+'\',this)">'+safe(tr('Follow','Seguir','Suivre','Obserwuj','Seguir'))+'</button>')+'<button class="btn btn-secondary" type="button" onclick="xoxoViewMoreFriend(\''+attr(id)+'\')">'+safe(tr('Profile','Perfil','Profil','Profil','Perfil'))+'</button></div></div>';}).join('');
  el('xoxoMoreFriendsResults').innerHTML=cards?'<div class="xoxo-more-friends-grid">'+cards+'</div>':'<div class="xoxo-more-friends-status">'+safe(tr('No matching suggestions yet.','Aún no hay sugerencias que coincidan.','Aucune suggestion correspondante.','Brak pasujących sugestii.','Ainda não há sugestões correspondentes.'))+'</div>';
  el('xoxoMoreFriendsLoadMore').style.display=filtered.length>state.visible?'':'none';};
- window.xoxoLoadMoreFriends=function(){state.visible+=12;xoxoRenderMoreFriends(false);};
+ window.xoxoLoadMoreFriends=function(){state.visible+=24;xoxoRenderMoreFriends(false);};
  window.xoxoViewMoreFriend=function(id){xoxoCloseMoreFriends();if(typeof openPublicProfile==='function')openPublicProfile(id);};
  window.xoxoFollowMoreFriend=async function(id,button){if(!currentUser||String(currentUser.id)===String(id))return;button.disabled=true;try{const {error}=await supabaseClient.from('user_follows').insert({follower_id:currentUser.id,following_id:id});if(error&&error.code!=='23505')throw error;state.following.add(id);xoxoRenderMoreFriends(false);if(typeof loadFriendSuggestions==='function')loadFriendSuggestions();}catch(e){console.error('Follow suggestion error',e);button.disabled=false;alert(tr('Could not follow this person.','No se pudo seguir a esta persona.','Impossible de suivre cette personne.','Nie można obserwować tej osoby.','Não foi possível seguir esta pessoa.'));}};
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&el('xoxoMoreFriendsOverlay')?.classList.contains('open'))xoxoCloseMoreFriends();});
