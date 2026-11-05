@@ -7920,7 +7920,20 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
     <div class="xoxo-admin-hero">
       <h1>👑 XOXO Avenue Admin</h1>
       <p>Private moderation dashboard for authorized administrators.</p>
-      <div id="xoxoAdminGlobalOnline" class="xoxo-admin-global-online">💚 Loading online users...</div>
+      <button id="xoxoAdminGlobalOnline" class="xoxo-admin-global-online" type="button" onclick="openXoxoPresenceHistory()" aria-haspopup="dialog" aria-controls="xoxoPresenceHistoryModal">💚 Loading online users · View history</button>
+    </div>
+    <div id="xoxoPresenceHistoryModal" class="xph-overlay" role="dialog" aria-modal="true" aria-labelledby="xphTitle" hidden>
+      <section class="xph-modal">
+        <header class="xph-header"><div><h2 id="xphTitle">💜 Online presence history</h2><p>Private admin view · Members and anonymous visitors</p></div><button type="button" class="xph-close" onclick="closeXoxoPresenceHistory()" aria-label="Close">×</button></header>
+        <div class="xph-filters">
+          <label>Period <select id="xphPeriod" onchange="loadXoxoPresenceHistory()"><option value="1">Last 24 hours</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></label>
+          <label>Type <select id="xphType" onchange="loadXoxoPresenceHistory()"><option value="all">Everyone</option><option value="member">Members</option><option value="guest">Visitors</option></select></label>
+          <button type="button" class="btn btn-secondary" onclick="loadXoxoPresenceHistory()">↻ Refresh</button>
+        </div>
+        <p id="xphStatus" class="xph-status" role="status" aria-live="polite">Loading history…</p>
+        <div id="xphRows" class="xph-rows"></div>
+        <p class="xph-footnote">A session is considered online when its last heartbeat was within 5 minutes. The end time is estimated from the last activity.</p>
+      </section>
     </div>
     <div id="xoxoAdminStatus" class="xoxo-admin-status"></div>
     <div class="xoxo-admin-tabs">
@@ -12861,6 +12874,21 @@ await Promise.all((profiles || []).filter(p => p.profile_photo).map(async p => {
                                     </div>`;
                                     }
 
+                                    function xoxoGetPresenceSessionKey() {
+                                    const key = "xoxo_presence_session_v1:" + String(currentUser?.id || "unknown");
+                                    let value = sessionStorage.getItem(key);
+                                    if (!value) {
+                                      value = (typeof crypto !== "undefined" && crypto.randomUUID)
+                                        ? crypto.randomUUID()
+                                        : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+                                            const r = Math.random() * 16 | 0;
+                                            return (c === "x" ? r : (r & 3 | 8)).toString(16);
+                                          });
+                                      sessionStorage.setItem(key, value);
+                                    }
+                                    return value;
+                                    }
+
                                     async function updateFriendHubPresence() {
                                     if (!currentUser || document.visibilityState === "hidden") return;
                                     const { error } = await supabaseClient
@@ -12870,6 +12898,13 @@ await Promise.all((profiles || []).filter(p => p.profile_photo).map(async p => {
                                     { onConflict: "user_id" }
                                     );
                                     if (error) console.error("Presence update error:", error);
+                                    try {
+                                    await supabaseClient.rpc("record_xoxo_member_presence", {
+                                      p_session_key: xoxoGetPresenceSessionKey()
+                                    });
+                                    } catch (sessionError) {
+                                      console.warn("Member presence history unavailable:", sessionError);
+                                    }
 
                                     // Keep the Worker informed while this signed-in tab is visible.
                                     // Email activity notifications remain disabled server-side until approved.
@@ -18518,7 +18553,7 @@ async function loadXoxoAdminDashboard() {
     supabaseClient.rpc("get_xoxo_admin_reports"),
     supabaseClient.rpc("get_xoxo_admin_posts"),
     supabaseClient.rpc("get_xoxo_admin_comments"),
-    supabaseClient.rpc("get_xoxo_admin_online_count")
+    supabaseClient.rpc("get_xoxo_admin_presence_summary")
   ]);
   const failed=[statsResult,usersResult,reportsResult,postsResult,commentsResult,onlineResult].find(r=>r.error);
   if(failed){ console.error(failed.error); setXoxoAdminStatus(failed.error.message || "Could not load admin data.","error"); return; }
@@ -18531,8 +18566,9 @@ async function loadXoxoAdminDashboard() {
 
 function renderXoxoAdminGlobalOnline(value) {
   const el=document.getElementById("xoxoAdminGlobalOnline"); if(!el)return;
-  const count=Number(value||0);
-  el.textContent=`💚 ${count.toLocaleString()} ${count===1 ? "user" : "users"} online now`;
+  const members=Number(value?.members_online||0);
+  const guests=Number(value?.guests_online||0);
+  el.textContent=`💚 ${members} members · 👀 ${guests} visitors online · View history`;
 }
 
 function renderXoxoAdminStats(stats) {
@@ -20117,7 +20153,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
  function dismiss(){scene.classList.remove('xb-show');clearTimeout(timeout);document.removeEventListener('keydown',escape);}
  function escape(e){if(e.key==='Escape')dismiss();}
  button.addEventListener('click',()=>{
-  if(!(window.xoxoIsAdminPreviewAllowed?.() ?? (typeof xoxoIsAdmin !== 'undefined' && xoxoIsAdmin && currentUser)))return;
+  if(!(xoxoIsAdminPreviewAllowed?.() ?? (typeof xoxoIsAdmin !== 'undefined' && xoxoIsAdmin && currentUser)))return;
   if(!letter.value.trim()||!section.classList.contains('active'))return;
   scene.classList.remove('xb-show');void scene.offsetWidth;
   close.textContent=es()?'✕ Cerrar':'✕ Close';
@@ -23806,7 +23842,7 @@ async function xwamDelete(id){
  finally{busy=false;}
  await window.xwamLoad();
 }
-window.xwamLoad=async function(){if(busy)return;busy=true;const status=$('xwamStatus');if(status)status.textContent='Cargando actividad…';try{if(!window.currentUser&&!currentUser)throw Error('Inicia sesión como administrador.');const {data:result,error}=await supabaseClient.rpc('xoxo_admin_whisper_activity');if(error)throw error;data=result;cards();render();if(status)status.textContent='Actualizado: '+new Date().toLocaleTimeString()+' · El historial expirado depende de los registros conservados.';}catch(e){if(status)status.textContent='No se pudo cargar la actividad: '+e.message;}finally{busy=false;}};
+window.xwamLoad=async function(){if(busy)return;busy=true;const status=$('xwamStatus');if(status)status.textContent='Cargando actividad…';try{if(!currentUser&&!currentUser)throw Error('Inicia sesión como administrador.');const {data:result,error}=await supabaseClient.rpc('xoxo_admin_whisper_activity');if(error)throw error;data=result;cards();render();if(status)status.textContent='Actualizado: '+new Date().toLocaleTimeString()+' · El historial expirado depende de los registros conservados.';}catch(e){if(status)status.textContent='No se pudo cargar la actividad: '+e.message;}finally{busy=false;}};
 })();
 </script>
 <script id="xoxo-r34-jewels-guard">
@@ -24665,5 +24701,86 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }catch(e){}
 })();
 </script>
+<style id="xoxoPresenceHistoryStyles">
+.xoxo-admin-global-online{cursor:pointer;font:inherit;text-align:left}
+.xoxo-admin-global-online:hover{filter:brightness(.97);box-shadow:0 0 0 3px rgba(134,76,210,.12)}
+.xph-overlay{position:fixed;inset:0;z-index:10050;background:rgba(12,7,24,.72);display:grid;place-items:center;padding:16px}
+.xph-overlay[hidden]{display:none!important}
+.xph-modal{width:min(820px,100%);max-height:min(86dvh,900px);overflow:auto;border:1px solid #9e6ac8;border-radius:22px;padding:20px;background:linear-gradient(150deg,#211038,#110a24);color:#fff;box-shadow:0 24px 80px #0008}
+.xph-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.xph-header h2{margin:0 0 5px;color:#fff}.xph-header p,.xph-footnote{margin:0;color:#d4c2e8;font-size:12px}
+.xph-close{width:38px;height:38px;border:1px solid #765394;border-radius:50%;background:#392253;color:#fff;font-size:25px;cursor:pointer;flex:0 0 auto}
+.xph-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:18px 0}.xph-filters label{display:grid;gap:5px;font-size:12px;color:#e7d8f7}.xph-filters select{min-height:40px;border:1px solid #765394;border-radius:10px;background:#2b1b40;color:#fff;padding:7px 10px}
+.xph-status{font-size:13px;color:#e8d8f8}.xph-rows{display:grid;gap:9px}.xph-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;padding:12px;border:1px solid #5d4279;border-radius:13px;background:#2a1b3d}.xph-row strong{font-size:14px}.xph-row small{display:block;color:#cdb9e2;font-size:12px;line-height:1.5}.xph-state{align-self:start;border-radius:99px;padding:4px 9px;background:#3c2854;color:#e7d5ff;font-size:11px;font-weight:800}.xph-state.online{background:#16452f;color:#a7f3c2}.xph-footnote{margin-top:14px;line-height:1.5}
+@media(max-width:560px){.xph-modal{padding:15px;border-radius:18px}.xph-filters{display:grid;grid-template-columns:1fr 1fr}.xph-filters label select{width:100%}.xph-row{grid-template-columns:1fr}.xph-state{justify-self:start}}
+</style>
+<script id="xoxoPresenceHistoryScript">
+(function(){
+  'use strict';
+  let guestTimer=null;
+  const guestKey='xoxo_guest_presence_session_v1';
+  function sessionKey(){
+    let value=sessionStorage.getItem(guestKey);
+    if(!value){
+      value=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID(): 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});
+      sessionStorage.setItem(guestKey,value);
+    }
+    return value;
+  }
+  async function guestHeartbeat(){
+    if(document.visibilityState==='hidden'||(typeof supabaseClient==='undefined')||currentUser)return;
+    try{
+      const {error}=await supabaseClient.rpc('record_xoxo_guest_presence',{p_session_key:sessionKey()});
+      if(error)console.warn('Guest presence heartbeat unavailable:',error.message);
+    }catch(e){console.warn('Guest presence heartbeat unavailable:',e)}
+  }
+  function stopGuest(){if(guestTimer){clearInterval(guestTimer);guestTimer=null}}
+  function syncGuest(){
+    if(currentUser){stopGuest();return}
+    if(!guestTimer){guestHeartbeat();guestTimer=setInterval(guestHeartbeat,45000)}
+  }
+  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function dateTime(v){if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString()}
+  window.openXoxoPresenceHistory=async function(){
+    if(!currentUser||!xoxoIsAdmin){return}
+    const check=await supabaseClient.rpc('is_xoxo_admin');
+    if(check.error||check.data!==true){return}
+    const modal=document.getElementById('xoxoPresenceHistoryModal');
+    if(!modal)return;modal.hidden=false;document.body.style.overflow='hidden';
+    await window.loadXoxoPresenceHistory();
+  };
+  window.closeXoxoPresenceHistory=function(){const modal=document.getElementById('xoxoPresenceHistoryModal');if(modal)modal.hidden=true;document.body.style.overflow=''};
+  window.loadXoxoPresenceHistory=async function(){
+    const status=document.getElementById('xphStatus'),rows=document.getElementById('xphRows');
+    if(!status||!rows||!currentUser||!xoxoIsAdmin)return;
+    status.textContent='Loading history…';rows.replaceChildren();
+    try{
+      const allowed=await supabaseClient.rpc('is_xoxo_admin');
+      if(allowed.error||allowed.data!==true)throw new Error('Administrator access required.');
+      const days=Math.max(1,Math.min(90,Number(document.getElementById('xphPeriod')?.value||30)));
+      const type=document.getElementById('xphType')?.value||'all';
+      const from=new Date(Date.now()-days*86400000).toISOString();
+      const {data,error}=await supabaseClient.rpc('get_xoxo_admin_presence_history',{p_from:from,p_to:new Date().toISOString(),p_type:type});
+      if(error)throw error;
+      if(!data?.length){status.textContent='No sessions found for this period.';return}
+      status.textContent=`${data.length} sessions · Newest first`;
+      rows.innerHTML=data.map(item=>{
+        const member=item.session_type==='member';
+        const active=!!item.is_online;
+        const label=member?(item.username||'Member'):'Anonymous visitor';
+        return `<article class="xph-row"><div><strong>${member?'👤':'👀'} ${escapeHtml(label)}</strong><small>Type: ${member?'Member':'Guest'}<br>Entered: ${escapeHtml(dateTime(item.started_at))}<br>Last activity: ${escapeHtml(dateTime(item.last_seen_at))}<br>Left / estimated: ${escapeHtml(dateTime(item.ended_at))}</small></div><span class="xph-state ${active?'online':''}">${active?'● Online':'Offline'}</span></article>`;
+      }).join('');
+    }catch(e){status.textContent='Could not load history: '+(e?.message||'Unknown error')}
+  };
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')guestHeartbeat()});
+  document.addEventListener('DOMContentLoaded',()=>{
+    syncGuest();
+    if(typeof supabaseClient!=='undefined'&&supabaseClient?.auth?.onAuthStateChange)supabaseClient.auth.onAuthStateChange(()=>{stopGuest();setTimeout(syncGuest,500)});
+    setInterval(syncGuest,3000);
+  });
+  if(document.readyState!=='loading')syncGuest();
+  document.getElementById('xoxoPresenceHistoryModal')?.addEventListener('click',e=>{if(e.target.id==='xoxoPresenceHistoryModal')window.closeXoxoPresenceHistory()});
+})();
+</script>
+
 </body>
                                     </html>
