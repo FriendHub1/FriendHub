@@ -24836,7 +24836,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
       // Wait for getSession(): a restored session means a member whose profile is still loading, never a guest.
       const {data:sessionData}=await supabaseClient.auth.getSession();
       if(sessionData?.session||currentUser)return;
-      const response=await fetch('/api/activity-presence-heartbeat',{
+      const response=await fetch('/api/guest-presence',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         cache:'no-store',
