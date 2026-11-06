@@ -7920,7 +7920,21 @@ body:has(#home.active) .xoxo-header-theme-control{display:block}
     <div class="xoxo-admin-hero">
       <h1>👑 XOXO Avenue Admin</h1>
       <p>Private moderation dashboard for authorized administrators.</p>
-      <div id="xoxoAdminGlobalOnline" class="xoxo-admin-global-online">💚 Loading online users...</div>
+      <button id="xoxoAdminGlobalOnline" class="xoxo-admin-global-online" type="button" onclick="openXoxoPresenceHistory()" aria-haspopup="dialog" aria-controls="xoxoPresenceHistoryModal">💚 Loading online users · View history</button>
+    </div>
+    <div id="xoxoPresenceHistoryModal" class="xph-overlay" role="dialog" aria-modal="true" aria-labelledby="xphTitle" hidden>
+      <section class="xph-modal">
+        <header class="xph-header"><div><h2 id="xphTitle">💜 Online presence history</h2><p>Private admin view · Members and anonymous visitors</p></div><button type="button" class="xph-close" onclick="closeXoxoPresenceHistory()" aria-label="Close">×</button></header>
+        <div class="xph-filters">
+          <label>Period <select id="xphPeriod" onchange="loadXoxoPresenceHistory()"><option value="1">Last 24 hours</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></label>
+          <label>Type <select id="xphType" onchange="loadXoxoPresenceHistory()"><option value="all">Everyone</option><option value="member">Members</option><option value="guest">Visitors</option></select></label>
+          <label>Sort <select id="xphSort" onchange="loadXoxoPresenceHistory()"><option value="last_activity" selected>Last activity</option><option value="first_visit">First visit (oldest first)</option><option value="online_first">Online first</option></select></label>
+          <button type="button" class="btn btn-secondary" onclick="loadXoxoPresenceHistory()">↻ Refresh</button>
+        </div>
+        <p id="xphStatus" class="xph-status" role="status" aria-live="polite">Loading history…</p>
+        <div id="xphRows" class="xph-rows"></div>
+        <p class="xph-footnote">A session is considered online when its last heartbeat was within 5 minutes. The end time is estimated from the last activity. Visitors are grouped by an anonymous visitor ID only if they allowed it; otherwise each browser session counts as a separate visit.</p>
+      </section>
     </div>
     <div id="xoxoAdminStatus" class="xoxo-admin-status"></div>
     <div class="xoxo-admin-tabs">
@@ -8414,7 +8428,6 @@ async function enforceXoxoSuspension() {
                                     let currentDmAvatarSettings = null;
                                     let dmUnreadRefreshTimer = null;
                                     let friendhubPresenceTimer = null;
-                                    let xoxoGuestPresenceTimer = null;
                                     let xoxoPresenceLocationSent = false;
                                     let dmPresenceRefreshTimer = null;
                                     let dmChatRefreshTimer = null;
@@ -9044,7 +9057,6 @@ async function enforceXoxoSuspension() {
                                     const postComposer =
                                     document.getElementById("postComposer");
                                     if (currentUser) {
-                                    stopXoxoGuestPresence();
                                     if (postComposer) {
                                     postComposer.style.display = "block";
                                     }
@@ -9061,7 +9073,6 @@ async function enforceXoxoSuspension() {
                                     startFriendHubPresence();
                                     startDmBuzzRealtime();
                                     } else {
-                                    startXoxoGuestPresence();
                                     if (postComposer) {
                                     postComposer.style.display = "none";
                                     }
@@ -12864,51 +12875,19 @@ await Promise.all((profiles || []).filter(p => p.profile_photo).map(async p => {
                                     </div>`;
                                     }
 
-                                    function getXoxoGuestPresenceSessionKey() {
-                                    const keyName = "xoxo_guest_presence_session";
-                                    try {
-                                    let key = sessionStorage.getItem(keyName);
-                                    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key || "")) {
-                                    key = crypto.randomUUID();
-                                    sessionStorage.setItem(keyName, key);
+                                    function xoxoGetPresenceSessionKey() {
+                                    const key = "xoxo_presence_session_v1:" + String(currentUser?.id || "unknown");
+                                    let value = sessionStorage.getItem(key);
+                                    if (!value) {
+                                      value = (typeof crypto !== "undefined" && crypto.randomUUID)
+                                        ? crypto.randomUUID()
+                                        : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+                                            const r = Math.random() * 16 | 0;
+                                            return (c === "x" ? r : (r & 3 | 8)).toString(16);
+                                          });
+                                      sessionStorage.setItem(key, value);
                                     }
-                                    return key;
-                                    } catch (error) {
-                                    console.warn("Guest presence session unavailable:", error);
-                                    return "";
-                                    }
-                                    }
-
-                                    async function updateXoxoGuestPresence() {
-                                    if (currentUser || document.visibilityState === "hidden") return;
-                                    const sessionKey = getXoxoGuestPresenceSessionKey();
-                                    if (!sessionKey) return;
-                                    try {
-                                    const response = await fetch("/api/guest-presence-heartbeat", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({ session_key: sessionKey }),
-                                    cache: "no-store",
-                                    keepalive: true
-                                    });
-                                    if (!response.ok) console.warn("Guest presence heartbeat:", response.status);
-                                    } catch (error) {
-                                    console.warn("Guest presence heartbeat unavailable:", error);
-                                    }
-                                    }
-
-                                    function stopXoxoGuestPresence() {
-                                    if (xoxoGuestPresenceTimer) {
-                                    clearInterval(xoxoGuestPresenceTimer);
-                                    xoxoGuestPresenceTimer = null;
-                                    }
-                                    }
-
-                                    function startXoxoGuestPresence() {
-                                    stopXoxoGuestPresence();
-                                    if (currentUser || document.visibilityState === "hidden") return;
-                                    updateXoxoGuestPresence();
-                                    xoxoGuestPresenceTimer = setInterval(updateXoxoGuestPresence, 45000);
+                                    return value;
                                     }
 
                                     async function updateFriendHubPresence() {
@@ -12920,6 +12899,13 @@ await Promise.all((profiles || []).filter(p => p.profile_photo).map(async p => {
                                     { onConflict: "user_id" }
                                     );
                                     if (error) console.error("Presence update error:", error);
+                                    try {
+                                    await supabaseClient.rpc("record_xoxo_member_presence", {
+                                      p_session_key: xoxoGetPresenceSessionKey()
+                                    });
+                                    } catch (sessionError) {
+                                      console.warn("Member presence history unavailable:", sessionError);
+                                    }
 
                                     // Keep the Worker informed while this signed-in tab is visible.
                                     // Email activity notifications remain disabled server-side until approved.
@@ -13195,11 +13181,7 @@ await Promise.all((profiles || []).filter(p => p.profile_photo).map(async p => {
                                     }
 
                                     document.addEventListener("visibilitychange", () => {
-                                    if (!currentUser) {
-                                    if (document.visibilityState === "hidden") stopXoxoGuestPresence();
-                                    else startXoxoGuestPresence();
-                                    return;
-                                    }
+                                    if (!currentUser) return;
                                     if (document.visibilityState === "hidden") {
                                     updateFriendHubPresence();
                                     stopFriendHubPresence();
@@ -18572,7 +18554,7 @@ async function loadXoxoAdminDashboard() {
     supabaseClient.rpc("get_xoxo_admin_reports"),
     supabaseClient.rpc("get_xoxo_admin_posts"),
     supabaseClient.rpc("get_xoxo_admin_comments"),
-    supabaseClient.rpc("get_xoxo_admin_online_count")
+    supabaseClient.rpc("get_xoxo_admin_presence_summary")
   ]);
   const failed=[statsResult,usersResult,reportsResult,postsResult,commentsResult,onlineResult].find(r=>r.error);
   if(failed){ console.error(failed.error); setXoxoAdminStatus(failed.error.message || "Could not load admin data.","error"); return; }
@@ -18585,8 +18567,9 @@ async function loadXoxoAdminDashboard() {
 
 function renderXoxoAdminGlobalOnline(value) {
   const el=document.getElementById("xoxoAdminGlobalOnline"); if(!el)return;
-  const count=Number(value||0);
-  el.textContent=`💚 ${count.toLocaleString()} ${count===1 ? "user" : "users"} online now`;
+  const members=Number(value?.members_online||0);
+  const guests=Number(value?.guests_online||0);
+  el.textContent=`💚 ${members} members · 👀 ${guests} visitors online · View history`;
 }
 
 function renderXoxoAdminStats(stats) {
@@ -20171,7 +20154,7 @@ supabaseClient.auth.onAuthStateChange(()=>{ setTimeout(refreshXoxoAdminAccess,0)
  function dismiss(){scene.classList.remove('xb-show');clearTimeout(timeout);document.removeEventListener('keydown',escape);}
  function escape(e){if(e.key==='Escape')dismiss();}
  button.addEventListener('click',()=>{
-  if(!(window.xoxoIsAdminPreviewAllowed?.() ?? (typeof xoxoIsAdmin !== 'undefined' && xoxoIsAdmin && currentUser)))return;
+  if(!(xoxoIsAdminPreviewAllowed?.() ?? (typeof xoxoIsAdmin !== 'undefined' && xoxoIsAdmin && currentUser)))return;
   if(!letter.value.trim()||!section.classList.contains('active'))return;
   scene.classList.remove('xb-show');void scene.offsetWidth;
   close.textContent=es()?'✕ Cerrar':'✕ Close';
@@ -23344,6 +23327,94 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 </script><style id="xoxo-legal-five-languages-style">
 .xoxo-legal-locale[hidden]{display:none!important}
 </style>
+<script id="xoxo-visitor-id-notice">
+(function(){
+  'use strict';
+  // Separate consent for an anonymous, persistent visitor ID. It is NOT covered by the Google Analytics choice.
+  var KEY='xoxo_visit_id_choice_v1',GA_KEY='xoxo_analytics_choice_v1',ID_KEY='xoxo_guest_visitor_id_v1',EMAIL='xoxoavenuesupport@gmail.com';
+  var T={
+    en:{aria:"Visitor ID privacy choice",message:"Recognize your return visits? XOXO Avenue can store a random, anonymous ID in this browser so that your return visits are counted as one visitor instead of several. It is not linked to any account. If you decline, only a temporary ID for this browser session is used. You can change your choice in our Privacy Policy.",decline:"Decline",allow:"Allow visitor ID",settings:"Visitor ID privacy settings",title:"Visit history for visitors without an account",p1:"If you use XOXO Avenue without signing in, XOXO Avenue keeps a limited record of your visit to operate and secure the service and to understand how many people use it. The record contains a random identifier for your browser session, the approximate country that Cloudflare derives from your connection, your IP address, the time of your first and most recent activity, and whether you appear to be online. Only authorized XOXO Avenue administrators can see this record. It is not shown on public pages or to other users.",p2:"Anonymous visitor ID: only if you choose to allow it, XOXO Avenue also stores a random identifier in this browser so that your return visits are recognized as the same visitor. It is not linked to any account or profile. If you decline, only a temporary session identifier is used. You can change your choice at any time with the button below; declining or withdrawing permission removes the identifier from your browser.",p3a:"Retention: IP addresses are deleted after 90 days, and a visitor's records are deleted after 90 days without activity. If you create an account later, this record is not linked to it. To ask about or request deletion of this information, email ",p3b:"."},
+    es:{aria:"Elección de privacidad del ID de visitante",message:"¿Reconocer tus visitas de vuelta? XOXO Avenue puede guardar en este navegador un ID aleatorio y anónimo para contar tus visitas repetidas como un solo visitante y no como varios. No está vinculado a ninguna cuenta. Si lo rechazas, solo se usa un ID temporal de esta sesión del navegador. Puedes cambiar tu elección en nuestra Política de privacidad.",decline:"Rechazar",allow:"Permitir ID de visitante",settings:"Preferencias de privacidad del ID de visitante",title:"Historial de visitas de personas sin cuenta",p1:"Si usas XOXO Avenue sin iniciar sesión, XOXO Avenue conserva un registro limitado de tu visita para operar y proteger el servicio y para saber cuántas personas lo usan. El registro contiene un identificador aleatorio de la sesión de tu navegador, el país aproximado que Cloudflare deduce de tu conexión, tu dirección IP, la hora de tu primera y de tu última actividad y si pareces estar conectado. Este registro solo pueden verlo los administradores autorizados de XOXO Avenue. No se muestra en páginas públicas ni a otros usuarios.",p2:"ID de visitante anónimo: solo si decides permitirlo, XOXO Avenue también guarda un identificador aleatorio en este navegador para reconocer tus visitas de vuelta como el mismo visitante. No está vinculado a ninguna cuenta ni perfil. Si lo rechazas, solo se usa un identificador de sesión temporal. Puedes cambiar tu elección en cualquier momento con el botón de abajo; al rechazar o retirar el permiso, el identificador se elimina de tu navegador.",p3a:"Conservación: las direcciones IP se eliminan a los 90 días y los registros de un visitante se eliminan tras 90 días sin actividad. Si creas una cuenta más adelante, este registro no se vincula a ella. Para consultar o solicitar la eliminación de esta información, escribe a ",p3b:"."},
+    "pt-BR":{aria:"Escolha de privacidade do ID de visitante",message:"Reconhecer suas visitas de retorno? O XOXO Avenue pode guardar neste navegador um ID aleatório e anônimo para contar suas visitas repetidas como um único visitante, e não como vários. Ele não é vinculado a nenhuma conta. Se você recusar, será usado apenas um ID temporário desta sessão do navegador. Você pode alterar sua escolha em nossa Política de Privacidade.",decline:"Recusar",allow:"Permitir ID de visitante",settings:"Preferências de privacidade do ID de visitante",title:"Histórico de visitas de pessoas sem conta",p1:"Se você usa o XOXO Avenue sem fazer login, o XOXO Avenue mantém um registro limitado da sua visita para operar e proteger o serviço e entender quantas pessoas o utilizam. O registro contém um identificador aleatório da sessão do seu navegador, o país aproximado que a Cloudflare deduz da sua conexão, seu endereço IP, o horário da sua primeira e da sua última atividade e se você parece estar online. Esse registro só pode ser visto por administradores autorizados do XOXO Avenue. Ele não é exibido em páginas públicas nem para outros usuários.",p2:"ID de visitante anônimo: somente se você optar por permitir, o XOXO Avenue também guarda um identificador aleatório neste navegador para reconhecer suas visitas de retorno como o mesmo visitante. Ele não é vinculado a nenhuma conta ou perfil. Se você recusar, será usado apenas um identificador de sessão temporário. Você pode alterar sua escolha a qualquer momento pelo botão abaixo; ao recusar ou retirar a permissão, o identificador é removido do seu navegador.",p3a:"Retenção: os endereços IP são excluídos após 90 dias, e os registros de um visitante são excluídos após 90 dias sem atividade. Se você criar uma conta depois, esse registro não será vinculado a ela. Para consultar ou solicitar a exclusão dessas informações, escreva para ",p3b:"."},
+    pl:{aria:"Wybór prywatności dotyczący identyfikatora odwiedzającego",message:"Rozpoznawać Twoje powroty? XOXO Avenue może zapisać w tej przeglądarce losowy, anonimowy identyfikator, aby Twoje kolejne wizyty były liczone jako jeden odwiedzający, a nie kilku. Nie jest on powiązany z żadnym kontem. Jeśli odmówisz, używany będzie tylko tymczasowy identyfikator tej sesji przeglądarki. Swój wybór możesz zmienić w naszej Polityce prywatności.",decline:"Odrzuć",allow:"Zezwól na identyfikator odwiedzającego",settings:"Ustawienia prywatności identyfikatora odwiedzającego",title:"Historia wizyt osób bez konta",p1:"Jeśli korzystasz z XOXO Avenue bez logowania, XOXO Avenue przechowuje ograniczony zapis Twojej wizyty, aby obsługiwać i zabezpieczać serwis oraz wiedzieć, ile osób z niego korzysta. Zapis zawiera losowy identyfikator sesji przeglądarki, przybliżony kraj ustalony przez Cloudflare na podstawie połączenia, Twój adres IP, czas pierwszej i ostatniej aktywności oraz informację, czy wydajesz się być online. Zapis widzą wyłącznie upoważnieni administratorzy XOXO Avenue. Nie jest wyświetlany na stronach publicznych ani innym użytkownikom.",p2:"Anonimowy identyfikator odwiedzającego: tylko jeśli się na to zgodzisz, XOXO Avenue zapisze w tej przeglądarce także losowy identyfikator, aby Twoje powroty były rozpoznawane jako ten sam odwiedzający. Nie jest on powiązany z żadnym kontem ani profilem. Jeśli odmówisz, używany jest tylko tymczasowy identyfikator sesji. Wybór możesz zmienić w każdej chwili przyciskiem poniżej; odmowa lub wycofanie zgody usuwa identyfikator z Twojej przeglądarki.",p3a:"Przechowywanie: adresy IP są usuwane po 90 dniach, a zapisy odwiedzającego są usuwane po 90 dniach bez aktywności. Jeśli później założysz konto, ten zapis nie zostanie z nim powiązany. Aby zapytać o te informacje lub poprosić o ich usunięcie, napisz na adres ",p3b:"."},
+    fr:{aria:"Choix de confidentialité de l'identifiant visiteur",message:"Reconnaître vos visites suivantes ? XOXO Avenue peut enregistrer dans ce navigateur un identifiant aléatoire et anonyme afin que vos visites répétées soient comptées comme un seul visiteur et non plusieurs. Il n'est lié à aucun compte. Si vous refusez, seul un identifiant temporaire de cette session de navigation est utilisé. Vous pouvez modifier votre choix dans notre Politique de confidentialité.",decline:"Refuser",allow:"Autoriser l'identifiant visiteur",settings:"Préférences de confidentialité de l'identifiant visiteur",title:"Historique des visites des personnes sans compte",p1:"Si vous utilisez XOXO Avenue sans vous connecter, XOXO Avenue conserve un enregistrement limité de votre visite afin d'exploiter et de sécuriser le service et de savoir combien de personnes l'utilisent. Cet enregistrement contient un identifiant aléatoire de votre session de navigation, le pays approximatif que Cloudflare déduit de votre connexion, votre adresse IP, l'heure de votre première et de votre dernière activité, et si vous semblez en ligne. Seuls les administrateurs autorisés de XOXO Avenue peuvent le consulter. Il n'est affiché ni sur les pages publiques ni aux autres utilisateurs.",p2:"Identifiant visiteur anonyme : uniquement si vous l'autorisez, XOXO Avenue enregistre aussi un identifiant aléatoire dans ce navigateur afin de reconnaître vos visites suivantes comme celles du même visiteur. Il n'est lié à aucun compte ni profil. Si vous refusez, seul un identifiant de session temporaire est utilisé. Vous pouvez modifier votre choix à tout moment avec le bouton ci-dessous ; refuser ou retirer votre accord supprime l'identifiant de votre navigateur.",p3a:"Conservation : les adresses IP sont supprimées après 90 jours, et les enregistrements d'un visiteur sont supprimés après 90 jours sans activité. Si vous créez un compte plus tard, cet enregistrement n'y est pas lié. Pour vous renseigner ou demander la suppression de ces informations, écrivez à ",p3b:"."},
+    de:{aria:"Datenschutzauswahl zur Besucher-ID",message:"Wiederkehrende Besuche erkennen? XOXO Avenue kann in diesem Browser eine zufällige, anonyme ID speichern, damit Ihre wiederholten Besuche als ein einziger Besucher statt als mehrere gezählt werden. Sie ist mit keinem Konto verknüpft. Wenn Sie ablehnen, wird nur eine temporäre ID für diese Browsersitzung verwendet. Sie können Ihre Auswahl in unserer Datenschutzerklärung ändern.",decline:"Ablehnen",allow:"Besucher-ID zulassen",settings:"Datenschutzeinstellungen zur Besucher-ID",title:"Besuchsverlauf für Personen ohne Konto",p1:"Wenn Sie XOXO Avenue ohne Anmeldung nutzen, speichert XOXO Avenue einen begrenzten Eintrag zu Ihrem Besuch, um den Dienst zu betreiben und abzusichern und um zu verstehen, wie viele Personen ihn nutzen. Der Eintrag enthält eine zufällige Kennung Ihrer Browsersitzung, das ungefähre Land, das Cloudflare aus Ihrer Verbindung ableitet, Ihre IP-Adresse, den Zeitpunkt Ihrer ersten und letzten Aktivität sowie die Angabe, ob Sie online zu sein scheinen. Diesen Eintrag können nur autorisierte Administratoren von XOXO Avenue einsehen. Er wird weder auf öffentlichen Seiten noch anderen Nutzern angezeigt.",p2:"Anonyme Besucher-ID: Nur wenn Sie zustimmen, speichert XOXO Avenue zusätzlich eine zufällige Kennung in diesem Browser, damit Ihre wiederholten Besuche als derselbe Besucher erkannt werden. Sie ist mit keinem Konto und keinem Profil verknüpft. Wenn Sie ablehnen, wird nur eine temporäre Sitzungskennung verwendet. Sie können Ihre Auswahl jederzeit über die Schaltfläche unten ändern; durch Ablehnen oder Widerruf wird die Kennung aus Ihrem Browser entfernt.",p3a:"Speicherdauer: IP-Adressen werden nach 90 Tagen gelöscht, und die Einträge eines Besuchers werden nach 90 Tagen ohne Aktivität gelöscht. Wenn Sie später ein Konto erstellen, wird dieser Eintrag nicht damit verknüpft. Für Auskünfte oder einen Löschwunsch schreiben Sie an ",p3b:"."},
+    nb:{aria:"Personvernvalg for besøks-ID",message:"Gjenkjenne gjenbesøkene dine? XOXO Avenue kan lagre en tilfeldig, anonym ID i denne nettleseren slik at gjentatte besøk telles som én besøkende i stedet for flere. Den er ikke knyttet til noen konto. Hvis du avslår, brukes bare en midlertidig ID for denne nettleserøkten. Du kan endre valget ditt i personvernerklæringen vår.",decline:"Avslå",allow:"Tillat besøks-ID",settings:"Personverninnstillinger for besøks-ID",title:"Besøkshistorikk for personer uten konto",p1:"Hvis du bruker XOXO Avenue uten å logge inn, lagrer XOXO Avenue en begrenset oppføring om besøket ditt for å drive og sikre tjenesten og for å forstå hvor mange som bruker den. Oppføringen inneholder en tilfeldig identifikator for nettleserøkten din, det omtrentlige landet Cloudflare utleder fra tilkoblingen din, IP-adressen din, tidspunktet for første og siste aktivitet og om du ser ut til å være online. Bare autoriserte administratorer i XOXO Avenue kan se oppføringen. Den vises ikke på offentlige sider eller for andre brukere.",p2:"Anonym besøks-ID: Bare hvis du velger å tillate det, lagrer XOXO Avenue også en tilfeldig identifikator i denne nettleseren slik at gjenbesøkene dine gjenkjennes som den samme besøkende. Den er ikke knyttet til noen konto eller profil. Hvis du avslår, brukes bare en midlertidig øktidentifikator. Du kan når som helst endre valget ditt med knappen nedenfor; hvis du avslår eller trekker tilbake samtykket, fjernes identifikatoren fra nettleseren din.",p3a:"Lagring: IP-adresser slettes etter 90 dager, og oppføringene til en besøkende slettes etter 90 dager uten aktivitet. Hvis du oppretter en konto senere, knyttes ikke denne oppføringen til den. Hvis du vil spørre om eller be om sletting av denne informasjonen, send en e-post til ",p3b:"."},
+    cs:{aria:"Volba soukromí pro ID návštěvníka",message:"Rozpoznávat vaše opakované návštěvy? XOXO Avenue může v tomto prohlížeči uložit náhodné anonymní ID, aby se vaše opakované návštěvy počítaly jako jeden návštěvník, nikoli jako několik. ID není propojeno s žádným účtem. Pokud odmítnete, použije se pouze dočasné ID této relace prohlížeče. Svou volbu můžete změnit v našich Zásadách ochrany osobních údajů.",decline:"Odmítnout",allow:"Povolit ID návštěvníka",settings:"Nastavení soukromí pro ID návštěvníka",title:"Historie návštěv osob bez účtu",p1:"Pokud XOXO Avenue používáte bez přihlášení, XOXO Avenue uchovává omezený záznam o vaší návštěvě, aby službu provozovala a zabezpečila a aby věděla, kolik lidí ji používá. Záznam obsahuje náhodný identifikátor relace vašeho prohlížeče, přibližnou zemi, kterou Cloudflare odvodí z vašeho připojení, vaši IP adresu, čas první a poslední aktivity a informaci, zda se zdá, že jste online. Záznam mohou vidět pouze oprávnění správci XOXO Avenue. Nezobrazuje se na veřejných stránkách ani ostatním uživatelům.",p2:"Anonymní ID návštěvníka: pouze pokud to povolíte, XOXO Avenue v tomto prohlížeči uloží také náhodný identifikátor, aby se vaše opakované návštěvy rozpoznaly jako stejný návštěvník. Není propojen s žádným účtem ani profilem. Pokud odmítnete, používá se pouze dočasný identifikátor relace. Svou volbu můžete kdykoli změnit tlačítkem níže; odmítnutím nebo odvoláním souhlasu se identifikátor z vašeho prohlížeče odstraní.",p3a:"Uchovávání: IP adresy se mažou po 90 dnech a záznamy návštěvníka se mažou po 90 dnech bez aktivity. Pokud si později vytvoříte účet, tento záznam se s ním nepropojí. Pokud se chcete na tyto informace zeptat nebo požádat o jejich smazání, napište na ",p3b:"."},
+    sv:{aria:"Integritetsval för besökar-ID",message:"Känna igen dina återbesök? XOXO Avenue kan spara ett slumpmässigt, anonymt ID i den här webbläsaren så att dina upprepade besök räknas som en besökare i stället för flera. Det är inte kopplat till något konto. Om du avböjer används bara ett tillfälligt ID för den här webbläsarsessionen. Du kan ändra ditt val i vår integritetspolicy.",decline:"Avböj",allow:"Tillåt besökar-ID",settings:"Integritetsinställningar för besökar-ID",title:"Besökshistorik för personer utan konto",p1:"Om du använder XOXO Avenue utan att logga in sparar XOXO Avenue en begränsad post om ditt besök för att driva och skydda tjänsten och för att förstå hur många som använder den. Posten innehåller en slumpmässig identifierare för din webbläsarsession, det ungefärliga land som Cloudflare härleder från din anslutning, din IP-adress, tidpunkten för din första och senaste aktivitet samt om du verkar vara online. Endast behöriga administratörer på XOXO Avenue kan se posten. Den visas inte på offentliga sidor eller för andra användare.",p2:"Anonymt besökar-ID: Bara om du väljer att tillåta det sparar XOXO Avenue också en slumpmässig identifierare i den här webbläsaren så att dina återbesök känns igen som samma besökare. Den är inte kopplad till något konto eller någon profil. Om du avböjer används bara en tillfällig sessionsidentifierare. Du kan ändra ditt val när som helst med knappen nedan; om du avböjer eller återkallar tillståndet tas identifieraren bort från din webbläsare.",p3a:"Lagring: IP-adresser raderas efter 90 dagar, och en besökares poster raderas efter 90 dagars inaktivitet. Om du skapar ett konto senare kopplas inte den här posten till det. Om du vill fråga om eller begära radering av den här informationen, skriv till ",p3b:"."},
+    it:{aria:"Scelta sulla privacy per l'ID visitatore",message:"Riconoscere le tue visite ripetute? XOXO Avenue può salvare in questo browser un ID casuale e anonimo, così le tue visite ripetute vengono conteggiate come un unico visitatore anziché come più visitatori. Non è collegato ad alcun account. Se rifiuti, viene usato solo un ID temporaneo di questa sessione del browser. Puoi modificare la tua scelta nella nostra Informativa sulla privacy.",decline:"Rifiuta",allow:"Consenti ID visitatore",settings:"Impostazioni privacy dell'ID visitatore",title:"Cronologia delle visite di chi non ha un account",p1:"Se usi XOXO Avenue senza accedere, XOXO Avenue conserva una registrazione limitata della tua visita per gestire e proteggere il servizio e per capire quante persone lo usano. La registrazione contiene un identificativo casuale della sessione del tuo browser, il paese approssimativo che Cloudflare ricava dalla tua connessione, il tuo indirizzo IP, l'orario della prima e dell'ultima attività e se risulti online. Solo gli amministratori autorizzati di XOXO Avenue possono vederla. Non viene mostrata nelle pagine pubbliche né ad altri utenti.",p2:"ID visitatore anonimo: solo se scegli di consentirlo, XOXO Avenue salva anche un identificativo casuale in questo browser per riconoscere le tue visite ripetute come lo stesso visitatore. Non è collegato ad alcun account o profilo. Se rifiuti, viene usato solo un identificativo di sessione temporaneo. Puoi modificare la tua scelta in qualsiasi momento con il pulsante qui sotto; rifiutando o revocando il consenso, l'identificativo viene rimosso dal tuo browser.",p3a:"Conservazione: gli indirizzi IP vengono eliminati dopo 90 giorni e le registrazioni di un visitatore vengono eliminate dopo 90 giorni senza attività. Se in seguito crei un account, questa registrazione non viene collegata ad esso. Per chiedere informazioni o la cancellazione di questi dati, scrivi a ",p3b:"."}
+  };
+  function lang(){var l='en';try{l=localStorage.getItem('friendhub_language')||'en'}catch(e){}return Object.prototype.hasOwnProperty.call(T,l)?l:'en'}
+  function words(){return T[lang()]}
+  function choice(){try{return localStorage.getItem(KEY)}catch(e){return null}}
+  function save(v){try{if(v)localStorage.setItem(KEY,v);else localStorage.removeItem(KEY)}catch(e){}}
+  function gpc(){return typeof navigator!=='undefined'&&navigator.globalPrivacyControl===true}
+  function closeNotice(){var el=document.getElementById('xoxo-visitor-id-consent');if(el&&el.remove)el.remove()}
+  function decide(v){
+    save(v);
+    // Declining (or withdrawing) removes the persistent id from this browser immediately.
+    if(v!=='yes'){try{localStorage.removeItem(ID_KEY)}catch(e){}}
+    closeNotice();
+  }
+  function build(){
+    var w=words(),el=document.createElement('div');
+    el.id='xoxo-visitor-id-consent';
+    el.setAttribute('data-no-translate','');el.setAttribute('role','region');el.setAttribute('aria-label',w.aria);
+    el.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:2147483645;max-width:620px;margin:auto;padding:16px;border-radius:16px;background:#201246;color:white;box-shadow:0 8px 35px #0008;font:14px/1.5 Arial,sans-serif';
+    var msg=document.createElement('div');msg.textContent=w.message;el.appendChild(msg);
+    var actions=document.createElement('div');actions.style.cssText='display:flex;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap';
+    [[w.decline,'no'],[w.allow,'yes']].forEach(function(item){
+      var btn=document.createElement('button');btn.type='button';btn.textContent=item[0];btn.setAttribute('data-choice',item[1]);
+      btn.style.cssText='border:1px solid #aa91e9;border-radius:9px;padding:9px 14px;cursor:pointer;background:'+(item[1]==='yes'?'#a56cff':'transparent')+';color:white;font-weight:bold';
+      btn.addEventListener('click',function(){decide(item[1])});actions.appendChild(btn);
+    });
+    el.appendChild(actions);document.body.appendChild(el);
+  }
+  // Only people browsing without an account are asked, and only after the Google Analytics notice has been answered.
+  async function isGuest(){
+    if(typeof supabaseClient==='undefined')return false;
+    if(typeof currentUser!=='undefined'&&currentUser)return false;
+    try{var r=await supabaseClient.auth.getSession();if(r&&r.data&&r.data.session)return false}catch(e){return false}
+    return !(typeof currentUser!=='undefined'&&currentUser);
+  }
+  function analyticsAnswered(){
+    try{var c=localStorage.getItem(GA_KEY);return (c==='yes'||c==='no')&&!document.getElementById('xoxo-analytics-consent')}catch(e){return false}
+  }
+  async function maybeShow(){
+    if(gpc()||choice()==='yes'||choice()==='no')return;
+    if(document.getElementById('xoxo-visitor-id-consent')||document.visibilityState==='hidden'||!analyticsAnswered())return;
+    if(!(await isGuest()))return;
+    if(choice()==='yes'||choice()==='no'||document.getElementById('xoxo-visitor-id-consent'))return;
+    build();
+  }
+  // Button in the Privacy Policy: reopen the choice at any time (also works while signed in).
+  window.xoxoVisitorIdPrivacySettings=function(){save('');closeNotice();build()};
+  function renderPolicy(){
+    var page=document.getElementById('privacy');
+    if(!page)return;
+    var host=document.getElementById('xoxo-visitor-privacy');
+    if(!host){host=document.createElement('div');host.id='xoxo-visitor-privacy';host.className='container';host.setAttribute('data-no-translate','');page.appendChild(host)}
+    var l=lang();
+    if(host.getAttribute('data-lang')===l)return;
+    host.setAttribute('data-lang',l);
+    var w=T[l];
+    while(host.firstChild)host.removeChild(host.firstChild);
+    var card=document.createElement('div');card.className='content-card legal-card';
+    var h=document.createElement('h2');h.textContent=w.title;card.appendChild(h);
+    var p1=document.createElement('p');p1.textContent=w.p1;card.appendChild(p1);
+    var p2=document.createElement('p');p2.textContent=w.p2;card.appendChild(p2);
+    var p3=document.createElement('p');p3.appendChild(document.createTextNode(w.p3a));
+    var a=document.createElement('a');a.href='mailto:'+EMAIL;a.textContent=EMAIL;p3.appendChild(a);
+    p3.appendChild(document.createTextNode(w.p3b));card.appendChild(p3);
+    var bp=document.createElement('p');var btn=document.createElement('button');btn.type='button';btn.id='xoxo-visitor-id-settings-button';btn.textContent=w.settings;
+    btn.style.cssText='cursor:pointer;text-decoration:underline;background:none;border:0;color:inherit;font:inherit';
+    btn.addEventListener('click',function(){window.xoxoVisitorIdPrivacySettings()});
+    bp.appendChild(btn);card.appendChild(bp);host.appendChild(card);
+  }
+  function init(){renderPolicy();maybeShow();setInterval(function(){renderPolicy();maybeShow()},1500)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
 <script id="xoxo-legal-five-languages-script">
 (function(){
 function syncLegalLanguage(){
@@ -23860,7 +23931,7 @@ async function xwamDelete(id){
  finally{busy=false;}
  await window.xwamLoad();
 }
-window.xwamLoad=async function(){if(busy)return;busy=true;const status=$('xwamStatus');if(status)status.textContent='Cargando actividad…';try{if(!window.currentUser&&!currentUser)throw Error('Inicia sesión como administrador.');const {data:result,error}=await supabaseClient.rpc('xoxo_admin_whisper_activity');if(error)throw error;data=result;cards();render();if(status)status.textContent='Actualizado: '+new Date().toLocaleTimeString()+' · El historial expirado depende de los registros conservados.';}catch(e){if(status)status.textContent='No se pudo cargar la actividad: '+e.message;}finally{busy=false;}};
+window.xwamLoad=async function(){if(busy)return;busy=true;const status=$('xwamStatus');if(status)status.textContent='Cargando actividad…';try{if(!currentUser&&!currentUser)throw Error('Inicia sesión como administrador.');const {data:result,error}=await supabaseClient.rpc('xoxo_admin_whisper_activity');if(error)throw error;data=result;cards();render();if(status)status.textContent='Actualizado: '+new Date().toLocaleTimeString()+' · El historial expirado depende de los registros conservados.';}catch(e){if(status)status.textContent='No se pudo cargar la actividad: '+e.message;}finally{busy=false;}};
 })();
 </script>
 <script id="xoxo-r34-jewels-guard">
@@ -24719,5 +24790,117 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }catch(e){}
 })();
 </script>
+<style id="xoxoPresenceHistoryStyles">
+.xoxo-admin-global-online{cursor:pointer;font:inherit;text-align:left}
+.xoxo-admin-global-online:hover{filter:brightness(.97);box-shadow:0 0 0 3px rgba(134,76,210,.12)}
+.xph-overlay{position:fixed;inset:0;z-index:10050;background:rgba(12,7,24,.72);display:grid;place-items:center;padding:16px}
+.xph-overlay[hidden]{display:none!important}
+.xph-modal{width:min(820px,100%);max-height:min(86dvh,900px);overflow:auto;border:1px solid #9e6ac8;border-radius:22px;padding:20px;background:linear-gradient(150deg,#211038,#110a24);color:#fff;box-shadow:0 24px 80px #0008}
+.xph-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.xph-header h2{margin:0 0 5px;color:#fff}.xph-header p,.xph-footnote{margin:0;color:#d4c2e8;font-size:12px}
+.xph-close{width:38px;height:38px;border:1px solid #765394;border-radius:50%;background:#392253;color:#fff;font-size:25px;cursor:pointer;flex:0 0 auto}
+.xph-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap;margin:18px 0}.xph-filters label{display:grid;gap:5px;font-size:12px;color:#e7d8f7}.xph-filters select{min-height:40px;border:1px solid #765394;border-radius:10px;background:#2b1b40;color:#fff;padding:7px 10px}
+.xph-status{font-size:13px;color:#e8d8f8}.xph-rows{display:grid;gap:9px}.xph-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;padding:12px;border:1px solid #5d4279;border-radius:13px;background:#2a1b3d}.xph-row strong{font-size:14px}.xph-row small{display:block;color:#cdb9e2;font-size:12px;line-height:1.5}.xph-state{align-self:start;border-radius:99px;padding:4px 9px;background:#3c2854;color:#e7d5ff;font-size:11px;font-weight:800}.xph-state.online{background:#16452f;color:#a7f3c2}.xph-footnote{margin-top:14px;line-height:1.5}
+@media(max-width:560px){.xph-modal{padding:15px;border-radius:18px}.xph-filters{display:grid;grid-template-columns:1fr 1fr}.xph-filters label select{width:100%}.xph-row{grid-template-columns:1fr}.xph-state{justify-self:start}}
+</style>
+<script id="xoxoPresenceHistoryScript">
+(function(){
+  'use strict';
+  let guestTimer=null;
+  const guestKey='xoxo_guest_presence_session_v1';
+  function sessionKey(){
+    let value=sessionStorage.getItem(guestKey);
+    if(!value){
+      value=(typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID(): 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});
+      sessionStorage.setItem(guestKey,value);
+    }
+    return value;
+  }
+  const visitorKey='xoxo_guest_visitor_id_v1';
+  const visitorConsentKey='xoxo_visit_id_choice_v1';
+  function newId(){
+    return (typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)});
+  }
+  // Persistent anonymous id ONLY with its own consent (Google Analytics consent does not count) and never under Global Privacy Control.
+  function visitorId(){
+    try{
+      const allowed=localStorage.getItem(visitorConsentKey)==='yes'&&navigator.globalPrivacyControl!==true;
+      if(!allowed){localStorage.removeItem(visitorKey);return null}
+      let value=localStorage.getItem(visitorKey);
+      if(!value){value=newId();localStorage.setItem(visitorKey,value)}
+      return value;
+    }catch(e){return null}
+  }
+  async function guestHeartbeat(){
+    if(document.visibilityState==='hidden'||(typeof supabaseClient==='undefined')||currentUser)return;
+    try{
+      // Wait for getSession(): a restored session means a member whose profile is still loading, never a guest.
+      const {data:sessionData}=await supabaseClient.auth.getSession();
+      if(sessionData?.session||currentUser)return;
+      const response=await fetch('/api/activity-presence-heartbeat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        cache:'no-store',
+        body:JSON.stringify({session_key:sessionKey(),visitor_id:visitorId()})
+      });
+      if(!response.ok)console.warn('Guest presence heartbeat:',response.status);
+    }catch(e){console.warn('Guest presence heartbeat unavailable:',e)}
+  }
+  function stopGuest(){if(guestTimer){clearInterval(guestTimer);guestTimer=null}}
+  function syncGuest(){
+    if(currentUser){stopGuest();return}
+    if(!guestTimer){guestHeartbeat();guestTimer=setInterval(guestHeartbeat,45000)}
+  }
+  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function dateTime(v){if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString()}
+  function guestRow(item){
+    const online=!!item.is_online;
+    const activity=online?`● Online · Last activity: ${dateTime(item.last_seen_at)}`:`Offline · Last seen: ${dateTime(item.last_seen_at)}`;
+    const visits=Number(item.visit_count||0);
+    const idTag=item.visitor_key?String(item.visitor_key).slice(0,8):'—';
+    return `<article class="xph-row"><div><strong>👀 Guest visitor</strong><small>Type: Guest (not registered) · ID: ${escapeHtml(idTag)}<br>🌎 Approx. country: ${escapeHtml(item.country_name||item.country_code||'—')}<br>🔐 IP address: ${escapeHtml(item.ip_address||'—')}<br>Joined: ${escapeHtml(dateTime(item.started_at))}<br>Confirmed: —<br>Last sign-in: —<br>Visits: ${visits>0?visits:'—'}<br>Activity: ${escapeHtml(activity)}</small></div><span class="xph-state ${online?'online':''}">${online?'● Online':'Offline'}</span></article>`;
+  }
+  window.openXoxoPresenceHistory=async function(){
+    if(!currentUser||!xoxoIsAdmin){return}
+    const check=await supabaseClient.rpc('is_xoxo_admin');
+    if(check.error||check.data!==true){return}
+    const modal=document.getElementById('xoxoPresenceHistoryModal');
+    if(!modal)return;modal.hidden=false;document.body.style.overflow='hidden';
+    await window.loadXoxoPresenceHistory();
+  };
+  window.closeXoxoPresenceHistory=function(){const modal=document.getElementById('xoxoPresenceHistoryModal');if(modal)modal.hidden=true;document.body.style.overflow=''};
+  window.loadXoxoPresenceHistory=async function(){
+    const status=document.getElementById('xphStatus'),rows=document.getElementById('xphRows');
+    if(!status||!rows||!currentUser||!xoxoIsAdmin)return;
+    status.textContent='Loading history…';rows.replaceChildren();
+    try{
+      const allowed=await supabaseClient.rpc('is_xoxo_admin');
+      if(allowed.error||allowed.data!==true)throw new Error('Administrator access required.');
+      const days=Math.max(1,Math.min(90,Number(document.getElementById('xphPeriod')?.value||30)));
+      const type=document.getElementById('xphType')?.value||'all';
+      const from=new Date(Date.now()-days*86400000).toISOString();
+      const {data,error}=await supabaseClient.rpc('get_xoxo_admin_presence_history',{p_from:from,p_to:new Date().toISOString(),p_type:type,p_sort:document.getElementById('xphSort')?.value||'last_activity'});
+      if(error)throw error;
+      if(!data?.length){status.textContent='No sessions found for this period.';return}
+      status.textContent=`${data.length} sessions · Newest first`;
+      rows.innerHTML=data.map(item=>{
+        if(item.session_type==='guest')return guestRow(item);
+        const member=item.session_type==='member';
+        const active=!!item.is_online;
+        const label=member?(item.username||'Member'):'Anonymous visitor';
+        return `<article class="xph-row"><div><strong>${member?'👤':'👀'} ${escapeHtml(label)}</strong><small>Type: ${member?'Member':'Guest'}<br>Entered: ${escapeHtml(dateTime(item.started_at))}<br>Last activity: ${escapeHtml(dateTime(item.last_seen_at))}<br>Left / estimated: ${escapeHtml(dateTime(item.ended_at))}</small></div><span class="xph-state ${active?'online':''}">${active?'● Online':'Offline'}</span></article>`;
+      }).join('');
+    }catch(e){status.textContent='Could not load history: '+(e?.message||'Unknown error')}
+  };
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')guestHeartbeat()});
+  document.addEventListener('DOMContentLoaded',()=>{
+    syncGuest();
+    if(typeof supabaseClient!=='undefined'&&supabaseClient?.auth?.onAuthStateChange)supabaseClient.auth.onAuthStateChange(()=>{stopGuest();setTimeout(syncGuest,500)});
+    setInterval(syncGuest,3000);
+  });
+  if(document.readyState!=='loading')syncGuest();
+  document.getElementById('xoxoPresenceHistoryModal')?.addEventListener('click',e=>{if(e.target.id==='xoxoPresenceHistoryModal')window.closeXoxoPresenceHistory()});
+})();
+</script>
+
 </body>
                                     </html>
