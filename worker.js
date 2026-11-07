@@ -2094,22 +2094,7 @@ ${escapeHtml(message)}
  * ==========================================
  */
 
-async function handlePresenceLocation(request, env) {
-  if (request.method !== "POST") {
-    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
-  }
-
-  if (!env.SUPABASE_SECRET_KEY) {
-    console.error("XOXO presence location: SUPABASE_SECRET_KEY is missing");
-    return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
-  }
-
-  const signedInUser = await getAuthenticatedUser(request);
-
-  if (!signedInUser?.id) {
-    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
-  }
-
+function xoxoRequestGeo(request) {
   const countryCode = String(
     request.cf?.country || request.headers.get("CF-IPCountry") || ""
   ).trim().toUpperCase();
@@ -2128,6 +2113,27 @@ async function handlePresenceLocation(request, env) {
   const ipAddress = String(
     request.headers.get("CF-Connecting-IP") || ""
   ).trim();
+
+  return { countryCode, countryName, ipAddress };
+}
+
+async function handlePresenceLocation(request, env) {
+  if (request.method !== "POST") {
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
+  }
+
+  if (!env.SUPABASE_SECRET_KEY) {
+    console.error("XOXO presence location: SUPABASE_SECRET_KEY is missing");
+    return jsonResponse({ ok: false, error: "Server configuration error" }, 500);
+  }
+
+  const signedInUser = await getAuthenticatedUser(request);
+
+  if (!signedInUser?.id) {
+    return jsonResponse({ ok: false, error: "Unauthorized" }, 401);
+  }
+
+  const { countryCode, countryName, ipAddress } = xoxoRequestGeo(request);
 
   const payload = {
     user_id: signedInUser.id,
@@ -2763,6 +2769,7 @@ async function handleUsernameLogin(request, env) {
 async function handleActivityPresenceHeartbeat(request, env) {
   if (request.method !== 'POST') return jsonResponse({ok:false,error:'Method not allowed'},405);
   if (!env.SUPABASE_SECRET_KEY) return jsonResponse({ok:false,error:'Server configuration error'},500);
+  if (!/^Bearer\s+\S/i.test(request.headers.get('Authorization') || '')) return handleGuestPresenceHeartbeat(request, env);
   const user = await getAuthenticatedUser(request);
   if (!user?.id) return jsonResponse({ok:false,error:'Unauthorized'},401);
   const r = await fetch(`${SUPABASE_URL}/rest/v1/user_presence?on_conflict=user_id`, {
@@ -2772,6 +2779,89 @@ async function handleActivityPresenceHeartbeat(request, env) {
   });
   if (!r.ok) {
     console.error('XOXO activity heartbeat failed',r.status,await r.text());
+    return jsonResponse({ok:false,error:'Presence update failed'},502);
+  }
+  return jsonResponse({ok:true});
+}
+
+const XOXO_GUEST_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const XOXO_GUEST_BOT_RE = /bot\b|crawl|spider|slurp|facebookexternalhit|embedly|headless|lighthouse|pingdom|uptime|monitor|curl\/|wget|python-requests|httpclient|axios|node-fetch|go-http-client|java\//i;
+
+function xoxoIsSameSiteRequest(request) {
+  const source = request.headers.get('Origin') || request.headers.get('Referer') || '';
+  if (source) {
+    try {
+      return new URL(source).host === new URL(request.url).host;
+    } catch {
+      return false;
+    }
+  }
+  return request.headers.get('Sec-Fetch-Site') === 'same-origin';
+}
+
+async function xoxoReadSmallBody(request, maxBytes) {
+  const declared = Number(request.headers.get('Content-Length') || 0);
+  if (declared > maxBytes) return null;
+  if (!request.body) return '';
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+  } catch {
+    return null;
+  }
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    merged.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(merged);
+}
+
+// Visitors without an account: records first/last activity, IP and approximate country (from Cloudflare).
+// Never returns the IP, country or visitor id to the browser.
+async function handleGuestPresenceHeartbeat(request, env) {
+  if (!xoxoIsSameSiteRequest(request)) return jsonResponse({ok:false,error:'Forbidden'},403);
+  const raw = await xoxoReadSmallBody(request, 512);
+  if (raw === null) return jsonResponse({ok:false,error:'Payload too large'},413);
+  let body;
+  try {
+    body = JSON.parse(raw || '{}');
+  } catch {
+    return jsonResponse({ok:false,error:'Invalid JSON'},400);
+  }
+  const sessionKey = String(body?.session_key || '').trim();
+  if (!XOXO_GUEST_UUID_RE.test(sessionKey)) return jsonResponse({ok:false,error:'Invalid session'},400);
+  const rawVisitor = String(body?.visitor_id || '').trim();
+  const visitorId = XOXO_GUEST_UUID_RE.test(rawVisitor) ? rawVisitor : null;
+  const userAgent = request.headers.get('User-Agent') || '';
+  if (!userAgent || XOXO_GUEST_BOT_RE.test(userAgent)) return jsonResponse({ok:true});
+  const geo = xoxoRequestGeo(request);
+  const knownCountry = /^[A-Z]{2}$/.test(geo.countryCode) && geo.countryCode !== 'XX';
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/record_xoxo_guest_presence`, {
+    method:'POST',
+    headers:xoxoServiceHeaders(env),
+    body:JSON.stringify({
+      p_session_key:sessionKey,
+      p_visitor_id:visitorId,
+      p_ip:geo.ipAddress || null,
+      p_country_code:knownCountry ? geo.countryCode : null,
+      p_country_name:knownCountry ? (geo.countryName || null) : null,
+    }),
+  });
+  if (!r.ok) {
+    console.error('XOXO guest heartbeat failed',r.status,await r.text());
     return jsonResponse({ok:false,error:'Presence update failed'},502);
   }
   return jsonResponse({ok:true});
