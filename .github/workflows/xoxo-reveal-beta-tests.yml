@@ -1,0 +1,205 @@
+name: XOXO Reveal beta tests
+on:
+  push:
+    branches:
+      - feature/xoxo-reveal-studio-beta
+  pull_request:
+    paths:
+      - 'xoxo-reveal-*.mjs'
+      - 'tests/xoxo-reveal-*.test.mjs'
+      - '.github/workflows/xoxo-reveal-beta-tests.yml'
+permissions:
+  contents: read
+jobs:
+  reveal-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run isolated Reveal tests
+        run: node --test tests/xoxo-reveal-*.test.mjs
+
+  isolated-postgres-refund-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: xoxo_test
+          POSTGRES_PASSWORD: isolated_test_only
+          POSTGRES_DB: xoxo_reveal_test_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U xoxo_test -d xoxo_reveal_test_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actual refund v2 SQL on disposable PostgreSQL
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: xoxo_test
+          PGPASSWORD: isolated_test_only
+          PGDATABASE: xoxo_reveal_test_ci
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'xoxo_reveal_test_ci'
+          test "$PGUSER" = 'xoxo_test'
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-isolated-smoke.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-transactional-fixture.sql
+          bash tests/xoxo-reveal-postgres-refund-concurrency.sh
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-setup.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_release_quota_v2_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-behavior.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-authorization.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-reservation-binding.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-refund-v2-rollback.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_try_lock_attempt_v1_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-attempt-lock-v1.sql
+          psql -X -v ON_ERROR_STOP=1 -c 'ALTER TABLE public.xoxo_reveal_upload_attempts ADD COLUMN IF NOT EXISTS claim_token uuid'
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_writer_lease_v1_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-writer-lease-v1.sql
+          bash tests/xoxo-reveal-postgres-writer-concurrency.sh
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_verify_writer_v1_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-verify-writer-v1.sql
+
+  isolated-postgres-quota-v1-syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: xoxo_test
+          POSTGRES_PASSWORD: isolated_test_only
+          POSTGRES_DB: xoxo_reveal_quota_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U xoxo_test -d xoxo_reveal_quota_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse actual quota v1 draft in disposable PostgreSQL
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: xoxo_test
+          PGPASSWORD: isolated_test_only
+          PGDATABASE: xoxo_reveal_quota_ci
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'xoxo_reveal_quota_ci'
+          test "$PGUSER" = 'xoxo_test'
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-parse.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_quota_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-authorization.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-behavior.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-hourly-limit.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-hourly-bytes.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-daily-limit.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-release-reuse.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-byte-release-reuse.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-quota-v1-cross-user-isolation.sql
+
+  isolated-postgres-finalize-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: xoxo_test
+          POSTGRES_PASSWORD: isolated_test_only
+          POSTGRES_DB: xoxo_reveal_finalize_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U xoxo_test -d xoxo_reveal_finalize_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse actual finalize v2 SQL in disposable PostgreSQL
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: xoxo_test
+          PGPASSWORD: isolated_test_only
+          PGDATABASE: xoxo_reveal_finalize_ci
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'xoxo_reveal_finalize_ci'
+          test "$PGUSER" = 'xoxo_test'
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-finalize-v2-setup.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_finalize_upload_v2_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-finalize-v2-behavior.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-finalize-v2-denials.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-finalize-v2-relationship.sql
+
+  isolated-postgres-linked-dm-v1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: xoxo_test
+          POSTGRES_PASSWORD: isolated_test_only
+          POSTGRES_DB: xoxo_reveal_linked_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U xoxo_test -d xoxo_reveal_linked_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run linked DM SQL in disposable PostgreSQL
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: xoxo_test
+          PGPASSWORD: isolated_test_only
+          PGDATABASE: xoxo_reveal_linked_ci
+        run: |
+          set -euo pipefail
+          test "$PGHOST" = '127.0.0.1'
+          test "$PGDATABASE" = 'xoxo_reveal_linked_ci'
+          test "$PGUSER" = 'xoxo_test'
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-linked-dm-v1-setup.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_claim_upload_v2_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-claim-recipient-behavior.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261019_xoxo_reveal_create_linked_dm_v1_REVIEW_ONLY.sql
+          psql -X -v ON_ERROR_STOP=1 -f tests/xoxo-reveal-postgres-linked-dm-v1-behavior.sql
+
+  reveal-browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test dependency
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Run local Reveal journey in Chromium
+        run: node --test tests/xoxo-reveal-browser-smoke.mjs
