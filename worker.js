@@ -3396,7 +3396,7 @@ export default {
       return handleUsernameLogin(request, env);
     }
 
-    if (url.pathname === "/api/activity-presence-heartbeat") {
+    if (url.pathname === "/api/activity-presence-heartbeat" || url.pathname === "/api/guest-presence") {
       return handleActivityPresenceHeartbeat(request, env);
     }
 
