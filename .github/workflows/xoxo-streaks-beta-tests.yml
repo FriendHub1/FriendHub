@@ -1,0 +1,92 @@
+name: XOXO Streaks BETA tests
+
+on:
+  push:
+    branches:
+      - feature/xoxo-streaks-beta
+    paths:
+      - "beta/xoxo-streaks.js"
+      - "beta/xoxo-streaks-chat-bridge.js"
+      - "beta/xoxo-streaks-beta-host.js"
+      - "beta/test-streaks-beta-deploy-contract.cjs"
+      - "beta/build-streaks-beta-assets.sh"
+      - "wrangler.streaks-beta.jsonc"
+      - ".github/workflows/xoxo-streaks-beta-deploy.yml"
+      - "beta/xoxo-streaks-schema.sql"
+      - "beta/sql-test-streaks-users.sql"
+      - "beta/sql-test-streaks-pipeline.sql"
+      - "beta/test-xoxo-streaks.cjs"
+      - ".github/workflows/xoxo-streaks-beta-tests.yml"
+  pull_request:
+    paths:
+      - "beta/xoxo-streaks.js"
+      - "beta/xoxo-streaks-chat-bridge.js"
+      - "beta/xoxo-streaks-beta-host.js"
+      - "beta/test-streaks-beta-deploy-contract.cjs"
+      - "beta/build-streaks-beta-assets.sh"
+      - "wrangler.streaks-beta.jsonc"
+      - ".github/workflows/xoxo-streaks-beta-deploy.yml"
+      - "beta/xoxo-streaks-schema.sql"
+      - "beta/sql-test-streaks-users.sql"
+      - "beta/sql-test-streaks-pipeline.sql"
+      - "beta/test-xoxo-streaks.cjs"
+      - ".github/workflows/xoxo-streaks-beta-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+
+  postgres-streaks-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: xoxo_streaks_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d xoxo_streaks_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: xoxo_streaks_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify fresh disposable PostgreSQL database
+        run: psql -XAtqc "select current_database()" | grep -Fx xoxo_streaks_test
+      - name: Install isolated auth and DM fixtures
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-fixtures.sql
+          psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-streaks-users.sql
+      - name: Apply proposed streak schema only to disposable PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/xoxo-streaks-schema.sql
+      - name: Test trigger aggregation, exclusions and per-user clear semantics
+        run: psql -X -v ON_ERROR_STOP=1 -f beta/sql-test-streaks-pipeline.sql
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test XOXO Streaks BETA contracts
+        run: |
+          node beta/test-xoxo-streaks.cjs
+          node beta/test-streaks-beta-deploy-contract.cjs
+      - name: Check BETA build script syntax
+        run: bash -n beta/build-streaks-beta-assets.sh
+      - name: Build isolated BETA assets without deployment
+        run: bash beta/build-streaks-beta-assets.sh
+      - name: Validate Cloudflare bundle without deployment
+        run: npx --yes wrangler@4.102.0 deploy --dry-run --config ./wrangler.streaks-beta.jsonc

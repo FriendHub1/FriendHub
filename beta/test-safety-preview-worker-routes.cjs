@@ -14,8 +14,8 @@ function section(before,after){
   assert.ok(i>=0 && j>i,"Worker BETA section not found: "+before);
   return worker.slice(i,j);
 }
-const route=section('// Stay Safe, Sweetheart! — opt-in BETA only on workers.dev.',
-  'const xoxoShareLanguage =');
+const route=section('// Stay Safe, Sweetheart! — production integration.',
+  'const xoxoShareLanguageRaw =');
 assert.match(route,/url\.hostname\.endsWith\("\.workers\.dev"\)/,
   "the combined route must not inject scripts on the public production domain");
 assert.match(route,/request\.method === "GET"/,
@@ -24,7 +24,7 @@ for(const flag of ["xoxo_safety_chat_beta","xoxo_safety_admin_beta"]){
   assert.ok(route.includes('url.searchParams.get("'+flag+'") === "1"'),
     flag+" must remain an explicit opt-in");
 }
-assert.match(route,/xoxoSafetyChatBeta \|\| xoxoSafetyAdminBeta/);
+assert.match(route,/enableSafetyChat \|\| enableSafetyAdmin/);
 assert.match(route,/headers\.set\("Cache-Control",\s*"no-store"\)/,
   "private preview pages must never be cached");
 const scripts=[

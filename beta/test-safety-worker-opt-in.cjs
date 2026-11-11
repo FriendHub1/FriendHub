@@ -6,8 +6,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 const worker = fs.readFileSync(path.join(__dirname, "..", "worker.js"), "utf8");
 
-const start = worker.indexOf("// Stay Safe, Sweetheart! — opt-in BETA only on workers.dev.");
-const end = worker.indexOf("const xoxoShareLanguage =",start);
+const start = worker.indexOf("// Stay Safe, Sweetheart! — production integration.");
+const end = worker.indexOf("const xoxoShareLanguageRaw =",start);
 assert.ok(start>=0 && end>start,"combined preview route exists");
 const route=worker.slice(start,end);
 assert.match(route, /url\.hostname\.endsWith\("\.workers\.dev"\)/);

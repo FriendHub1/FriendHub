@@ -34,7 +34,7 @@ const document = {readyState:"loading",
   querySelector:()=>null};
 
 const context = {
-  window,document,
+  window,document,location:{hostname:"feature-xoxo-streaks-beta.workers.dev"},
   get currentUser(){return loggedIn;},
   get currentDmUserId(){return peer;},
   get supabaseClient(){return client;},

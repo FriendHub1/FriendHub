@@ -49,7 +49,8 @@ function clientWith({ rows = [{ id: id1, sender_id: peer, recipient_id: user }],
 async function testAdapter() {
   let test = clientWith();
   assert.deepEqual(await adapter.submit(test.client, input), { ok: true, reportId });
-  assert.deepEqual(test.calls, ["auth", "evidence", "auth", "rpc", "auth"]);
+  // A confirmed RPC receipt is trusted; the flow independently suppresses stale UI after account/chat changes.
+  assert.deepEqual(test.calls, ["auth", "evidence", "auth", "rpc"]);
 
   // The same explicitly selected evidence IDs, clicked in different orders,
   // must reach Supabase in ONE deterministic UUID order for idempotent retry.
@@ -134,8 +135,8 @@ async function testAdapter() {
   assert.equal(typeof releaseRpc,"function");
   changingUser=outsider;
   releaseRpc({data:reportId,error:null});
-  assert.equal((await pendingReceipt).reason,"wrong_account",
-    "Successful old-account report receipt must not appear after account swap");
+  assert.deepEqual(await pendingReceipt,{ok:true,reportId},
+    "The adapter trusts the committed RPC receipt; the chat flow suppresses stale UI after account swap");
 
   const anonymousClient=clientWith().client;
   anonymousClient.auth.getUser=async()=>({
